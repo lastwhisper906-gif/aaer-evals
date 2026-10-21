@@ -24,8 +24,6 @@ branch changed. A run item is done when its run directory is published and
 
 [ ] AIOT's 10-Q filed 2026-08-10 on Opus, the first run of a company added on 2026-10-21 · `.venv/bin/python -m evals --runs runs/AIOT` · the fixture set of 2026-10-21
 
-[ ] VISN's 10-Q filed 2026-08-06 on Opus, the first run of a company added on 2026-10-21 · `.venv/bin/python -m evals --runs runs/VISN` · the fixture set of 2026-10-21
-
 [ ] the improvement loop's first pass, by hand, over the runs of 2026-10-14 (`docs/improve_loop.md` build order 3): a weakness file, two or three candidate edits each with its prediction, `measure run` on both sides and `measure compare`, one ledger line per candidate · `.venv/bin/python -m src.improve.measure compare --baseline <rows> --candidate <rows> --held-in <runs> --target <metric>` exits 0 or 1 and prints its verdict, and `.venv/bin/python -m src.append_check --baseline origin/main` passes with the ledger lines appended · the build of 2026-10-21
 
 [ ] new Fable runs for AAPL, GNRC and LFUS, each in `runs/<ticker>/<accession>-rerun-<date>/` · `.venv/bin/python -m evals --runs runs/AAPL runs/GNRC runs/LFUS` · items one to three
@@ -61,6 +59,8 @@ branch changed. A run item is done when its run directory is published and
 [ ] MU, Micron Technology, the reading's pick under 3674 (`docs/structure_changes.md`, 2026-10-14): fixtures as of the day it is fetched, the two 10-K headers and Exhibit 21 documents by hand, expected values with the 43 keys, and its row · `.venv/bin/python -m pytest tests -q -k "MU"` passes with every defect a strict expected failure · none
 
 ## Done
+
+[x] VISN's 10-Q filed 2026-08-06 on Opus, the first run of a company added on 2026-10-21 · `.venv/bin/python -m evals --runs runs/VISN` · the fixture set of 2026-10-21 · 2026-10-21: started on Opus before the owner's Fable-first decision of the same evening, `--model opus` recorded as `model_override`, every agent served claude-opus-5-5, no fallback; accounting analyst 0 dropped, 0 of 8 areas empty after 1 hook round, 1 adjustment; financial analyst 0 dropped after 2 rounds; regression pass; analysis-grader 0.956 with 5 dealbreakers
 
 [x] AAON's 10-Q filed 2026-08-10 on Opus, the first run of a company added on 2026-10-21 · `.venv/bin/python -m evals --runs runs/AAON` · the fixture set of 2026-10-21 · 2026-10-21: `--model opus` recorded as `model_override`, every agent served claude-opus-5-5, no fallback; accounting analyst 0 dropped, 0 of 8 areas empty after 2 hook rounds, no adjustment; financial analyst 0 dropped after 2 rounds; regression pass; analysis-grader 0.896 with 4 dealbreakers
 

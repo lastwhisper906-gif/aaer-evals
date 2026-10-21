@@ -1,0 +1,92 @@
+{
+ "question": "what is this company worth, and what does the price already assume?",
+ "value_range": {
+  "reading": "Python computed no value range, and none is estimated here. The calculator prints under valuation.missing: \"WACC is not computed: the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\", and under cost_of_capital.missing: \"the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". So no bear, base or bull enterprise value, equity value or value per share exists. Of the cost of capital, Python did compute the risk-free rate, {cost_of_capital.risk_free_rate|pct}, the equity risk premium, {cost_of_capital.equity_risk_premium|pct}, and the tax rate, {cost_of_capital.tax_rate|pct}. The beta and the market value of equity are what is missing, and both need the price series. The pre-tax cost of debt it prints, {cost_of_capital.pre_tax_cost_of_debt|pct}, rests on interest paid on debt since repaid; debt now stands at {terms.debt_now}. What can be read is the drivers against the record. All three scenarios start from trailing revenue of {terms.trailing_four_quarters.revenue}, which adds fiscal 2025 as filed, {terms.trailing_four_quarters.revenue.parts.prior_fiscal_year} with RUCKUS still inside, to half-years recast without it, so a value later computed on this base will lean high. The base case asks for revenue growth a little above its terminal rate, against a second-quarter change of {ratios.growth.revenue.year_over_year|pct}, and for an operating margin that climbs from thin to a level above every filed annual margin, including the fiscal 2025 margin of {earnings_versus_cash.history.years.0.operating_margin|pct}.",
+  "fields": [
+   "valuation.missing",
+   "cost_of_capital.missing",
+   "cost_of_capital.risk_free_rate",
+   "cost_of_capital.equity_risk_premium",
+   "cost_of_capital.tax_rate",
+   "cost_of_capital.pre_tax_cost_of_debt",
+   "terms.debt_now",
+   "terms.trailing_four_quarters.revenue",
+   "terms.trailing_four_quarters.revenue.parts.prior_fiscal_year",
+   "ratios.growth.revenue.year_over_year",
+   "earnings_versus_cash.history.years.0.operating_margin"
+  ]
+ },
+ "price_position": {
+  "reading": "Where the price sits cannot be read: there is no price at the cutoff and no value range to place it in. The calculator prints under market.missing: \"no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". The free-cash-flow yield cross-check needs the same price and is missing for the same reason. No position is estimated. One point bears on any later comparison. The quarter-end balance sheet shows cash of {terms.balances_now.cash} and debt of {terms.debt_now}, but the RUCKUS proceeds arrived after the balance-sheet date, and a further special distribution was declared after it, payable in August. A per-share comparison would have to account for both flows, and the quarter-end balance sheet carries neither.",
+  "fields": [
+   "market.missing",
+   "cost_of_capital.missing",
+   "free_cash_flow_yield.price_at_cutoff.missing",
+   "terms.balances_now.cash",
+   "terms.debt_now"
+  ]
+ },
+ "market_implied_growth": {
+  "reading": "No reverse DCF was run, so the growth the price assumes is unknown, and it is not estimated here. The calculator prints under implied_growth_beside_history.implied_ten_year_revenue_growth.missing: \"no reverse DCF: WACC is not computed: the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". The implied rate would have been set against this record. Revenue fell at {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} a year over three fiscal years and {earnings_versus_cash.history.revenue_growth_five_year_compound|pct} over five, mostly through sales of businesses, so neither rate describes the business that remains. On the recast basis, first-half revenue rose to {terms.trailing_four_quarters.revenue.parts.this_year_to_date} from {terms.trailing_four_quarters.revenue.parts.prior_year_to_date}, while the second quarter changed {ratios.growth.revenue.year_over_year|pct} against the year-ago quarter. The company gives no revenue guidance. Its one forward operating figure, quoted here, is an adjusted EBITDA guidepost cut on memory-chip pricing and availability; the CFO adds that he remains confident in underlying demand. That guidepost leaves out restructuring, transaction costs and amortization, so it speaks to margin more than to growth. My base case starts growth a little above its terminal rate, which sits below the risk-free rate of {cost_of_capital.risk_free_rate|pct}. That start is above the second-quarter change and below the first-half rise.",
+  "fields": [
+   "implied_growth_beside_history.implied_ten_year_revenue_growth.missing",
+   "earnings_versus_cash.history.revenue_growth_three_year_compound",
+   "earnings_versus_cash.history.revenue_growth_five_year_compound",
+   "terms.trailing_four_quarters.revenue.parts.this_year_to_date",
+   "terms.trailing_four_quarters.revenue.parts.prior_year_to_date",
+   "ratios.growth.revenue.year_over_year",
+   "cost_of_capital.risk_free_rate"
+  ],
+  "quote": "Our full year adjusted EBITDA guideposts of $200 to $225 million are down $25 million versus the first quarter guideposts driven by continued challenges with memory chip pricing and availability.",
+  "quote_from": "input_8k.md"
+ },
+ "most_sensitive": [
+  {
+   "assumption": "operating_margin_year_ten",
+   "reading": "The sensitivity grid was not computed, because the valuation is missing for want of a price. No ranking is read off a grid or a scenario spread, and none is estimated. What the drivers show is where they stand furthest from the record. The year-ten operating margin is furthest from anything filed: the base sets it at nine per cent and the bull at thirteen. The fiscal 2025 margin was {earnings_versus_cash.history.years.0.operating_margin|pct}, the three-year average {earnings_versus_cash.history.operating_margin_three_year_average|pct}, and the second quarter ended at an operating loss of {ratios.growth.operating_income.this_quarter}. Even the bear case's four per cent sits above fiscal 2025. Gross margin in the latest quarter, {trend_table.quarters-back-0.ratios.gross_margin|pct}, is the lowest filed, against {trend_table.years-back-0.ratios.gross_margin|pct} for fiscal 2025. The margin path depends on amortization running off and stranded costs being cut, and the record does not yet show either.",
+   "fields": [
+    "valuation.missing",
+    "earnings_versus_cash.history.years.0.operating_margin",
+    "earnings_versus_cash.history.operating_margin_three_year_average",
+    "ratios.growth.operating_income.this_quarter",
+    "trend_table.quarters-back-0.ratios.gross_margin",
+    "trend_table.years-back-0.ratios.gross_margin"
+   ]
+  },
+  {
+   "assumption": "revenue_growth_year_one",
+   "reading": "No grid exists to rank this one either. Year-one growth runs from a fall of six per cent in the bear case to a rise of eight per cent in the bull, with the base at three. On the record, the second quarter changed {ratios.growth.revenue.year_over_year|pct}, and Comcast took {concentration.facts.38|pct} of second-quarter sales, so one customer's orders can move the whole line. Every growth rate compounds from trailing revenue of {terms.trailing_four_quarters.revenue}. That base adds fiscal 2025 as filed, {terms.trailing_four_quarters.revenue.parts.prior_fiscal_year}, which still held RUCKUS, to recast half-years; the second quarter alone was {ratios.growth.revenue.this_quarter}. The base is not a driver, but it leans the same way in all three scenarios, so any value later computed on it leans high in each of them alike.",
+   "fields": [
+    "ratios.growth.revenue.year_over_year",
+    "concentration.facts.38",
+    "terms.trailing_four_quarters.revenue",
+    "terms.trailing_four_quarters.revenue.parts.prior_fiscal_year",
+    "ratios.growth.revenue.this_quarter"
+   ]
+  }
+ ],
+ "accounting_adjustments": {
+  "reading": "No valuation was run, so Python carries no valuation.accounting_adjustments field, and how far the adjustments move value cannot be read. The accounting reader wrote one adjustment: remove the discrete continuing-operations tax benefit, which it judged will not recur. Python applied it to quality-adjusted free cash flow, lowering it by {free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.0.amount}, from {free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.0.before} to {free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.0.after}. The benefit sits below operating income. Every driver is set on reported operating income taxed at the calculator's rate of {tax_rate|pct}, so the drivers already leave it out. The reader wrote no adjustment to operating income. The cut in research spending, to {terms.trailing_four_quarters.research_and_development_expense.parts.this_year_to_date} from {terms.trailing_four_quarters.research_and_development_expense.parts.prior_year_to_date} for the half, and the lower incentive-pay accrual both lift the recent operating result, but no field carries an amount for the accrual.",
+  "fields": [
+   "free_cash_flow.free_cash_flow_quality_adjusted",
+   "free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.0.amount",
+   "free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.0.before",
+   "free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.0.after",
+   "terms.trailing_four_quarters.income_tax_expense.parts.this_year_to_date",
+   "tax_rate",
+   "terms.trailing_four_quarters.research_and_development_expense.parts.this_year_to_date",
+   "terms.trailing_four_quarters.research_and_development_expense.parts.prior_year_to_date"
+  ]
+ },
+ "summary_ko": {
+  "value_range": "주가 자료가 주어지지 않아 베타와 WACC를 계산하지 못했습니다. 그래서 약세·기본·강세 시나리오의 기업가치와 주당 가치 범위는 계산되지 않았고, 여기서 따로 추정하지도 않습니다. 계산된 입력값은 무위험이자율 {cost_of_capital.risk_free_rate|pct}와 주식위험프리미엄 {cost_of_capital.equity_risk_premium|pct} 정도입니다. 출발점인 최근 연간 기준 매출 {terms.trailing_four_quarters.revenue}에는 이미 매각된 RUCKUS가 섞여 있어, 나중에 계산될 가치는 높게 나올 수 있습니다.",
+  "price_position": "기준일 주가가 기록에 없어 주가가 가치 범위의 어디에 있는지 읽을 수 없고, 같은 이유로 잉여현금흐름 수익률도 계산되지 않았습니다. 분기 말 현금은 {terms.balances_now.cash}, 차입금은 {terms.debt_now}입니다. 다만 분기 뒤에 RUCKUS 매각 대금이 들어오고 추가 특별배당이 선언되었으므로, 주당 비교에는 이 흐름들을 함께 봐야 합니다.",
+  "market_implied_growth": "역DCF가 계산되지 않아 주가에 담긴 장기 매출 성장률은 알 수 없습니다. 과거 연평균 매출 증가율은 중기 {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, 장기 {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}로 대부분 사업 매각 때문입니다. 이번 분기 매출은 전년 동기 대비 {ratios.growth.revenue.year_over_year|pct} 변했고, 회사는 매출 전망 없이 메모리칩 문제로 낮춘 조정 EBITDA 가이드포스트만 내놓았습니다.",
+  "most_sensitive": "민감도 표가 계산되지 않아 가치가 어떤 가정에 가장 민감한지는 읽을 수 없습니다. 기록과 가장 멀리 떨어진 가정은 예측 기간 끝의 영업이익률로, 직전 회계연도 영업이익률 {earnings_versus_cash.history.years.0.operating_margin|pct}와 이번 분기 영업손실 {ratios.growth.operating_income.this_quarter}보다 훨씬 높게 잡혀 있습니다. 그다음은 초기 매출 성장률로, 단일 고객 Comcast가 이번 분기 매출의 {concentration.facts.38|pct}를 차지해 시나리오 사이의 폭이 넓습니다.",
+  "accounting_adjustments": "가치평가가 실행되지 않아 회계 조정이 가치를 얼마나 바꿨는지는 계산되지 않았습니다. 회계 분석가가 낸 유일한 조정은 반복되지 않는 계속영업 법인세 혜택을 빼는 것으로, 품질조정 잉여현금흐름을 {free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.0.before}에서 {free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.0.after}로 낮췄습니다. 이 혜택은 영업이익 아래 항목이라 영업이익률 가정에는 처음부터 들어 있지 않습니다."
+ },
+ "limits": "This valuation is a set of stated assumptions run through a stated formula. It states no recommendation to trade, and a different reader choosing different drivers would reach a different value.",
+ "normalized_quotes": 0,
+ "dropped_items": [],
+ "dropped_count": 0
+}

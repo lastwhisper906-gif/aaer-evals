@@ -1,0 +1,619 @@
+{
+ "run": "VISN/0001193125-26-336708",
+ "rubric": "evals/capability/rubric.md",
+ "dealbreakers": [
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "controls_audit_and_filing_signals_debt_table_carries_retired_notes",
+   "where": "analysis_accounting.json anomalies[36].numbers_vs_prose",
+   "why": "The anomaly and its reconciliation entry are both left 'unresolved', yet the inputs settle the point: mdna:90 says the company 'repurchased in full the $1,500.0 million outstanding amount of our 2026 Secured Notes' in the first half of 2025, notes:108 shows no current portion at year-end, and terms.cash_flow_families.borrowing_repaid.parts.prior_fiscal_year equals parts.prior_year_to_date."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "cross_document_reconciliation_quarterly_operating_cash_flow_release_versus_derived",
+   "where": "analysis_accounting.json anomalies[43].numbers_vs_prose",
+   "why": "Left 'unresolved', and the anomaly claims an unexplained first-quarter recast, but 8k_2_02:64 prints first-quarter 2026 operating cash flow at the filed figure, the same first-quarter input as ratios.growth.operating_cash_flow.this_quarter.parts, so the small gap with 8k_2_02:34 is rounding."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "cross_document_reconciliation_aurora_prose_internal_contradictions",
+   "where": "analysis_accounting.json anomalies[45].numbers_vs_prose",
+   "why": "Left 'unresolved', yet mdna:63 and the next sentence of mdna:64 settle six-month volume as 'higher sales volume', and mdna:9 explains Aurora's higher SG&A against lower consolidated SG&A (mdna:30) as corporate costs reallocated to the remaining segment."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": null,
+   "where": "analysis_valuation.json most_sensitive[0].reading",
+   "why": "'the base sets it at nine per cent and the bull at thirteen' and 'Even the bear case's four per cent sits above fiscal 2025' state scenario driver values from assumptions.json. No calculator path supplies them, because valuation.missing."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": null,
+   "where": "analysis_valuation.json most_sensitive[1].reading",
+   "why": "'Year-one growth runs from a fall of six per cent in the bear case to a rise of eight per cent in the bull, with the base at three' states driver values that no calculator path holds."
+  }
+ ],
+ "items": [
+  {
+   "id": "earnings_versus_cash_operating_cash_flow_far_below_net_income",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "earnings_versus_cash.operating_cash_flow_over_net_income and accruals_over_average_assets match; the years-back-0 accruals cell is 'highest of the 5 filled years'; earnings_quality_discontinued_operations_inside_annual_net_income and facts:ProceedsFromDivestitureOfBusinesses show disposals drive the gap."
+  },
+  {
+   "id": "earnings_versus_cash_working_capital_articulation_gaps",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "Both earnings_versus_cash.working_capital articulation_gap paths match; balances_a_year_earlier come from the pre-divestiture 10-Q 0000950170-25-101615, and 8k_2_02:13 says cash flows are not segregated."
+  },
+  {
+   "id": "earnings_versus_cash_operating_cash_outflow_deepens",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "operating_cash_flow.parts.this_year_to_date is worse than parts.prior_year_to_date and ratios.growth.operating_cash_flow.this_quarter is an outflow; mdna:83 names working capital, incentive payments and cash taxes, partly offset by lower interest."
+  },
+  {
+   "id": "earnings_versus_cash_income_far_more_volatile_than_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.smoothness is far above the neutral level its formula defines, and its net-income series is dominated by the disposal quarters shown in the discontinued-operations items."
+  },
+  {
+   "id": "earnings_versus_cash_trailing_figures_mix_recast_and_as_filed_bases",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters_a_year_earlier.revenue is negative, which makes ratios.growth.revenue.trailing_four_quarters an artifact; the parts mix the 10-K 0001193125-26-072523 with recast year-to-date facts (8k_2_02:18)."
+  },
+  {
+   "id": "earnings_versus_cash_interest_income_on_cash_being_distributed",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:48 ties interest income to the CCS proceeds, which notes:156 says funded the distribution; pretax_income.parts.this_year_to_date sits above operating_income.parts.this_year_to_date."
+  },
+  {
+   "id": "revenue_recognition_days_sales_outstanding_rise_unexplained",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "Quarters-back-0 days_sales_outstanding is above quarters-back-1, whose inputs predate the recast, as the anomaly flags; concentration.facts.41 sits above concentration.facts.36; the reader found no text on the balance."
+  },
+  {
+   "id": "revenue_recognition_contract_liabilities_fall_on_recast_basis",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The quarters-back-1 input is the pre-recast balance; notes:92 shows the recast year-end deferred revenue below terms.balances_now.contract_liabilities, and notes:93 attributes the change to upfront support billings."
+  },
+  {
+   "id": "revenue_recognition_prior_year_license_sales_absent_from_filing",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:17 cites 'strong license sales in the second quarter of 2025', while mdna:20, mdna:26 and mdna:64 do not; trend_table.quarters-back-4.ratios.gross_margin sits above quarters-back-0."
+  },
+  {
+   "id": "revenue_recognition_negative_amphenol_msa_revenue",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:60 prints negative MSA net revenues for the quarter and six months, gives no cause, and books them in discontinued operations."
+  },
+  {
+   "id": "revenue_recognition_fourth_quarter_revenue_tag_switch",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "The concept-switch reader items show the quarters-back-2 and -6 tag change, but only for the DSO, receivables, contract-liability and warranty ratios; they do not show that 'fourth-quarter revenue concentration cannot be tested'."
+  },
+  {
+   "id": "estimates_and_reserves_bad_debt_allowance_at_record_low",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "Quarters-back-0 bad_debt_reserve_ratio is 'lowest of the 8 filled quarters' and below the recast years-back-0 cell, so the thinning holds like for like; the quarters-back-4 and years-back-3 comparators rest on pre-divestiture filings and carry no caveat."
+  },
+  {
+   "id": "estimates_and_reserves_continuing_income_rests_on_discrete_tax_benefit",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "notes:30 names the equity-compensation and remeasurement benefits and does not say they recur; income_tax_expense.parts.this_year_to_date is a benefit against pretax_income.parts.this_year_to_date."
+  },
+  {
+   "id": "estimates_and_reserves_discontinued_operations_tax_benefit_unexplained",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "notes:66 (via earnings_quality_discontinued_operations_tax_lines_unexplained) shows a RUCKUS tax benefit carrying ratios.growth.net_income.this_quarter, with no paragraph explaining it; the 'not cash' gloss is only partly backed by the deferred-tax line in 8k_2_02:58."
+  },
+  {
+   "id": "estimates_and_reserves_tax_planning_benefit_moved_out_of_continuing_operations",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The first-quarter tax-planning benefit in note_history:21 (0001193125-26-193963) is gone: the recast six-month continuing benefit (income_tax_expense.parts.this_year_to_date) is smaller than the second-quarter benefit in notes:30, and no text says where it went."
+  },
+  {
+   "id": "estimates_and_reserves_prior_year_valuation_allowance_dropped_from_explanation",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "note_history:22 (0001193125-26-193963) named the additional valuation allowance; the recast explanation in notes:31 no longer does."
+  },
+  {
+   "id": "estimates_and_reserves_deferred_tax_asset_drawdown",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:57 shows deferred tax assets falling steeply from the recast year-end and 8k_2_02:58 a large deferred-tax adjustment. No note explains the move; notes:75 gives only the CCS gain's tax expense."
+  },
+  {
+   "id": "estimates_and_reserves_variable_incentive_compensation_accrual_lowered",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:30 shows lower incentive expense while mdna:83 cites higher incentive payments, and notes:98 shows compensation liabilities down from the recast year-end; no field carries the amount."
+  },
+  {
+   "id": "estimates_and_reserves_legal_expense_drop_unexplained",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:30 gives the legal-expense decrease, and notes:18 names no matter, settlement or resolution."
+  },
+  {
+   "id": "estimates_and_reserves_gains_on_unidentified_financial_assets",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:44 cites gains on 'certain financial assets' that the notes do not identify. 'Cannot be separated' holds only for calculator fields, since 8k_2_02:56 prints other income on its own line."
+  },
+  {
+   "id": "estimates_and_reserves_goodwill_unchanged_while_segment_profit_falls",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:57 prints goodwill unchanged at both dates, 8k_2_02:29 shows Aurora operating income collapsing, and quarters-back-0 gross margin is lowest; notes:25 gives only the policy and a no-impairment statement, with no headroom."
+  },
+  {
+   "id": "estimates_and_reserves_warranty_ratio_at_quarterly_high",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "Quarters-back-0 warranty_reserve_ratio is the highest on the same concepts and above quarters-back-4, whose inputs come from the same filing; the notes:16 roll-forward gives no cause."
+  },
+  {
+   "id": "estimates_and_reserves_restructuring_charges_and_reserve_rise",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "facts:RestructuringCharges and facts:RestructuringReserve both rise, mdna:38 ties them to the new plan, and the reader shows the reserve tagged to the CommScope NEXT member."
+  },
+  {
+   "id": "estimates_and_reserves_own_das_and_ruckus_disposal_estimates_unexplained",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:76 gives the OWN/DAS adjustment with no cause or direction; note_history:51 (0001193125-26-193963) shows the RUCKUS cost estimate removed, and notes:161 gives no update."
+  },
+  {
+   "id": "cost_deferral_soft_asset_share_at_high",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "Quarters-back-0 soft_asset_share is 'highest of the 8 filled quarters' against quarters-back-1; the reader item shows cash collapsing between the two dates, alongside the distribution in 8k_2_02:58."
+  },
+  {
+   "id": "cost_deferral_prepaid_and_other_current_assets_jump",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:57 shows the prepaid line jumping and 8k_2_02:58 a large outflow on it; mdna:77 names the rise without its contents, and notes:22 says the restricted deposits were returned."
+  },
+  {
+   "id": "cost_deferral_recurring_restructuring_and_transaction_costs",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:6, mdna:38 and the mdna:100 reconciliation show restructuring and transaction costs in every period presented, with more expected; adjusted measures exclude them (mdna:64, 8k_2_02:59)."
+  },
+  {
+   "id": "cost_deferral_core_measure_excludes_stranded_costs",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:10 defines Core as Aurora alone, mdna:9 reallocates RUCKUS corporate costs from the third quarter, and 8k_2_02:56 shows transition-service income falling."
+  },
+  {
+   "id": "cost_deferral_non_gaap_close_to_gaap_only_through_tax_line",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:59 reverses the reported tax benefit and nets 'Tax effects of adjustments and other tax items', which brings adjusted net income near GAAP continuing income; trend_table non_gaap_gap is missing."
+  },
+  {
+   "id": "cost_deferral_research_and_development_cut",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "research_and_development_expense.parts.this_year_to_date is below parts.prior_year_to_date, mdna:32 cites lower Aurora spending, and the trend table finds no capitalized development cost."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_cash_flows_not_segregated",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:13 and notes:78 confirm discontinued cash flows are not segregated; terms.trailing_four_quarters.interest_paid sits against terms.debt_now, and the proceeds are in investing (facts:ProceedsFromDivestitureOfBusinesses)."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_restricted_cash_presentation",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:58 prints different restricted-inclusive end totals for the same date in its two columns, with a restricted line only in the three-month column; notes:22 dates the return to April."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_dividend_equivalents_on_unvested_awards",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:157 records more than notes:158 says was paid, with dividend equivalents due at vesting; notes:98 adds a special distribution payable; terms.trailing_four_quarters.share_based_compensation is as cited."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_prior_period_values_recast_without_bridge",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The restated-value reader items show 10-K year-end lines superseded by different values while totals hold (facts:Assets:2025-12-31); notes:4 discloses the recast, and no bridging text is carried."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_deferred_tax_liability_moves_up_on_recast",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "facts:DeferredIncomeTaxLiabilitiesNet:2025-12-31 differs upward from the liability 8k_2_02:57 prints for the same date, while the other restated lines moved down or into held for sale; no text explains it."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_share_counts_identical_at_two_dates",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "facts:CommonStockSharesOutstanding is identical at both 10-K year-ends while weighted shares differ, per controls_audit_and_filings_share_counts_identical_across_balance_sheet_dates."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_debt_table_carries_retired_notes",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:108 does carry the 2026 notes at year-end against mdna:90, but the anomaly is tagged 'unresolved' when the inputs settle it; zeroed by a dealbreaker."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_controls_item_reports_no_change_amid_transition",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "item_4_controls:5 reports no control change while notes:83 describes the reverse TSA and notes:115 the move to one segment."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_pending_standards_and_dilution_changes",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "note_history:25 to :29 (0001193125-26-193963) are pending-standard paragraphs removed without comment; notes:36 against note_history:24 shows the changed first-quarter preferred-dilution treatment."
+  },
+  {
+   "id": "cross_document_reconciliation_transaction_costs_prose_disagrees_with_table",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:6 gives six-month and prior-year-quarter transaction costs that differ from the same caption in the mdna:100 table."
+  },
+  {
+   "id": "cross_document_reconciliation_special_distribution_amount_differs",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:76 says 'approximately $2,316.6 million', while mdna:92, notes:158 and 8k_2_02:58 give a different figure for the same payment."
+  },
+  {
+   "id": "cross_document_reconciliation_capital_expenditure_decrease_misstated",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:86 says 'decreased capital expenditures of $4.2 million', which equals capital_expenditure.parts.this_year_to_date rather than the fall from parts.prior_year_to_date."
+  },
+  {
+   "id": "cross_document_reconciliation_basic_eps_release_differs_from_note",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:56 and notes:38 print different basic discontinued and total EPS for the quarter; settling it would need derived figures the analysts may not write."
+  },
+  {
+   "id": "cross_document_reconciliation_quarterly_operating_cash_flow_release_versus_derived",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "low",
+   "why": "ratios.growth.operating_cash_flow.this_quarter differs only slightly from 8k_2_02:34, and 8k_2_02:64 prints first-quarter 2026 at the filed figure, so no first-quarter recast is shown; also zeroed by a dealbreaker."
+  },
+  {
+   "id": "cross_document_reconciliation_input_costs_explanations_conflict",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:26 credits 'lower input costs' while 8k_2_02:17 blames 'memory chip pricing'; no input quantifies either, so 'unresolved' is fair."
+  },
+  {
+   "id": "cross_document_reconciliation_aurora_prose_internal_contradictions",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "The SG&A contrast mixes segment (mdna:64) and consolidated (mdna:30) scope, and the volume conflict is settled by mdna:63; zeroed by a dealbreaker."
+  },
+  {
+   "id": "cross_document_reconciliation_release_cash_includes_cash_held_for_sale",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:36 states the release cash total includes cash in assets held for sale, and terms.balances_now.cash matches the balance sheet in 8k_2_02:57."
+  },
+  {
+   "id": "cross_document_reconciliation_revolver_commitment_cut_absent_from_mdna",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:72 still says 'up to $300.0 million', while notes:111 records the reduction effective July 1."
+  },
+  {
+   "id": "cross_document_reconciliation_explanations_only_in_release",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The refund, the legacy versus Access Technologies split and the year-end cash plan appear in 8k_2_02:16 and 8k_2_02:33, and the notes reader found none of them in the 10-Q text."
+  },
+  {
+   "id": "cross_document_reconciliation_total_capitalization_explanation_omits_distribution",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:77 explains the capitalization fall by debt repayment and net income only, while 8k_2_02:58 shows the preferred redemption and the distribution; terms.cash_flow_families.borrowing_repaid is as cited."
+  },
+  {
+   "id": "industry_lens_inventory_build_against_falling_sales",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:57 shows inventory rising from the recast year-end to terms.balances_now.inventory; quarters-back-0 days_sales_of_inventory is as stated, balances_now.inventory_reserve is missing, and mdna:77 gives no cause."
+  },
+  {
+   "id": "industry_lens_comcast_concentration_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "notes:9 and concentration.facts.38, .19 and .41 give Comcast's sales and receivable shares as stated, with both sales shares on the recast basis."
+  },
+  {
+   "id": "industry_lens_continuing_agreements_with_buyer_of_divested_businesses",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:61 keeps the Amphenol supply and services revenue in continuing operations, notes:83 records reverse-TSA costs, and notes:60 shows the negative MSA revenue."
+  },
+  {
+   "id": "results_against_expectations_guideposts_cut_on_memory_chips",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:17 calls the quarter 'generally aligned with our expectations' and cuts the guideposts on memory chips, while mdna:26 credits lower input costs; quarters-back-0 gross margin and ratios.growth.revenue.year_over_year are as stated."
+  },
+  {
+   "id": "results_against_expectations_ruckus_transaction_cost_estimate_withdrawn",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "note_history:51 (0001193125-26-193963) gave the estimate, this 10-Q drops it, and notes:161 reports the close 'subject to certain adjustments' with no cost, tax or gain figure."
+  },
+  {
+   "id": "liquidity_and_capital_operating_cash_used_in_both_quarters",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "operating_cash_flow parts and ratios.growth.operating_cash_flow.this_quarter against year_over_year.inputs.before are as stated; mdna:83 gives the drivers and 8k_2_02:13 the non-segregation."
+  },
+  {
+   "id": "liquidity_and_capital_cash_and_quick_ratio_low_at_quarter_end",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.balances_now.cash, ratios.liquidity.quick_ratio and current_ratio are as stated; 8k_2_02:57 shows held-for-sale assets inside current assets, notes:112 the availability, and 8k_2_02:58 the two column totals."
+  },
+  {
+   "id": "liquidity_and_capital_special_distributions_consume_sale_proceeds",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:157 and notes:158 show more recorded than paid, notes:162 the August declaration, and 8k_2_02:16 the year-end guidance; terms.shares_outstanding and borrowing_repaid.parts.this_year_to_date are as cited."
+  },
+  {
+   "id": "liquidity_and_capital_revolver_commitments_cut_and_borrowing_base_limits",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:111 cuts the commitments, notes:110 sets the borrowing base and liens, notes:112 gives availability after letters of credit, and mdna:72 keeps the original size."
+  },
+  {
+   "id": "liquidity_and_capital_working_capital_absorbs_cash",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:77 names prepaid, inventory and accruals, and 8k_2_02:57 shows the prepaid jump with no contents; facts:IncreaseDecreaseInAccountsPayableAndAccruedLiabilities flips to an outflow, and the change_in_inventory and change_in_receivables parts are as cited."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_lower_pricing_mix_and_volume",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:20 and mdna:64 give mix, pricing and volume; 8k_2_02:33 gives the legacy decline and 8k_2_02:20 the EMEA and Canada declines; ratios.growth.revenue.year_over_year is as stated."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_memory_chip_cost_and_availability",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:110 names memory chips among key components, 8k_2_02:17 ties the decline and the guidepost cut to them, and quarters-back-0 gross margin is 'lowest of the 6 filled quarters'."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_stranded_costs_move_onto_aurora",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:9 reallocates RUCKUS costs from the third quarter of 2026, mdna:110 names the stranded-cost risk, and notes:83 and 8k_2_02:56 show Amphenol TSA income far below the prior year while reverse-TSA costs run on."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_restructuring_charges_and_reserve_rising",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "facts:RestructuringCharges and facts:RestructuringReserve rise; mdna:38 ties them to the new plan and warns charges could be material; ratios.growth.operating_income.this_quarter is a loss."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_research_and_development_cut",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The research_and_development_expense parts are as cited; mdna:32 attributes the cut to Aurora, mdna:30 adds the lower incentive and legal expense, and 8k_2_02:16 carries the CEO's investment remark."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_customer_concentration",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "notes:9 and concentration.facts.38, .19 and .41 are on the same recast basis; quarters-back-0 bad_debt_reserve_ratio is 'lowest of the 8 filled quarters', and the reader found no credit-risk text."
+  },
+  {
+   "id": "profitability_gross_margin_lowest_filed_quarter",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The gross margin cells for quarters-back-0, -4 and -1 are as stated, years-back-0 is 'highest of the 5 filled years', and 8k_2_02:65 shows the same fall in the adjusted series."
+  },
+  {
+   "id": "profitability_operating_loss_and_thin_returns",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "ratios.growth.operating_income.this_quarter and inputs.before, operating_income.parts.this_year_to_date, operating_margin and return_on_invested_capital are as stated; 8k_2_02:29 and 8k_2_02:31 show the Aurora and Core declines."
+  },
+  {
+   "id": "profitability_continuing_income_rests_on_tax_benefits",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "notes:30 gives the benefit on a pretax loss; the income_tax_expense and pretax_income parts are as cited; facts:IncomeTaxExpenseBenefit:2025-01-01..2025-12-31 shows the same pattern for the full year; tax_rate.rule sets aside effective_rate."
+  },
+  {
+   "id": "profitability_net_income_is_divestiture_gains_not_cash",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "net_income, net_margin, return_on_assets, operating_cash_flow_over_net_income and accruals_over_average_assets are as stated; the years-back-0 accruals cell is 'highest of the 5 filled years', and notes:66 shows the unexplained tax lines."
+  },
+  {
+   "id": "profitability_pretax_result_leans_on_interest_income_from_cash_being_paid_out",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:48 ties interest income to the CCS proceeds and mdna:44 cites unidentified gains; notes:156 says the proceeds funded the distribution and notes:162 declares another."
+  },
+  {
+   "id": "profitability_warranty_accrual_rising_against_sales",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The quarters-back-0 and -4 warranty ratios rest on same-filing inputs; the balances_now and balances_a_year_earlier warranty_accrual values are as stated, and notes:16 gives no cause."
+  },
+  {
+   "id": "efficiency_inventory_days_rising_with_cash_absorbed",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "days_sales_of_inventory for quarters-back-0, -1 and years-back-0 and change_in_inventory.parts.this_year_to_date are as stated; 8k_2_02:57 shows inventory up from the recast year-end, and notes:120 and notes:60 tie retained inventory to the MSA."
+  },
+  {
+   "id": "efficiency_receivable_days_rising",
+   "frame": "finance",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "The DSO and receivables cells are as stated, but the quarters-back-1 inputs predate the RUCKUS recast, so the evidence cannot show that 'Collections are slower relative to sales'; the allowance point holds."
+  },
+  {
+   "id": "efficiency_low_turnover_and_assets_mostly_non_cash",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.efficiency.asset_turnover and cash_conversion_cycle average a pre-divestiture year-ago balance, quarters-back-0 soft_asset_share is 'highest of the 8 filled quarters', and 8k_2_02:57 shows the asset mix."
+  },
+  {
+   "id": "solvency_future_borrowing_without_operating_earnings_to_cover_it",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.solvency.total_debt and interest_coverage.missing are as stated; notes:113 and 8k_2_02:56 show the new interest-expense line, mdna:48 expects more, and notes:110 gives the liens."
+  },
+  {
+   "id": "growth_revenue_falling_year_over_year",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.growth.revenue.year_over_year rests on two recast quarters, 8k_2_02:20 and 8k_2_02:33 give the regional and legacy declines, and revenue.parts.this_year_to_date is above parts.prior_year_to_date."
+  },
+  {
+   "id": "growth_operating_income_and_cash_flow_reversed",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The operating_income and operating_cash_flow year_over_year paths and operating_cash_flow.trailing_four_quarters are as stated; 8k_2_02:21 and 8k_2_02:31 show non-GAAP net income and Core EBITDA lower."
+  },
+  {
+   "id": "growth_long_run_shrinkage_to_a_single_segment",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The earnings_versus_cash.history three-year and five-year revenue compounds are as stated; notes:115 gives one remaining segment, and mdna:9 the stranded-cost reallocation."
+  },
+  {
+   "id": "growth_contract_liabilities_shrinking_against_revenue",
+   "frame": "finance",
+   "verdict": "unsupported",
+   "severity": "medium",
+   "why": "The quarters-back-1 and -4 inputs come from pre-recast filings. On the recast basis, notes:92 shows deferred revenue rising to terms.balances_now.contract_liabilities, and notes:93 says 'primarily due to upfront support billings', the opposite of fewer prepayments."
+  }
+ ],
+ "coverage": {
+  "answer": "yes",
+  "why": "Every accounting area and the industry lens carry a finding and verdict, and every financial section, the DuPont split and path_to_distress carry a reading. input_manifest.json analysis_stages records no drop for either analysis, and both dropped_items lists are empty."
+ },
+ "calibration": {
+  "answer": "yes",
+  "why": "Each area verdict tracks its anomalies: the cross_document_reconciliation verdict names the MD&A figures its 'contradicts' anomalies cover, and the estimates verdict's tax, allowance and warranty points match its list. The one item that reads against the accounting area's recast finding is the financial growth anomaly on contract liabilities."
+ },
+ "valuation_reading": {
+  "answer": "no",
+  "why": "market.missing, implied_growth_beside_history.implied_ten_year_revenue_growth.missing and valuation.missing leave the price position, the implied growth and the sensitivity uncomputed. The reading says so, but it chooses its most-sensitive assumptions without a grid and states driver values that no calculator path holds."
+ },
+ "score": 0.956,
+ "grader": {
+  "model_requested": "opus",
+  "model_served": "claude-opus-5-5",
+  "input_tokens": 60,
+  "output_tokens": 102564,
+  "cost_usd": 9.0255496,
+  "seconds": 864.4
+ }
+}

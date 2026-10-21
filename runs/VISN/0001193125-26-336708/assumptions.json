@@ -1,0 +1,235 @@
+{
+ "scenarios": {
+  "bear": {
+   "revenue_growth_year_one": -0.06,
+   "terminal_growth": 0.01,
+   "operating_margin_year_one": 0.0,
+   "operating_margin_year_ten": 0.04,
+   "reinvestment_rate_year_one": 0.25,
+   "reinvestment_rate_year_ten": 0.25,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "Comcast took most of second-quarter sales, so a pause in its orders moves the whole company. Memory-chip availability can delay shipments, the legacy business is shrinking, and the second quarter already fell year on year. In the bear case revenue falls in the first year, and keeps shrinking for several more years as the straight-line fade climbs back to the terminal rate.",
+     "quote": "Aurora net sales of $319.2 million decreased 1.0% from the prior year period driven by a decrease in the legacy business, partially offset by an increase in the Access Technologies business.",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "concentration.facts.38",
+      "ratios.growth.revenue.year_over_year",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound"
+     ],
+     "history": "Below the latest quarter's change of {ratios.growth.revenue.year_over_year|pct} on the recast basis, with Comcast at {concentration.facts.38|pct} of quarterly sales. Still above the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, which records divestitures rather than a falling order book."
+    },
+    "terminal_growth": {
+     "reason": "If the legacy business keeps shrinking and the customer base stays narrow, Aurora grows more slowly than nominal spending over the long run. Set below the risk-free rate, {cost_of_capital.risk_free_rate|pct}.",
+     "quote": "concentration of sales among a limited number of customers",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.revenue_growth_five_year_compound"
+     ],
+     "history": "Above the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, which is driven by sales of businesses. The bear case still assumes the shrinking stops once the portfolio is settled, but at a lower long-run rate than the base case."
+    },
+    "operating_margin_year_one": {
+     "reason": "Memory-chip pricing stays a headwind. The corporate costs once charged to RUCKUS land on Aurora, with little offset from Belden transition-service income, and restructuring charges continue. The operating result stays at the break-even level of the first half, and the research-spending cuts that helped the half cannot be repeated.",
+     "quote": "Our full year adjusted EBITDA guideposts of $200 to $225 million are down $25 million versus the first quarter guideposts driven by continued challenges with memory chip pricing and availability.",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "terms.trailing_four_quarters.operating_income.parts.this_year_to_date",
+      "ratios.growth.operating_income.this_quarter",
+      "trend_table.quarters-back-0.ratios.gross_margin"
+     ],
+     "history": "Close to the first-half operating result of {terms.trailing_four_quarters.operating_income.parts.this_year_to_date} and above the second-quarter loss of {ratios.growth.operating_income.this_quarter}. Gross margin is assumed to stay near the latest quarter, {trend_table.quarters-back-0.ratios.gross_margin|pct}, the lowest filed quarter."
+    },
+    "operating_margin_year_ten": {
+     "reason": "Stranded-cost reductions fall short, and the mix and pricing pressure management cites persists. Research spending has to be rebuilt after the cuts. The margin recovers only as amortization of purchased intangibles runs off.",
+     "quote": "risks related to the successful execution of our initiatives related to stranded costs reductions",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "earnings_versus_cash.history.years.0.operating_margin",
+      "terms.trailing_four_quarters.research_and_development_expense.parts.this_year_to_date",
+      "terms.trailing_four_quarters.research_and_development_expense.parts.prior_year_to_date"
+     ],
+     "history": "Above the fiscal 2025 margin of {earnings_versus_cash.history.years.0.operating_margin|pct} by about the amortization that runs off and no more. First-half research spending fell to {terms.trailing_four_quarters.research_and_development_expense.parts.this_year_to_date} from {terms.trailing_four_quarters.research_and_development_expense.parts.prior_year_to_date}, and the bear case assumes that spending comes back."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "Inventory keeps building into weak sales, as it did in the half, with no disclosed reserve, and spare cash goes into investments that earn little. Because the bear margin is near zero in the first year, this share matters little at the start.",
+     "quote": "Customer concentration on Comcast is high and rising, and inventory is building into falling sales with no disclosed reserve.",
+     "quote_from": "analysis_accounting.json",
+     "fields": [
+      "terms.trailing_four_quarters.change_in_inventory.parts.this_year_to_date",
+      "trend_table.quarters-back-0.ratios.days_sales_of_inventory"
+     ],
+     "history": "Above the base case. Inventory absorbed {terms.trailing_four_quarters.change_in_inventory.parts.this_year_to_date} in the first half and days of inventory reached {trend_table.quarters-back-0.ratios.days_sales_of_inventory}; the bear case assumes none of it is released."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "The acquisitions and technology spending the chief executive describes earn close to or below the cost of capital. A large share of after-tax operating income then funds only the low terminal growth.",
+     "quote": "We will have significant funds to evaluate growth opportunities including organic and inorganic investments.",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.profitability.return_on_invested_capital"
+     ],
+     "history": "In line with the trailing return on invested capital of {ratios.profitability.return_on_invested_capital|pct}: the bear case assumes new capital earns little more than the existing base."
+    }
+   }
+  },
+  "base": {
+   "revenue_growth_year_one": 0.03,
+   "terminal_growth": 0.02,
+   "operating_margin_year_one": 0.02,
+   "operating_margin_year_ten": 0.09,
+   "reinvestment_rate_year_one": 0.1,
+   "reinvestment_rate_year_ten": 0.18,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "The business that remains is Aurora alone, supplying mainly cable operators. The first half grew on volume. The second quarter came in below a year-ago quarter that the CFO says held strong licence sales, and the guideposts were cut for memory-chip pricing and availability, which can also hold back shipments; the CFO still calls demand intact. The best reading is low growth a little above the terminal rate. The trailing revenue the calculator carries, {terms.trailing_four_quarters.revenue}, adds the as-filed fiscal 2025, which still held RUCKUS, to recast half-years, so it is larger than the business that remains. This driver is a rate for Aurora and does not try to undo that base: the straight-line fade would carry a deep first-year cut through most of the decade. A value built on that base leans high.",
+     "quote": "For the six months ended June 30, 2026, net sales increased by $58.3 million, or 10.4% compared to the prior year period, primarily driven by higher sales volume, partially offset by unfavorable product mix and lower pricing.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "terms.trailing_four_quarters.revenue",
+      "ratios.growth.revenue.year_over_year",
+      "terms.trailing_four_quarters.revenue.parts.this_year_to_date",
+      "terms.trailing_four_quarters.revenue.parts.prior_year_to_date",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.revenue_growth_five_year_compound"
+     ],
+     "history": "Above the latest quarter's change of {ratios.growth.revenue.year_over_year|pct} on the recast basis, and below the first-half rise from {terms.trailing_four_quarters.revenue.parts.prior_year_to_date} to {terms.trailing_four_quarters.revenue.parts.this_year_to_date}. Far above the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, because those rates record divestitures, not the organic path of the business that remains."
+    },
+    "terminal_growth": {
+     "reason": "A single segment that supplies access equipment against cable operators' capital budgets grows with those budgets over a full cycle, at about the pace of nominal spending and no faster. It is set below the risk-free rate, {cost_of_capital.risk_free_rate|pct}, as the rule requires, and well below it because the customer base is narrow.",
+     "quote": "our dependence on customers’ capital spending on data, communication and entertainment equipment, which could be negatively impacted by a regional or global economic downturn",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.revenue_growth_five_year_compound",
+      "concentration.facts.38"
+     ],
+     "history": "The filed record holds no stretch of organic growth to anchor on: revenue fell at {earnings_versus_cash.history.revenue_growth_five_year_compound|pct} a year over five years, mostly through sales of businesses. The terminal rate assumes the shrinking stops once the portfolio is settled and Aurora grows modestly. The record neither confirms nor rules this out."
+    },
+    "operating_margin_year_one": {
+     "reason": "The first half ended near break-even and the second quarter at an operating loss. Both carried restructuring, transaction costs and amortization of purchased intangibles, and gross margin hit its lowest filed quarter on memory-chip pricing and lower prices. Over the next year, management says restructuring and transformation charges continue. The corporate costs once charged to RUCKUS move onto Aurora, only partly offset by Belden transition-service income, and the lowered guideposts show the chip problem persisting. Amortization keeps falling, and transaction costs should fade after the last sale. A thin positive margin is the best reading.",
+     "quote": "We expect to continue to incur such costs during the remainder of 2026 as we continue executing on our current transformation initiative, and the resulting charges and cash requirements could be material.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "terms.trailing_four_quarters.operating_income.parts.this_year_to_date",
+      "ratios.growth.operating_income.this_quarter",
+      "trend_table.quarters-back-0.ratios.gross_margin",
+      "ratios.profitability.operating_margin",
+      "earnings_versus_cash.history.years.0.operating_margin"
+     ],
+     "history": "Above the first-half operating result of {terms.trailing_four_quarters.operating_income.parts.this_year_to_date} and the second-quarter loss of {ratios.growth.operating_income.this_quarter}. Below the trailing margin of {ratios.profitability.operating_margin|pct}, which mixes in RUCKUS for the second half of 2025, and close to the fiscal 2025 margin of {earnings_versus_cash.history.years.0.operating_margin|pct}. The margin uses the same reported operating-income basis as these figures, after amortization of purchased intangibles."
+    },
+    "operating_margin_year_ten": {
+     "reason": "By year ten, amortization of purchased intangibles should have largely run off; management already reports it falling. Restructuring and transaction charges should have ended, and stranded corporate costs should have been cut, a step management names as an execution risk. What remains is Aurora's own earning power. The release puts second-quarter adjusted EBITDA well above the reported operating result, and that measure leaves out amortization, restructuring and transaction costs. After share-based pay, depreciation and a remaining corporate layer, a high single-digit margin is the best reading. It is not set higher because the latest quarter is the lowest filed gross-margin quarter.",
+     "quote": "Restructuring costs, transaction, transformation and integration costs and amortization expense are not reflected in adjusted EBITDA.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "earnings_versus_cash.history.years.0.operating_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "trend_table.years-back-0.ratios.gross_margin",
+      "trend_table.quarters-back-0.ratios.gross_margin"
+     ],
+     "history": "Well above every filed annual margin: {earnings_versus_cash.history.years.0.operating_margin|pct} in fiscal 2025 and a three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}. Those years carry the old company's impairments, amortization and businesses since sold, so the record is a poor ceiling, but the driver assumes an improvement the company has not yet shown. It assumes gross margin between the latest quarter, {trend_table.quarters-back-0.ratios.gross_margin|pct}, and the fiscal 2025 level, {trend_table.years-back-0.ratios.gross_margin|pct}."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "Capital spending runs far below depreciation and amortization, at {earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization} times. The plant is small, and much of the charge is amortization of purchased intangibles that need no replacing, which frees cash. Against that, inventory and prepaid balances absorbed cash in the half, and management plans organic investment. On balance, only a small share of after-tax operating income is reinvested. The operating forecast leaves out the cash the release expects at year end, after the RUCKUS proceeds and the August distribution, and the expected tax refund. The June balance sheet carries cash of {terms.balances_now.cash}, before those flows.",
+     "quote": "Working capital, net of assets and liabilities held for sale and excluding cash and cash equivalents, increased during the six months ended June 30, 2026 compared to the fourth quarter of 2025 primarily due to increases in prepaid expenses and inventory balances and a decrease in accrued and other liabilities, partially offset by increased accounts payable.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization",
+      "terms.trailing_four_quarters.capital_expenditure.parts.this_year_to_date",
+      "terms.trailing_four_quarters.change_in_inventory.parts.this_year_to_date",
+      "terms.balances_now.property_plant_and_equipment",
+      "terms.balances_now.cash"
+     ],
+     "history": "The record shows capital spending of {terms.trailing_four_quarters.capital_expenditure.parts.this_year_to_date} in the first half against plant of {terms.balances_now.property_plant_and_equipment}, with inventory absorbing {terms.trailing_four_quarters.change_in_inventory.parts.this_year_to_date}. Trailing cash flows still include the sold businesses, so no filed ratio isolates Aurora's own reinvestment. The driver sits between the near-zero net capital spending and the working-capital build."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "In steady state, reinvestment has to fund terminal growth. Once amortization has run off, capital spending must roughly match depreciation, and growth needs working capital and product investment. The share is set so that growth at the terminal rate earns a return on new capital at or a little above a plausible cost of capital. The chief executive's plans for organic and acquired growth mean the share does not fall to zero.",
+     "quote": "These investments could range from investing more aggressively in existing or new technology to evaluating potential acquisitions to broaden the markets we participate in, our technology portfolio and our customer base.",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.profitability.return_on_invested_capital",
+      "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now"
+     ],
+     "history": "Trailing return on invested capital is only {ratios.profitability.return_on_invested_capital|pct}, on a capital base that is mostly goodwill and intangibles. The driver assumes new capital earns well above that average, because what growth actually requires is working capital, now {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now}, and a small plant."
+    }
+   }
+  },
+  "bull": {
+   "revenue_growth_year_one": 0.08,
+   "terminal_growth": 0.03,
+   "operating_margin_year_one": 0.04,
+   "operating_margin_year_ten": 0.13,
+   "reinvestment_rate_year_one": 0.05,
+   "reinvestment_rate_year_ten": 0.15,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "The first half showed what volume can do. Access Technologies is growing while the legacy business shrinks, memory-chip supply normalizes, and cash on hand funds product investment or acquisitions. The bull case runs close to the first-half pace.",
+     "quote": "We remain confident in the underlying demand for our products",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "terms.trailing_four_quarters.revenue.parts.this_year_to_date",
+      "terms.trailing_four_quarters.revenue.parts.prior_year_to_date",
+      "ratios.growth.revenue.year_over_year"
+     ],
+     "history": "Below the first-half rise from {terms.trailing_four_quarters.revenue.parts.prior_year_to_date} to {terms.trailing_four_quarters.revenue.parts.this_year_to_date}, and well above the latest quarter's change of {ratios.growth.revenue.year_over_year|pct}. The filed record holds no multi-year organic growth for the business that remains to compare against."
+    },
+    "terminal_growth": {
+     "reason": "Broader markets, technology and customers, as the chief executive describes them, let Aurora grow with nominal spending over the long run. Set below the risk-free rate, {cost_of_capital.risk_free_rate|pct}.",
+     "quote": "These investments could range from investing more aggressively in existing or new technology to evaluating potential acquisitions to broaden the markets we participate in, our technology portfolio and our customer base.",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.revenue_growth_five_year_compound"
+     ],
+     "history": "Far above the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, which records divestitures. The bull case assumes a settled portfolio that grows rather than shrinks."
+    },
+    "operating_margin_year_one": {
+     "reason": "Chip pricing eases. Belden transition-service income offsets most of the corporate costs reallocated to Aurora, restructuring charges taper, and amortization keeps falling.",
+     "quote": "Aurora segment operating income was favorably impacted by decreases in amortization expense of $2.4 million and $5.8 million, respectively, for the three and six months ended June 30, 2026.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "earnings_versus_cash.history.years.0.operating_margin",
+      "terms.trailing_four_quarters.operating_income.parts.this_year_to_date"
+     ],
+     "history": "Above the trailing margin of {ratios.profitability.operating_margin|pct}, the fiscal 2025 margin of {earnings_versus_cash.history.years.0.operating_margin|pct} and the first-half result of {terms.trailing_four_quarters.operating_income.parts.this_year_to_date}. It requires an immediate turn that the latest quarter does not show."
+    },
+    "operating_margin_year_ten": {
+     "reason": "Amortization is gone, stranded costs are cut, growth and acquisitions bring scale, and gross margin returns toward the fiscal 2025 level, the highest of five filed years. Second-quarter adjusted EBITDA, which leaves those charges out, shows the earning power this case builds on.",
+     "quote": "The Aurora business delivered $319 million of revenue and $46 million of Adjusted EBITDA in the second quarter.",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "trend_table.years-back-0.ratios.gross_margin",
+      "earnings_versus_cash.history.years.0.operating_margin"
+     ],
+     "history": "Far above any filed annual operating margin, including {earnings_versus_cash.history.years.0.operating_margin|pct} in fiscal 2025. It assumes gross margin near the fiscal 2025 level of {trend_table.years-back-0.ratios.gross_margin|pct}, not the latest quarter's."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "The inventory built in the half unwinds as chip supply settles, releasing cash, while capital spending stays well below depreciation and amortization. Even with faster growth, little net reinvestment is needed in the first year.",
+     "quote": "",
+     "quote_from": "",
+     "fields": [
+      "trend_table.quarters-back-0.ratios.days_sales_of_inventory",
+      "trend_table.quarters-back-3.ratios.days_sales_of_inventory",
+      "earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization"
+     ],
+     "history": "Days of inventory stand at {trend_table.quarters-back-0.ratios.days_sales_of_inventory}, against {trend_table.quarters-back-3.ratios.days_sales_of_inventory} in the third quarter of 2025; the bull case has them move back toward the lower level. Capital spending runs at {earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization} times depreciation and amortization."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "A more profitable, asset-light Aurora earns a high return on new capital, so terminal growth takes a smaller share of after-tax operating income than in the base case.",
+     "quote": "",
+     "quote_from": "",
+     "fields": [
+      "terms.balances_now.property_plant_and_equipment",
+      "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now"
+     ],
+     "history": "Below the base case. Plant of {terms.balances_now.property_plant_and_equipment} is small, so growth needs mainly working capital, now {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now}."
+    }
+   }
+  }
+ },
+ "wacc_overrides": {},
+ "dropped_items": [],
+ "dropped_count": 0
+}
