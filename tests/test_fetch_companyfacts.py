@@ -502,8 +502,9 @@ def test_the_filings_companyfacts_has_not_loaded_are_the_two_on_record():
     assert found == NOT_YET_IN_COMPANYFACTS
     # Three instances per company -- the 10-K's, the 10-Q's and the prior
     # 10-Q's, each a manifest row -- over the twelve, the eight, the next
-    # eight and the seven added on 2026-10-14: 35 × 3.
-    assert sum(comparison(ticker)["instances"] for ticker in TICKERS) == 105
+    # eight and the seven added on 2026-10-14: three instances per company, the
+    # count derived from universe.json and never typed as a literal.
+    assert sum(comparison(ticker)["instances"] for ticker in TICKERS) == 3 * len(TICKERS)
 
 
 @pytest.mark.parametrize("ticker", TICKERS)

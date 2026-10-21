@@ -349,10 +349,10 @@ def test_a_filename_rule_has_more_than_one_candidate_almost_everywhere():
                for role in ("submission_header", "prior_year_submission_header")}
     # Two headers per company, over the twelve, the eight added on 2026-10-07
     # and the next eight added the same day, and the seven added on 2026-10-14:
-    # 35 × 2. Every one of the eight's sixteen headers lists an `R21.htm` among
+    # two per company, derived from universe.json. Every one of the eight's sixteen headers lists an `R21.htm` among
     # its XML files, and so does every one of the next eight's sixteen, so
     # none of them is alone either; of the seven's fourteen, one is.
-    assert len(counted) == 70
+    assert len(counted) == 2 * len(TICKERS)
     # American Superconductor's current-year header, of the seven added on
     # 2026-10-14, lists `R21.htm` and nothing else with 21 in its name: its
     # Section 1350 certifications are `ex_919734.htm` and `ex_919735.htm`, so it is alone too, and

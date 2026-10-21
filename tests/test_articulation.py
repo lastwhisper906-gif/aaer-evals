@@ -866,14 +866,15 @@ def test_every_trigger_whose_record_holds_the_rows_produces_one():
 
     # Two triggers per company, one 10-K and one 10-Q primary document in each
     # manifest: twelve companies, the eight added on 2026-10-07, the next
-    # eight added the same day and the seven added on 2026-10-14, 35 × 2.
-    assert len(triggers()) == 2 * len(TICKERS) == 70
+    # eight added the same day and the seven added on 2026-10-14: two triggering
+    # reports per company, derived from universe.json.
+    assert len(triggers()) == 2 * len(TICKERS)
     assert sorted(set(f"{ticker} {form} {accession}"
                       for ticker, form, accession, _ in triggers())
                   - set(holds)) == NOTHING_TO_READ
     assert produces == holds
     # Seventy triggers less the seven whose record holds no row: 70 - 7.
-    assert len(produces) == len(triggers()) - len(NOTHING_TO_READ) == 63
+    assert len(produces) == len(triggers()) - len(NOTHING_TO_READ)
     assert len([named for named in produces if " 10-K " in named]) == len(TICKERS)
 
 
