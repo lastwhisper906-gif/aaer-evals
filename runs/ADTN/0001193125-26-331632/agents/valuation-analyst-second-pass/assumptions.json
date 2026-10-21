@@ -1,0 +1,179 @@
+{
+ "scenarios": {
+  "base": {
+   "revenue_growth_year_one": 0.04,
+   "terminal_growth": 0.025,
+   "operating_margin_year_one": 0.005,
+   "operating_margin_year_ten": 0.055,
+   "reinvestment_rate_year_one": 0.15,
+   "reinvestment_rate_year_ten": 0.3,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "Management guides the third quarter to a revenue range that brackets the second quarter's {ratios.growth.revenue.this_quarter}, which moved {ratios.growth.revenue.quarter_over_quarter|pct} against the first quarter. So the coming year starts from a flat run-rate, not from the trailing jump. Optical networking keeps growing on high-risk vendor displacement in Europe, while a single customer's project delay weighs on access products. The base takes modest growth above that run-rate as the delay unwinds, not a return to the trailing pace.",
+     "quote": "For the third quarter of 2026, the Company expects revenue to be within a range of $275.0 million to $295.0 million.",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.growth.revenue.this_quarter",
+      "ratios.growth.revenue.quarter_over_quarter",
+      "ratios.growth.revenue.year_over_year",
+      "ratios.growth.revenue.trailing_four_quarters",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.revenue_growth_five_year_compound",
+      "earnings_versus_cash.history.years.1.revenue_growth",
+      "earnings_versus_cash.history.years.3.revenue_growth"
+     ],
+     "history": "Below the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct} and the latest quarter's year-over-year {ratios.growth.revenue.year_over_year|pct}, because guidance implies no sequential rebound. Above the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, which includes the decline of {earnings_versus_cash.history.years.1.revenue_growth|pct} in 2024. The five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct} is no guide, because it rests on a jump of {earnings_versus_cash.history.years.3.revenue_growth|pct} in 2022 that later years did not repeat."
+    },
+    "terminal_growth": {
+     "reason": "Over the long run, a network-equipment vendor grows with nominal spending on carrier and enterprise networks. The base sets a long-run pace below nominal economic growth and well below the risk-free rate of {cost_of_capital.risk_free_rate|pct}, because the company competes against far larger vendors and its revenue record is volatile.",
+     "quote": "",
+     "quote_from": "",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.years.0.revenue_growth",
+      "earnings_versus_cash.history.years.1.revenue_growth"
+     ],
+     "history": "Above the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, which spans a full down-and-up cycle, and below the risk-free rate. Annual growth in the record ranges from {earnings_versus_cash.history.years.1.revenue_growth|pct} in 2024 to {earnings_versus_cash.history.years.0.revenue_growth|pct} in 2025, so no single year sets the terminal rate."
+    },
+    "operating_margin_year_one": {
+     "reason": "The trailing operating margin is {ratios.profitability.operating_margin|pct}. The first quarter of 2026 earned an operating profit, and the second swung to a loss of {ratios.growth.operating_income.this_quarter}. The chief executive puts that loss down to near-term factors, and the release attributes part of it to employee exit costs. Guidance puts next quarter's non-GAAP operating margin above zero, but the GAAP margin sits below it by share-based compensation and the amortization of acquired intangibles. The base therefore takes a margin just above break-even for the coming year. Investigation fees should fall now that the SEC staff has closed its inquiry, while the new tariffs weigh on gross margin.",
+     "quote": "Non-GAAP operating margin is expected to be within a range of 1.5% to 5.5%.",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "ratios.growth.operating_income.this_quarter",
+      "earnings_versus_cash.history.years.0.operating_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "terms.trailing_four_quarters.share_based_compensation"
+     ],
+     "history": "Above every fiscal year in the record, all of them negative: {earnings_versus_cash.history.years.0.operating_margin|pct} in 2025, and a three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct} that includes the large losses booked in 2023 and in 2024. Slightly above the trailing {ratios.profitability.operating_margin|pct}. The step rests on guidance and on the first quarter's profit, not on a full year the company has already delivered."
+    },
+    "operating_margin_year_ten": {
+     "reason": "Depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization} far exceed property and equipment spending, because amortization of acquired intangibles dominates. As those intangibles run off, GAAP operating income rises toward the non-GAAP measure with no change in the business. On top of that, the base allows modest leverage on research and development, now {terms.trailing_four_quarters.research_and_development_expense} a year, and on overhead. It does not assume gross margin keeps the lift from near-zero inventory-reserve charges. The calculator holds the tax rate at {tax_rate} because pretax income is not positive, so after-tax operating income equals operating income in every year. That flatters the later years, and a reader of the output should keep it in mind.",
+     "quote": "Part of the recovery rests on inventory reserves: the reserve charge was a net release in 2025 and close to nothing in the first half of 2026, so reported margins carry less reserve drag than before; the size of that effect is not computed here.",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "terms.trailing_four_quarters.depreciation_and_amortization",
+      "earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization",
+      "terms.trailing_four_quarters.research_and_development_expense",
+      "ratios.profitability.gross_margin",
+      "tax_rate",
+      "trend_table.years-back-2.ratios.gross_margin",
+      "trend_table.years-back-0.ratios.gross_margin"
+     ],
+     "history": "Well above every fiscal year on record, the best of which is {earnings_versus_cash.history.years.0.operating_margin|pct} in 2025. Reaching it needs two things to hold: the amortization run-off, and the gross-margin recovery from {trend_table.years-back-2.ratios.gross_margin|pct} in 2023 to {trend_table.years-back-0.ratios.gross_margin|pct} in 2025. A company with no positive annual operating margin in this record has still to show it can earn one."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "On the calculator's measure, the business reinvests little out of operating income: property and equipment purchases are only {earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization} of depreciation and amortization. Two cash uses sit outside that measure. First, capitalised development is paid through investing, so total capital spending in the amount quoted runs well above the half-year property purchases of {terms.trailing_four_quarters.capital_expenditure.parts.this_year_to_date} that the calculator reads. Second, receivables are lengthening while factoring proceeds rise. The base therefore keeps a positive rate rather than letting the surplus of amortization over spending imply none.",
+     "quote": "Capital expenditures totaled approximately $33.2 million and $32.5 million for the six months ended June 30, 2026 and 2025, respectively.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization",
+      "terms.trailing_four_quarters.capital_expenditure.parts.this_year_to_date",
+      "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital",
+      "free_cash_flow.free_cash_flow_quality_adjusted",
+      "free_cash_flow.free_cash_flow_simple",
+      "ebit"
+     ],
+     "history": "The company's own rate has no meaningful reading. Trailing operating income is {ebit}, close to zero, while simple free cash flow of {free_cash_flow.free_cash_flow_simple} is positive mainly because of non-cash amortization. After share-based compensation and removal of the one-time inventory release, free cash flow is {free_cash_flow.free_cash_flow_quality_adjusted}, and trade working capital absorbed {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital} over the year. This rate carries that absorption forward at a lower level."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "At maturity, growth at the terminal rate has to be funded by working capital, equipment and capitalised development, with no amortization surplus left to hide the cost. The base sets the rate so that new capital earns roughly its cost. That is a cautious assumption for a company whose return on assets is {ratios.profitability.return_on_assets|pct}, especially since the calculator's capital spending leaves out capitalised development.",
+     "quote": "Readers should know the calculator's free cash flow is higher than the company's own definition would give.",
+     "quote_from": "analysis_accounting.json",
+     "fields": [
+      "ratios.profitability.return_on_assets",
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters.depreciation_and_amortization"
+     ],
+     "history": "Above the base's year-one rate, as the amortization surplus fades. Return on invested capital cannot be read because equity is not tagged for the balance date, and return on assets is {ratios.profitability.return_on_assets|pct}. This rate is therefore a stated assumption, not a continuation of a measured record."
+    }
+   }
+  },
+  "bull": {
+   "revenue_growth_year_one": 0.09,
+   "terminal_growth": 0.03,
+   "operating_margin_year_one": 0.02,
+   "operating_margin_year_ten": 0.1,
+   "reinvestment_rate_year_one": 0.15,
+   "reinvestment_rate_year_ten": 0.25,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "Optical networking keeps growing on vendor displacement in Europe and on cloud, enterprise and government customers, and the delayed customer project resumes. The bull takes growth above the top of the third-quarter range and carries it through the year. Management's growth figure for those customers appears only in the release and is not stated in the 10-Q, so the bull leans on it only in part.",
+     "quote": "We continue to gain momentum in optical networking while increasing diversity across cloud providers/hyperscalers, enterprise, and government customers, with revenue from these customers growing 47% year-over-year.",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.growth.revenue.trailing_four_quarters",
+      "earnings_versus_cash.history.years.0.revenue_growth",
+      "ratios.growth.revenue.year_over_year",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound"
+     ],
+     "history": "Below the trailing {ratios.growth.revenue.trailing_four_quarters|pct} and 2025's {earnings_versus_cash.history.years.0.revenue_growth|pct}. Above the latest quarter's year-over-year {ratios.growth.revenue.year_over_year|pct} and the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}."
+    },
+    "terminal_growth": {
+     "reason": "If the company holds a durable place in optical transport and fiber access as networks are rebuilt, it grows with nominal network spending over the long run. That is still below the risk-free rate of {cost_of_capital.risk_free_rate|pct}.",
+     "quote": "Demand across our end markets remained strong during the quarter led by the results of our Optical Networking Solutions business.",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound"
+     ],
+     "history": "Above the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}. The bull assumes the swings in the record settle into steady growth."
+    },
+    "operating_margin_year_one": {
+     "reason": "The bull takes the first quarter's operating profit as the run-rate, treats the second quarter's exit costs as truly one-time, and drops the investigation fees. That puts the GAAP margin near the upper half of the guided non-GAAP range, less share-based compensation (now {earnings_versus_cash.share_based_compensation_over_revenue|pct} of revenue) and acquired-intangible amortization.",
+     "quote": "While our second quarter results were affected by a specific set of near-term factors, it does not change the underlying strength or trajectory of our business.",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "earnings_versus_cash.share_based_compensation_over_revenue",
+      "ratios.profitability.operating_margin",
+      "trend_table.quarters-back-1.ratios.gross_margin"
+     ],
+     "history": "Above every fiscal year on record and above the trailing {ratios.profitability.operating_margin|pct}. It rests on the first quarter of 2026, when gross margin reached {trend_table.quarters-back-1.ratios.gross_margin|pct}, the highest of the comparable quarters. The accounting reading warns that items the release calls one-time have recurred every period."
+    },
+    "operating_margin_year_ten": {
+     "reason": "The bull adds scale to the amortization run-off. Gross margin holds at or above its level in 2025, {trend_table.years-back-0.ratios.gross_margin|pct}, as the optical mix rises, and research and development and overhead grow more slowly than revenue. Management cites a long-term operating model, but the inputs do not quantify it, so the bull level is this reader's assumption.",
+     "quote": "We remain committed to our long-term operating model and remain confident that our strategy will deliver long-term shareholder value.",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "trend_table.years-back-0.ratios.gross_margin",
+      "terms.trailing_four_quarters.research_and_development_expense",
+      "terms.trailing_four_quarters.depreciation_and_amortization",
+      "earnings_versus_cash.history.years.0.operating_margin"
+     ],
+     "history": "Far above any fiscal year in the record, the best of which is {earnings_versus_cash.history.years.0.operating_margin|pct} in 2025. The bull needs the gross-margin recovery since 2023 to hold and operating costs to fall as a share of revenue. The record has not yet shown that for a full year at the operating line."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "Faster growth needs working capital, and it needs inventory rebuilt after the buffer stock was used up. The surplus of amortization over property spending offsets part of that cost, so the rate matches the base.",
+     "quote": "We expect inventory levels to fluctuate as we attempt to maintain sufficient inventory for customer demand and improve working capital.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization",
+      "trend_table.quarters-back-0.ratios.days_sales_of_inventory",
+      "terms.balances_now.inventory"
+     ],
+     "history": "Equal to the base's year-one rate. The company's own rate has no reading while operating income is near zero. Quarter-end days of inventory, {trend_table.quarters-back-0.ratios.days_sales_of_inventory}, are the lowest of the comparable quarters, so faster growth would need stock rebuilt."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "With a stronger competitive position, new capital earns more than its cost, so a smaller share of income has to be reinvested to sustain terminal growth.",
+     "quote": "",
+     "quote_from": "",
+     "fields": [
+      "ratios.efficiency.asset_turnover",
+      "ratios.profitability.return_on_assets"
+     ],
+     "history": "Below the base. Asset turnover of {ratios.efficiency.asset_turnover} has risen as assets fell while revenue grew, which is the direction a lower reinvestment need assumes."
+    }
+   }
+  }
+ },
+ "wacc_overrides": {},
+ "dropped_items": [
+  {
+   "where": "scenarios.bear",
+   "reason": "operating_margin_year_ten: history: a number written in the analyst's own words: 's assumed to drift back toward the   of 2024.'"
+  }
+ ],
+ "dropped_count": 1
+}

@@ -1,0 +1,94 @@
+{
+ "question": "what is this company worth, and what does the price already assume?",
+ "value_range": {
+  "reading": "Python did not compute a value range. Under valuation.missing the calculator prints: \"WACC is not computed: the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". Under cost_of_capital.missing it prints: \"the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". Of the inputs to the cost of capital, the risk-free rate of {cost_of_capital.risk_free_rate|pct} and the equity risk premium of {cost_of_capital.equity_risk_premium|pct} are on record; the beta, the cost of equity and the market value of equity are not. No scenario therefore carries an enterprise value, an equity value or a value per share, and none is estimated here. Two further limits would have applied even with a price. First, my assumptions file holds base and bull scenarios only. The bear scenario is absent, and the file's list of dropped items names a bear reason dropped for a number written in my own words, so a computed range would have lacked its low end. Second, the step from enterprise value to equity value would have used calculator debt of {ratios.solvency.total_debt}, although the notes describe convertible notes due 2030 and a drawn revolver, and trailing interest expense is {terms.trailing_four_quarters.interest_expense}. Any equity value per share would have been overstated by that debt and by the redeemable non-controlling interest in Adtran Networks.",
+  "fields": [
+   "valuation.missing",
+   "cost_of_capital.missing",
+   "cost_of_capital.risk_free_rate",
+   "cost_of_capital.equity_risk_premium",
+   "cost_of_capital.beta.missing",
+   "cost_of_capital.market_value_of_equity.missing",
+   "ratios.solvency.total_debt",
+   "terms.trailing_four_quarters.interest_expense"
+  ]
+ },
+ "price_position": {
+  "reading": "Where the price sits in the range cannot be read, because there is neither a range nor a price. The calculator holds no price at the cutoff. Under market.missing it prints: \"no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". The free-cash-flow yield cross-check needs the same price and is missing for the same reason. Without a market value of equity, trailing free cash flow to the firm of {free_cash_flow.free_cash_flow_to_firm} and quality-adjusted free cash flow of {free_cash_flow.free_cash_flow_quality_adjusted} cannot be set against what the market pays for them.",
+  "fields": [
+   "market.missing",
+   "free_cash_flow_yield.price_at_cutoff.missing",
+   "free_cash_flow_yield.free_cash_flow_to_firm_over_enterprise_value.missing",
+   "free_cash_flow.free_cash_flow_to_firm",
+   "free_cash_flow.free_cash_flow_quality_adjusted"
+  ]
+ },
+ "market_implied_growth": {
+  "reading": "There is no market-implied growth. Under implied_growth_beside_history the calculator prints: \"no reverse DCF: WACC is not computed: the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". What can be read is the record an implied rate would have been set beside, and where my growth drivers sit in it. Revenue compounded at {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} over three years and at {earnings_versus_cash.history.revenue_growth_five_year_compound|pct} over five. The five-year figure rests on a jump of {earnings_versus_cash.history.years.3.revenue_growth|pct} in 2022, and annual growth swung from {earnings_versus_cash.history.years.1.revenue_growth|pct} in 2024 to {earnings_versus_cash.history.years.0.revenue_growth|pct} in 2025. Trailing four-quarter growth is {ratios.growth.revenue.trailing_four_quarters|pct}. The latest quarter, however, grew {ratios.growth.revenue.year_over_year|pct} on a year earlier and moved {ratios.growth.revenue.quarter_over_quarter|pct} against the prior quarter. The guidance quoted puts next quarter's revenue in a range that brackets this quarter's {ratios.growth.revenue.this_quarter}, so the company is guiding to a flat run-rate. My base case starts growth below both the trailing rate and the latest year-over-year rate, and above the three-year compound. My bull case starts higher, above the latest year-over-year rate but still below the trailing rate. Whether the price assumes more or less growth than either case cannot be said until a price and a beta are supplied.",
+  "fields": [
+   "implied_growth_beside_history.implied_ten_year_revenue_growth.missing",
+   "earnings_versus_cash.history.revenue_growth_three_year_compound",
+   "earnings_versus_cash.history.revenue_growth_five_year_compound",
+   "earnings_versus_cash.history.years.3.revenue_growth",
+   "earnings_versus_cash.history.years.1.revenue_growth",
+   "earnings_versus_cash.history.years.0.revenue_growth",
+   "ratios.growth.revenue.trailing_four_quarters",
+   "ratios.growth.revenue.year_over_year",
+   "ratios.growth.revenue.quarter_over_quarter",
+   "ratios.growth.revenue.this_quarter"
+  ],
+  "quote": "For the third quarter of 2026, the Company expects revenue to be within a range of $275.0 million to $295.0 million.",
+  "quote_from": "input_8k.md"
+ },
+ "most_sensitive": [
+  {
+   "assumption": "operating margin at year ten",
+   "reading": "The sensitivity grid and the scenario values were not computed, for the reason printed under valuation.missing, so no measured sensitivity is read here. What can be said is that this is the driver furthest from the company's own record. Every fiscal year in the history has a negative operating margin. The best is {earnings_versus_cash.history.years.0.operating_margin|pct} in 2025, the three-year average is {earnings_versus_cash.history.operating_margin_three_year_average|pct}, and the trailing margin is {ratios.profitability.operating_margin|pct}. Both the base and the bull case end the decade at a positive margin the company has not earned in any full year on record. That rests on two things. One is acquired-intangible amortization running off, inside depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization}. The other is gross margin holding near the level it reached in 2025, which was {trend_table.years-back-0.ratios.gross_margin|pct}. The calculator holds the tax rate at {tax_rate|pct}, so after-tax operating income equals operating income in every projected year, which flatters the later years this driver governs.",
+   "fields": [
+    "valuation.missing",
+    "earnings_versus_cash.history.years.0.operating_margin",
+    "earnings_versus_cash.history.operating_margin_three_year_average",
+    "ratios.profitability.operating_margin",
+    "terms.trailing_four_quarters.depreciation_and_amortization",
+    "trend_table.years-back-0.ratios.gross_margin",
+    "tax_rate"
+   ]
+  },
+  {
+   "assumption": "discount rate (WACC)",
+   "reading": "This is the input whose absence stopped the valuation. Its effect cannot be read, because the grid was not computed. The calculator has the risk-free rate of {cost_of_capital.risk_free_rate|pct} and the equity risk premium of {cost_of_capital.equity_risk_premium|pct}, but no beta, and therefore no cost of equity. The formula weights the cost of debt by calculator debt, which reads {ratios.solvency.total_debt} because the company's debt lines use none of the standard tags. The pre-tax cost of debt is printed as carrying no weight, so a computed WACC would equal the cost of equity alone. Yet the company paid interest of {terms.trailing_four_quarters.interest_paid} over the trailing four quarters, and the notes describe convertible notes and a drawn revolver. Neither the level of the rate nor its effect on value is estimated here.",
+   "fields": [
+    "cost_of_capital.missing",
+    "cost_of_capital.risk_free_rate",
+    "cost_of_capital.equity_risk_premium",
+    "cost_of_capital.beta.missing",
+    "cost_of_capital.pre_tax_cost_of_debt",
+    "ratios.solvency.total_debt",
+    "terms.trailing_four_quarters.interest_paid"
+   ]
+  }
+ ],
+ "accounting_adjustments": {
+  "reading": "How much the accounting adjustments moved value was not computed, because no valuation was run. One adjustment from the accounting reading did reach the calculator. It removes the one-time buffer-stock inventory release, which is the cash-flow statement's inventory change of {earnings_versus_cash.working_capital.inventory.cash_flow_statement_change}. That brings quality-adjusted free cash flow down to {free_cash_flow.free_cash_flow_quality_adjusted}, starting from simple free cash flow of {free_cash_flow.free_cash_flow_simple} less share-based compensation of {terms.trailing_four_quarters.share_based_compensation}. Its effect on value per share is not known. Three items the accounting reading names could not be adjusted. First, capitalised development is paid through investing and sits outside the calculator's capital expenditure of {terms.trailing_four_quarters.capital_expenditure}. I set my reinvestment drivers above what that capital expenditure, at {earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization} of depreciation and amortization, would imply, partly to carry this cost. Second, factoring proceeds of unmeasured size sit inside operating cash flow; my drivers do not take operating cash flow as an input, but the free-cash-flow cross-checks do. Third, calculator debt reads {ratios.solvency.total_debt}, so any equity value would have been overstated by the debt the notes describe.",
+  "fields": [
+   "earnings_versus_cash.working_capital.inventory.cash_flow_statement_change",
+   "free_cash_flow.free_cash_flow_quality_adjusted",
+   "free_cash_flow.free_cash_flow_simple",
+   "terms.trailing_four_quarters.share_based_compensation",
+   "terms.trailing_four_quarters.capital_expenditure",
+   "earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization",
+   "ratios.solvency.total_debt"
+  ]
+ },
+ "summary_ko": {
+  "value_range": "주가 자료가 없어 베타와 자기자본비용을 구하지 못했고, 그 결과 WACC와 시나리오별 기업가치·주당가치 범위가 계산되지 않았습니다. 기록된 것은 무위험이자율 {cost_of_capital.risk_free_rate|pct}과 주식위험프리미엄 {cost_of_capital.equity_risk_premium|pct}뿐이며, 계산되지 않은 값은 추정하지 않았습니다.",
+  "price_position": "평가 기준일 주가가 계산기에 없어서 주가가 가치 범위의 어디쯤에 있는지 읽을 수 없습니다. 같은 이유로 잉여현금흐름 수익률 비교도 계산되지 않았습니다.",
+  "market_implied_growth": "역DCF가 계산되지 않아 시장이 가정하는 성장률은 없습니다. 비교할 과거 기록은 최근 세 회계연도 연평균 매출 성장률 {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}과 최근 네 분기 성장률 {ratios.growth.revenue.trailing_four_quarters|pct}이며, 회사는 다음 분기 매출을 이번 분기 매출 {ratios.growth.revenue.this_quarter}과 비슷한 수준으로 안내했습니다.",
+  "most_sensitive": "민감도 표가 계산되지 않아 가치가 어떤 가정에 가장 민감한지는 측정되지 않았습니다. 다만 예측 마지막 해의 영업이익률 가정은 모든 회계연도의 영업이익률이 마이너스였던 회사 기록(가장 좋았던 해 {earnings_versus_cash.history.years.0.operating_margin|pct})에서 가장 멀리 떨어져 있고, 할인율은 베타가 없어 아예 정해지지 않았습니다.",
+  "accounting_adjustments": "가치 계산이 없어 회계 조정이 가치를 얼마나 바꿨는지는 알 수 없습니다. 일회성 재고 감소를 빼는 조정으로 품질조정 잉여현금흐름이 {free_cash_flow.free_cash_flow_quality_adjusted}로 낮아졌고, 계산기가 부채를 {ratios.solvency.total_debt}로 읽고 있어 주식가치를 계산했더라도 과대평가되었을 것입니다."
+ },
+ "limits": "This valuation is a set of stated assumptions run through a stated formula. It states no recommendation to trade, and a different reader choosing different drivers would reach a different value.",
+ "normalized_quotes": 0,
+ "dropped_items": [],
+ "dropped_count": 0
+}

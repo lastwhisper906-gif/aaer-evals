@@ -68,6 +68,8 @@ branch changed. A run item is done when its run directory is published and
 
 ## Done
 
+[x] ADTN's 10-Q filed 2026-08-04 on Opus · `.venv/bin/python -m evals --runs runs/ADTN` · none · 2026-10-21: `--model opus` recorded as `model_override`, every agent served claude-opus-5-5, no fallback; accounting analyst 0 dropped, 0 of 8 areas empty after 1 hook round, 1 adjustment written; financial analyst 0 dropped after 2 rounds; regression pass; analysis-grader 0.889 with 4 dealbreakers
+
 [x] AMSC's 10-Q filed 2026-08-05 on Opus · `.venv/bin/python -m evals --runs runs/AMSC` · none · 2026-10-21: `--model opus` recorded as `model_override`, every agent served claude-opus-5-5, no fallback; accounting analyst 0 dropped, 0 of 8 areas empty after 1 hook round, 2 adjustments written; financial analyst 0 dropped after 1 round; regression pass; analysis-grader 0.938 with 3 dealbreakers
 
 [x] LII's 10-Q filed 2026-07-29 on Opus · `.venv/bin/python -m evals --runs runs/LII` · none · 2026-10-21: `--model opus` recorded as `model_override`, every agent served claude-opus-5-5, no fallback; accounting analyst 0 dropped, 0 of 8 areas empty after 1 hook round, no adjustment; financial analyst 0 dropped after 1 round; regression pass; analysis-grader 0.954 with 3 dealbreakers
