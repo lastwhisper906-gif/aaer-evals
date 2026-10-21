@@ -67,7 +67,14 @@ THE_NEXT_EIGHT = ("MSI", "LITE", "FLEX", "AVGO", "SMCI", "SNDK", "FFIV", "LOGI")
 # to 2026-10-14.
 THE_SEVEN = ("OMCL", "NTAP", "EXTR", "EVLV", "LII", "AMSC", "ADTN")
 
-EVERY_ROW = THE_TWELVE + THE_EIGHT + THE_NEXT_EIGHT + THE_SEVEN
+# The three added on 2026-10-21 by the same rule continued (`docs/structure_changes.md`,
+# 2026-10-22): the largest current filer under 3674 named on 2026-10-14 and not yet
+# fetched, then the next under 3672 and the next under 3674, through
+# `src/add_company.py`. Typed from that line; their fixture sets are pinned to
+# 2026-10-21.
+THE_THREE = ("MU", "JBL", "AMD")
+
+EVERY_ROW = THE_TWELVE + THE_EIGHT + THE_NEXT_EIGHT + THE_SEVEN + THE_THREE
 
 
 def _manifest(ticker: str) -> dict:

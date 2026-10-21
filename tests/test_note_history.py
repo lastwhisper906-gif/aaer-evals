@@ -259,6 +259,14 @@ BROAD_DEBT_MATCH = {
     # Table…) not paired, so narrowing the pattern alone does not turn it green.
     "ADTN": "InvestmentsInDebtAndMarketableEquitySecuritiesAndCertainTradingAssets…, "
             "the investments note; 10 read, 9 paired",
+    "MU": "DebtSecuritiesAvailableForSaleTable, the investments the company holds; "
+          "6 read, 7 paired",
+    # the other direction: the patterns match on tag names, so the debt fair-value
+    # table on the filer's own tag and the equity-method note that is the
+    # related-party disclosure are not paired
+    "AMD": "amd:FinancialInstrumentsNotRecordedAtFairValueOnRecurringBasisTable…, the "
+           "debt table on the filer's own tag, and EquityMethodInvestmentsDisclosure…, "
+           "the related-party joint-venture note, are not paired; 7 read, 5 paired",
 }
 
 

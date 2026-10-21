@@ -199,6 +199,9 @@ UNDER_DROPPED = {
            "'disclaims any intention or obligation to update', are carried; "
            "3 read, 1 dropped",
     "AMSC": "the disclaimer's heading is carried; 2 read, 1 dropped",
+    "JBL": "the one-paragraph disclaimer, which writes 'cause actual outcomes and results to differ materially' and 'We assume no obligation to update', is carried; 1 read, 0 dropped",
+    "MU": "6 of 10 bare page numerals, which sit closer together than the page-run gap allows, and both blocks of 'Forward-Looking Statements' are carried; 12 read, 4 dropped",
+    "AMD": "10 of 12 bare page numerals and the disclaimer's heading are carried; 14 read, 3 dropped",
     "ADTN": "the disclaimer's heading is carried; 2 read, 1 dropped",
 }
 
