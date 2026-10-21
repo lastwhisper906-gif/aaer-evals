@@ -1,0 +1,247 @@
+{
+  "scenarios": {
+    "bear": {
+      "revenue_growth_year_one": 0.10,
+      "terminal_growth": 0.025,
+      "operating_margin_year_one": 0.10,
+      "operating_margin_year_ten": 0.11,
+      "reinvestment_rate_year_one": 1.00,
+      "reinvestment_rate_year_ten": 0.30,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "Total backlog fell from March to June as conversion ran ahead of new BASX awards. The core commercial HVAC market is soft, and growth leans on one large liquid-cooling data center. In this case award timing stays slow and the raised full-year guide is missed. The coming four quarters then add little to a trailing base that already holds a record first half.",
+          "quote": "Compared to the first quarter of 2026, total backlog decreased 7.4%, primarily reflecting accelerated backlog conversion into record revenue and the inherent timing variability of large BASX project awards.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.growth.revenue.trailing_four_quarters",
+            "ratios.growth.revenue.quarter_over_quarter",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.years.4.revenue_growth",
+            "earnings_versus_cash.history.years.1.revenue_growth"
+          ],
+          "history": "Below the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and far below trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct}. Still above the two slow years on record, with growth of {earnings_versus_cash.history.years.4.revenue_growth|pct} in 2021 and {earnings_versus_cash.history.years.1.revenue_growth|pct} in 2024, because the backlog in hand keeps some growth in place even if new awards slow."
+        },
+        "terminal_growth": {
+          "reason": "If the single large data-center programme ends and is not replaced, long-run growth reverts to the mature commercial HVAC equipment market and runs a little below nominal growth in the economy. It is well inside the cap set by the risk-free rate of {cost_of_capital.risk_free_rate|pct}.",
+          "quote": "The open risk is customer concentration in a single large data-center programme, untagged, which now drives growth and backlog.",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "cost_of_capital.risk_free_rate",
+            "earnings_versus_cash.history.years.1.revenue_growth",
+            "earnings_versus_cash.history.years.4.revenue_growth"
+          ],
+          "history": "Just below growth in the slowest year on record, {earnings_versus_cash.history.years.1.revenue_growth|pct} in 2024, and below the {earnings_versus_cash.history.years.4.revenue_growth|pct} recorded in 2021. The record holds no mature period, so the slow years are the nearest guide."
+        },
+        "operating_margin_year_one": {
+          "reason": "Margin stays where it was in 2025. The gross-margin guide was cut, the latest quarter's gross margin was the lowest of six quarters, surcharges lag tariff and metals costs, and warranty claims are rising. In this case the promised second-half improvement does not arrive.",
+          "quote": "Although the realization of these surcharges may lag initial cost increases due to production lead times, we expect pricing actions to help offset tariff-related margin impacts over time, subject to market demand and competitive dynamics.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "ratios.profitability.operating_margin",
+            "trend_table.quarters-back-0.ratios.gross_margin"
+          ],
+          "history": "At about the operating margin of {earnings_versus_cash.history.years.0.operating_margin|pct} earned in 2025, the weakest year on record, and below the trailing {ratios.profitability.operating_margin|pct}."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Margins never get back to the company's earlier range. The added volume comes from data-center and Coil Products work, whose gross margin is well below the Oklahoma segment's and kept falling in the quarter. Memphis overhead is only partly absorbed, and outsourcing, freight and warranty costs stay high.",
+          "quote": "The added volume is being sold at lower margins.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "ratios.profitability.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "earnings_versus_cash.history.years.4.operating_margin"
+          ],
+          "history": "Near the trailing {ratios.profitability.operating_margin|pct} and well below the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}. It is below even the {earnings_versus_cash.history.years.4.operating_margin|pct} earned in 2021, the weakest year before 2025."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "The pattern seen in 2025 continues: the Memphis build and working capital take all of after-tax operating income. Receivables days stay high, customer deposits keep running off, and inventory is still bought ahead of supply delays with revolver borrowing. Capital already committed to Memphis does not shrink when growth slows, so each unit of reinvestment produces less growth.",
+          "quote": "The change in cash from financing activities in 2026 is primarily related to borrowings under our revolving credit facility to manage our working capital needs, especially strategic purchases of inventory to avoid supply chain delays and the funding of certain capital expenditures, offset by repayments we were able to make due to our operating results and financial condition.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "earnings_versus_cash.history.years.0.operating_cash_flow",
+            "earnings_versus_cash.history.years.0.operating_cash_flow_over_net_income",
+            "earnings_versus_cash.working_capital.receivables.balance_sheet_change",
+            "trend_table.years-back-0.ratios.days_sales_outstanding",
+            "trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue"
+          ],
+          "history": "In line with 2025, when operating cash flow was only {earnings_versus_cash.history.years.0.operating_cash_flow}, or {earnings_versus_cash.history.years.0.operating_cash_flow_over_net_income|pct} of net income, and year-end receivables days reached {trend_table.years-back-0.ratios.days_sales_outstanding}, the highest of five years. It stops at all of income, rather than above it as in 2025, only because this case grows more slowly."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "Weaker margins mean weaker returns on capital, so the same slow terminal growth needs a larger share of income reinvested. In this case growth adds little value over the cost of the capital it uses.",
+          "quote": "The growth is real and fast, but it is concentrated, and it is not yet turning into a matching rise in profit or cash.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "ratios.profitability.return_on_assets",
+            "earnings_versus_cash.operating_cash_flow_over_net_income",
+            "earnings_versus_cash.history.years.5.operating_cash_flow_over_net_income"
+          ],
+          "history": "Above the base case, and far above the cash-generative years before 2025: in 2020, operating cash flow was {earnings_versus_cash.history.years.5.operating_cash_flow_over_net_income|pct} of net income. Far below the recent reinvestment, which exceeded after-tax operating income."
+        }
+      }
+    },
+    "base": {
+      "revenue_growth_year_one": 0.20,
+      "terminal_growth": 0.03,
+      "operating_margin_year_one": 0.12,
+      "operating_margin_year_ten": 0.15,
+      "reinvestment_rate_year_one": 0.90,
+      "reinvestment_rate_year_ten": 0.22,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "Management raised its full-year sales growth guide after a record quarter. But the trailing base already holds the record first half, so the guide implies second-half revenue at or a little below the second quarter's level, which fits backlog falling from March to June. Year one adds a first half of next year modestly above that second-half pace. Backlog at the end of June stood far above a year earlier, most of it data-center liquid cooling, and supports it. The result is well below the guided full-year rate, and I hold it there because growth leans on one large data-center programme.",
+          "quote": "YoY Sales Growth | 55%-60% | 40%-45%",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.growth.revenue.trailing_four_quarters",
+            "ratios.growth.revenue.year_over_year",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound",
+            "terms.trailing_four_quarters.revenue"
+          ],
+          "history": "Between the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and the five-year compound rate of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}. Far below trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct} and the quarter's year-over-year rate of {ratios.growth.revenue.year_over_year|pct}. Both of those are measured against a year-ago quarter that the company says was held back by the refrigerant change and a coil shortage."
+        },
+        "terminal_growth": {
+          "reason": "After ten years the company grows with its markets, commercial HVAC and data-center cooling, at about nominal growth in the economy. That is well inside the cap set by the risk-free rate of {cost_of_capital.risk_free_rate|pct}.",
+          "quote": "The long-term market opportunity remains compelling across both brands.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound",
+            "earnings_versus_cash.history.years.1.revenue_growth",
+            "earnings_versus_cash.history.years.4.revenue_growth"
+          ],
+          "history": "The record holds no mature period. Five-year compound growth of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct} reflects a build-out, so the terminal rate rests on the long-run economy, not the company's past. It sits between the two slow years on record, with growth of {earnings_versus_cash.history.years.1.revenue_growth|pct} in 2024 and {earnings_versus_cash.history.years.4.revenue_growth|pct} in 2021."
+        },
+        "operating_margin_year_one": {
+          "reason": "The revised outlook lowers the gross-margin range and also lowers SG&A as a share of sales. The gap between the two leaves a full-year operating margin a little above the trailing figure. Management expects the second half to improve on the first as Memphis utilization rises and pricing catches up with tariffs and metals costs. I take the guided full-year level rather than the higher second-half pace it implies, because the guide was just cut and the latest quarter's gross margin was the lowest of six quarters.",
+          "quote": "Gross Profit Margin | 25%-26% | 27%-28%",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.profitability.operating_margin",
+            "trend_table.quarters-back-0.ratios.gross_margin",
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average"
+          ],
+          "history": "Slightly above the trailing {ratios.profitability.operating_margin|pct}, and above the operating margin of {earnings_versus_cash.history.years.0.operating_margin|pct} earned in 2025, the weakest year on record. Well below the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Margin recovers as Memphis moves from ramp to utilization and its overhead is absorbed. The release shows the Oklahoma segment's margin expanding once that overhead is set aside. It stops short of the margins earned in 2023 and 2024, for two reasons. The growth mix now leans to data-center and Coil Products work, whose gross margin is well below the Oklahoma segment's. And warranty claims, outsourcing and tariff costs have risen.",
+          "quote": "Excluding these costs, segment margins expanded 70 basis points to 31.2%, compared to 30.5% in the prior-year period.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "earnings_versus_cash.history.years.1.operating_margin",
+            "earnings_versus_cash.history.years.2.operating_margin",
+            "ratios.profitability.operating_margin"
+          ],
+          "history": "Just under the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}. Below {earnings_versus_cash.history.years.1.operating_margin|pct} in 2024 and {earnings_versus_cash.history.years.2.operating_margin|pct} in 2023, and well above the trailing {ratios.profitability.operating_margin|pct}."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "The Memphis build-out continues and working capital grows with revenue. Receivables and inventory have risen faster than payables, and the customer deposits that funded part of the build in 2025 are running down. First-half capital spending exceeded operating cash flow, so the business now reinvests more than its after-tax operating income. Year one stays close to all of it. It sits a little below because growth slows from the trailing pace, which shrinks the yearly working-capital build.",
+          "quote": "The Memphis build-out and the working-capital build have been paid for with revolver borrowing, not with cash the business generated.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now",
+            "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier",
+            "earnings_versus_cash.operating_cash_flow_over_net_income",
+            "earnings_versus_cash.history.years.0.operating_cash_flow",
+            "earnings_versus_cash.history.years.1.operating_cash_flow_over_net_income"
+          ],
+          "history": "Below the recent record, in which free cash flow was negative. Operating cash flow was {earnings_versus_cash.history.years.0.operating_cash_flow} in 2025 against heavy capital spending, and trade working capital rose from {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier} to {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now} over the year to June. Far above 2024, when operating cash flow was {earnings_versus_cash.history.years.1.operating_cash_flow_over_net_income|pct} of net income."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "By year ten, growth has faded to the terminal rate and Memphis is built. Set against terminal growth, reinvestment of about a fifth of after-tax operating income implies a good return on new capital, but one below the company's best years. That fits a business whose recent added sales have earned less than its old ones.",
+          "quote": "Each added dollar of sales earns less than the business used to.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "earnings_versus_cash.history.years.1.operating_cash_flow_over_net_income",
+            "earnings_versus_cash.history.years.1.operating_margin",
+            "ratios.efficiency.asset_turnover"
+          ],
+          "history": "Far below the reinvestment of 2025 and the first half of 2026, which exceeded after-tax operating income. It assumes cash conversion returns toward years like 2024, when operating cash flow was {earnings_versus_cash.history.years.1.operating_cash_flow_over_net_income|pct} of net income."
+        }
+      }
+    },
+    "bull": {
+      "revenue_growth_year_one": 0.30,
+      "terminal_growth": 0.04,
+      "operating_margin_year_one": 0.13,
+      "operating_margin_year_ten": 0.18,
+      "reinvestment_rate_year_one": 0.95,
+      "reinvestment_rate_year_ten": 0.18,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "The top of the raised guide is met. The data-center pipeline turns into new large BASX awards that refill the backlog, and AAON-branded backlog keeps growing on share gains. New capacity at Memphis and Tulsa lets the record quarterly run rate rise again through the first half of next year. That growth builds on backlog at the end of June far above a year earlier.",
+          "quote": "At June 30, 2026, our consolidated backlog is $1,970.8 million, an increase of 98.0%, or $975.5 million, as compared to June 30, 2025.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.growth.revenue.trailing_four_quarters",
+            "ratios.growth.revenue.quarter_over_quarter",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.years.2.revenue_growth",
+            "earnings_versus_cash.history.years.3.revenue_growth"
+          ],
+          "history": "Below trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct}. Just under the growth of {earnings_versus_cash.history.years.2.revenue_growth|pct} in 2023, and well under the {earnings_versus_cash.history.years.3.revenue_growth|pct} in 2022. Well above the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}."
+        },
+        "terminal_growth": {
+          "reason": "Data-center cooling keeps the company's markets growing a little faster than the economy after ten years, on top of the core HVAC business. It stays inside the cap set by the risk-free rate of {cost_of_capital.risk_free_rate|pct}.",
+          "quote": "The BASX brand continues to benefit from significant data center investment activity, a healthy customer pipeline, and strong engagement with strategic customers.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate",
+            "earnings_versus_cash.history.years.4.revenue_growth",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "Just above the growth of {earnings_versus_cash.history.years.4.revenue_growth|pct} recorded in 2021, the faster of the slow years on record, and far below the five-year compound rate of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}."
+        },
+        "operating_margin_year_one": {
+          "reason": "The second-half improvement management expects arrives. Higher utilization, pricing actions and sourcing lift gross margin toward the top of the guided range, and SG&A keeps falling as a share of sales on higher volume.",
+          "quote": "We expect sequential margin improvement in the second half of the year as higher production volumes, better utilization, pricing actions, sourcing initiatives, and continued operational discipline begin to show more clearly in reported results.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.profitability.operating_margin",
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "earnings_versus_cash.history.years.4.operating_margin",
+            "trend_table.quarters-back-1.ratios.gross_margin",
+            "trend_table.quarters-back-0.ratios.gross_margin"
+          ],
+          "history": "Above the trailing {ratios.profitability.operating_margin|pct} and above the {earnings_versus_cash.history.years.0.operating_margin|pct} earned in 2025, and about level with the {earnings_versus_cash.history.years.4.operating_margin|pct} earned in 2021. Still well below the margins earned in 2023 and 2024."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Memphis reaches full utilization and the Oklahoma segment returns to the margin it earns without the plant's overhead. Pricing recovers tariff and metals costs, as management says these pressures will not change the segment's long-term margin profile. Margin returns to the range the company earned in 2023 and 2024.",
+          "quote": "These pressures are being addressed through pricing and operational initiatives and are not expected to change the long-term margin profile of the segment.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "earnings_versus_cash.history.years.1.operating_margin",
+            "earnings_versus_cash.history.years.2.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average"
+          ],
+          "history": "Between {earnings_versus_cash.history.years.1.operating_margin|pct} in 2024 and {earnings_versus_cash.history.years.2.operating_margin|pct} in 2023, and above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Faster growth needs more working capital and capacity than the base case, so reinvestment is a little higher. It stays below all of after-tax income for two reasons. New large BASX awards bring customer deposits back, as they funded part of the build in 2025. And the Memphis build-out moves toward completion.",
+          "quote": "Contract liabilities, the customer advances that helped fund working capital in 2025",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "trend_table.quarters-back-1.ratios.contract_liabilities_over_revenue",
+            "trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue",
+            "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now"
+          ],
+          "history": "Above the base case, and below the recent record in which reinvestment exceeded after-tax operating income. Deposits swing widely: over quarterly revenue they were {trend_table.quarters-back-1.ratios.contract_liabilities_over_revenue|pct} at the end of March, the highest of six quarters, and {trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue|pct} at the end of June."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "With margins back near those earned in 2023 and 2024, returns on new capital are high. A smaller share of income then sustains the terminal growth.",
+          "quote": "",
+          "quote_from": "",
+          "fields": [
+            "earnings_versus_cash.history.years.2.operating_margin",
+            "earnings_versus_cash.history.years.1.operating_cash_flow_over_net_income"
+          ],
+          "history": "Below the base and bear cases and far below the recent reinvestment. Consistent with 2024, when operating cash flow was {earnings_versus_cash.history.years.1.operating_cash_flow_over_net_income|pct} of net income."
+        }
+      }
+    }
+  },
+  "wacc_overrides": {}
+}

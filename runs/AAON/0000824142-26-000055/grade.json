@@ -1,0 +1,501 @@
+{
+ "run": "AAON/analysis-grader-7h84r5zl",
+ "rubric": "evals/capability/rubric.md",
+ "dealbreakers": [
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "earnings_versus_cash_working_capital_absorbs_cash_against_stated_discipline",
+   "where": "analysis_accounting.json anomalies[2].numbers_vs_prose",
+   "why": "The anomaly marks the CFO's working-capital credit unresolved because 'The contract-asset line ... is not in my inputs'. But the cash-flow statement at 8k_2_02:89 and mdna:98 carries that line, and the reader item it cites points to it. Taken together, the half's working-capital lines absorbed less cash than a year earlier, so the inputs settle the question against the anomaly's title."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "cash_flow_engineering_and_off_balance_sheet_new_markets_tax_credit_guarantee_and_expected_forgiveness",
+   "where": "analysis_accounting.json anomalies[22].what",
+   "why": "The what writes 'seven-year compliance period' in the analyst's own words, outside any quote. It is a figure the filer prints at mdna:76, and no calculator path supplies it."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "controls_audit_and_filing_signals_refrigerant_payment_period_labels",
+   "where": "analysis_accounting.json anomalies[26].numbers_vs_prose",
+   "why": "The MD&A (mdna:110) and the note (notes:211) give the payments different period labels. note_history:2, which the cited note-wording item repeats, gives the first-quarter payments, and adding the second-quarter payments in notes:211 reproduces the note's six-month figures. So the inputs show the MD&A label is the error, yet the anomaly leaves it unresolved."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "cross_document_reconciliation_aaon_branded_net_sales_two_figures",
+   "where": "analysis_accounting.json anomalies[29].numbers_vs_prose",
+   "why": "The disaggregation tables notes:32 and notes:33 give AAON-branded Products totals that match the release's amount and growth rate at 8k_2_02:26, and the mdna:25 figure equals the increase between them. The cited notes item points to notes:32, yet the anomaly says no input can check which amount is right."
+  }
+ ],
+ "items": [
+  {
+   "id": "earnings_versus_cash_conversion_below_own_history",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "earnings_versus_cash.operating_cash_flow_over_net_income is below every earnings_versus_cash.history.years ratio except years.0, and trend_table.years-back-0.ratios.accruals_over_total_assets reads 'highest of the 5 filled years'."
+  },
+  {
+   "id": "earnings_versus_cash_quarter_cash_fell_while_income_rose",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.growth.operating_cash_flow.this_quarter is derived as the half less the first quarter. ratios.growth.operating_cash_flow.quarter_over_quarter is negative while ratios.growth.net_income.quarter_over_quarter is positive, and 8k_2_02:57 speaks only of the half."
+  },
+  {
+   "id": "earnings_versus_cash_working_capital_absorbs_cash_against_stated_discipline",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "high",
+   "why": "Dealbreaker. With the contract-asset line at 8k_2_02:89 and mdna:98, the half's working-capital changes together absorbed less cash than a year earlier, the opposite of the title."
+  },
+  {
+   "id": "earnings_versus_cash_payables_articulation_gap_unexplained",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "earnings_versus_cash.working_capital.accounts_payable.articulation_gap is as stated, and the inventory gap matches terms.trailing_four_quarters.inventory_write_down in size. The supplemental table at notes:83 lacks the full-year non-cash capex that would explain the payables gap."
+  },
+  {
+   "id": "earnings_versus_cash_earnings_smoother_than_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.smoothness is below one, and its formula note reads 'below 1 means income moves less than cash'. Only quarters-back-1 and quarters-back-5 fill accruals_over_total_assets, as the numbers reader's insufficient item says."
+  },
+  {
+   "id": "revenue_recognition_contract_liabilities_drawn_to_lowest_of_six_quarters",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue is 'lowest of the 6 filled quarters' and quarters-back-1 is 'highest of the 6 filled quarters'. notes:49 states the revenue recognized from the opening contract-liability balance."
+  },
+  {
+   "id": "revenue_recognition_receivables_days_highest_year_and_up_on_year",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.years-back-0.ratios.days_sales_outstanding is 'highest of the 5 filled years' and quarters-back-0 is above quarters-back-4. The receivables table at notes:62 carries no explanatory prose."
+  },
+  {
+   "id": "revenue_recognition_contract_asset_gross_concepts_disagree",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "low",
+   "why": "notes:48 shows the larger GrossCurrent value is costs incurred on uncompleted contracts plus estimated earnings, before billings, and notes:46 gives the contract-asset balance. The inputs say what the larger figure measures, which the anomaly says they do not."
+  },
+  {
+   "id": "revenue_recognition_new_judgment_wording_in_revenue_note",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:13 and note_history:27 through note_history:32 show the pricing, warranty and Representatives wording as changed or added, and the anomaly states the prior-wording limit."
+  },
+  {
+   "id": "estimates_and_reserves_bad_debt_reserve_lowest_with_negative_provision",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio is 'lowest of the 6 filled quarters'. The recoveries line for the half at 8k_2_02:89 matches the numbers reader's negative-provision item."
+  },
+  {
+   "id": "estimates_and_reserves_inventory_reserve_ratio_near_lowest",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0.ratios.inventory_reserve_ratio is 'second lowest of the 6 filled quarters' and years-back-0 is 'second lowest of the 5 filled years'. terms.balances_now.inventory_reserve exceeds terms.balances_a_year_earlier.inventory_reserve."
+  },
+  {
+   "id": "estimates_and_reserves_quarter_tax_rate_cut_by_excess_tax_benefit",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:116 shows the excess-benefit line pulling the quarter's rate below the year-ago quarter's. mdna:60 says such benefits 'consistently provide a benefit', and ratios.growth.net_income.year_over_year exceeds ratios.growth.operating_income.year_over_year."
+  },
+  {
+   "id": "estimates_and_reserves_accrued_sales_commissions_fell_as_revenue_rose",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:93 shows the 'Due to representatives' row lower than at year-end while terms.balances_now.receivables rose. notes:45 says these amounts are paid only after collection, and no input explains the fall."
+  },
+  {
+   "id": "estimates_and_reserves_federal_operating_loss_asset_used_up_taxes_payable_rising",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "notes:130 and notes:131 support the fully used federal NOL asset. But the taxes-payable row the anomaly leans on is labelled 'Property tax' in notes:93, so it does not bear on the NOL."
+  },
+  {
+   "id": "estimates_and_reserves_tennessee_credit_valuation_allowance_established",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:119 states the new valuation allowance, and notes:116 shows its line smaller than the excess-benefit line, so the rate still fell. The amount the anomaly calls absent is in notes:116, a minor slip."
+  },
+  {
+   "id": "estimates_and_reserves_deferred_tax_attributed_to_tax_law_changes",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The numbers reader's DeferredIncomeTaxExpenseBenefit item gives the tax-law-change attribution and the rise in the deferred tax liability, and the anomaly claims no more than that."
+  },
+  {
+   "id": "cost_deferral_memphis_fee_called_infrequent_recurs",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:30 calls the fee an 'infrequent expense', yet 8k_2_02:95, 8k_2_02:101 and 8k_2_02:104 carry the Memphis incentive fee add-back in the prior-year columns too. That conflicts with the definition at 8k_2_02:93."
+  },
+  {
+   "id": "cost_deferral_segment_margin_shown_without_memphis_overhead",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:44 and 8k_2_02:108 exclude Memphis overhead from the adjusted segment margin. mdna:34 says Memphis builds BASX orders at cost, so the overhead stays in AAON Oklahoma."
+  },
+  {
+   "id": "cost_deferral_soft_asset_share_at_top_of_history",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "trend_table.quarters-back-0.ratios.soft_asset_share is 'second highest of the 6 filled quarters' and years-back-0 is 'highest of the 5 filled years'. terms.trailing_four_quarters.research_and_development_expense is missing, as stated."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_calculator_debt_misses_revolver",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "ratios.solvency.total_debt and ratios.solvency.debt_over_ebitda rest on parts noted 'no line on record'. Meanwhile the LineOfCredit item, mdna:67 and 8k_2_02:56 all give the revolver balance."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_spending_funded_on_revolver_with_minimal_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The machinery-and-equipment item exceeds terms.trailing_four_quarters.operating_cash_flow.parts.this_year_to_date. 8k_2_02:89 shows the revolver borrowings, repayments and option proceeds, and mdna:106 gives the purpose."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_new_markets_tax_credit_guarantee_and_expected_forgiveness",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:76 supports the guarantee and the expected put/call forgiveness, but a dealbreaker strikes the item: it states the compliance term in the analyst's own words."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_related_party_tagged_loan_and_restricted_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The LoansPayable item gives the April-dated related-party-axis loan, its earlier instances and the dropped SubsequentEventMember tag, and the RestrictedCash item shows the build. The hedge on the loan's purpose is fair."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_disposal_result_signs_and_labels",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The disposal-result items, and 8k_2_02:71 set against 8k_2_02:79, show the opposite signs and the loss and gain labels the anomaly describes."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_duplicate_concepts_and_equity_tag",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The contract-asset allowance, option-proceeds and equity-concept items show the paired values and the equity tag that includes noncontrolling interest. terms.balances_now.stockholders_equity is missing for that reason."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_refrigerant_payment_period_labels",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The label mismatch between mdna:110 and notes:211 is real, but a dealbreaker strikes the item: note_history:2 lets the inputs settle which label is wrong."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_related_party_revenue_and_receivables_moved",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:214 and notes:215 show sales to affiliates down for the quarter and up for the half, with due-from-affiliates up from year-end. notes:217 gives the Representative relationship."
+  },
+  {
+   "id": "cross_document_reconciliation_unrestricted_cash_increase_is_restricted",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:63 says 'Our unrestricted cash and cash equivalents increased'. But 8k_2_02:83 prints the same cash line at both dates and puts the build in restricted cash, consistent with terms.balances_now.cash."
+  },
+  {
+   "id": "cross_document_reconciliation_aaon_branded_net_sales_two_figures",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The two amounts do differ (mdna:25 against 8k_2_02:26), but a dealbreaker strikes the item: notes:32 and notes:33 settle which is right."
+  },
+  {
+   "id": "cross_document_reconciliation_coil_margin_two_causes",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:34 gives 'higher material costs' while 8k_2_02:49 gives inflation, outsourcing, freight and price-cost timing. 8k_2_02:47 confirms the direction."
+  },
+  {
+   "id": "cross_document_reconciliation_backlog_decline_omitted_from_quarterly_report",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The mdna:21 text compares backlog only with the prior-year June, while 8k_2_02:34 states the sequential decrease the 10-Q text omits."
+  },
+  {
+   "id": "cross_document_reconciliation_second_half_margin_promise_against_falling_margin",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:39 promises second-half improvement while trend_table.quarters-back-0.ratios.gross_margin sits below quarters-back-1. The half is not yet reported, so unresolved is right."
+  },
+  {
+   "id": "cross_document_reconciliation_oklahoma_growth_and_intersegment_sales",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "low",
+   "why": "mdna:49 footnotes segment net sales 'Presented after intercompany eliminations', and 8k_2_02:76 shows AAON Oklahoma net sales equal to external sales. So the stated segment growth excludes the internal sales the anomaly says it may include."
+  },
+  {
+   "id": "cross_document_reconciliation_gross_margin_lowest_of_six_quarters",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0.ratios.gross_margin is 'lowest of the 6 filled quarters'. 8k_2_02:27 and 8k_2_02:37 give the stated causes and the lowered guide."
+  },
+  {
+   "id": "industry_lens_customer_concentration_untagged_single_data_center",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "concentration.facts is empty. mdna:33 ties Coil growth to products 'for a large liquid cooling data center', and mdna:21 links most backlog orders to data-center liquid cooling."
+  },
+  {
+   "id": "industry_lens_inventory_days_lowest_of_six_quarters",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "trend_table.quarters-back-0.ratios.days_sales_of_inventory is 'lowest of the 6 filled quarters' and below quarters-back-4, while terms.balances_now.inventory exceeds terms.balances_a_year_earlier.inventory."
+  },
+  {
+   "id": "profitability_quarterly_gross_margin_lowest_on_record",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0.ratios.gross_margin is 'lowest of the 6 filled quarters', below quarters-back-1, quarters-back-4 and quarters-back-7. 8k_2_02:22 and 8k_2_02:27 give management's causes."
+  },
+  {
+   "id": "profitability_annual_margins_compressed_against_history",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "Gross margin in trend_table years-back-2, years-back-1 and years-back-0, and earnings_versus_cash.history.years operating margins, fall as stated. ratios.profitability.operating_margin is below earnings_versus_cash.history.operating_margin_three_year_average."
+  },
+  {
+   "id": "profitability_trailing_profit_not_keeping_pace_with_revenue",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.net_income is below earnings_versus_cash.history.years.1.net_income and years.2.net_income, and trailing operating income is below years.2.operating_income. Trailing revenue exceeds both years."
+  },
+  {
+   "id": "profitability_net_income_lifted_by_discrete_tax_benefits",
+   "frame": "finance",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "notes:116 and the ratios.growth net-income and operating-income rates support the tax lift. But the claim that this support is less likely to repeat runs against mdna:60, which says such benefits 'consistently provide a benefit'."
+  },
+  {
+   "id": "results_against_expectations_gross_margin_guide_lowered",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:37 shows the margin guide cut and the sales guide raised. 8k_2_02:38 gives the CEO's reasons, 8k_2_02:39 the second-half promise, and mdna:15 the surcharge lag."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_coil_products_margin_drop",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:47 shows the Coil margin below both comparison quarters and gross profit down from the first quarter on higher sales. mdna:34 and 8k_2_02:49 give different causes."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_input_costs_outsourcing_and_tariffs",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:11 reports higher copper and aluminum averages, 8k_2_02:45 names elevated outsourcing and inflation, and mdna:15 says surcharges may lag cost increases."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_memphis_ramp_costs_adjusted_out",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:44 and 8k_2_02:95 show the Memphis overhead exclusion and the add-back in the prior-year columns, and mdna:34 explains the at-cost transfer."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_softer_commercial_hvac_market",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:21, 8k_2_02:33 and 8k_2_02:34 each describe a soft commercial HVAC market alongside share gains."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_backlog_falling_sequentially",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:32 shows total and BASX backlog below the March column, and 8k_2_02:34 gives the conversion and award-timing explanation. The mdna:21 text omits the sequential fall."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_warranty_claims_rising",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:89 shows warranty expense far above the year-ago quarter and mdna:41 cites 'an increase in our historical claims'. trend_table.quarters-back-0.ratios.warranty_reserve_ratio is 'lowest of the 6 filled quarters'."
+  },
+  {
+   "id": "efficiency_receivables_days_high_against_history",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.years-back-0.ratios.days_sales_outstanding is 'highest of the 5 filled years', and earnings_versus_cash.working_capital.receivables.balance_sheet_change exceeds terms.trailing_four_quarters.net_income."
+  },
+  {
+   "id": "efficiency_bad_debt_allowance_thinning_as_receivables_grow",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.balances_now.bad_debt_allowance is below terms.balances_a_year_earlier.bad_debt_allowance while terms.balances_now.receivables rose sharply, and the half's provision was negative per the numbers reader."
+  },
+  {
+   "id": "efficiency_trade_working_capital_build_absorbing_cash",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "free_cash_flow.free_cash_flow_to_firm.trade_working_capital rises from a_year_earlier to now. mdna:106 ties the inventory build to strategic purchases on the revolver, and the write-down item shows the higher half."
+  },
+  {
+   "id": "liquidity_and_capital_customer_deposits_running_down",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.balances_now.contract_liabilities is far below the year-end balance at 8k_2_02:83, the quarterly ratio is 'lowest of the 6 filled quarters', and notes:49 gives the revenue recognized from the opening balance."
+  },
+  {
+   "id": "liquidity_and_capital_operating_cash_flow_far_below_earnings",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "earnings_versus_cash.history.years.0.operating_cash_flow is a sliver of years.0.net_income, trailing conversion is below years.1, and ratios.growth.operating_cash_flow.this_quarter is below quarter_over_quarter.inputs.before. The 'only' about the CFO claim overstates slightly."
+  },
+  {
+   "id": "liquidity_and_capital_capital_spending_exceeds_operating_cash_flow",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "The machinery-and-equipment item exceeds half-year operating cash flow and gives the 10-K's full-year capex above earnings_versus_cash.history.years.0.operating_cash_flow. mdna:103 names the projects."
+  },
+  {
+   "id": "liquidity_and_capital_cash_balance_near_zero",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.balances_now.cash and terms.balances_a_year_earlier.cash are token amounts. 8k_2_02:56 cites a total that 8k_2_02:83 shows is mostly restricted cash, and mdna:63 mislabels the increase."
+  },
+  {
+   "id": "liquidity_and_capital_revolver_headroom_shrinking",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:100 and note_history:10 show revolver borrowings up and availability down from year-end to March to June, with standby letters of credit up from year-end."
+  },
+  {
+   "id": "liquidity_and_capital_share_repurchases_halted",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:89 and the repurchase item show no open-market buybacks in the half against the prior-year half, and notes:146 gives the higher option proceeds."
+  },
+  {
+   "id": "liquidity_and_capital_cash_tax_shelter_exhausted",
+   "frame": "finance",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "notes:130 supports the used-up federal NOL. But the taxes-payable row is labelled 'Property tax' in notes:93, and notes:85 shows income taxes paid lower in the half, so rising cash taxes are not shown yet."
+  },
+  {
+   "id": "solvency_revolver_borrowing_missing_from_debt_total",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "ratios.solvency.total_debt, net_debt and debt_over_ebitda rest on parts noted 'no line on record', while the LineOfCredit item gives the revolver. notes:109 against note_history:9 shows the covenant ratio lower than at March."
+  },
+  {
+   "id": "solvency_interest_paid_rising_coverage_unmeasured",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "terms.trailing_four_quarters.interest_paid.parts.this_year_to_date exceeds prior_year_to_date and ebit far exceeds trailing interest paid. ratios.solvency.interest_coverage is missing for the stated reason."
+  },
+  {
+   "id": "solvency_related_party_loan_outside_debt_total",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The LoansPayable item gives the April-dated related-party-axis loan, which ratios.solvency.total_debt leaves out. The open question about its link to the New Markets Tax Credit financings is fairly hedged."
+  },
+  {
+   "id": "growth_profit_growth_lagging_revenue",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.growth.revenue.trailing_four_quarters exceeds the trailing operating-income and net-income rates, and revenue's quarter_over_quarter rate exceeds operating income's."
+  },
+  {
+   "id": "growth_year_over_year_rates_against_disrupted_base",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The ratios.growth year-over-year rates are as stated, mdna:50 and 8k_2_02:43 describe the disrupted base, and the year-ago net income is the smallest value in earnings_versus_cash.smoothness.net_income."
+  },
+  {
+   "id": "growth_concentration_in_one_data_center_program",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:33 ties Coil growth to a single large data center, mdna:21 links most backlog orders to data-center liquid cooling, and concentration.facts is empty."
+  },
+  {
+   "id": "growth_operating_cash_flow_falling_while_earnings_rise",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.growth.operating_cash_flow.quarter_over_quarter is negative while net income's is positive. The year-over-year and trailing cash-flow rates start from a negative year-ago quarter and the near-zero earnings_versus_cash.history.years.0.operating_cash_flow."
+  }
+ ],
+ "coverage": {
+  "answer": "yes",
+  "why": "Every accounting area and the industry lens carry a finding and a verdict, and the financial file answers every section plus dupont and path_to_distress. input_manifest.json analysis_stages records '\"dropped\": 0' for both analysis_accounting and analysis_financial."
+ },
+ "calibration": {
+  "answer": "yes",
+  "why": "Area verdicts track their anomalies. cross_document_reconciliation says 'There is one contradiction (unrestricted cash)' and its only contradicts-coded anomaly is the unrestricted-cash item; cost_deferral calls its points presentational, and its anomalies are non-GAAP and tagging items."
+ },
+ "valuation_reading": {
+  "answer": "no",
+  "why": "price_position and market_implied_growth read 'Not computed' and most_sensitive reads 'Not ranked'. market.missing, valuation.missing and implied_growth_beside_history.implied_ten_year_revenue_growth.missing leave no price, WACC or reverse DCF to read from."
+ },
+ "score": 0.896,
+ "grader": {
+  "model_requested": "opus",
+  "model_served": "claude-opus-5-5",
+  "input_tokens": 40,
+  "output_tokens": 91207,
+  "cost_usd": 6.2799429999999985,
+  "seconds": 804.0
+ }
+}

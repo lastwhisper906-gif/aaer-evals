@@ -19,8 +19,6 @@ branch changed. A run item is done when its run directory is published and
 [ ] JBL's 10-Q filed 2026-06-30 on Opus, the first run of a company added on 2026-10-21 · `.venv/bin/python -m evals --runs runs/JBL` · the fixture set of 2026-10-21
     pending, 2026-10-21: refused at the drift check on both the 10-Q and the 10-K (`eight_k` 66 and 72 against a baseline slot that records none, the fixture 8-K postdating both filings); the owner's row on the drift baseline's slot (`docs/needs_judgment.md`) now names Jabil beside the five of 2026-10-14
 
-[ ] AAON's 10-Q filed 2026-08-10 on Opus, the first run of a company added on 2026-10-21 · `.venv/bin/python -m evals --runs runs/AAON` · the fixture set of 2026-10-21
-
 [ ] ATEN's 10-Q filed 2026-08-06 on Opus, the first run of a company added on 2026-10-21 · `.venv/bin/python -m evals --runs runs/ATEN` · the fixture set of 2026-10-21
     pending, 2026-10-21: the run finished on Opus (every agent written) and was set aside by the plain-name check, which names the filer's XBRL member for its convertible notes (a capital letter and the coupon rate in digits) inside a fact id the numbers reader cited as its `paragraph_id`; the owner's row on reader-written codes carries this second shape; not run again until it is decided
 
@@ -63,6 +61,8 @@ branch changed. A run item is done when its run directory is published and
 [ ] MU, Micron Technology, the reading's pick under 3674 (`docs/structure_changes.md`, 2026-10-14): fixtures as of the day it is fetched, the two 10-K headers and Exhibit 21 documents by hand, expected values with the 43 keys, and its row · `.venv/bin/python -m pytest tests -q -k "MU"` passes with every defect a strict expected failure · none
 
 ## Done
+
+[x] AAON's 10-Q filed 2026-08-10 on Opus, the first run of a company added on 2026-10-21 · `.venv/bin/python -m evals --runs runs/AAON` · the fixture set of 2026-10-21 · 2026-10-21: `--model opus` recorded as `model_override`, every agent served claude-opus-5-5, no fallback; accounting analyst 0 dropped, 0 of 8 areas empty after 2 hook rounds, no adjustment; financial analyst 0 dropped after 2 rounds; regression pass; analysis-grader 0.896 with 4 dealbreakers
 
 [x] AMD's 10-Q filed 2026-08-05 on Opus, the first run of a company added on 2026-10-21 · `.venv/bin/python -m evals --runs runs/AMD` · the fixture set of 2026-10-21 · 2026-10-21: `--model opus` recorded as `model_override`, every agent served claude-opus-5-5, no fallback; a first attempt at 10:02 UTC hit the Opus session limit in both readers and was set aside, the run made again at 14:08 on a fresh store; accounting analyst 0 dropped, 0 of 8 areas empty after 1 hook round, 2 adjustments; financial analyst 0 dropped; regression pass; analysis-grader 0.974 with 1 dealbreaker
 
