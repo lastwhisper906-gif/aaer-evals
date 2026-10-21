@@ -1,0 +1,230 @@
+{
+  "scenarios": {
+    "bear": {
+      "revenue_growth_year_one": 0.0,
+      "terminal_growth": 0.015,
+      "operating_margin_year_one": 0.045,
+      "operating_margin_year_ten": 0.06,
+      "reinvestment_rate_year_one": 0.45,
+      "reinvestment_rate_year_ten": 0.20,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "Price increases stop lifting product revenue, and distributors work down stock they took on ahead of those increases. The accounting reader finds channel-loading indicators at the distributors, and receivables are concentrating in one of them. Fiscal 2024 showed that this company's revenue can fall when the channel turns.",
+          "quote": "Watch item. Channel-loading indicators line up at the distributors and commitments exceed on-hand inventory, but there is no direct evidence of channel stuffing or of circular deals.",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "earnings_versus_cash.history.years.2.revenue_growth",
+            "earnings_versus_cash.history.years.1.revenue_growth",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "trend_table.years-back-0.ratios.days_sales_outstanding.value"
+          ],
+          "history": "About level with the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and below fiscal 2025's {earnings_versus_cash.history.years.1.revenue_growth|pct}. It is well above fiscal 2024's {earnings_versus_cash.history.years.2.revenue_growth|pct}, so it is not the worst year on record."
+        },
+        "terminal_growth": {
+          "reason": "The company has limited visibility into end-customer renewals through its channel, and maintenance support revenue is not growing. That leaves a long-run rate below the base case, set far below the risk-free rate of {cost_of_capital.risk_free_rate.value|pct}.",
+          "quote": "management says the distributor model limits its visibility into end-customer renewals",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "cost_of_capital.risk_free_rate.value",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound"
+          ],
+          "history": "Below the five-year compound revenue growth of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct} and above the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}."
+        },
+        "operating_margin_year_one": {
+          "reason": "The insurance recovery behind the guided net litigation benefit does not arrive. Restructuring and system-transition charges continue as they have, and memory component costs outrun the price increases. The guide for the first quarter already sits near breakeven.",
+          "quote": "The 10-K says recovery of defense and indemnification costs through insurance is uncertain and mentions no insurance receivable.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "ratios.profitability.operating_margin.value",
+            "earnings_versus_cash.history.operating_margin_three_year_average"
+          ],
+          "history": "Slightly below the closed year's {ratios.profitability.operating_margin.value|pct} and above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Charges labelled non-recurring keep recurring, and share-based compensation stays a large share of revenue. Once supply costs ease, customers push back on the price increases, so the margin recovers only partway toward its best year.",
+          "quote": "Adverse. Costs are moving onto the balance sheet and out of non-GAAP earnings faster than before, and charges labelled non-recurring keep recurring.",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "earnings_versus_cash.history.years.3.operating_margin",
+            "earnings_versus_cash.history.years.4.operating_margin",
+            "earnings_versus_cash.share_based_compensation_over_revenue.value"
+          ],
+          "history": "Below the fiscal 2023 high of {earnings_versus_cash.history.years.3.operating_margin|pct} and close to fiscal 2022's {earnings_versus_cash.history.years.4.operating_margin|pct}."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "The non-cancelable inventory commitments arrive into flat demand, so inventory builds up again and write-downs follow. Receivables, concentrated in a few distributors, stay high. Lower taxed operating income makes the same cash reinvestment a larger share of it.",
+          "quote": "Adverse. For a second year receivables are growing faster than revenue, they are now concentrated in one distributor, and this is after a receivables sale. Revenue itself is not visibly pulled into the closing quarter.",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "terms.balances_now.inventory.value",
+            "terms.trailing_four_quarters.inventory_write_down.value",
+            "trend_table.years-back-0.ratios.days_sales_outstanding.value",
+            "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital.value"
+          ],
+          "history": "Far above the closed year, whose reinvestment was negative after a change in trade working capital of {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital.value}. Year-end days sales outstanding were already {trend_table.years-back-0.ratios.days_sales_outstanding.value}, and the year's inventory write-down was {terms.trailing_four_quarters.inventory_write_down.value}."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "In the bear case new capital earns little, at or below its cost. Even low terminal growth then needs a larger share of income reinvested than in the base case.",
+          "quote": "",
+          "quote_from": "",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital.value",
+            "cost_of_capital.pre_tax_cost_of_debt.value"
+          ],
+          "history": "Above the base case's steady-state rate. The measured return on invested capital of {ratios.profitability.return_on_invested_capital.value|pct} rests on a tiny capital base, and I do not assume it holds on new capital."
+        }
+      }
+    },
+    "base": {
+      "revenue_growth_year_one": 0.09,
+      "terminal_growth": 0.025,
+      "operating_margin_year_one": 0.075,
+      "operating_margin_year_ten": 0.10,
+      "reinvestment_rate_year_one": 0.35,
+      "reinvestment_rate_year_ten": 0.15,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "The release guides double-digit product revenue growth for fiscal 2027, and subscription revenue keeps growing with Platform ONE, so the guide points to growth near the closed year's. I set the base a little lower. MD&A credits the closed year's product growth to price increases and mix rather than volume, and a price step does not compound the way volume does. The accounting reader also finds receivables outrunning revenue at the distributors, which can pull demand forward. Growth in the fourth quarter over the same quarter a year earlier, {ratios.growth.revenue.year_over_year.value|pct}, was already below the full year's.",
+          "quote": "Looking ahead at Fiscal 2027, we continue to expect double-digit product revenue growth and continued solid gross margin driving strong EPS growth.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.growth.revenue.trailing_four_quarters.value",
+            "ratios.growth.revenue.year_over_year.value",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "Below the closed year's {ratios.growth.revenue.trailing_four_quarters.value|pct} and above the five-year compound rate of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}. It is far above the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, which still carries the fiscal 2024 decline; revenue has not yet regained its fiscal 2023 level."
+        },
+        "terminal_growth": {
+          "reason": "In the long run this is a networking equipment, subscription and support business that grows with enterprise network spending. Maintenance support revenue barely moved across the two years MD&A reports while subscription grows, so the long-run rate rests on a slowly growing installed base. The rate sits well below the risk-free rate of {cost_of_capital.risk_free_rate.value|pct}.",
+          "quote": "Support revenues from maintenance contracts included in Subscription and support revenues but excluded from SaaS ARR were $235.3 million and $234.2 million, representing 49.6% and 53.8% of total Subscription and support revenues, respectively, for the years ended June 30, 2026 and 2025.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate.value",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound"
+          ],
+          "history": "Below the five-year compound revenue growth of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct} and above the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}."
+        },
+        "operating_margin_year_one": {
+          "reason": "The release guides a GAAP operating margin range for fiscal 2027, and I sit below its low end. That guide includes a net litigation benefit, which needs an insurance recovery the 10-K calls uncertain. It also follows a first quarter guided near breakeven after litigation, restructuring and system-transition charges. Charges labelled non-recurring have kept recurring, so I keep them in the margin. The margin is GAAP, so share-based compensation, at {earnings_versus_cash.share_based_compensation_over_revenue.value|pct} of revenue, stays inside it as a real cost.",
+          "quote": "| GAAP | 61.6% - 62.1% |  | 8.4% - 8.9% |  | $0.68 - $0.74 |",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.profitability.operating_margin.value",
+            "earnings_versus_cash.share_based_compensation_over_revenue.value",
+            "earnings_versus_cash.history.years.3.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average"
+          ],
+          "history": "Above the closed year's {ratios.profitability.operating_margin.value|pct} and far above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}. It is just below the fiscal 2023 high of {earnings_versus_cash.history.years.3.operating_margin|pct}."
+        },
+        "operating_margin_year_ten": {
+          "reason": "The release's non-GAAP operating margin guide sits far above its GAAP guide. Share-based compensation is most of that gap, and the rest is litigation, restructuring and system-transition charges. If those charges end and share-based pay grows more slowly than revenue, the GAAP margin can climb. Subscription mix helps, but hosting costs rise with Platform ONE adoption and memory component costs press on product margin, so I allow only modest expansion.",
+          "quote": "| Non-GAAP | 62.2% - 62.7% |  | 16.7% - 17.1% |  | $1.28 - $1.33 |",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "earnings_versus_cash.history.years.3.operating_margin",
+            "earnings_versus_cash.share_based_compensation_over_revenue.value",
+            "trend_table.years-back-0.ratios.gross_margin.value"
+          ],
+          "history": "Above every operating margin in the six filed years, the best being fiscal 2023's {earnings_versus_cash.history.years.3.operating_margin|pct}. It assumes the company keeps one-off charges out of its run rate, which it has not yet done."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Last year's working-capital release reverses. The non-cancelable inventory commitments, larger than year-end inventory of {terms.balances_now.inventory.value}, are to be received in fiscal 2027. Receivables have grown faster than revenue for two years. Capital expenditure, which includes capitalized software, runs above depreciation and amortization. MD&A names the inventory decrease and the payables increase among last year's cash sources, and neither will repeat at that rate.",
+          "quote": "As of June 30, 2026, the Company had non-cancelable commitments to purchase $112.5 million of inventory, which will be received and consumed during fiscal 2027.",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "free_cash_flow.free_cash_flow_to_firm.value",
+            "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital.value",
+            "earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization.value",
+            "terms.balances_now.inventory.value"
+          ],
+          "history": "Far above the closed year. Then, free cash flow to the firm ({free_cash_flow.free_cash_flow_to_firm.value}) exceeded taxed operating income because trade working capital changed by {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital.value}, a release of cash. Capital expenditure was {earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization.value} times depreciation and amortization."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "In steady state the company reinvests only what terminal growth needs. Deferred revenue billed upfront funds much of its working capital, so it needs little capital per unit of growth. I do not assume new capital earns the very high return measured today, which rests on a tiny capital base.",
+          "quote": "Other sources of cash for the period included a decrease in inventories and increases in accounts payable, accrued compensation and benefits and deferred revenue.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital.value",
+            "ratios.profitability.return_on_invested_capital.invested_capital.value",
+            "terms.balances_now.contract_liabilities.value"
+          ],
+          "history": "Measured return on invested capital is {ratios.profitability.return_on_invested_capital.value|pct} only because invested capital after netting cash is {ratios.profitability.return_on_invested_capital.invested_capital.value}. Terminal growth divided by this rate gives a return on new capital far below that."
+        }
+      }
+    },
+    "bull": {
+      "revenue_growth_year_one": 0.13,
+      "terminal_growth": 0.03,
+      "operating_margin_year_one": 0.088,
+      "operating_margin_year_ten": 0.15,
+      "reinvestment_rate_year_one": 0.22,
+      "reinvestment_rate_year_ten": 0.12,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "The company meets its double-digit product guide through volume as well as price, and supply secured in advance lets it ship into demand. SaaS ARR keeps growing at the pace MD&A reports as Platform ONE spreads through the subscription base.",
+          "quote": "As of June 30, 2026, our SaaS ARR was $244.3 million, which was 17.7% higher than our SaaS ARR of $207.6 million as of June 30, 2025.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.growth.revenue.trailing_four_quarters.value",
+            "earnings_versus_cash.history.years.3.revenue_growth"
+          ],
+          "history": "Slightly above the closed year's {ratios.growth.revenue.trailing_four_quarters.value|pct} and below fiscal 2023's {earnings_versus_cash.history.years.3.revenue_growth|pct}, the best year in the record."
+        },
+        "terminal_growth": {
+          "reason": "A larger subscription share makes revenue more recurring, so the installed base grows a little faster than in the base case. The rate still sits well below the risk-free rate of {cost_of_capital.risk_free_rate.value|pct}.",
+          "quote": "Extreme Platform ONE reached over 30% of our subscription bookings in its first year of availability and doubled quarter-over-quarter in the fourth quarter.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate.value",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "Below the five-year compound revenue growth of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}."
+        },
+        "operating_margin_year_one": {
+          "reason": "The company lands near the top of its guide, the litigation recovery arrives, and the pricing actions keep offsetting supply costs as the CFO says.",
+          "quote": "The targeted pricing actions we implemented are successfully offsetting the incremental supply chain costs the industry is facing and provide increased confidence and visibility into our margin outlook.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.profitability.operating_margin.value",
+            "earnings_versus_cash.history.years.3.operating_margin"
+          ],
+          "history": "Well above the closed year's {ratios.profitability.operating_margin.value|pct} and slightly above the fiscal 2023 high of {earnings_versus_cash.history.years.3.operating_margin|pct}."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Subscription growth on a largely fixed engineering base brings operating leverage, the one-off charges end, and share-based compensation falls as a share of revenue. The non-GAAP margin the company already guides shows how much room there is if share-based pay shrinks against revenue.",
+          "quote": "| Share-based compensation | 0.5% |  | 7.6% - 7.7% |  | 0.79 |",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "earnings_versus_cash.share_based_compensation_over_revenue.value",
+            "earnings_versus_cash.history.years.3.operating_margin"
+          ],
+          "history": "Far above any year in the record, the best being fiscal 2023's {earnings_versus_cash.history.years.3.operating_margin|pct}. It needs share-based compensation, now {earnings_versus_cash.share_based_compensation_over_revenue.value|pct} of revenue, to keep shrinking against revenue."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Demand absorbs inventory received under the commitments about as fast as it arrives, and receivables ease as concentration unwinds. Multi-year upfront billing adds deferred revenue that funds growth. Higher taxed operating income makes the same reinvestment a smaller share of it.",
+          "quote": "With our supply secured into Fiscal 2028, we have broad product availability to meet growing demand.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital.value",
+            "earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization.value"
+          ],
+          "history": "Above the closed year's negative reinvestment, which rested on a change in trade working capital of {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital.value}, and below the base case."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "Upfront-billed subscriptions fund working capital and the business needs little fixed capital, so steady growth needs only a small share of income reinvested.",
+          "quote": "Other sources of cash for the period included a decrease in inventories and increases in accounts payable, accrued compensation and benefits and deferred revenue.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "terms.balances_now.contract_liabilities.value",
+            "ratios.profitability.return_on_invested_capital.invested_capital.value"
+          ],
+          "history": "Below the base case. Current deferred revenue ({terms.balances_now.contract_liabilities.value}) exceeds net invested capital ({ratios.profitability.return_on_invested_capital.invested_capital.value}), so the record supports low capital needs."
+        }
+      }
+    }
+  },
+  "wacc_overrides": {}
+}
