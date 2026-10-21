@@ -514,6 +514,13 @@ UNDER_DROPPED_BUNDLE = {
     ("NTAP", "10-Q"): "the second safe-harbour paragraph carried; 126 read, 127 built",
     ("MU", "10-K"): "6 page numerals and both forward-looking blocks carried; 80 read, 88 built",
     ("AMD", "10-Q"): "10 page numerals and the disclaimer's heading carried; 82 read, 93 built",
+    ("CLFD", "10-Q"): "the disclaimer's heading carried; 29 read, 30 built",
+    ("VISN", "10-Q"): "the disclaimer's heading, its second paragraph, its page-broken "
+                      "continuation and its closing paragraph carried; 62 read, 66 built",
+    ("ATEN", "10-Q"): "the disclaimer's heading and its one paragraph carried; 81 read, 83 built",
+    ("AAON", "10-Q"): "3 page numerals and the disclaimer's heading carried; 104 read, 108 built",
+    ("AIOT", "10-Q"): "the disclaimer's heading and two of its three paragraphs carried; "
+                      "93 read, 96 built",
     ("EXTR", "10-K"): "the disclaimer's heading, its second paragraph and its "
                       "page-broken second half carried; 122 read, 124 built",
     ("EVLV", "10-Q"): "the disclaimer's heading and its page-broken continuation "

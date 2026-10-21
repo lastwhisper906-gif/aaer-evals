@@ -345,6 +345,15 @@ def _page_footer(ticker: str, form: str, role: str) -> re.Pattern | None:
 # of the footers -- pages 42, 56, 61, 82, 85, 91, 94, 99, 102 and 103 -- which
 # this test, like Apple's, does not assert either way.)
 OVER_DROPPED_AS_HEADERS = {
+    ("AAON", "10-K", "primary_html"): "the three '20xx New Markets Tax Credit' subheadings "
+                                      "of the New Markets Tax Credit note are dropped as a "
+                                      "running header; no footer with words in it, 3 "
+                                      "subheadings dropped",
+    ("AAON", "10-Q", "primary_html"): "the four '20xx New Markets Tax Credit' subheadings of "
+                                      "the same note dropped as a running header; no footer "
+                                      "with words in it, 4 subheadings dropped",
+    ("AAON", "10-Q", "prior_period"): "the same four subheadings dropped as a running header; "
+                                      "no footer with words in it, 4 subheadings dropped",
     ("LOGI", "10-K", "primary_html"): "the three '20xx Share Repurchase Program' "
                                       "subheadings of Note 14 are dropped as a "
                                       "running header; 104 footers read, 94 of them "

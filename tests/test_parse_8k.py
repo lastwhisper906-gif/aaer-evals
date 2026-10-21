@@ -202,6 +202,16 @@ UNDER_DROPPED = {
     "JBL": "the one-paragraph disclaimer, which writes 'cause actual outcomes and results to differ materially' and 'We assume no obligation to update', is carried; 1 read, 0 dropped",
     "MU": "6 of 10 bare page numerals, which sit closer together than the page-run gap allows, and both blocks of 'Forward-Looking Statements' are carried; 12 read, 4 dropped",
     "AMD": "10 of 12 bare page numerals and the disclaimer's heading are carried; 14 read, 3 dropped",
+    "CLFD": "the disclaimer's heading is carried; 2 read, 1 dropped",
+    "VISN": "the disclaimer's heading, its second paragraph, that paragraph's page-broken "
+            "continuation and its closing paragraph are carried; 5 read, 1 dropped",
+    "ATEN": "the one-paragraph disclaimer, which writes 'could cause actual results to differ "
+            "materially' and 'We do not intend to update or alter', and its heading are "
+            "carried; 2 read, 0 dropped",
+    "AAON": "3 of 12 bare page numerals (6, 8 and 11) and the disclaimer's heading are carried; "
+            "14 read, 10 dropped",
+    "AIOT": "the disclaimer's heading, its risk-list paragraph and its 'we assume no "
+            "obligation' paragraph are carried; 4 read, 1 dropped",
     "ADTN": "the disclaimer's heading is carried; 2 read, 1 dropped",
 }
 

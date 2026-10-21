@@ -263,8 +263,21 @@ def split(html: str, form: str, section: str) -> dict:
 _CAM_ADDRESSED = re.compile(
     r"how the critical audit matter was addressed in the audit"
     r"|how we addressed the matter in our audit")
-_CAM_IDENTIFIED = re.compile(
-    r"(?:is|as) a critical audit matter")
+# The sentence that identifies a matter comes in three forms, and a report may
+# carry one form or two for the same matter: "we identified X as a critical
+# audit matter" (Deloitte, KPMG, Grant Thornton); "X is a critical audit
+# matter." closing its clause; and the determination sentence "the principal
+# consideration(s) for our determination that X is a critical audit matter is
+# ..." or "... are a critical audit matter are ...", which PwC writes alone and
+# Grant Thornton writes beside the first form for the same matter (AAON's,
+# A10 Networks' and ESCO's reports of fiscal 2025, read on 2026-10-21; ESCO's
+# second matter has the determination sentence only). The determination
+# sentences are counted on their own, the other two forms together, and the
+# larger wins, as the two families above are, because adding a determination
+# sentence to the identification of the same matter counts it twice.
+_CAM_IDENTIFIED_PLAIN = re.compile(
+    r"as a critical audit matter|is a critical audit matter(?!\s+(?:is|are)\b)")
+_CAM_DETERMINATION = re.compile(r"(?:is|are) a critical audit matter\s+(?:is|are)\b")
 _CAM_ONE = re.compile(r"the critical audit matter communicated below is a matter")
 _CAM_MANY = re.compile(r"the critical audit matters communicated below are matters")
 _CAM_NONE = re.compile(r"(?:are|were) no critical audit matters")
@@ -310,7 +323,7 @@ def critical_audit_matters(section_text: str) -> dict:
     """
     flat = html_text.normalized(section_text)
     addressed = len(_CAM_ADDRESSED.findall(flat))
-    identified = len(_CAM_IDENTIFIED.findall(flat))
+    identified = max(len(_CAM_IDENTIFIED_PLAIN.findall(flat)), len(_CAM_DETERMINATION.findall(flat)))
     count = max(addressed, identified)
     stated = ("none" if _CAM_NONE.search(flat) else
               "many" if _CAM_MANY.search(flat) else

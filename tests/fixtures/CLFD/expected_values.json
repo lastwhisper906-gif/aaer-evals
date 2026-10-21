@@ -1,0 +1,187 @@
+{
+  "auditors_report.10-K.audit_firm": {
+    "value": "Deloitte & Touche LLP",
+    "from": "read by eye in 10-K/clfd20250930_10k.htm: the auditor's signature line closing the Report of Independent Registered Public Accounting Firm on the fiscal 2025 statements is '/s/ Deloitte & Touche LLP', Minneapolis, Minnesota, November 25, 2025, followed by 'We have served as the Company's auditor since 2025.'; Deloitte signs the separate report on internal control the same way. The predecessor's report on the fiscal 2024 and 2023 statements, signed '/s/ Baker Tilly, US, LLP' with 'We served as the Company's auditor from 2013 to 2024.', follows them and is not the current auditor"
+  },
+  "auditors_report.10-K.critical_audit_matters": {
+    "value": 1,
+    "from": "read by eye in 10-K/clfd20250930_10k.htm: one matter - 'Inventories, Net – Inventory Reserves - Refer to Note 1 to the financial statements', under the singular heading 'Critical Audit Matter' and with one 'Critical Audit Matter Description' and one 'How the Critical Audit Matter Was Addressed in the Audit'; Deloitte's report on internal control and Baker Tilly's predecessor report carry no critical-audit-matter section"
+  },
+  "auditors_report.10-K.paragraphs": {
+    "value": 67,
+    "from": "already judged: tests/test_split_controls.py::recount finds the auditor's report with regexes written out in the test file, over tests/independent_text.block_text (html.parser), selects by the content 'critical audit matter' and splits on blank lines, importing nothing from src/; that recount was re-run standalone here and returns 67. The earlier lines 'Report of Independent Registered Public Accounting Firm (PCAOB ID 34)' and '... (PCAOB ID 23)' are the entries in the 'INDEX TO CONSOLIDATED FINANCIAL STATEMENTS', and the text from them to the index's 'Consolidated Balance Sheets' names no critical audit matter, so the content rule passes over them. The 67 run from Deloitte's report on the statements (its heading, 'Opinion on the Financial Statements', the critical audit matter, '/s/ Deloitte & Touche LLP'), through Deloitte's separate report headed 'Opinion on Internal Control over Financial Reporting' and Baker Tilly's predecessor report headed 'Opinions on the Financial Statements and Internal Control over Financial Reporting', none of whose titles is in the recount's end rule, to the page numeral 32 and the page heading 'CLEARFIELD, INC.' before 'CONSOLIDATED BALANCE SHEETS', the statement title the end rule names"
+  },
+  "auditors_report.10-K.the_report_states": {
+    "value": "one",
+    "from": "read by eye in 10-K/clfd20250930_10k.htm: 'The critical audit matter communicated below is a matter arising from the current-period audit of the financial statements' - singular, under the singular heading 'Critical Audit Matter'"
+  },
+  "bundle.10-K.eight_k": {
+    "value": 0,
+    "from": "hand computation from manifest.json's filing dates: the stored 8-K (0001171843-26-005241) was filed 2026-08-05, after the 10-K (0001171843-25-007594) was filed 2025-11-25, so no earnings release is in the 10-K bundle"
+  },
+  "bundle.10-Q.eight_k": {
+    "value": 29,
+    "from": "hand computation: the stored 8-K (0001171843-26-005241) was filed 2026-08-05, on or before the 10-Q's (0001171843-26-005329) 2026-08-06, so the release is in the bundle - (exhibit_99_1_blocks_outside_tables 26 - exhibit_99_1_dropped 2) + exhibit_99_1_tables 5 = 29, over the three re-sourced values in this file"
+  },
+  "cleaner.10-K.tables": {
+    "value": 97,
+    "from": "the filing: 97 <table> start tags in 10-K/clfd20250930_10k.htm, counted by feeding the document's own bytes to an html.parser.HTMLParser subclass whose handle_starttag increments on tag == 'table'; imports nothing from src/"
+  },
+  "cleaner.10-Q.tables": {
+    "value": 52,
+    "from": "the filing: 52 <table> start tags in 10-Q/clfd20260630_10q.htm, counted with the same html.parser start-tag counter; imports nothing from src/"
+  },
+  "cleaner.8-K.tables": {
+    "value": 5,
+    "from": "the filing: 5 <table> start tags in 8-K/exh_991.htm, counted with the same html.parser start-tag counter; equals earnings_release.8-K.exhibit_99_1_tables (5) because the cleaner's 8-K role is that same exhibit"
+  },
+  "cleaner.8-K.tables_already_in_xbrl": {
+    "value": 0,
+    "from": "zero by construction - no XBRL instance is fetched for an 8-K exhibit, so the cleaner is handed an empty fact set (tests/test_clean_text.py::test_the_cleaner_finds_every_table_the_document_holds passes facts=[]) and no table can match"
+  },
+  "earnings_release.8-K.eight_k_filings_in_the_index": {
+    "value": 180,
+    "from": "already judged: tests/test_parse_8k.py::test_the_index_is_a_recount_of_the_stored_file reads submissions.json with json alone and counts the rows whose form is '8-K' or '8-K/A', importing nothing from src/; that recount was re-run standalone here and returns 180, two of them amendments (0001171843-23-004984, filed 2023-08-04, and 0001171843-17-005182, filed 2017-08-21)"
+  },
+  "earnings_release.8-K.exhibit_99_1_blocks_outside_tables": {
+    "value": 26,
+    "from": "the exhibit: 26 blocks with visible text in 8-K/exh_991.htm after every <table>...</table> region is replaced by an empty <p></p> and the remainder is block-split with tests/independent_text.py::block_paragraphs (html.parser); imports nothing from src/"
+  },
+  "earnings_release.8-K.exhibit_99_1_dropped": {
+    "value": 2,
+    "from": "read by eye over the 26 independent blocks of 8-K/exh_991.htm: the exhibit prints no page numerals - no block is a bare number - and the 2 blocks of the section 'Cautionary Statement Regarding Forward-Looking Information': its heading (block 24) and its one paragraph (25), opening 'Forward-looking statements contained herein and in any related presentation or in the related Earnings Presentation are made pursuant to the safe harbor provisions of the Private Litigation Reform Act of 1995' and closing 'The Company undertakes no obligation to update these statements to reflect actual events unless required by law.' The document-furniture blocks at the head ('EX-99.1' with the sequence number 2, the file name and 'PRESS RELEASE' in one block, and 'EdgarFiling EXHIBIT 99.1'), the headline and bullets, the management commentary, the 'Outlook' paragraph, the conference-call and replay lines, 'About Clearfield, Inc.' and its paragraph, and the 'Investor Relations Contact:' block are none of these and are carried"
+  },
+  "earnings_release.8-K.exhibit_99_1_tables": {
+    "value": 5,
+    "from": "already judged: tests/test_parse_8k.py::test_the_expected_counts_survive_an_independent_recount re-derives it with a bare regex for <table> elements holding at least one cell with a character in it, importing nothing from src/; that recount was re-run standalone here and returns 5"
+  },
+  "earnings_release.8-K.held_items": {
+    "value": [
+      "2.02",
+      "9.01"
+    ],
+    "from": "the submissions index: the single filings row in submissions.json with accession 0001171843-26-005241 (filed 2026-08-05, primary document f8k_080526.htm) carries items '2.02,9.01', split on commas and stripped; docs/INPUT_SPEC.md section 1 names the index's items field as the source for 8-K item codes"
+  },
+  "exhibits.10-K.exhibit_filename": {
+    "value": "ex_889271.htm",
+    "from": "read by eye in 10-K/0001171843-25-007594/0001171843-25-007594-index-headers.html: the <FILENAME> line the header pairs with the <TYPE>EX-21.1 of document 2 is ex_889271.htm, described 'EXHIBIT 21.1'. The header is what says which file it is; the name itself does not"
+  },
+  "exhibits.10-K.exhibit_type": {
+    "value": "EX-21.1",
+    "from": "read by eye in 10-K/0001171843-25-007594/0001171843-25-007594-index-headers.html: the submission's SGML header gives document 2 as <TYPE>EX-21.1 <SEQUENCE>2 <FILENAME>ex_889271.htm, and it is the only document in the submission whose type is EX-21 or an EX-21 with a suffix"
+  },
+  "exhibits.10-K.prior_year_exhibit_filename": {
+    "value": "ex_745471.htm",
+    "from": "read by eye in 10-K/0001171843-24-006402/0001171843-24-006402-index-headers.html: the <FILENAME> line the header pairs with the <TYPE>EX-21.1 of document 3 is ex_745471.htm, described 'EXHIBIT 21.1'. The header is what says which file it is; the name itself does not"
+  },
+  "exhibits.10-K.prior_year_exhibit_type": {
+    "value": "EX-21.1",
+    "from": "read by eye in 10-K/0001171843-24-006402/0001171843-24-006402-index-headers.html: the submission's SGML header gives document 3 as <TYPE>EX-21.1 <SEQUENCE>3 <FILENAME>ex_745471.htm, and it is the only document in the submission whose type is EX-21 or an EX-21 with a suffix"
+  },
+  "item_4_controls.10-Q.paragraphs": {
+    "value": 5,
+    "from": "already judged: tests/test_split_controls.py::recount applies the Item 4 boundaries written out as regexes in the test file to tests/independent_text.block_text (html.parser) and splits on blank lines, importing nothing from src/; re-run standalone here it returns 5, from the heading 'ITEM 4. CONTROLS AND PROCEDURES' through 'Evaluation of Disclosure Controls and Procedures' and its paragraph and 'Changes in Internal Control over Financial Reporting' and its no-change statement, to 'PART II. OTHER INFORMATION'"
+  },
+  "item_9a.10-K.paragraphs": {
+    "value": 8,
+    "from": "already judged: tests/test_split_controls.py::recount, same mechanism against the Item 9A boundaries, importing nothing from src/; re-run standalone here it returns 8, from the heading 'ITEM 9A. CONTROLS AND PROCEDURES' through 'Disclosure Controls and Procedures', 'Management’s Report on Internal Control over Financial Reporting' and 'Changes in Internal Control over Financial Reporting', each with its one paragraph, to the page numeral 56 before 'ITEM 9B. OTHER INFORMATION'"
+  },
+  "mdna.10-K.ends_before": {
+    "value": "ITEM 7A. QUANTITATIVE AND QUALITATIVE DISCLOSURES ABOUT MARKET RISK",
+    "from": "the filing, read by eye in 10-K/clfd20250930_10k.htm, rendered to lines by tests/independent_text.py::block_paragraphs (html.parser) and importing nothing from src/, the heading set in one line with its run of spaces flattened to one and in capitals, as the filing prints it: the LAST Item 7 heading in the document is the line 'ITEM 7. MANAGEMENT’S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS', after 'ITEM 6. [RESERVED]' and followed by 'Cautionary Statement Regarding Forward-Looking Information' — the earlier one is the table-of-contents entry, a bare 'ITEM 7.' above the title with the page number 18 under it — and the first Item 7A or Item 8 heading after it is 'ITEM 7A. QUANTITATIVE AND QUALITATIVE DISCLOSURES ABOUT MARKET RISK', followed by 'The Company currently invests its excess cash in bank certificates of deposit'; the last blocks before it are the cells of the second 'Quarterly Information' table, ending with the diluted per-share figures '(0.40', ')', '$', '(0.35', ')'. Those two lines are where the section starts and stops; every other MD&A expectation is a count, and a count cannot say the section began in the right place"
+  },
+  "mdna.10-K.heading_candidates": {
+    "value": 2,
+    "from": "the filing: 2 Item 7 MD&A heading lines in 10-K/clfd20250930_10k.htm - the table-of-contents entry (a bare 'ITEM 7.' whose next non-empty line is the MD&A title, with the page number 18 under it) and the section heading itself, 'ITEM 7. MANAGEMENT’S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS', found over tests/independent_text.block_text with the written-out regexes of tests/test_split_mdna.py::recount"
+  },
+  "mdna.10-K.opens_at": {
+    "value": "ITEM 7. MANAGEMENT’S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS",
+    "from": "the filing, read by eye in 10-K/clfd20250930_10k.htm, rendered to lines by tests/independent_text.py::block_paragraphs (html.parser) and importing nothing from src/, the heading set in one line with its run of spaces flattened to one and in capitals, as the filing prints it: the LAST Item 7 heading in the document is the line 'ITEM 7. MANAGEMENT’S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS', after 'ITEM 6. [RESERVED]' and followed by 'Cautionary Statement Regarding Forward-Looking Information' — the earlier one is the table-of-contents entry, a bare 'ITEM 7.' above the title with the page number 18 under it — and the first Item 7A or Item 8 heading after it is 'ITEM 7A. QUANTITATIVE AND QUALITATIVE DISCLOSURES ABOUT MARKET RISK', followed by 'The Company currently invests its excess cash in bank certificates of deposit'; the last blocks before it are the cells of the second 'Quarterly Information' table, ending with the diluted per-share figures '(0.40', ')', '$', '(0.35', ')'. Those two lines are where the section starts and stops; every other MD&A expectation is a count, and a count cannot say the section began in the right place"
+  },
+  "mdna.10-K.paragraphs": {
+    "value": 335,
+    "from": "already judged: tests/test_split_mdna.py::recount builds the block text with html.parser via tests/independent_text, takes the LAST Item 7 heading with its own regexes, stops at the first Item 7A or Item 8 heading and splits on blank lines, importing nothing from src/; re-run standalone here it returns 335, most of them the cells of the two 'Quarterly Information' tables that close the section, the last '(0.35' and ')'"
+  },
+  "mdna.10-Q.ends_before": {
+    "value": "ITEM 3. QUANTITATIVE AND QUALITATIVE DISCLOSURES ABOUT MARKET RISK",
+    "from": "the filing, read by eye in 10-Q/clfd20260630_10q.htm, rendered to lines by tests/independent_text.py::block_paragraphs (html.parser) and importing nothing from src/, the heading set in one span with single spaces and in capitals, as the filing prints it: the LAST Item 2 heading in the document is the line 'ITEM 2. MANAGEMENT’S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS', followed by 'The following discussion and analysis of the Company’s financial condition and results of operations' — the earlier one is the table-of-contents entry, the same title in one line with the page number 23 under it, and Part II's 'ITEM 2. UNREGISTERED SALES OF EQUITY SECURITIES AND USE OF PROCEEDS' is not an MD&A heading; the first Item 3 or Item 4 heading after it is 'ITEM 3. QUANTITATIVE AND QUALITATIVE DISCLOSURES ABOUT MARKET RISK', which follows the MD&A's last paragraph under 'CAUTIONARY STATEMENT REGARDING FORWARD-LOOKING INFORMATION' and the page numeral 29. Those two lines are where the section starts and stops; every other MD&A expectation is a count, and a count cannot say the section began in the right place"
+  },
+  "mdna.10-Q.heading_candidates": {
+    "value": 2,
+    "from": "the filing: 2 Item 2 MD&A heading lines in 10-Q/clfd20260630_10q.htm - the table-of-contents entry ('ITEM 2. MANAGEMENT’S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS' in one line, with the page number 23 under it) and the section heading itself, the same line followed by 'The following discussion and analysis', found over tests/independent_text.block_text with the written-out regexes of tests/test_split_mdna.py::recount; the table of contents' and the body's 'ITEM 2. UNREGISTERED SALES OF EQUITY SECURITIES AND USE OF PROCEEDS' carry no MD&A title and are not candidates"
+  },
+  "mdna.10-Q.opens_at": {
+    "value": "ITEM 2. MANAGEMENT’S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS",
+    "from": "the filing, read by eye in 10-Q/clfd20260630_10q.htm, rendered to lines by tests/independent_text.py::block_paragraphs (html.parser) and importing nothing from src/, the heading set in one span with single spaces and in capitals, as the filing prints it: the LAST Item 2 heading in the document is the line 'ITEM 2. MANAGEMENT’S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS', followed by 'The following discussion and analysis of the Company’s financial condition and results of operations' — the earlier one is the table-of-contents entry, the same title in one line with the page number 23 under it, and Part II's 'ITEM 2. UNREGISTERED SALES OF EQUITY SECURITIES AND USE OF PROCEEDS' is not an MD&A heading; the first Item 3 or Item 4 heading after it is 'ITEM 3. QUANTITATIVE AND QUALITATIVE DISCLOSURES ABOUT MARKET RISK', which follows the MD&A's last paragraph under 'CAUTIONARY STATEMENT REGARDING FORWARD-LOOKING INFORMATION' and the page numeral 29. Those two lines are where the section starts and stops; every other MD&A expectation is a count, and a count cannot say the section began in the right place"
+  },
+  "mdna.10-Q.paragraphs": {
+    "value": 61,
+    "from": "already judged: tests/test_split_mdna.py::recount builds the block text with html.parser via tests/independent_text, takes the LAST Item 2 heading with its own regexes, stops at the first Item 3 or Item 4 heading and splits on blank lines, importing nothing from src/; re-run standalone here it returns 61, the last the page numeral 29"
+  },
+  "note_history.10-Q.key_note_tags": {
+    "value": [
+      "us-gaap:DebtDisclosureTextBlock",
+      "us-gaap:DisaggregationOfRevenueTableTextBlock",
+      "us-gaap:RevenueFromContractWithCustomerTextBlock",
+      "us-gaap:SignificantAccountingPoliciesTextBlock"
+    ],
+    "from": "the current 10-Q XBRL instance 10-Q/clfd20260630_10q_htm.xml: every element whose local name ends in 'TextBlock' listed with ElementTree and a start-ns pass for the prefixes, importing nothing from src/, then each name read against the six key notes docs/INPUT_SPEC.md section 5 names — revenue_recognition_policy: us-gaap:RevenueFromContractWithCustomerTextBlock, whose text opens 'Note 8. Revenue Revenue Recognition Our revenue is comprised of the sale of our products to customers', and us-gaap:DisaggregationOfRevenueTableTextBlock, its net-sales tables by geography ('United States', 'All other countries') and by customer type ('Broadband service providers'), as Dell's and Micron's readings took the same pair; critical_accounting_estimates: us-gaap:SignificantAccountingPoliciesTextBlock, the note opening 'Note 1. Summary of Significant Accounting Policies', which says 'management is required to make estimates and assumptions that affect reported amounts of assets and liabilities', as the readings of Cisco, Ciena, Littelfuse, F5, NVIDIA and Adtran took that tag (us-gaap:BasisOfAccountingPolicyPolicyTextBlock, us-gaap:ConsolidationPolicyTextBlock and us-gaap:NewAccountingPronouncementsPolicyPolicyTextBlock are single policy paragraphs inside it, which none of the readings took as the critical-accounting-estimates note); debt: us-gaap:DebtDisclosureTextBlock, 'Note 16. Debt On April 27, 2022, the Company entered into a loan agreement and a security agreement with a bank that provides the Company with a $40,000,000 revolving line of credit', the one note about what the company owes; no contingencies, related-party or subsequent-events note is tagged in either quarter - the notes run from Note 1 to Note 16 and none is titled for any of the three. us-gaap:DebtSecuritiesAvailableForSaleUnrealizedLossPositionFairValueTableTextBlock is the unrealized-loss table inside 'Note 4. Investments' ('The Company invests in United States Treasury securities'), the securities the company holds, and names no debt it owes, so it is not the debt note; us-gaap:InvestmentTextBlock and us-gaap:ScheduleOfAvailableForSaleSecuritiesReconciliationTableTextBlock are the same investments note. This is where the reading DISAGREES with the parser: src/note_history.py's 'debt' pattern matches the bare substring 'debt' and pairs us-gaap:DebtSecuritiesAvailableForSaleUnrealizedLossPositionFairValueTableTextBlock, the investments table, as the debt note, so it lists 5 where this reading lists 4"
+  },
+  "note_history.10-Q.prior_accession": {
+    "value": "0001171843-26-003126",
+    "from": "the submissions index: the latest 10-Q row in submissions.json filed strictly before the current 10-Q's 2026-08-06 is accession 0001171843-26-003126, filed 2026-05-07 for the quarter ended 2026-03-31; it equals the fetch manifest's ('10-Q','prior_period') accession, whose bytes tests/test_fixtures.py verifies by sha256"
+  },
+  "note_history.10-Q.prior_key_note_tags": {
+    "value": [
+      "us-gaap:DebtDisclosureTextBlock",
+      "us-gaap:DisaggregationOfRevenueTableTextBlock",
+      "us-gaap:RevenueFromContractWithCustomerTextBlock",
+      "us-gaap:SignificantAccountingPoliciesTextBlock"
+    ],
+    "from": "the prior 10-Q XBRL instance 10-Q/clfd20260331_10q_htm.xml: every element whose local name ends in 'TextBlock' listed with ElementTree and a start-ns pass for the prefixes, importing nothing from src/, then each name read against the six key notes docs/INPUT_SPEC.md section 5 names — revenue_recognition_policy: us-gaap:RevenueFromContractWithCustomerTextBlock, whose text opens 'Note 8. Revenue Revenue Recognition Our revenue is comprised of the sale of our products to customers', and us-gaap:DisaggregationOfRevenueTableTextBlock, its net-sales tables by geography ('United States', 'All other countries') and by customer type ('Broadband service providers'), as Dell's and Micron's readings took the same pair; critical_accounting_estimates: us-gaap:SignificantAccountingPoliciesTextBlock, the note opening 'Note 1. Summary of Significant Accounting Policies', which says 'management is required to make estimates and assumptions that affect reported amounts of assets and liabilities', as the readings of Cisco, Ciena, Littelfuse, F5, NVIDIA and Adtran took that tag (us-gaap:BasisOfAccountingPolicyPolicyTextBlock, us-gaap:ConsolidationPolicyTextBlock and us-gaap:NewAccountingPronouncementsPolicyPolicyTextBlock are single policy paragraphs inside it, which none of the readings took as the critical-accounting-estimates note); debt: us-gaap:DebtDisclosureTextBlock, 'Note 16. Debt On April 27, 2022, the Company entered into a loan agreement and a security agreement with a bank that provides the Company with a $40,000,000 revolving line of credit', the one note about what the company owes; no contingencies, related-party or subsequent-events note is tagged in either quarter - the notes run from Note 1 to Note 16 and none is titled for any of the three. us-gaap:DebtSecuritiesAvailableForSaleUnrealizedLossPositionFairValueTableTextBlock is the unrealized-loss table inside 'Note 4. Investments' ('The Company invests in United States Treasury securities'), the securities the company holds, and names no debt it owes, so it is not the debt note; us-gaap:InvestmentTextBlock and us-gaap:ScheduleOfAvailableForSaleSecuritiesReconciliationTableTextBlock are the same investments note. This is where the reading DISAGREES with the parser: src/note_history.py's 'debt' pattern matches the bare substring 'debt' and pairs us-gaap:DebtSecuritiesAvailableForSaleUnrealizedLossPositionFairValueTableTextBlock, the investments table, as the debt note, so it lists 5 where this reading lists 4; the prior instance holds the same 36 TextBlock names as the current one"
+  },
+  "notes.10-K.extension_tag_count": {
+    "value": 2,
+    "from": "the XBRL instance: 2 TextBlock elements in 10-K/clfd20250930_10k_htm.xml carried on Clearfield's own extension namespace http://www.clearfieldconnection.com/20250930 (ShareRepurchaseProgramPolicyTextBlock, 'Share Repurchase Program: On April 30, 2024, the Company’s board of directors increased the Company’s share repurchase program', and LesseeOperatingLeaseExpenseTableTextBlock, the operating-lease-expense table by line of the statement of earnings); the ten cyd: cybersecurity and two ecd: TextBlocks sit on xbrl.sec.gov and are excluded, counted with ElementTree by excluding the namespaces containing /us-gaap/, /dei/, /srt/, xbrl.sec.gov and fasb.org; imports nothing from src/"
+  },
+  "notes.10-K.textblock_count": {
+    "value": 63,
+    "from": "already judged: tests/test_extract_notes.py::_count_by_hand counts elements whose local name ends in 'TextBlock' straight off the instance with ElementTree and the input spec's rule, importing nothing from src/; re-counted standalone here it returns 63"
+  },
+  "notes.10-Q.extension_tag_count": {
+    "value": 1,
+    "from": "the XBRL instance: 1 TextBlock element in 10-Q/clfd20260630_10q_htm.xml on Clearfield's own extension namespace http://www.clearfieldconnection.com/20260630 (LesseeOperatingLeaseExpenseTableTextBlock, the operating-lease-expense table for the three and nine months ended June 30), counted with ElementTree by excluding the namespaces containing /us-gaap/, /dei/, /srt/, xbrl.sec.gov and fasb.org; imports nothing from src/"
+  },
+  "notes.10-Q.textblock_count": {
+    "value": 36,
+    "from": "already judged: tests/test_extract_notes.py::_count_by_hand, same ElementTree hand count against the 10-Q instance; re-counted standalone here it returns 36"
+  },
+  "numbers.10-K.fact_count": {
+    "value": 1007,
+    "from": "already judged: tests/test_extract_numbers.py::_count_by_hand re-reads the instance with ElementTree and the selection rule as docs/INPUT_SPEC.md words it (a us-gaap or dei element carrying a unitRef), importing nothing from src/; re-counted standalone here it returns 1007. companyfacts cannot source this: it is a count of elements in one filing's instance, while companyfacts is the deduplicated standard-taxonomy record across all filings"
+  },
+  "numbers.10-Q.fact_count": {
+    "value": 1749,
+    "from": "already judged: the same hand counter summed over both 10-Q instances (883 in the current 10-Q/clfd20260630_10q_htm.xml and 866 in the prior-period 10-Q/clfd20260331_10q_htm.xml); re-counted standalone here it returns 1749"
+  },
+  "prior_period_diff.10-Q.prior_accession": {
+    "value": "0001171843-26-003126",
+    "from": "the submissions index, by the same derivation as note_history.10-Q.prior_accession, and necessarily the same string: the latest 10-Q filed before 2026-08-06 is 0001171843-26-003126, the one tests/test_diff_periods.py::test_the_prior_report_is_the_one_the_index_names describes"
+  },
+  "risk_factors.10-K.ends_before": {
+    "value": "ITEM 1B. UNRESOLVED STAFF COMMENTS",
+    "from": "the filing, read by eye in 10-K/clfd20250930_10k.htm, rendered to lines by tests/independent_text.py::block_paragraphs (html.parser) and importing nothing from src/, the heading set in one line with its run of spaces flattened to one and in capitals, as the filing prints it: the earlier candidate is the table-of-contents entry, where 'ITEM 1A.' sits alone above the title 'RISK FACTORS' and the page number 6 below it. The LAST Item 1A heading in the document is the line 'ITEM 1A. RISK FACTORS', followed by 'Risks Relating to Our Operations' and 'We depend on the availability of sufficient supply of certain materials', and the first item heading after it is 'ITEM 1B. UNRESOLVED STAFF COMMENTS', followed by 'Not applicable.'; the last block before it is the paragraph 'These measures could discourage or prevent a takeover of us or changes in our management'. Those two lines are where Item 1A starts and stops. docs/INPUT_SPEC.md carries this section as a diff and nothing else, so a boundary that slipped would not show up as an empty section — it would show up as a page of risk factors the prior period does not have"
+  },
+  "risk_factors.10-K.opens_at": {
+    "value": "ITEM 1A. RISK FACTORS",
+    "from": "the filing, read by eye in 10-K/clfd20250930_10k.htm, rendered to lines by tests/independent_text.py::block_paragraphs (html.parser) and importing nothing from src/, the heading set in one line with its run of spaces flattened to one and in capitals, as the filing prints it: the earlier candidate is the table-of-contents entry, where 'ITEM 1A.' sits alone above the title 'RISK FACTORS' and the page number 6 below it. The LAST Item 1A heading in the document is the line 'ITEM 1A. RISK FACTORS', followed by 'Risks Relating to Our Operations' and 'We depend on the availability of sufficient supply of certain materials', and the first item heading after it is 'ITEM 1B. UNRESOLVED STAFF COMMENTS', followed by 'Not applicable.'; the last block before it is the paragraph 'These measures could discourage or prevent a takeover of us or changes in our management'. Those two lines are where Item 1A starts and stops. docs/INPUT_SPEC.md carries this section as a diff and nothing else, so a boundary that slipped would not show up as an empty section — it would show up as a page of risk factors the prior period does not have"
+  },
+  "risk_factors.10-Q.ends_before": {
+    "value": "ITEM 2. UNREGISTERED SALES OF EQUITY SECURITIES AND USE OF PROCEEDS",
+    "from": "the filing, read by eye in 10-Q/clfd20260630_10q.htm, rendered to lines by tests/independent_text.py::block_paragraphs (html.parser) and importing nothing from src/, the heading set in one span with single spaces and in capitals, as the filing prints it: the earlier candidate is the table-of-contents entry, the line 'ITEM 1A. RISK FACTORS' with the page number 31 under it; the section itself, in Part II, is one paragraph pointing back to the annual report: 'The most significant risk factors applicable to the Company are described in Part II, Item 1A “Risk Factors” of our Annual Report on Form 10-K for the year ended September 30, 2025. There have been no material changes from'. The LAST Item 1A heading in the document is the line 'ITEM 1A. RISK FACTORS', and the first item heading after it is 'ITEM 2. UNREGISTERED SALES OF EQUITY SECURITIES AND USE OF PROCEEDS', followed by 'The Company repurchased shares of stock associated with exercise and satisfaction of employee tax withholding requirements'. Those two lines are where Item 1A starts and stops. docs/INPUT_SPEC.md carries this section as a diff and nothing else, so a boundary that slipped would not show up as an empty section — it would show up as a page of risk factors the prior period does not have"
+  },
+  "risk_factors.10-Q.opens_at": {
+    "value": "ITEM 1A. RISK FACTORS",
+    "from": "the filing, read by eye in 10-Q/clfd20260630_10q.htm, rendered to lines by tests/independent_text.py::block_paragraphs (html.parser) and importing nothing from src/, the heading set in one span with single spaces and in capitals, as the filing prints it: the earlier candidate is the table-of-contents entry, the line 'ITEM 1A. RISK FACTORS' with the page number 31 under it; the section itself, in Part II, is one paragraph pointing back to the annual report: 'The most significant risk factors applicable to the Company are described in Part II, Item 1A “Risk Factors” of our Annual Report on Form 10-K for the year ended September 30, 2025. There have been no material changes from'. The LAST Item 1A heading in the document is the line 'ITEM 1A. RISK FACTORS', and the first item heading after it is 'ITEM 2. UNREGISTERED SALES OF EQUITY SECURITIES AND USE OF PROCEEDS', followed by 'The Company repurchased shares of stock associated with exercise and satisfaction of employee tax withholding requirements'. Those two lines are where Item 1A starts and stops. docs/INPUT_SPEC.md carries this section as a diff and nothing else, so a boundary that slipped would not show up as an empty section — it would show up as a page of risk factors the prior period does not have"
+  }
+}

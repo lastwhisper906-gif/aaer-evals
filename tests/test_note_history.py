@@ -267,6 +267,16 @@ BROAD_DEBT_MATCH = {
     "AMD": "amd:FinancialInstrumentsNotRecordedAtFairValueOnRecurringBasisTable…, the "
            "debt table on the filer's own tag, and EquityMethodInvestmentsDisclosure…, "
            "the related-party joint-venture note, are not paired; 7 read, 5 paired",
+    "CLFD": "DebtSecuritiesAvailableForSaleUnrealizedLossPositionFairValueTable, the "
+            "investments the company holds; 4 read, 5 paired",
+    "AAON": "aaon:NewMarketTaxCreditTextBlock, the New Markets Tax Credit financing note on "
+            "the filer's own tag (its investors' interests 'recorded as short-term debt'), "
+            "is not paired; 10 read, 9 paired",
+    "AIOT": "BusinessDescriptionAndBasisOfPresentation…, Note 1, paired although the filer's "
+            "own UseOfEstimates… is the estimates note, and FairValueAssetsAndLiabilities"
+            "MeasuredOnRecurringAndNonrecurringBasisValuationTechniquesTable…, the RMB "
+            "facilities' embedded-derivative table inside the debt note, not paired; "
+            "9 read, 9 paired",
 }
 
 

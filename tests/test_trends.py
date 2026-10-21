@@ -1104,8 +1104,22 @@ def test_the_two_records_older_than_their_trigger_are_the_ones_the_fixtures_hold
 # record reaches all five. Read off the record by `fiscal_year_ends` below.
 FIRST_YEAR_ON_RECORD = {"SNDK": "2023-06-30"}
 
+# Powerfleet moved its year end from December 31 to March 31 in 2024, through a
+# three-month transition period ended 2024-03-31 (its 10-K of 2026-06-15, read on
+# 2026-10-21); the years before that end in December, so the window, which walks
+# back from March, finds no year ending within 20 days of its three oldest
+# targets. The test's exemption above covers a record that begins inside the
+# window, not a year end that moved; the slots say why they are missing, and the
+# shape this test asserts does not hold for this company.
+YEAR_END_MOVED = {"AIOT": "the year end moved from December to March in 2024; years-back-2, 3 "
+                          "and 4 end in December and are outside the window's 20 days"}
 
-@pytest.mark.parametrize("ticker", TICKERS)
+
+@pytest.mark.parametrize("ticker", [
+    pytest.param(ticker, marks=pytest.mark.xfail(
+        strict=True, reason=f"{ticker}: {YEAR_END_MOVED[ticker]}"))
+    if ticker in YEAR_END_MOVED else ticker
+    for ticker in TICKERS])
 def test_the_only_window_the_record_cannot_fill_is_the_fourth_quarters(ticker):
     """Why the row exists, and the exact size of what is still missing.
 
@@ -1348,6 +1362,8 @@ def test_an_empty_record_still_lists_all_thirteen_periods():
 # table that stops copying the name, turns it red.
 NAMED_WITH_THE_SHAPE = {
     "FFIV": "the record's entity_name 'F5, INC.' is written into the table; "
+            "1 token, line 15",
+    "ATEN": "the record's entity_name 'A10 Networks, Inc.' is written into the table; "
             "1 token, line 15",
 }
 

@@ -360,3 +360,49 @@ def test_ciscos_auditors_report_ends_before_reports_of_management():
     joined = "\n".join(payload["paragraphs"])
     assert "CHARLES H. ROBBINS" not in joined
     assert "Statement of Management" not in joined
+
+
+def test_the_determination_sentence_is_the_same_matter_not_a_second_one():
+    """AAON's report of fiscal 2025 (read by eye in its 10-K, aaon-20251231.htm,
+    fetched 2026-10-21 and set aside outside the tree) states one matter and
+    writes two sentences about it: "we identified revenue recognized over time
+    related to BASX-branded products as a critical audit matter." and "the
+    principal consideration for our determination that revenue recognized over
+    time related to the company's contracts for BASX-branded products is a
+    critical audit matter is the high degree of auditor effort". A10 Networks'
+    report does the same for its one matter. Both sentences are planted here as
+    the report wrote them; the count is one, and the report's own "one"
+    sentence agrees."""
+    report = ("<p>The critical audit matter communicated below is a matter arising from the "
+              "current period audit of the financial statements.</p>"
+              "<p>We identified revenue recognized over time related to BASX-branded products "
+              "as a critical audit matter.</p>"
+              "<p>The principal consideration for our determination that revenue recognized over "
+              "time related to the Company's contracts for BASX-branded products is a critical "
+              "audit matter is the high degree of auditor effort in evaluating the estimates.</p>")
+    found = split_sections.critical_audit_matters(report)
+    assert found["count"] == 1 and found["stated"] == "one"
+    # the determination sentence alone, which is how Cisco's report (PwC) identifies
+    # its one matter: still one
+    alone = report.replace("<p>We identified revenue recognized over time related to BASX-branded "
+                           "products as a critical audit matter.</p>", "")
+    assert split_sections.critical_audit_matters(alone)["count"] == 1
+    # ESCO's report: the first matter in both forms, the determination written in
+    # the plural ("are a critical audit matter are that ..."), the second matter in
+    # the determination sentence alone -- two
+    esco = ("<p>The critical audit matters communicated below are matters arising from the "
+            "current period audit.</p>"
+            "<p>We identified the determination of the estimated total contract costs at "
+            "completion as a critical audit matter.</p>"
+            "<p>The principal considerations for our determination that the estimated total "
+            "contract costs at completion are a critical audit matter are that the estimates "
+            "require complex judgments.</p>"
+            "<p>The principal consideration for our determination that the valuation of customer "
+            "relationships is a critical audit matter is the high degree of auditor judgment.</p>")
+    assert split_sections.critical_audit_matters(esco)["count"] == 2
+    two = report + ("<p>We identified the valuation of goodwill as a critical audit matter.</p>"
+                    "<p>The principal considerations for our determination that the valuation of "
+                    "goodwill is a critical audit matter are the significant judgments.</p>")
+    two = two.replace("The critical audit matter communicated below is a matter",
+                      "The critical audit matters communicated below are matters")
+    assert split_sections.critical_audit_matters(two)["count"] == 2

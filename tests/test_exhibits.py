@@ -136,6 +136,19 @@ def document(ticker: str, role: str) -> str:
 # name rather than a refusal. Every other company's current 10-K names one.
 NAMES_NO_SUBSIDIARY_EXHIBIT = ("WDC", "ANET")
 
+# A10 Networks' Exhibit 21 of both years is a scanned image (`<IMG
+# src="listofsubsidiaries001.jpg">`) with no table: the current year's file has
+# no text at all and the prior year's carries the list only as hidden one-point
+# white text (read on 2026-10-21). The header names an EX-21.1, so the company
+# is not in the list above; the four tests that read or plant a row in the
+# exhibit's table have no table to read, and say so.
+EXHIBIT_IS_AN_IMAGE = {"ATEN": "Exhibit 21 is a scanned image with no table in either year"}
+TICKERS_WITH_A_TABLE = [
+    pytest.param(ticker, marks=pytest.mark.xfail(
+        strict=True, reason=f"{ticker}: {EXHIBIT_IS_AN_IMAGE[ticker]}"))
+    if ticker in EXHIBIT_IS_AN_IMAGE else ticker
+    for ticker in TICKERS]
+
 
 @functools.lru_cache(maxsize=None)
 def no_subsidiary_exhibit(ticker: str) -> bool:
@@ -224,7 +237,7 @@ def test_the_stored_documents_came_from_the_urls_this_module_names(ticker):
             name=Path(exhibit["path"]).name)
 
 
-@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("ticker", TICKERS_WITH_A_TABLE)
 def test_a_ten_k_that_names_no_exhibit_21_is_read_as_the_absence_by_name(ticker):
     """Both sides: where the header names no document of the EX-21 family the
     record holds none, the expected values are null, and the module names the
@@ -298,14 +311,14 @@ def test_both_types_are_in_the_fixture_set_so_the_rule_is_the_family():
     """A match on the literal `EX-21.1` would find nine of the twelve, and
     Franklin Electric, of the eight added on 2026-10-07, files the bare type
     too, as does Motorola Solutions of the next eight, ADTRAN of the seven
-    added on 2026-10-14 and Advanced Micro Devices of the three added on
-    2026-10-21; Flex files `EX-21.01`,
+    added on 2026-10-14, and Advanced Micro Devices and AAON of the eight added
+    on 2026-10-21; Flex files `EX-21.01`,
     a third spelling of the family; the two that filed no exhibit at all
     record no type."""
     recorded = {ticker: expected_values.value(ticker, "exhibits.10-K.exhibit_type")
                 for ticker in TICKERS if ticker not in NAMES_NO_SUBSIDIARY_EXHIBIT}
     assert sorted(t for t, kind in recorded.items() if kind == "EX-21") == \
-        ["ADTN", "AMD", "CARR", "ESE", "FELE", "MSI", "QCOM"]
+        ["AAON", "ADTN", "AMD", "CARR", "ESE", "FELE", "MSI", "QCOM"]
     assert sorted(t for t, kind in recorded.items() if kind == "EX-21.01") == ["FLEX"]
     assert {kind for kind in recorded.values()} == {"EX-21", "EX-21.1", "EX-21.01"}
 
@@ -313,17 +326,18 @@ def test_both_types_are_in_the_fixture_set_so_the_rule_is_the_family():
 # --- what a filename rule does instead ----------------------------------------
 
 def test_two_of_the_twelve_name_the_exhibit_without_a_21_in_it():
-    """Generac's `ex_873991.htm` and NVIDIA's `subsidiariesofregistrantfy.htm`,
-    and, of the seven added on 2026-10-14, American Superconductor's
-    `ex_919730.htm`."""
+    """Generac's `ex_873991.htm` and NVIDIA's `subsidiariesofregistrantfy.htm`;
+    of the seven added on 2026-10-14, American Superconductor's `ex_919730.htm`;
+    of the eight added on 2026-10-21, Clearfield's `ex_889271.htm` and A10
+    Networks' `listofsubsidiaries.htm`."""
     blind = [ticker for ticker in TICKERS
              if ticker not in NAMES_NO_SUBSIDIARY_EXHIBIT
              and "21" not in expected_values.value(ticker,
                                                    "exhibits.10-K.exhibit_filename")]
-    assert blind == ["GNRC", "NVDA", "AMSC"]
+    assert blind == ["GNRC", "NVDA", "AMSC", "CLFD", "ATEN"]
 
 
-@pytest.mark.parametrize("ticker", ("GNRC", "NVDA", "AMSC"))
+@pytest.mark.parametrize("ticker", ("GNRC", "NVDA", "AMSC", "CLFD", "ATEN"))
 @pytest.mark.parametrize("role,key", [
     ("submission_header", "exhibits.10-K.exhibit_filename"),
     ("prior_year_submission_header", "exhibits.10-K.prior_year_exhibit_filename")])
@@ -358,8 +372,12 @@ def test_a_filename_rule_has_more_than_one_candidate_almost_everywhere():
     # 2026-10-14, lists `R21.htm` and nothing else with 21 in its name: its
     # Section 1350 certifications are `ex_919734.htm` and `ex_919735.htm`, so it is alone too, and
     # its one candidate is a report page, not an exhibit.
+    # Clearfield's two headers, of the eight added on 2026-10-21, name their
+    # certifications `ex_NNNNNN.htm` as Generac does, so both are alone too.
     alone = sorted(key for key, found in counted.items() if len(found) < 2)
     assert alone == [("AMSC", "submission_header"),
+                     ("CLFD", "prior_year_submission_header"),
+                     ("CLFD", "submission_header"),
                      ("GNRC", "prior_year_submission_header"),
                      ("GNRC", "submission_header")]
     for key in alone:
@@ -490,7 +508,7 @@ def test_spacer_cells_do_not_make_a_row_three_columns_wide():
 
 # --- the diff -----------------------------------------------------------------
 
-@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("ticker", TICKERS_WITH_A_TABLE)
 def test_a_subsidiary_planted_in_a_copy_of_the_exhibit_is_reported_as_added(
         ticker, tmp_path):
     """The judge's second expected value: a name this test wrote into a copy of
@@ -522,7 +540,7 @@ def test_a_subsidiary_planted_in_a_copy_of_the_exhibit_is_reported_as_added(
     assert after["prior_count"] == before["prior_count"]
 
 
-@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("ticker", TICKERS_WITH_A_TABLE)
 def test_a_subsidiary_planted_in_the_prior_year_is_reported_as_dropped(
         ticker, tmp_path):
     """The same plant on the other side of the pair. A diff that reported every
@@ -552,7 +570,7 @@ def test_a_subsidiary_planted_in_the_prior_year_is_reported_as_dropped(
     assert after["prior_count"] == before["prior_count"] + 1
 
 
-@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("ticker", TICKERS_WITH_A_TABLE)
 def test_the_planted_subsidiary_reaches_the_file_the_reader_sees(ticker, tmp_path):
     """`input_exhibits.md` is what the notes-text reader is handed, so the plant
     has to be in it, on its own paragraph id, and not merely in the payload."""
