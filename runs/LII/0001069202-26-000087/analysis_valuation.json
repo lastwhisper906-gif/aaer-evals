@@ -1,0 +1,89 @@
+{
+ "question": "what is this company worth, and what does the price already assume?",
+ "value_range": {
+  "reading": "No value range was computed. Under valuation.missing the calculator prints: \"WACC is not computed: the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". Under cost_of_capital.missing it prints: \"the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". There is therefore no enterprise value, equity value or value per share for the bear, base or bull case, and none is estimated here. Python did compute part of the cost of capital: a risk-free rate of {cost_of_capital.risk_free_rate|pct}, an equity risk premium of {cost_of_capital.equity_risk_premium|pct}, a pre-tax cost of debt of {cost_of_capital.pre_tax_cost_of_debt|pct} and a tax rate of {cost_of_capital.tax_rate|pct}. Beta, the cost of equity, the market value of equity and the capital weights are missing for the reason quoted above. The claims that rank ahead of shareholders are on record: net debt of {ratios.solvency.net_debt} and operating lease liabilities of {ratios.solvency.operating_lease_liability}, against {terms.shares_outstanding} shares outstanding. Net debt is measured at the end of June, before the Heat Controller acquisition that MD&A reports for July and whose funding the filing does not state. What can be read is how my drivers compare with the company's record. The base case starts operating margin a little below the trailing {ratios.profitability.operating_margin|pct} and above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}. It starts revenue growth above the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and below the five-year rate of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}.",
+  "fields": [
+   "valuation.missing",
+   "cost_of_capital.missing",
+   "cost_of_capital.risk_free_rate",
+   "cost_of_capital.equity_risk_premium",
+   "cost_of_capital.pre_tax_cost_of_debt",
+   "cost_of_capital.tax_rate",
+   "ratios.solvency.net_debt",
+   "ratios.solvency.operating_lease_liability",
+   "terms.shares_outstanding",
+   "ratios.profitability.operating_margin",
+   "earnings_versus_cash.history.operating_margin_three_year_average",
+   "earnings_versus_cash.history.revenue_growth_three_year_compound",
+   "earnings_versus_cash.history.revenue_growth_five_year_compound"
+  ]
+ },
+ "price_position": {
+  "reading": "Where the price sits cannot be read, because there is neither a price nor a range. The calculator carries no price at the cutoff. Under market.missing it prints \"no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". The free-cash-flow-yield cross-check is missing for the same reason. So the trailing free cash flow to the firm of {free_cash_flow.free_cash_flow_to_firm} and the simple free cash flow of {free_cash_flow.free_cash_flow_simple} have no market value to be compared with. No position, discount or premium is stated or estimated.",
+  "fields": [
+   "market.missing",
+   "free_cash_flow_yield.price_at_cutoff.missing",
+   "free_cash_flow.free_cash_flow_to_firm",
+   "free_cash_flow.free_cash_flow_simple"
+  ]
+ },
+ "market_implied_growth": {
+  "reading": "No market-implied growth was computed. Under implied_growth_beside_history.implied_ten_year_revenue_growth the calculator prints \"no reverse DCF: WACC is not computed: the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". What the price assumes therefore cannot be said. The record it would have been compared with is computed: three-year compound revenue growth of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, five-year compound growth of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, fiscal 2025 growth of {earnings_versus_cash.history.years.0.revenue_growth|pct} and trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct}. The quoted guidance reaffirms full-year growth a little above the five-year compound rate. Completed acquisitions supply most of it, so the organic part is smaller than the acquired part. My base case starts first-year growth below the guided rate, because Home Comfort Solutions volume is still falling and the EPS range was lowered. It starts above the trailing and three-year rates because acquired revenue is added. It then fades to a terminal rate a little below the three-year compound rate and below the risk-free rate of {cost_of_capital.risk_free_rate|pct}. The bear case starts below the three-year rate and the bull case above the five-year rate.",
+  "fields": [
+   "implied_growth_beside_history.implied_ten_year_revenue_growth.missing",
+   "earnings_versus_cash.history.revenue_growth_three_year_compound",
+   "earnings_versus_cash.history.revenue_growth_five_year_compound",
+   "earnings_versus_cash.history.years.0.revenue_growth",
+   "ratios.growth.revenue.trailing_four_quarters",
+   "cost_of_capital.risk_free_rate"
+  ],
+  "quote": "For full year 2026, we are reaffirming revenue growth guidance at approximately 8% growth, including an updated 5% benefit from completed acquisitions.",
+  "quote_from": "input_8k.md"
+ },
+ "most_sensitive": [
+  {
+   "assumption": "Operating margin, year one and year ten",
+   "reading": "No sensitivity grid was computed, because the valuation it varies was not computed (the valuation.missing reason quoted under the value range). There is also no scenario spread to read. Python's output therefore cannot show which assumption value depends on most. Against the record, operating margin is where my three cases differ most. The bear case ends near fiscal 2023's {earnings_versus_cash.history.years.2.operating_margin|pct}. The base case ends between fiscal 2024's {earnings_versus_cash.history.years.1.operating_margin|pct} and fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}. The bull case ends above every year on record. The starting point is uncertain too. The trailing margin of {ratios.profitability.operating_margin|pct} includes tariff refunds that the release calls earlier than expected. The June quarter's gross margin of {trend_table.quarters-back-0.ratios.gross_margin|pct} is the highest of the filled quarters. Part of the recent margin comes from the change from LIFO to FIFO, which the inputs do not size.",
+   "fields": [
+    "valuation.missing",
+    "earnings_versus_cash.history.years.2.operating_margin",
+    "earnings_versus_cash.history.years.1.operating_margin",
+    "earnings_versus_cash.history.years.0.operating_margin",
+    "ratios.profitability.operating_margin",
+    "trend_table.quarters-back-0.ratios.gross_margin"
+   ]
+  },
+  {
+   "assumption": "Revenue growth, and terminal growth against the discount rate",
+   "reading": "No grid value exists here either. My cases put first-year growth anywhere from below the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} (bear) to above the five-year rate of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct} (bull). Trailing growth is {ratios.growth.revenue.trailing_four_quarters|pct}. Terminal growth runs from below the three-year compound rate to just above it, and every case is under the risk-free rate of {cost_of_capital.risk_free_rate|pct}. In this formula the terminal value depends on the gap between terminal growth and the WACC. That gap cannot be measured here because the WACC is missing. The reinvestment shares were set against a trailing return on invested capital of {ratios.profitability.return_on_invested_capital|pct}. The bear case reinvests more for less growth and the bull case less for more, so the cases also assume different returns on new capital.",
+   "fields": [
+    "valuation.missing",
+    "earnings_versus_cash.history.revenue_growth_three_year_compound",
+    "earnings_versus_cash.history.revenue_growth_five_year_compound",
+    "ratios.growth.revenue.trailing_four_quarters",
+    "cost_of_capital.risk_free_rate",
+    "ratios.profitability.return_on_invested_capital"
+   ]
+  }
+ ],
+ "accounting_adjustments": {
+  "reading": "No accounting adjustment moved value. The accounting reader wrote none: its list of adjustments is empty. Of the tariff refunds it says \"The refund amount appears only in quoted text, not in any calculator field, so no earnings adjustment could be written.\" The calculator's quality-adjusted free cash flow of {free_cash_flow.free_cash_flow_quality_adjusted} also records no adjustment applied and none refused. In any case no valuation was computed, so there is no valuation.accounting_adjustments figure. The items the accounting reader flagged but could not size were handled through my driver choices instead. The base case starts operating margin below the trailing {ratios.profitability.operating_margin|pct} because the quarter's gross margin of {trend_table.quarters-back-0.ratios.gross_margin|pct} includes the one-time refunds. It holds the long-run margin below fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}, partly because the change from LIFO to FIFO raises recent margins by an amount the inputs do not state.",
+  "fields": [
+   "free_cash_flow.free_cash_flow_quality_adjusted",
+   "ratios.profitability.operating_margin",
+   "trend_table.quarters-back-0.ratios.gross_margin",
+   "earnings_versus_cash.history.years.0.operating_margin"
+  ]
+ },
+ "summary_ko": {
+  "value_range": "기준일 주가 자료가 없어 베타, 자기자본비용, 가중평균자본비용(WACC)을 계산하지 못했습니다. 그래서 시나리오별 기업가치와 주당 가치 범위도 계산되지 않았고, 무위험이자율 {cost_of_capital.risk_free_rate|pct}, 세전 타인자본비용 {cost_of_capital.pre_tax_cost_of_debt|pct} 같은 일부 구성요소만 계산되었으며 여기서 가치를 따로 추정하지는 않습니다.",
+  "price_position": "계산기에 기준일 주가도 가치 범위도 없으므로, 주가가 가치 범위의 어디쯤에 있는지는 말할 수 없습니다. 잉여현금흐름 수익률 같은 보조 지표도 같은 이유로 계산되지 않았습니다.",
+  "market_implied_growth": "WACC가 없어 역DCF를 돌리지 못했으므로, 주가에 담긴 성장률은 알 수 없습니다. 비교할 과거 매출 성장률은 최근 세 해 연평균 {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, 다섯 해 연평균 {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, 최근 네 분기 {ratios.growth.revenue.trailing_four_quarters|pct}이며, 회사의 올해 매출 성장 가이던스는 대부분 인수 효과에서 나옵니다.",
+  "most_sensitive": "민감도 표가 계산되지 않아, 가치가 어느 가정에 가장 민감한지는 계산 결과로 말할 수 없습니다. 다만 세 시나리오가 과거 기록에 비해 가장 크게 갈리는 가정은 영업이익률(2023 회계연도 {earnings_versus_cash.history.years.2.operating_margin|pct} 수준부터 2025 회계연도 {earnings_versus_cash.history.years.0.operating_margin|pct}를 넘는 수준까지)과 매출 성장률입니다.",
+  "accounting_adjustments": "회계 분석가가 작성한 조정이 없고 가치평가도 계산되지 않았으므로, 회계 조정 때문에 달라진 가치는 없습니다. 대신 이번 분기 매출총이익률 {trend_table.quarters-back-0.ratios.gross_margin|pct}에 섞인 일회성 관세 환급을 감안해, 기본 시나리오의 첫해 영업이익률을 최근 네 분기 {ratios.profitability.operating_margin|pct}보다 낮게 잡았습니다."
+ },
+ "limits": "This valuation is a set of stated assumptions run through a stated formula. It states no recommendation to trade, and a different reader choosing different drivers would reach a different value.",
+ "normalized_quotes": 0,
+ "dropped_items": [],
+ "dropped_count": 0
+}

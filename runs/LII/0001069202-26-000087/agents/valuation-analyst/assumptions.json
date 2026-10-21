@@ -1,0 +1,237 @@
+{
+  "scenarios": {
+    "bear": {
+      "revenue_growth_year_one": 0.01,
+      "terminal_growth": 0.02,
+      "operating_margin_year_one": 0.175,
+      "operating_margin_year_ten": 0.16,
+      "reinvestment_rate_year_one": 0.35,
+      "reinvestment_rate_year_ten": 0.20,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "Residential weakness persists. Home Comfort Solutions volume keeps falling, new construction stays a headwind, and price and acquisitions only offset the lost volume, so organic revenue declines and reported growth is little more than the acquired contribution.",
+          "quote": "Net sales for the second quarter of 2026 increased 3% as compared to the same period in 2025 primarily due to a 3% increase from favorable mix and price and a 4% increase in sales volumes from completed acquisitions, which were partially offset by a 4% decrease in sales volumes.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.growth.revenue.trailing_four_quarters",
+            "ratios.growth.revenue.year_over_year",
+            "earnings_versus_cash.history.years.0.revenue_growth",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound"
+          ],
+          "history": "Above trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct} and fiscal 2025's {earnings_versus_cash.history.years.0.revenue_growth|pct} only because acquired revenue is added. It is below the quarter's year-over-year growth of {ratios.growth.revenue.year_over_year|pct} and below the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}."
+        },
+        "terminal_growth": {
+          "reason": "A lower perpetual rate for a business whose residential segment is shrinking on volume and whose recent reported growth has come from acquisitions. It sits below the risk-free rate of {cost_of_capital.risk_free_rate|pct}.",
+          "quote": "Organic growth has stalled, and reported growth is coming from acquisitions.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "cost_of_capital.risk_free_rate",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "Below the three-year compound revenue growth of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and far below the five-year rate of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}."
+        },
+        "operating_margin_year_one": {
+          "reason": "The tariff refunds do not repeat. Factory under-absorption deepens as residential volume falls, and freight, distribution and SG&A inflation is not fully passed on. Together these pull the margin below the three-year average.",
+          "quote": "Gross profit margins for the six months ended June 30, 2026 decreased 20 bps to 33.2% as compared to 33.4% in the same period in 2025.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.profitability.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "trend_table.quarters-back-1.ratios.gross_margin"
+          ],
+          "history": "Below the trailing {ratios.profitability.operating_margin|pct} and below the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}. The first quarter of fiscal 2026 already had the lowest gross margin of the filled quarters, {trend_table.quarters-back-1.ratios.gross_margin|pct}."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Tariff programmes that were not repealed keep raising input costs, and acquired businesses dilute returns. Part of the recent margin level comes from the change from LIFO to FIFO rather than from operations. So the margin settles near fiscal 2023's level.",
+          "quote": "With input costs rising on inflation and tariffs, a FIFO basis generally reports lower cost of goods sold than LIFO would, so the change lifts reported margins relative to the old method; the inputs do not quantify the effect.",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "earnings_versus_cash.history.years.2.operating_margin",
+            "earnings_versus_cash.history.years.3.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average"
+          ],
+          "history": "Near fiscal 2023's {earnings_versus_cash.history.years.2.operating_margin|pct} and above fiscal 2022's {earnings_versus_cash.history.years.3.operating_margin|pct}, but below both later years and below the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Working capital stays heavy, with high inventory days and growing receivables. Capital spending stays above depreciation, and the company keeps acquiring businesses to replace lost organic volume. Reinvestment takes about the trailing share of after-tax operating income but delivers little growth.",
+          "quote": "Efficiency is weaker than a year ago: more cash is tied up in inventory and receivables, and suppliers fund less of it.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "free_cash_flow.free_cash_flow_to_firm",
+            "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital",
+            "ratios.efficiency.days_sales_of_inventory",
+            "terms.cash_flow_families.acquisitions"
+          ],
+          "history": "About the share implied by the trailing free cash flow to the firm of {free_cash_flow.free_cash_flow_to_firm}, which charges trade working capital growth of {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital}. It is below fiscal 2025, when acquisitions of {terms.cash_flow_families.acquisitions} took most of a year's after-tax operating income."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "Returns on new capital stay low. At the bear terminal growth rate, this share implies a return on new capital well below the trailing return on invested capital, because acquired assets and a larger working-capital base earn less.",
+          "quote": "Acquired assets that do not yet add revenue drag on returns.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital",
+            "ratios.efficiency.asset_turnover"
+          ],
+          "history": "Above the base case's long-run share even though growth is slower. That reverses the trailing record, in which a return on invested capital of {ratios.profitability.return_on_invested_capital|pct} let growth be funded with a modest share of income."
+        }
+      }
+    },
+    "base": {
+      "revenue_growth_year_one": 0.06,
+      "terminal_growth": 0.03,
+      "operating_margin_year_one": 0.19,
+      "operating_margin_year_ten": 0.195,
+      "reinvestment_rate_year_one": 0.30,
+      "reinvestment_rate_year_ten": 0.15,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "Management reaffirmed full-year revenue guidance that relies on completed acquisitions for most of its growth. Heat Controller, bought in July, adds revenue across the whole first forecast year, while the Duro Dyne and Supco contribution laps in the fourth quarter of fiscal 2026. First-half revenue rose only modestly on the prior first half ({terms.trailing_four_quarters.revenue.parts.this_year_to_date} against {terms.trailing_four_quarters.revenue.parts.prior_year_to_date}). Home Comfort Solutions volume is still falling and the EPS range was lowered, so the base sits below the second-half pace the guidance implies.",
+          "quote": "For full year 2026, we are reaffirming revenue growth guidance at approximately 8% growth, including an updated 5% benefit from completed acquisitions.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "terms.trailing_four_quarters.revenue.parts.this_year_to_date",
+            "terms.trailing_four_quarters.revenue.parts.prior_year_to_date",
+            "ratios.growth.revenue.trailing_four_quarters",
+            "earnings_versus_cash.history.years.0.revenue_growth",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "Above trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct}, fiscal 2025's {earnings_versus_cash.history.years.0.revenue_growth|pct} and the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, because acquired revenue is added to a roughly flat organic base. Below the five-year compound rate of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, which includes the strong fiscal 2021 and fiscal 2022 years."
+        },
+        "terminal_growth": {
+          "reason": "A long-run rate near nominal economic growth for a mature heating and cooling manufacturer whose installed base drives replacement and service demand. It sits below the risk-free rate of {cost_of_capital.risk_free_rate|pct}, as the model requires.",
+          "quote": "Organic revenue growth of 15% was driven by strong execution with national account customers, healthy emergency replacement activity, and growth in service offerings, while acquisitions added 9% to revenue growth.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "Slightly below the three-year compound revenue growth of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and well below the five-year rate of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}. A perpetual rate should not carry growth bought through acquisitions or a pricing cycle."
+        },
+        "operating_margin_year_one": {
+          "reason": "Starts a little below the trailing operating margin. The trailing figure includes tariff refunds that the release calls earlier than expected, and product-cost inflation and factory under-absorption are still running. Management lowered the EPS range but held revenue guidance, which means less profit on the same sales.",
+          "quote": "Underlying earnings were therefore weaker than reported, and the quarter's margin is not a run-rate.",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "ratios.profitability.operating_margin",
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "trend_table.quarters-back-0.ratios.gross_margin"
+          ],
+          "history": "Below the trailing {ratios.profitability.operating_margin|pct} and below fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}, the best year on record. Above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}, which still includes the weaker fiscal 2023."
+        },
+        "operating_margin_year_ten": {
+          "reason": "A modest recovery from year one, as residential volume normalises from a soft market and Building Climate Solutions, which is growing on volume, takes a larger share. Held below fiscal 2025's level because tariff costs on imported inputs continue and the company is still evaluating them.",
+          "quote": "The Company is evaluating the potential impact of all tariff actions on future material costs and sourcing decisions.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "earnings_versus_cash.history.years.1.operating_margin",
+            "earnings_versus_cash.history.years.3.operating_margin"
+          ],
+          "history": "Between fiscal 2024's {earnings_versus_cash.history.years.1.operating_margin|pct} and fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}. The base case assumes the step up from fiscal 2022's {earnings_versus_cash.history.years.3.operating_margin|pct} holds but does not extend, partly because part of the recent level rests on the change from LIFO to FIFO, which the inputs do not size."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Capital spending is running above depreciation while the company builds land and buildings for innovation centres. The July purchase of Heat Controller carries part of year-one growth, and trade working capital absorbed cash over the trailing year. Together these take a larger share of after-tax operating income than a steady state would.",
+          "quote": "In July 2026, we acquired Heat Controller for approximately $205 million.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization",
+            "free_cash_flow.free_cash_flow_to_firm",
+            "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital",
+            "terms.cash_flow_families.acquisitions"
+          ],
+          "history": "A little below the share implied by the trailing free cash flow to the firm of {free_cash_flow.free_cash_flow_to_firm}, which charges trade working capital growth of {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital}. Well below fiscal 2025, when acquisitions of {terms.cash_flow_families.acquisitions} alone took most of a year's after-tax operating income."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "At the base terminal growth rate, this share implies a return on new capital below the trailing return on invested capital. That allows for acquired goodwill and a larger asset base diluting returns. Capital spending falls back toward depreciation once the innovation-centre build is complete.",
+          "quote": "The increase in capital expenditures was primarily driven by strategic investments in land and buildings that will support future product innovation centers.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital",
+            "earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization"
+          ],
+          "history": "Below the year-one share and far below fiscal 2025, when acquisitions dominated reinvestment. It is consistent with a return on invested capital fading from the trailing {ratios.profitability.return_on_invested_capital|pct} toward a lower, still healthy level."
+        }
+      }
+    },
+    "bull": {
+      "revenue_growth_year_one": 0.09,
+      "terminal_growth": 0.035,
+      "operating_margin_year_one": 0.20,
+      "operating_margin_year_ten": 0.215,
+      "reinvestment_rate_year_one": 0.25,
+      "reinvestment_rate_year_ten": 0.12,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "Guidance is met in full. Building Climate Solutions keeps growing on volume, residential demand keeps improving sequentially in both channels, and Heat Controller and the earlier acquisitions contribute in full over the year.",
+          "quote": "Demand improved across both distribution channels, though residential new construction activity remained a meaningful headwind.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.growth.revenue.trailing_four_quarters",
+            "earnings_versus_cash.history.years.1.revenue_growth",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "Well above trailing growth of {ratios.growth.revenue.trailing_four_quarters|pct}, and above fiscal 2024's {earnings_versus_cash.history.years.1.revenue_growth|pct} and the five-year compound rate of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, with acquisitions supplying a large part of it."
+        },
+        "terminal_growth": {
+          "reason": "A slightly higher perpetual rate, reflecting replacement-driven demand, a growing commercial and service business in Building Climate Solutions, and pricing power shown in the mix and price gains. It stays below the risk-free rate of {cost_of_capital.risk_free_rate|pct}.",
+          "quote": "For our Building Climate Solutions segment, net sales increased 24% and segment profit increased $35 million.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "Just above the three-year compound revenue growth of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and about half the five-year rate of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}."
+        },
+        "operating_margin_year_one": {
+          "reason": "Pricing keeps covering inflation and tariffs, Building Climate Solutions volume and the acquisitions keep adding profit, and the residential absorption drag eases. The margin holds at the fiscal 2025 level.",
+          "quote": "Pricing actions implemented in response to inflationary and tariff pressures largely offset those impacts, while earlier than expected tariff refunds provided a benefit during the quarter.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "ratios.profitability.operating_margin"
+          ],
+          "history": "At fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}, the highest on record, and a little above the trailing {ratios.profitability.operating_margin|pct}."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Mix shifts toward higher-margin commercial and service revenue, recovering volume restores factory absorption, and the acquired businesses are integrated. Together these extend the margin gains of recent years.",
+          "quote": "Segment profit in the second quarter of 2026 increased $35 million as compared to the same period in 2025 primarily due to $23 million profit benefit from higher sales volumes, $15 million increase from favorable mix and price, and $11 million profit benefit from sales volumes from completed acquisitions",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "earnings_versus_cash.history.years.3.operating_margin"
+          ],
+          "history": "Above every year on record, including fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}. The bull case assumes the climb from fiscal 2022's {earnings_versus_cash.history.years.3.operating_margin|pct} continues, at a slower pace."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Inventory keeps falling from its first-quarter high, so working capital releases cash. The Heat Controller purchase is modest against a year's after-tax operating income, and capital spending stays only somewhat above depreciation for the innovation centres.",
+          "quote": "Cash Flow: Operating cash flow was $172 million compared to $87 million in the prior-year quarter driven by reduced inventory levels.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "trend_table.quarters-back-1.ratios.days_sales_of_inventory",
+            "trend_table.quarters-back-0.ratios.days_sales_of_inventory",
+            "earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization",
+            "free_cash_flow.free_cash_flow_to_firm",
+            "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital"
+          ],
+          "history": "Below the share implied by the trailing free cash flow to the firm of {free_cash_flow.free_cash_flow_to_firm}, because the trailing figure carries a trade working capital build of {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital} that the bull case does not repeat. Inventory days already eased from {trend_table.quarters-back-1.ratios.days_sales_of_inventory} to {trend_table.quarters-back-0.ratios.days_sales_of_inventory}."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "Returns on new capital stay near today's level. At the bull terminal growth rate, this share implies a return on new capital close to the trailing return on invested capital, with capital spending close to depreciation.",
+          "quote": "Those are high returns, and the level is healthy.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital",
+            "earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization"
+          ],
+          "history": "Consistent with the trailing return on invested capital of {ratios.profitability.return_on_invested_capital|pct} holding. This is the lowest long-run reinvestment share of the three cases."
+        }
+      }
+    }
+  },
+  "wacc_overrides": {}
+}

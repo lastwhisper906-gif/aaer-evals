@@ -1,0 +1,439 @@
+{
+ "run": "LII/0001069202-26-000087",
+ "rubric": "evals/capability/rubric.md",
+ "dealbreakers": [
+  {
+   "kind": "number_not_from_calculator",
+   "id": "estimates_and_reserves_hedge_gains_to_reduce_future_cost",
+   "where": "analysis_accounting.json anomalies[16].name, .name_ko and .what",
+   "why": "Restates the filer's 'into earnings within the next 12 months' (notes:99) as 'over the next twelve months' in the analyst's own words, outside any quote; no calculator path supplies it."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "liquidity_and_capital_irs_audit_could_exceed_reserves",
+   "where": "analysis_financial.json anomalies[17].what",
+   "why": "'auditing two earlier years' recasts the filer's 'for 2021 and 2022' (notes:109) as a count in the analyst's own words after the gate struck the years; no calculator path supplies it."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "cross_document_reconciliation_home_comfort_bridge_grouping",
+   "where": "analysis_accounting.json anomalies[31].what and .numbers_vs_prose",
+   "why": "Leaves open whether the groupings tie, but mdna:43's '$3 million from increased freight and distribution costs' and '$8 million from miscellaneous other costs' together make 8k_2_02:26's 'additional $11 million', so the inputs settle it."
+  }
+ ],
+ "items": [
+  {
+   "id": "earnings_versus_cash_inventory_articulation_gap",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.working_capital.inventory.articulation_gap resolves; the year-ago balance (0001069202-25-000032) predates the change stated at 8k_2_02:48, and nothing sizes either cause, so 'unresolved' is fair."
+  },
+  {
+   "id": "earnings_versus_cash_payables_articulation_gap",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "earnings_versus_cash.working_capital.accounts_payable.articulation_gap resolves with a sign that fits acquired payables; mdna:85 does not address it, as stated."
+  },
+  {
+   "id": "earnings_versus_cash_prior_fiscal_year_conversion_dip",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.history.years shows fiscal 2025 conversion the weakest since fiscal 2022; trend_table.years-back-0 accruals reads 'second highest of the 5 filled years'."
+  },
+  {
+   "id": "earnings_versus_cash_income_smoother_than_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "earnings_versus_cash.smoothness formula: 'below 1 means income moves less than cash'; the calculator holds no earlier reading."
+  },
+  {
+   "id": "earnings_versus_cash_cash_taxes_paid_rise",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "liquidity_and_capital_income_taxes_paid (IncomeTaxesPaidNet fact) shows the rise and the payable reversal; the operating cash flow parts resolve."
+  },
+  {
+   "id": "revenue_recognition_receivables_outrunning_quarterly_revenue",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.balances_now.receivables outgrows ratios.growth.revenue.year_over_year; quarters-back-0 DSO reads 'second highest of the 7 filled quarters'; the IncreaseDecreaseInAccountsAndNotesReceivable item shows the larger build."
+  },
+  {
+   "id": "revenue_recognition_year_end_receivables_days_at_low",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "trend_table.years-back-0.ratios.days_sales_outstanding reads 'lowest of the 5 filled years'."
+  },
+  {
+   "id": "revenue_recognition_contract_liabilities_falling_against_revenue",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "contract_liabilities balances fall; quarters-back-1 ratio reads 'highest of the 7 filled quarters'; notes:81 shows more revenue drawn from opening liabilities."
+  },
+  {
+   "id": "revenue_recognition_distributor_share_edging_up",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:77 shows the direct share down against the year-ago quarter; 8k_2_02:16 says demand improved in both channels; DSO paths resolve."
+  },
+  {
+   "id": "estimates_and_reserves_doubtful_accounts_allowance_thinning",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "bad_debt_reserve_ratio reads 'lowest of the 7 filled quarters' (quarters-back-0) and 'lowest of the 5 filled years' (years-back-0); the ProvisionForDoubtfulAccounts item rose while the allowance fell."
+  },
+  {
+   "id": "estimates_and_reserves_tariff_refund_recognition_basis_unstated",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:17 says customs 'is now processing valid court-ordered IEEPA refunds' and mdna:25 nets them into cost; no input states the recognition basis."
+  },
+  {
+   "id": "estimates_and_reserves_warranty_reserve_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "warranty_accrual balances rise, years-back-0 ratio reads 'highest of the 5 filled years', and notes:59 shows the pre-existing estimate line as an addition."
+  },
+  {
+   "id": "estimates_and_reserves_goodwill_measurement_period_adjustment_unexplained",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:153 carries the adjustment column while notes:152 is unchanged prose, so no reason is given."
+  },
+  {
+   "id": "estimates_and_reserves_effective_tax_rate_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:36 gives the higher quarterly rate and its jurisdiction cause; tax_rate.effective_rate resolves."
+  },
+  {
+   "id": "estimates_and_reserves_antitrust_litigation_without_accrual",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:62 records the amended complaints and notes:64 that the loss cannot be estimated; mdna:30 does not tie its litigation line to the matter."
+  },
+  {
+   "id": "estimates_and_reserves_tax_audit_could_exceed_reserves",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:109 says resolution 'could result in settlements or judgments in excess of our reserves'; notes:107 shows small unrecognized benefits."
+  },
+  {
+   "id": "estimates_and_reserves_hedge_gains_to_reduce_future_cost",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:99 and notes:138 support the claim, but the dealbreaker on the restated horizon scores it zero."
+  },
+  {
+   "id": "cost_deferral_one_time_tariff_refunds_inside_product_cost",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "mdna:25 nets refunds into product cost, 8k_2_02:16 calls them 'earlier than expected', and trend_table.quarters-back-0.ratios.gross_margin reads 'highest of the 7 filled quarters'."
+  },
+  {
+   "id": "cost_deferral_soft_asset_share_at_high",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "soft_asset_share reads 'highest of the 7 filled quarters' (quarters-back-0) and 'highest of the 5 filled years' (years-back-0)."
+  },
+  {
+   "id": "cost_deferral_capital_spending_above_depreciation",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization and the first-half capex parts resolve; mdna:86 ties the rise to land and buildings."
+  },
+  {
+   "id": "cost_deferral_other_operating_items_swing_to_loss",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:30 and 8k_2_02:46 both show the line swinging from gain to loss, with a special litigation charges line."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_commercial_paper_funds_working_capital",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "Commercial paper, debt and interest paths resolve and mdna:34 ties interest to the paper, but no evidence links the paper to the receivables build rather than to the repurchases and dividends in 8k_2_02:63."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_operating_leases_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "operating_lease_liability balances show the rise and neither reader explains it; the evidence list is empty, so the item rests on the calculator fields alone."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_new_standby_letters_of_credit",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:123, set against the removed note_history:23 text, shows the new standby letter-of-credit commitment."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_lifo_to_fifo_recast_history",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:48 states the change and recast; years-back-0 gross_margin and days_sales_of_inventory read 'highest of the 5 filled years'; the numbers reader documents pre-change inputs in older cells."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_acquisition_note_absent_from_input",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:107 points to 'Note 14', and input_notes.md ends at notes:150-153 under 'Prior Year Acquisitions'."
+  },
+  {
+   "id": "cross_document_reconciliation_refund_timing_wording_only_in_release",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "Only 8k_2_02:16 has 'earlier than expected'; mdna:25 has no timing qualifier. 'Record-high' overstates the calculator's 'highest of the 7 filled quarters'."
+  },
+  {
+   "id": "cross_document_reconciliation_growth_attribution_omits_volume_decline",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:21 credits completed acquisitions alone, while mdna:23 shows the offsetting decrease in sales volumes."
+  },
+  {
+   "id": "cross_document_reconciliation_cash_flow_explanations_omit_receivables_build",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:25 and mdna:85 leave receivables unmentioned; the IncreaseDecreaseInAccountsAndNotesReceivable item shows the larger build, and the inventory parts confirm the release's point."
+  },
+  {
+   "id": "cross_document_reconciliation_acquisition_named_differently",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:15 names Comfort-Aire and Century brands while mdna:107 names Heat Controller; nothing in the inputs links them."
+  },
+  {
+   "id": "cross_document_reconciliation_eps_guidance_cut_called_update",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:32 lowers both ends, 8k_2_02:11 says 'Updating full year EPS guidance range', and 8k_2_02:33 keeps free cash flow guidance."
+  },
+  {
+   "id": "cross_document_reconciliation_home_comfort_bridge_grouping",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "low",
+   "why": "The anomaly says no number tests the tie, but mdna:43 and 8k_2_02:26 do; the dealbreaker scores it zero."
+  },
+  {
+   "id": "industry_lens_inventory_days_elevated_against_falling_volume",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "days_sales_of_inventory reads 'highest of the 5 filled years' (years-back-0) and 'highest of the 7 filled quarters' (quarters-back-1); mdna:41 shows the volume fall; no inventory reserve is tagged."
+  },
+  {
+   "id": "industry_lens_equipment_share_shifting",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "concentration.facts paths resolve and notes:78 shows a higher equipment share for Building Climate Solutions; no customer fact exists."
+  },
+  {
+   "id": "results_against_expectations_full_year_eps_guidance_cut",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "8k_2_02:32 lowers both ends of the range while 8k_2_02:31 reaffirms revenue; ratios.growth.net_income paths resolve."
+  },
+  {
+   "id": "results_against_expectations_revenue_guidance_relies_on_acquisitions",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:31 'including an updated 5% benefit from completed acquisitions' and mdna:23's decrease in sales volumes support it."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_home_comfort_volume_slump",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:8, mdna:41, mdna:43 and 8k_2_02:16 support falling segment sales, profit and volume and the absorption pressure."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_tariff_costs_continue_after_refunds",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:18 describes the replacement tariff framework, the modified tariffs still in force and the ongoing evaluation; mdna:17 covers the refunds."
+  },
+  {
+   "id": "profitability_quarter_gross_margin_lifted_by_tariff_refunds",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "mdna:25, 8k_2_02:16 and mdna:55 support it; gross_margin reads 'highest of the 7 filled quarters' (quarters-back-0) and 'lowest of the 7 filled quarters' (quarters-back-1)."
+  },
+  {
+   "id": "profitability_net_income_falling_faster_than_operating_income",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "Trailing ratios.growth.net_income falls further than operating_income; interest paths and mdna:34 and mdna:36 give the two causes."
+  },
+  {
+   "id": "profitability_operating_margin_slipping_from_last_fiscal_year",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "ratios.profitability.operating_margin sits below history.years.0.operating_margin and above operating_margin_three_year_average; mdna:27, mdna:30 and mdna:64 back the drivers."
+  },
+  {
+   "id": "profitability_warranty_estimates_raised",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:59's pre-existing line is an addition and years-back-0 reads 'highest of the 5 filled years'; the seasonal reason for the quarter's position is inference."
+  },
+  {
+   "id": "efficiency_inventory_days_elevated",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The days_sales_of_inventory paths and their positions resolve; the IncreaseDecreaseInInventories item shows the small six-month change."
+  },
+  {
+   "id": "efficiency_receivables_build_with_thinner_credit_reserve",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The ProvisionForDoubtfulAccounts item rose while quarters-back-0 bad_debt_reserve_ratio reads 'lowest of the 7 filled quarters' and DSO 'second highest of the 7 filled quarters'."
+  },
+  {
+   "id": "efficiency_cash_conversion_cycle_long_supplier_funding_down",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "cash_conversion_cycle, days_payables_outstanding, the payables balance_sheet_change and change_in_trade_working_capital resolve; 8k_2_02:63 shows the small inventory line and the large receivables line."
+  },
+  {
+   "id": "efficiency_asset_base_outgrowing_revenue",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "Asset balances and soft_asset_share ('highest of the 7 filled quarters') rise against negative trailing revenue growth; notes:153 shows the goodwill adjustment."
+  },
+  {
+   "id": "liquidity_and_capital_commercial_paper_dependence_rising",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:112, notes:116 and notes:123, set against note_history:23, show more paper, a higher rate, lower revolver availability and a new letter-of-credit commitment."
+  },
+  {
+   "id": "liquidity_and_capital_thin_cash_quick_ratio_below_one",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.liquidity.quick_ratio and the cash paths resolve; mdna:107 says part of the cash is held abroad and that liquidity is sufficient."
+  },
+  {
+   "id": "liquidity_and_capital_heat_controller_acquisition_funding_unstated",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:107 'In July 2026, we acquired Heat Controller for approximately $205 million.' sits against terms.cash_and_short_term_investments_now, with no funding source stated."
+  },
+  {
+   "id": "liquidity_and_capital_payouts_and_acquisitions_funded_by_debt",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "free_cash_flow.free_cash_flow_quality_adjusted is below terms.trailing_four_quarters.dividends_paid while the debt paths rise; mdna:87 backs the repurchase point."
+  },
+  {
+   "id": "liquidity_and_capital_cash_taxes_paid_rising",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The IncomeTaxesPaidNet item and the payable swing support it; the 'rising' rate rests on mdna:36, not the trailing tax_rate."
+  },
+  {
+   "id": "liquidity_and_capital_irs_audit_could_exceed_reserves",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:109 and notes:107 support the substance, but the dealbreaker on the restated year count scores it zero."
+  },
+  {
+   "id": "solvency_debt_and_interest_cost_rising",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "Debt, interest parts and the ratios.solvency paths resolve; mdna:104 reports the rising debt-to-total-capital ratio."
+  },
+  {
+   "id": "solvency_antitrust_class_actions_loss_not_estimable",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:62 and notes:64 support it; the equity and liabilities_over_assets paths resolve."
+  },
+  {
+   "id": "growth_trailing_revenue_and_earnings_declining",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The trailing ratios.growth paths are negative, and earnings_versus_cash.history puts the three-year compound below the five-year."
+  },
+  {
+   "id": "growth_reported_growth_carried_by_acquisitions",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:23, 8k_2_02:21, mdna:41 and mdna:47 support it; the quarter_over_quarter path resolves."
+  }
+ ],
+ "coverage": {
+  "answer": "yes",
+  "why": "Every accounting area and the industry_lens carry a finding and a verdict; every financial section, plus dupont and path_to_distress, has a reading; both files list no dropped_items after the gate."
+ },
+ "calibration": {
+  "answer": "yes",
+  "why": "Each area verdict tracks its anomalies: estimates_and_reserves is 'Mixed' over the thinning allowance and undisclosed refund basis, and cost_deferral names the refund-flattered margin. The one blemish is the cross-document verdict leaving open a bridge tie the inputs close."
+ },
+ "valuation_reading": {
+  "answer": "no",
+  "why": "valuation.missing, market.missing and implied_growth_beside_history.implied_ten_year_revenue_growth.missing leave no price position, implied growth or sensitivity grid. The reading says so and estimates none; its two named assumptions come from the scenario spread against earnings_versus_cash.history, not a calculator grid."
+ },
+ "score": 0.954,
+ "grader": {
+  "model_requested": "opus",
+  "model_served": "claude-opus-5-5",
+  "input_tokens": 60,
+  "output_tokens": 69205,
+  "cost_usd": 8.5296152,
+  "seconds": 603.2
+ }
+}
