@@ -1020,6 +1020,11 @@ def ratios(record: Record, terms: dict, periods: dict) -> dict:
                                / v["current_liabilities"], denominator="current_liabilities"),
         "cash_runway_months": runway,
     }
+    # the capital that funds the assets, the denominator of debt's share of it: a
+    # sum of its own, so a zero or negative sum is what the guard reads, not equity
+    capital = measure("total_debt + stockholders_equity",
+                      {"total_debt": debt, "stockholders_equity": now["stockholders_equity"]},
+                      lambda v: v["total_debt"] + v["stockholders_equity"], unit="USD")
     solvency = {
         "total_debt": debt,
         "net_debt": measure("total_debt - cash_and_short_term_investments",
@@ -1049,10 +1054,9 @@ def ratios(record: Record, terms: dict, periods: dict) -> dict:
             {"operating_cash_flow": ttm["operating_cash_flow"], "total_debt": debt},
             lambda v: v["operating_cash_flow"] / v["total_debt"], denominator="total_debt"),
         "debt_over_debt_plus_equity": measure(
-            "total_debt / (total_debt + stockholders_equity)",
-            {"total_debt": debt, "stockholders_equity": now["stockholders_equity"]},
-            lambda v: v["total_debt"] / (v["total_debt"] + v["stockholders_equity"]),
-            denominator="stockholders_equity", positive=True),
+            "total_debt / capital",
+            {"total_debt": debt, "capital": capital},
+            lambda v: v["total_debt"] / v["capital"], denominator="capital", positive=True),
         "operating_lease_liability": record.latest_balance("operating_lease_liability",
                                                            periods["balance_now"]),
     }

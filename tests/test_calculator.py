@@ -1361,6 +1361,10 @@ def test_the_cash_flow_and_capital_structure_pair_of_the_rating_agencies(nvda):
     assert solvency["total_debt"]["value"] == 33_366 * MILLION
     assert solvency["operating_cash_flow_over_total_debt"]["value"] == pytest.approx(134_360 / 33_366)
     assert solvency["debt_over_debt_plus_equity"]["value"] == pytest.approx(33_366 / (33_366 + 228_984))
+    # the denominator is the sum, carried as its own input, so equity of exactly zero
+    # with debt outstanding reads 1.0 and only a zero or negative sum is missing
+    assert solvency["debt_over_debt_plus_equity"]["inputs"]["capital"]["value"] == (33_366 + 228_984) * MILLION
+    assert solvency["debt_over_debt_plus_equity"]["formula"] == "total_debt / capital"
 
 
 def test_a_ratio_over_a_loss_or_negative_equity_is_written_missing_with_the_sign():
