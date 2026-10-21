@@ -17,6 +17,7 @@ branch changed. A run item is done when its run directory is published and
 ## Open
 
 [ ] JBL's 10-Q filed 2026-06-30 on Opus, the first run of a company added on 2026-10-21 · `.venv/bin/python -m evals --runs runs/JBL` · the fixture set of 2026-10-21
+    pending, 2026-10-21: refused at the drift check on both the 10-Q and the 10-K (`eight_k` 66 and 72 against a baseline slot that records none, the fixture 8-K postdating both filings); the owner's row on the drift baseline's slot (`docs/needs_judgment.md`) now names Jabil beside the five of 2026-10-14
 
 [ ] AMD's 10-Q filed 2026-08-05 on Opus, the first run of a company added on 2026-10-21 · `.venv/bin/python -m evals --runs runs/AMD` · the fixture set of 2026-10-21
 
