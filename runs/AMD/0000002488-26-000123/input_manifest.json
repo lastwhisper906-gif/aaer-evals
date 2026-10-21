@@ -1,0 +1,2432 @@
+{
+ "accepted": "2026-08-04T21:40:01-04:00",
+ "accession": "0000002488-26-000123",
+ "agents": {
+  "numbers-reader": {
+   "agent": "numbers-reader",
+   "model_requested": "opus",
+   "model_served": "claude-opus-5-5",
+   "effort": "xhigh",
+   "input_tokens": 28,
+   "cache_creation_input_tokens": 343599,
+   "cache_read_input_tokens": 2180077,
+   "output_tokens": 98167,
+   "turns": 24,
+   "cost_usd": 5.1482594,
+   "session": "1397ada1-004b-5cf9-b1ed-ac87663ebc2d",
+   "seconds": 848.3,
+   "attempt": 1,
+   "is_error": false,
+   "stop_reason": "end_turn",
+   "result": "written",
+   "attempts": [
+    {
+     "attempt": 1,
+     "model_requested": "opus",
+     "model_served": "claude-opus-5-5",
+     "input_tokens": 28,
+     "cache_creation_input_tokens": 343599,
+     "cache_read_input_tokens": 2180077,
+     "output_tokens": 98167,
+     "cost_usd": 5.1482594,
+     "duration_s": 848.3,
+     "outcome": "written"
+    }
+   ]
+  },
+  "notes-text-reader": {
+   "agent": "notes-text-reader",
+   "model_requested": "opus",
+   "model_served": "claude-opus-5-5",
+   "effort": "xhigh",
+   "input_tokens": 6,
+   "cache_creation_input_tokens": 157634,
+   "cache_read_input_tokens": 71529,
+   "output_tokens": 91841,
+   "turns": 8,
+   "cost_usd": 3.1122217999999995,
+   "session": "1397ada1-004b-5cf9-b1ed-ac87663ebc2d",
+   "seconds": 773.3,
+   "attempt": 1,
+   "is_error": false,
+   "stop_reason": "end_turn",
+   "result": "written",
+   "attempts": [
+    {
+     "attempt": 1,
+     "model_requested": "opus",
+     "model_served": "claude-opus-5-5",
+     "input_tokens": 6,
+     "cache_creation_input_tokens": 157634,
+     "cache_read_input_tokens": 71529,
+     "output_tokens": 91841,
+     "cost_usd": 3.1122217999999995,
+     "duration_s": 773.3,
+     "outcome": "written"
+    }
+   ]
+  },
+  "accounting-analyst": {
+   "agent": "accounting-analyst",
+   "model_requested": "opus",
+   "model_served": "claude-opus-5-5",
+   "effort": "xhigh",
+   "input_tokens": 12,
+   "cache_creation_input_tokens": 287073,
+   "cache_read_input_tokens": 613457,
+   "output_tokens": 139975,
+   "turns": 11,
+   "cost_usd": 5.218823399999999,
+   "session": "1397ada1-004b-5cf9-b1ed-ac87663ebc2d",
+   "seconds": 1059.6,
+   "attempt": 1,
+   "is_error": false,
+   "stop_reason": "end_turn",
+   "result": "written",
+   "attempts": [
+    {
+     "attempt": 1,
+     "model_requested": "opus",
+     "model_served": "claude-opus-5-5",
+     "input_tokens": 12,
+     "cache_creation_input_tokens": 287073,
+     "cache_read_input_tokens": 613457,
+     "output_tokens": 139975,
+     "cost_usd": 5.218823399999999,
+     "duration_s": 1059.6,
+     "outcome": "written"
+    }
+   ],
+   "gate_feedback": [
+    {
+     "dropped_count": 4,
+     "text": "Python ran the analysis gate on the file you just wrote. It would drop the items below, each with its reason. Rewrite each one so it stands, or leave it and it is dropped and counted. A figure the filing prints belongs in the item's `quote` field, never in your sentences.\n- areas.estimates_and_reserves: finding: a number written in the analyst's own words: 'd unrecognized tax benefits fell across 2025; that discrete item raised prior-ye'\n- anomalies[11]: what: a number written in the analyst's own words: 'd unrecognized tax benefits fell across 2025.   net income of   exceeded operati'\n- anomalies[26]: what: a number written in the analyst's own words: \"nt report's item list: the post-quarter 8-Ks carry only the officer-change item \"\n- anomalies[33]: anomalies[33].name: a ruled-out word ('buy')"
+    }
+   ]
+  },
+  "financial-analyst": {
+   "agent": "financial-analyst",
+   "model_requested": "opus",
+   "model_served": "claude-opus-5-5",
+   "effort": "xhigh",
+   "input_tokens": 14,
+   "cache_creation_input_tokens": 202611,
+   "cache_read_input_tokens": 570543,
+   "output_tokens": 56770,
+   "turns": 10,
+   "cost_usd": 2.8704526,
+   "session": "1397ada1-004b-5cf9-b1ed-ac87663ebc2d",
+   "seconds": 450.4,
+   "attempt": 1,
+   "is_error": false,
+   "stop_reason": "end_turn",
+   "result": "written",
+   "attempts": [
+    {
+     "attempt": 1,
+     "model_requested": "opus",
+     "model_served": "claude-opus-5-5",
+     "input_tokens": 14,
+     "cache_creation_input_tokens": 202611,
+     "cache_read_input_tokens": 570543,
+     "output_tokens": 56770,
+     "cost_usd": 2.8704526,
+     "duration_s": 450.4,
+     "outcome": "written"
+    }
+   ]
+  },
+  "valuation-analyst": {
+   "agent": "valuation-analyst",
+   "model_requested": "opus",
+   "model_served": "claude-opus-5-5",
+   "effort": "xhigh",
+   "input_tokens": 18,
+   "cache_creation_input_tokens": 239211,
+   "cache_read_input_tokens": 1186246,
+   "output_tokens": 56350,
+   "turns": 14,
+   "cost_usd": 3.2780092,
+   "session": "1397ada1-004b-5cf9-b1ed-ac87663ebc2d",
+   "seconds": 477.4,
+   "attempt": 1,
+   "is_error": false,
+   "stop_reason": "end_turn",
+   "result": "written",
+   "attempts": [
+    {
+     "attempt": 1,
+     "model_requested": "opus",
+     "model_served": "claude-opus-5-5",
+     "input_tokens": 18,
+     "cache_creation_input_tokens": 239211,
+     "cache_read_input_tokens": 1186246,
+     "output_tokens": 56350,
+     "cost_usd": 3.2780092,
+     "duration_s": 477.4,
+     "outcome": "written"
+    }
+   ],
+   "gate_feedback": [
+    {
+     "dropped_count": 1,
+     "text": "Python ran the analysis gate on the file you just wrote. It would drop the items below, each with its reason. Rewrite each one so it stands, or leave it and it is dropped and counted. A figure the filing prints belongs in the item's `quote` field, never in your sentences.\n- scenarios.base: revenue_growth_year_one: reason: a number written in the analyst's own words: 'The release guides the third quarter of 2026 well above this rate against the ye'"
+    }
+   ],
+   "trimmed": {
+    "input_8k.md": {
+     "kept": [
+      "0000002488-26-000121:8k_2_02:14",
+      "0000002488-26-000121:8k_2_02:33",
+      "0000002488-26-000121:8k_2_02:51",
+      "0000002488-26-000121:8k_2_02:89"
+     ],
+     "note": "4 of 93 paragraphs, the ones the notes reader flagged; the rest were not placed",
+     "of": 93
+    },
+    "input_mdna.md": {
+     "kept": [
+      "0000002488-26-000123:mdna:12",
+      "0000002488-26-000123:mdna:13",
+      "0000002488-26-000123:mdna:14",
+      "0000002488-26-000123:mdna:26",
+      "0000002488-26-000123:mdna:27",
+      "0000002488-26-000123:mdna:30",
+      "0000002488-26-000123:mdna:31",
+      "0000002488-26-000123:mdna:32",
+      "0000002488-26-000123:mdna:34",
+      "0000002488-26-000123:mdna:35",
+      "0000002488-26-000123:mdna:48",
+      "0000002488-26-000123:mdna:50",
+      "0000002488-26-000123:mdna:52",
+      "0000002488-26-000123:mdna:54",
+      "0000002488-26-000123:mdna:57",
+      "0000002488-26-000123:mdna:63",
+      "0000002488-26-000123:mdna:71",
+      "0000002488-26-000123:mdna:75"
+     ],
+     "note": "18 of 82 paragraphs, the ones the notes reader flagged; the rest were not placed",
+     "of": 82
+    }
+   }
+  },
+  "valuation-analyst-second-pass": {
+   "agent": "valuation-analyst",
+   "model_requested": "opus",
+   "model_served": "claude-opus-5-5",
+   "effort": "xhigh",
+   "input_tokens": 16,
+   "cache_creation_input_tokens": 216212,
+   "cache_read_input_tokens": 924641,
+   "output_tokens": 24214,
+   "turns": 14,
+   "cost_usd": 2.3989682,
+   "session": "1397ada1-004b-5cf9-b1ed-ac87663ebc2d",
+   "seconds": 213.2,
+   "attempt": 1,
+   "is_error": false,
+   "stop_reason": "end_turn",
+   "result": "written",
+   "attempts": [
+    {
+     "attempt": 1,
+     "model_requested": "opus",
+     "model_served": "claude-opus-5-5",
+     "input_tokens": 16,
+     "cache_creation_input_tokens": 216212,
+     "cache_read_input_tokens": 924641,
+     "output_tokens": 24214,
+     "cost_usd": 2.3989682,
+     "duration_s": 213.2,
+     "outcome": "written"
+    }
+   ],
+   "trimmed": {
+    "input_8k.md": {
+     "kept": [
+      "0000002488-26-000121:8k_2_02:14",
+      "0000002488-26-000121:8k_2_02:33",
+      "0000002488-26-000121:8k_2_02:51",
+      "0000002488-26-000121:8k_2_02:89"
+     ],
+     "note": "4 of 93 paragraphs, the ones the notes reader flagged; the rest were not placed",
+     "of": 93
+    },
+    "input_mdna.md": {
+     "kept": [
+      "0000002488-26-000123:mdna:12",
+      "0000002488-26-000123:mdna:13",
+      "0000002488-26-000123:mdna:14",
+      "0000002488-26-000123:mdna:26",
+      "0000002488-26-000123:mdna:27",
+      "0000002488-26-000123:mdna:30",
+      "0000002488-26-000123:mdna:31",
+      "0000002488-26-000123:mdna:32",
+      "0000002488-26-000123:mdna:34",
+      "0000002488-26-000123:mdna:35",
+      "0000002488-26-000123:mdna:48",
+      "0000002488-26-000123:mdna:50",
+      "0000002488-26-000123:mdna:52",
+      "0000002488-26-000123:mdna:54",
+      "0000002488-26-000123:mdna:57",
+      "0000002488-26-000123:mdna:63",
+      "0000002488-26-000123:mdna:71",
+      "0000002488-26-000123:mdna:75"
+     ],
+     "note": "18 of 82 paragraphs, the ones the notes reader flagged; the rest were not placed",
+     "of": 82
+    }
+   }
+  }
+ },
+ "analysis_stages": {
+  "quote_gate": {
+   "dropped": 2
+  },
+  "market_labels": {
+   "written": false,
+   "reason": "the run holds no input_market.json, so there is no market to label against; nothing is written and every item's label stays absent"
+  },
+  "analysis_accounting": {
+   "dropped": 0
+  },
+  "analysis_financial": {
+   "dropped": 0
+  },
+  "assumptions": {
+   "dropped": 0
+  },
+  "analysis_valuation": {
+   "dropped": 0
+  },
+  "baselines": "written",
+  "control": "skipped: no approved golden case under evals/golden/cases names 0000002488-26-000123"
+ },
+ "comparer_labels": {
+  "notes-vs-market": "absent",
+  "numbers-vs-market": "absent"
+ },
+ "counts": {
+  "controls": 5,
+  "dropped_items": 2,
+  "eight_k": 93,
+  "exclusions": 20,
+  "facts": 2793,
+  "mdna": 82,
+  "normalized_quotes": 9,
+  "note_history": 35,
+  "notes": 111,
+  "paragraphs": 326
+ },
+ "cutoff": "2026-08-05",
+ "documents": [
+  {
+   "accepted": "2026-02-03T23:14:52-05:00",
+   "accession": "0000002488-26-000018",
+   "contributed_to": [
+    "input_numbers.json"
+   ],
+   "filing_date": "2026-02-04",
+   "form": "10-K",
+   "path": "10-K/amd-20251227_htm.xml",
+   "report_date": "2025-12-27",
+   "role": "xbrl_instance",
+   "sha256": "7a073e96fa640527505f4b53c4cda1f5b0af4d6e6a3b54b4cb056e78c36d328e",
+   "url": "https://www.sec.gov/Archives/edgar/data/2488/000000248826000018/amd-20251227_htm.xml"
+  },
+  {
+   "accepted": "2026-05-05T22:06:27-04:00",
+   "accession": "0000002488-26-000076",
+   "contributed_to": [
+    "input_mdna.md",
+    "input_notes.md"
+   ],
+   "filing_date": "2026-05-06",
+   "form": "10-Q",
+   "path": "10-Q/amd-20260328.htm",
+   "report_date": "2026-03-28",
+   "role": "prior_period",
+   "sha256": "da17888ba532021689af9e9756c32b1d336c202e15bd468090a62786124b5451",
+   "url": "https://www.sec.gov/Archives/edgar/data/2488/000000248826000076/amd-20260328.htm"
+  },
+  {
+   "accepted": "2026-05-05T22:06:27-04:00",
+   "accession": "0000002488-26-000076",
+   "contributed_to": [
+    "input_mdna.md",
+    "input_notes.md",
+    "input_notes_history.md",
+    "input_numbers.json"
+   ],
+   "filing_date": "2026-05-06",
+   "form": "10-Q",
+   "path": "10-Q/amd-20260328_htm.xml",
+   "report_date": "2026-03-28",
+   "role": "prior_period_xbrl_instance",
+   "sha256": "c305797957d29f8e8e3dbbde013f37acc0135b753cc189773ffe9b40cc9ba8aa",
+   "url": "https://www.sec.gov/Archives/edgar/data/2488/000000248826000076/amd-20260328_htm.xml"
+  },
+  {
+   "accepted": "2026-08-04T20:16:24-04:00",
+   "accession": "0000002488-26-000121",
+   "contributed_to": [
+    "input_8k.md"
+   ],
+   "filing_date": "2026-08-04",
+   "form": "8-K",
+   "path": "8-K/q22026991.htm",
+   "report_date": "2026-08-04",
+   "role": "exhibit_99_1",
+   "sha256": "300092cf72d99580e6d7d02e3e397325fd15b41c719616bc902260cba5901eb0",
+   "url": "https://www.sec.gov/Archives/edgar/data/2488/000000248826000121/q22026991.htm"
+  },
+  {
+   "accepted": "2026-08-04T20:16:24-04:00",
+   "accession": "0000002488-26-000121",
+   "contributed_to": [
+    "input_8k.md"
+   ],
+   "filing_date": "2026-08-04",
+   "form": "8-K",
+   "path": "8-K/amd-20260804.htm",
+   "report_date": "2026-08-04",
+   "role": "primary_html",
+   "sha256": "f9747e0b72a7ccf8da011775ba336ef301d468b4f8ed1a86e6caaadc56521e5e",
+   "url": "https://www.sec.gov/Archives/edgar/data/2488/000000248826000121/amd-20260804.htm"
+  },
+  {
+   "accepted": "2026-08-04T21:40:01-04:00",
+   "accession": "0000002488-26-000123",
+   "contributed_to": [
+    "input_controls.md",
+    "input_mdna.md",
+    "input_notes.md"
+   ],
+   "filing_date": "2026-08-05",
+   "form": "10-Q",
+   "path": "10-Q/amd-20260627.htm",
+   "report_date": "2026-06-27",
+   "role": "primary_html",
+   "sha256": "979ef332e94a3a992c167769712fb15b633e5cf331d3f3f0ac91348f1bc0a9bf",
+   "url": "https://www.sec.gov/Archives/edgar/data/2488/000000248826000123/amd-20260627.htm"
+  },
+  {
+   "accepted": "2026-08-04T21:40:01-04:00",
+   "accession": "0000002488-26-000123",
+   "contributed_to": [
+    "input_mdna.md",
+    "input_notes.md",
+    "input_notes_history.md",
+    "input_numbers.json"
+   ],
+   "filing_date": "2026-08-05",
+   "form": "10-Q",
+   "path": "10-Q/amd-20260627_htm.xml",
+   "report_date": "2026-06-27",
+   "role": "xbrl_instance",
+   "sha256": "39e82b6aaec2de306ebbe9368ec7d71375d45cb7f36e0e0f2cbcc34ad50c8a09",
+   "url": "https://www.sec.gov/Archives/edgar/data/2488/000000248826000123/amd-20260627_htm.xml"
+  },
+  {
+   "accession": "",
+   "contributed_to": [
+    "input_trends.json"
+   ],
+   "date_basis": "the latest filing whose facts this record contains; companyfacts is a catalogue of facts drawn from many filings and is not itself a filing",
+   "filing_date": null,
+   "form": "companyfacts",
+   "path": "companyfacts.json.gz",
+   "report_date": "",
+   "role": "standard_taxonomy_history",
+   "rows_used_through": "2026-08-05",
+   "sha256": "fc55137904ef6e65a3acf5b2b4af73f9b00698104cd30403166ea5f0d03ea616",
+   "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000002488.json"
+  },
+  {
+   "accession": "",
+   "contributed_to": [
+    "input_8k.md"
+   ],
+   "date_basis": "the latest filing this index contains; the index is not itself a filing and has no filing date",
+   "filing_date": null,
+   "form": "submissions",
+   "path": "submissions.json",
+   "report_date": "",
+   "role": "submissions_index",
+   "rows_used_through": "2026-08-05",
+   "sha256": "0a220ec96b895b3bf8abe89da2e6050cf389b47772ec7ef55c28a6cbd197014f",
+   "url": "https://data.sec.gov/submissions/CIK0000002488.json"
+  }
+ ],
+ "dropped_items": [
+  {
+   "item_id": "articulation_and_the_filed_history_comparative_quarter_sourced_from_later_filing",
+   "reason": "the quote carries only key names, the row's metadata or the id, nothing the row says",
+   "report": "report_numbers.md"
+  },
+  {
+   "item_id": "controls_audit_and_filings_officer_director_change_without_body",
+   "reason": "paragraph id input_8k.md: item codes, every 8-K on or before 2026-08-05 is not in this reader's committed input",
+   "report": "report_notes_text.md"
+  }
+ ],
+ "exclusions": [
+  {
+   "id": "0000002488-26-000123:mdna_excluded:1",
+   "reason": "forward_looking_boilerplate",
+   "source": "10-Q MD&A",
+   "text": "The statements in this report include forward-looking statements within the meaning of the Private Securities Litigation Reform Act of 1995. These forward-looking statements are based on current expectations and beliefs and involve numerous risks and uncertainties that could cause actual results to differ materially from expectations. These forward-looking statements speak only as of the date hereof or as of the dates indicated in the statements and should not be relied upon as predictions of future events, as we cannot assure you that the events or circumstances reflected in these statements will be achieved or will occur. You can identify forward-looking statements by the use of forward-looking terminology including “believes,” “expects,” “may,” “will,” “should,” “seeks,” “intends,” “plans,” “pro forma,” “estimates,” “anticipates,” or the negative of these words and phrases, other variations of these words and phrases or comparable terminology. The forward-looking statements relate to, among other things: possible impact of future accounting rules on AMD’s condensed consolidated financial statements; demand for AMD’s products; AMD’s strategy and expected benefits; the growth, change and competitive landscape of the markets in which AMD participates; the expectation that international sales will continue to be a significant portion of total sales in the foreseeable future; the expectation that AMD’s cash, cash equivalents, short-term investments and cash flows from operations along with our revolving credit facility and our commercial paper program will be sufficient to fund AMD’s operations, capital expenditures, commitments and strategic activities over the next 12 months and beyond; AMD’s ability to access capital markets; AMD’s expectation that based on management’s current knowledge, the potential liability related to AMD’s current litigation will not have a material adverse effect on its financial positions, results of operations or cash flows; anticipated ongoing and increased costs related to enhancing and implementing information security controls; the expectation that revenue allocated to remaining performance obligations that are unsatisfied will be recognized in the next 12 months; that a small number of customers will continue to account for a substantial part of AMD’s revenue and receivables in the future; the expected implications from the development of the legal and regulatory environment relating to emerging technologies, such as AI; AMD’s expectation to utilize the cloud service capacity in its operations or assign the capacity; AMD’s ability to achieve its corporate responsibility initiatives; compliance costs associated with new or developing sustainability laws and requirements; expected future AI technology trends, developments and growth; the expected benefits of AMD’s acquisitions; the extent of impact of export restrictions imposed by the U.S. on our business; expected shipment of the Helios rack-scale platforms; expected gain on the transfer of appreciated assets related to the acquisition of ZT Group Int’l, Inc.; AMD’s future investment commitments and commencement of future payments under data center leases; and AMD’s expectation to fund stock repurchases through cash generated from operations. For a discussion of the factors that could cause actual results to differ materially from the forward-looking statements, see “Part II, Item 1A—Risk Factors” and the “Financial Condition” section set forth in “Part I, Item 2-Management’s Discussion and Analysis of Financial Condition and Results of Operations,” or MD&A, and such other risks and uncertainties as set forth below in this report or detailed in our other Securities and Exchange Commission (SEC) reports and filings. We assume no obligation to update forward-looking statements."
+  },
+  {
+   "id": "0000002488-26-000123:mdna_excluded:2",
+   "reason": "page_number",
+   "source": "10-Q MD&A",
+   "text": "22"
+  },
+  {
+   "id": "0000002488-26-000123:mdna_excluded:3",
+   "reason": "table_of_contents_link",
+   "source": "10-Q MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0000002488-26-000123:mdna_excluded:4",
+   "reason": "page_number",
+   "source": "10-Q MD&A",
+   "text": "23"
+  },
+  {
+   "id": "0000002488-26-000123:mdna_excluded:5",
+   "reason": "table_of_contents_link",
+   "source": "10-Q MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0000002488-26-000123:mdna_excluded:6",
+   "reason": "page_number",
+   "source": "10-Q MD&A",
+   "text": "24"
+  },
+  {
+   "id": "0000002488-26-000123:mdna_excluded:7",
+   "reason": "table_of_contents_link",
+   "source": "10-Q MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0000002488-26-000123:mdna_excluded:8",
+   "reason": "page_number",
+   "source": "10-Q MD&A",
+   "text": "25"
+  },
+  {
+   "id": "0000002488-26-000123:mdna_excluded:9",
+   "reason": "table_of_contents_link",
+   "source": "10-Q MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0000002488-26-000123:mdna_excluded:10",
+   "reason": "page_number",
+   "source": "10-Q MD&A",
+   "text": "26"
+  },
+  {
+   "id": "0000002488-26-000123:mdna_excluded:11",
+   "reason": "table_of_contents_link",
+   "source": "10-Q MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0000002488-26-000123:mdna_excluded:12",
+   "reason": "page_number",
+   "source": "10-Q MD&A",
+   "text": "27"
+  },
+  {
+   "id": "0000002488-26-000123:mdna_excluded:13",
+   "reason": "table_of_contents_link",
+   "source": "10-Q MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0000002488-26-000123:mdna_excluded:14",
+   "reason": "page_number",
+   "source": "10-Q MD&A",
+   "text": "28"
+  },
+  {
+   "id": "0000002488-26-000123:mdna_excluded:15",
+   "reason": "table_of_contents_link",
+   "source": "10-Q MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0000002488-26-000123:mdna_excluded:16",
+   "reason": "page_number",
+   "source": "10-Q MD&A",
+   "text": "29"
+  },
+  {
+   "id": "0000002488-26-000123:mdna_excluded:17",
+   "reason": "table_of_contents_link",
+   "source": "10-Q MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0000002488-26-000121:8k_excluded:1",
+   "reason": "page_number",
+   "source": "8-K exhibit 99.1",
+   "text": "2"
+  },
+  {
+   "id": "0000002488-26-000121:8k_excluded:2",
+   "reason": "forward_looking_boilerplate",
+   "source": "8-K exhibit 99.1",
+   "text": "This press release contains forward-looking statements concerning Advanced Micro Devices, Inc. (AMD) such as, AMD’s strong momentum in the second half of 2026; AI driving compute demand across AMD’s markets; AMD being well positioned to capture expanding opportunity; AMD’s ability to deliver substantial revenue and earnings growth in the years ahead; acceleration of AMD’s Data Center sales growth in second half of 2026 driving stronger overall revenue growth and continued earnings expansion; the strategic partnership with Anthropic and the deployment of up to two gigawatts of AMD Instinct GPUs in AMD Helios rack-scale solutions and multiyear collaboration; expected plans, benefits and timing of AMD’s partnerships and strategic collaborations, including with Microsoft, Cerebras and Cisco; the features, functionality, performance, availability, timing and expected benefits of future AMD products; and AMD’s expected third quarter 2026 financial outlook, including revenue and non-GAAP gross margin, which are made pursuant to the Safe Harbor provisions of the Private Securities Litigation Reform Act of 1995. Forward-looking statements are commonly identified by words such as \"would,\" \"may,\" \"expects,\" \"believes,\" \"plans,\" \"intends,\" \"projects\" and other terms with similar meaning. Investors are cautioned that the forward-looking statements in this press release are based on current beliefs, assumptions and expectations, speak only as of the date of this press release and involve risks and uncertainties that could cause actual results to differ materially from current expectations. Such statements are subject to certain known and unknown risks and uncertainties, many of which are difficult to predict and are generally beyond AMD’s control, that could cause actual results and other future events to differ materially from those expressed in, or implied or projected by, the forward-looking information and statements. Material factors that could cause actual results to differ materially from current expectations include, without limitation, the following: impact of government actions and regulations such as export regulations, national-security-based regulations, import tariffs, trade protection measures, and licensing requirements; competitive markets in which AMD’s products are sold; the cyclical nature of the semiconductor industry; market conditions of the industries in which AMD products are sold; AMD's ability to introduce products on a timely basis with expected features and performance levels; loss of a significant customer; economic and market uncertainty; quarterly and seasonal sales patterns; AMD's ability to adequately protect its technology or other intellectual property; unfavorable currency exchange rate fluctuations; ability of third party manufacturers to manufacture AMD's products on a timely basis in sufficient quantities and using competitive technologies; availability of essential equipment, materials, components (such as memory supply), substrates or manufacturing processes; ability to achieve expected manufacturing yields for AMD’s products; AMD's ability to generate revenue from its semi-custom SoC products; potential security vulnerabilities; potential security incidents including IT outages, data loss, data breaches and cyberattacks; uncertainties involving the ordering and shipment of AMD’s products; AMD’s reliance on third-party intellectual property to design and introduce new products; AMD's reliance on third-party companies for design, manufacture and supply of motherboards, software, memory and other computer platform components; AMD's reliance on Microsoft and other software vendors' support to design and develop software to run on AMD’s products; AMD’s reliance on third-party distributors and add-in-board partners; impact of modification or interruption of AMD’s internal business processes and information systems; compatibility of AMD’s products with some or all industry-standard software and hardware; costs related to defective products; failure to maintain an efficient supply chain as customer demand changes; AMD's ability to rely on third party supply-chain logistics functions; AMD’s ability to effectively control sales of its products on the gray market; impact of climate change on AMD’s business; AMD’s ability to realize its deferred tax assets; potential tax liabilities; current and future claims and litigation; impact of environmental laws, conflict minerals related provisions and other laws or regulations; evolving expectations from governments, investors, customers and other stakeholders regarding corporate responsibility matters; issues related to the responsible use of AI; restrictions imposed by agreements governing AMD’s notes, the guarantees of Xilinx’s notes and the revolving credit agreement; AMD’s ability to satisfy financial obligations under guarantees, leases and other commercial commitments; impact of acquisitions, joint ventures and/or investments on AMD’s business and AMD’s ability to integrate acquired businesses; impact of any impairment of the combined company’s assets; political, legal and economic risks and natural disasters; future impairments of technology license purchases; AMD’s ability to attract and retain key employees; and AMD’s stock price volatility. Investors are urged to review in detail the risks and uncertainties in AMD’s Securities and Exchange Commission filings, including but not limited to AMD’s most recent reports on Forms 10-K and 10-Q."
+  },
+  {
+   "id": "0000002488-26-000121:8k_excluded:3",
+   "reason": "page_number",
+   "source": "8-K exhibit 99.1",
+   "text": "9"
+  }
+ ],
+ "files": {
+  "input_8k.md": {
+   "bytes": 43456,
+   "sha256": "75fae535bbc5d046a870d6572bb3ebdc389df9431acf5ddbc5c4fefd00d76354"
+  },
+  "input_controls.md": {
+   "bytes": 1895,
+   "sha256": "1df5bcaaa0717b46c5d611a86ebd515f8e25f6a42d0d01ff44953f8a66817184"
+  },
+  "input_mdna.md": {
+   "bytes": 28486,
+   "sha256": "ebbcf1863c026ac18e4b3c121053203f127ab752c447c56c2fe33c33240d9d4b"
+  },
+  "input_notes.md": {
+   "bytes": 44620,
+   "sha256": "c102cde09a1cd8eeeb7109ee2a1a7f18aea18b825427d7286dfd8afaa5e329a8"
+  },
+  "input_notes_history.md": {
+   "bytes": 21483,
+   "sha256": "c196fb18162ac7d154c703c81a10a351774958587f195ab0dd8e171241b2b0ea"
+  },
+  "input_numbers.json": {
+   "bytes": 2344763,
+   "sha256": "0f0ebd91260dbc489f921abfc243605766c94af45f90a60bdc9ee1f1f370e903"
+  },
+  "input_prior_predictions.md": {
+   "bytes": 183,
+   "sha256": "755ee8ecfcd4efd2b2d69b74ba00a79369fc5a26084cb78f311bbd072fe012f5"
+  },
+  "input_trends.json": {
+   "bytes": 213678,
+   "sha256": "d648d1a79d76c9dd78c6161cb24c7eb5d279cf3e96397e427183cfb84771950d"
+  }
+ },
+ "filing_date": "2026-08-05",
+ "form": "10-Q",
+ "market_table": "unavailable",
+ "market_table_reason": "no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched",
+ "normalized_quotes": [
+  {
+   "characters": 1,
+   "item_id": "articulation_and_the_filed_history_zt_systems_measurement_period_working_capital_payment",
+   "paragraph_id": "0000002488-26-000123:notes:28",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 1,
+   "item_id": "estimates_and_discretion_non_marketable_equity_cumulative_upward_adjustments",
+   "paragraph_id": "0000002488-26-000123:notes:62",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 1,
+   "item_id": "related_parties_contingencies_and_subsequent_events_investment_commitments_after_quarter_end",
+   "paragraph_id": "0000002488-26-000123:notes:63",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 3,
+   "item_id": "related_parties_contingencies_and_subsequent_events_partner_data_center_lease_guarantees",
+   "paragraph_id": "0000002488-26-000123:notes:70",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 1,
+   "item_id": "liquidity_and_capital_revolving_credit_facility_replaced",
+   "paragraph_id": "0000002488-26-000123:notes:82",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 2,
+   "item_id": "liquidity_and_capital_commercial_paper_program_capacity_raised",
+   "paragraph_id": "0000002488-26-000123:notes:83",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 1,
+   "item_id": "related_parties_contingencies_and_subsequent_events_data_center_leases_signed_after_quarter_end",
+   "paragraph_id": "0000002488-26-000123:notes:88",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 1,
+   "item_id": "structure_and_disclosure_changes_treasury_share_retirement",
+   "paragraph_id": "0000002488-26-000123:notes:98",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 2,
+   "item_id": "structure_and_disclosure_changes_equity_incentive_plan_share_increase",
+   "paragraph_id": "0000002488-26-000123:notes:106",
+   "report": "report_notes_text.md"
+  }
+ ],
+ "on_record_at_cutoff": [
+  {
+   "accepted": "2026-02-03T23:14:52-05:00",
+   "accession": "0000002488-26-000018",
+   "filing_date": "2026-02-04",
+   "form": "10-K",
+   "path": "10-K/amd-20251227.htm.gz",
+   "role": "primary_html",
+   "sha256": "6d978a7cb15913b280d2a5bf933d2c37cf749933504dc8060fdce5ee341f2c36"
+  },
+  {
+   "accepted": "2026-02-03T23:14:52-05:00",
+   "accession": "0000002488-26-000018",
+   "filing_date": "2026-02-04",
+   "form": "10-K",
+   "path": "10-K/amd-20251227_htm.xml",
+   "role": "xbrl_instance",
+   "sha256": "7a073e96fa640527505f4b53c4cda1f5b0af4d6e6a3b54b4cb056e78c36d328e"
+  },
+  {
+   "accepted": "2026-05-05T22:06:27-04:00",
+   "accession": "0000002488-26-000076",
+   "filing_date": "2026-05-06",
+   "form": "10-Q",
+   "path": "10-Q/amd-20260328.htm",
+   "role": "prior_period",
+   "sha256": "da17888ba532021689af9e9756c32b1d336c202e15bd468090a62786124b5451"
+  },
+  {
+   "accepted": "2026-05-05T22:06:27-04:00",
+   "accession": "0000002488-26-000076",
+   "filing_date": "2026-05-06",
+   "form": "10-Q",
+   "path": "10-Q/amd-20260328_htm.xml",
+   "role": "prior_period_xbrl_instance",
+   "sha256": "c305797957d29f8e8e3dbbde013f37acc0135b753cc189773ffe9b40cc9ba8aa"
+  },
+  {
+   "accepted": "2026-08-04T20:16:24-04:00",
+   "accession": "0000002488-26-000121",
+   "filing_date": "2026-08-04",
+   "form": "8-K",
+   "path": "8-K/q22026991.htm",
+   "role": "exhibit_99_1",
+   "sha256": "300092cf72d99580e6d7d02e3e397325fd15b41c719616bc902260cba5901eb0"
+  },
+  {
+   "accepted": "2026-08-04T20:16:24-04:00",
+   "accession": "0000002488-26-000121",
+   "filing_date": "2026-08-04",
+   "form": "8-K",
+   "path": "8-K/amd-20260804.htm",
+   "role": "primary_html",
+   "sha256": "f9747e0b72a7ccf8da011775ba336ef301d468b4f8ed1a86e6caaadc56521e5e"
+  },
+  {
+   "accession": "",
+   "filing_date": "2026-08-05",
+   "form": "companyfacts",
+   "path": "companyfacts.json.gz",
+   "role": "standard_taxonomy_history",
+   "sha256": "fc55137904ef6e65a3acf5b2b4af73f9b00698104cd30403166ea5f0d03ea616"
+  },
+  {
+   "accession": "",
+   "filing_date": "2026-08-05",
+   "form": "submissions",
+   "path": "submissions.json",
+   "role": "submissions_index",
+   "sha256": "0a220ec96b895b3bf8abe89da2e6050cf389b47772ec7ef55c28a6cbd197014f"
+  },
+  {
+   "accepted": "2026-08-04T21:40:01-04:00",
+   "accession": "0000002488-26-000123",
+   "filing_date": "2026-08-05",
+   "form": "10-Q",
+   "path": "10-Q/amd-20260627.htm",
+   "role": "primary_html",
+   "sha256": "979ef332e94a3a992c167769712fb15b633e5cf331d3f3f0ac91348f1bc0a9bf"
+  },
+  {
+   "accepted": "2026-08-04T21:40:01-04:00",
+   "accession": "0000002488-26-000123",
+   "filing_date": "2026-08-05",
+   "form": "10-Q",
+   "path": "10-Q/amd-20260627_htm.xml",
+   "role": "xbrl_instance",
+   "sha256": "39e82b6aaec2de306ebbe9368ec7d71375d45cb7f36e0e0f2cbcc34ad50c8a09"
+  }
+ ],
+ "paragraphs": [
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:1",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:2",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:3",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:4",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:5",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:6",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:7",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:8",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:9",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:10",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:11",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:12",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:13",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:14",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:15",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:16",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:17",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:18",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:19",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:20",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:21",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:22",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:23",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:24",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:25",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:26",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:27",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:28",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:29",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:30",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:31",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:32",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:33",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:34",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:35",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:36",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:37",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:38",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:39",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:40",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:41",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:42",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:43",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:44",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:45",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:46",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:47",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:48",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:49",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:50",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:51",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:52",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:53",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:54",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:55",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:56",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:57",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:58",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:59",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:60",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:61",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:62",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:63",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:64",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:65",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:66",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:67",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:68",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:69",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:70",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:71",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:72",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:73",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:74",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:75",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:76",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:77",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:78",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:79",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:80",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:81",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:82",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:83",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:84",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:85",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:86",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:87",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:88",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:89",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:90",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:91",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:92",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:93",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:94",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:95",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:96",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:97",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:98",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:99",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:100",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:101",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:102",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:103",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:104",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:105",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:106",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:107",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:108",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:109",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:110",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0000002488-26-000123:notes:111",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:1",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:2",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:3",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:4",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:5",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:6",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:7",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:8",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:9",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:10",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:11",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:12",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:13",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:14",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:15",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:16",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:17",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:18",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:19",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:20",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:21",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:22",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:23",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:24",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:25",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:26",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:27",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:28",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:29",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:30",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:31",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:32",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:33",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:34",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:35",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:36",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:37",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:38",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:39",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:40",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:41",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:42",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:43",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:44",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:45",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:46",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:47",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:48",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:49",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:50",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:51",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:52",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:53",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:54",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:55",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:56",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:57",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:58",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:59",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:60",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:61",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:62",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:63",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:64",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:65",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:66",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:67",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:68",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:69",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:70",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:71",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:72",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:73",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:74",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:75",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:76",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:77",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:78",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:79",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:80",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:81",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0000002488-26-000123:mdna:82",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000123:note_history:1",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000076:note_history:1",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000123:note_history:2",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000076:note_history:2",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000123:note_history:3",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000076:note_history:3",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000123:note_history:4",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000076:note_history:4",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000123:note_history:5",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000076:note_history:6",
+   "kind": "removed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000123:note_history:7",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000076:note_history:7",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000123:note_history:8",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000076:note_history:8",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000123:note_history:9",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000076:note_history:9",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000123:note_history:10",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000076:note_history:10",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000123:note_history:11",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000076:note_history:11",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000123:note_history:12",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000076:note_history:12",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000123:note_history:13",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000123:note_history:14",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000076:note_history:14",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000123:note_history:15",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000123:note_history:16",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000076:note_history:16",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000076:note_history:17",
+   "kind": "removed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000076:note_history:18",
+   "kind": "removed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000076:note_history:19",
+   "kind": "removed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000123:note_history:20",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000076:note_history:20",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000123:note_history:21",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0000002488-26-000076:note_history:21",
+   "kind": "previous"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0000002488-26-000123:item_4_controls:1",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0000002488-26-000123:item_4_controls:2",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0000002488-26-000123:item_4_controls:3",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0000002488-26-000123:item_4_controls:4",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0000002488-26-000123:item_4_controls:5",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:1",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:2",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:3",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:4",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:5",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:6",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:7",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:8",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:9",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:10",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:11",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:12",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:13",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:14",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:15",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:16",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:17",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:18",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:19",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:20",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:21",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:22",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:23",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:24",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:25",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:26",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:27",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:28",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:29",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:30",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:31",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:32",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:33",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:34",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:35",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:36",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:37",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:38",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:39",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:40",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:41",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:42",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:43",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:44",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:45",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:46",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:47",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:48",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:49",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:50",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:51",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:52",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:53",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:54",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:55",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:56",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:57",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:58",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:59",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:60",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:61",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:62",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:63",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:64",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:65",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:66",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:67",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:68",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:69",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:70",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:71",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:72",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:73",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:74",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:75",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:76",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:77",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:78",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:79",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:80",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:81",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:82",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:83",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:84",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:85",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:86",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:87",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:88",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:89",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:90",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:91",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:92",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0000002488-26-000121:8k_2_02:93",
+   "kind": "verbatim"
+  }
+ ],
+ "prior_accession": "0000002488-26-000076",
+ "rules_version": null,
+ "rules_version_comment": "null until rules/v0.1 exists; a prediction is scored against its own rules version and guessing one here would decide that scoring by accident",
+ "served_model": null,
+ "served_model_comment": "null until a prediction is served; the pinned-model runner records what it actually served, and nothing else may claim to know it",
+ "ticker": "AMD",
+ "analysis_failure": null,
+ "control_reason": "no approved golden case under evals/golden/cases names 0000002488-26-000123",
+ "model_override": {
+  "model": "opus",
+  "applies_to": [
+   "numbers-reader",
+   "notes-text-reader",
+   "accounting-analyst",
+   "financial-analyst",
+   "valuation-analyst",
+   "valuation-analyst-second-pass"
+  ],
+  "why": "named with --model in place of each definition's own, for the agents applies_to lists, which this invocation called; the owner's decision that names it is in docs/structure_changes.md"
+ },
+ "analysed_utc": "2026-10-21T14:52:19Z"
+}

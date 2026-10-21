@@ -1,0 +1,242 @@
+{
+ "scenarios": {
+  "bear": {
+   "revenue_growth_year_one": 0.2,
+   "terminal_growth": 0.025,
+   "operating_margin_year_one": 0.15,
+   "operating_margin_year_ten": 0.2,
+   "reinvestment_rate_year_one": 0.45,
+   "reinvestment_rate_year_ten": 0.3,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "The ramp slips. Rack-scale deployments with a few large AI customers move out, and revenue after the guided third quarter holds near that level instead of stepping up. Gaming semi-custom revenue keeps falling. Vested customer warrants are treated as consideration payable to a customer, which reduces the revenue recognised on those sales. Year one still grows, because the guided quarter alone is far above the year-ago quarter.",
+     "quote": "Equity granted to a customer in step with its purchases is consideration payable to a customer, so it may reduce the revenue recognised on those sales.",
+     "quote_from": "analysis_accounting.json",
+     "fields": [
+      "ratios.growth.revenue.trailing_four_quarters",
+      "ratios.growth.revenue.year_over_year",
+      "earnings_versus_cash.history.years.0.revenue_growth",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.revenue_growth_five_year_compound"
+     ],
+     "history": "Bear year-one growth is well below the trailing-four-quarter {ratios.growth.revenue.trailing_four_quarters|pct} and fiscal 2025's {earnings_versus_cash.history.years.0.revenue_growth|pct}. It is also below the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, but above the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, which includes the fiscal 2023 decline."
+    },
+    "terminal_growth": {
+     "reason": "Suppose the company stays a second source competing on price in accelerators, while Client faces price and mix pressure and Gaming shrinks. Once the cycle ends it then grows at nominal economic growth or a little below it. The rate is below the risk-free rate of {cost_of_capital.risk_free_rate|pct}.",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.years.2.revenue_growth"
+     ],
+     "history": "It is below every year of positive growth in the record and below the base terminal rate. The record's one decline, fiscal 2023 at {earnings_versus_cash.history.years.2.revenue_growth|pct}, shows the business is cyclical."
+    },
+    "operating_margin_year_one": {
+     "reason": "Operating expenses already committed, namely research and development headcount for AI and go-to-market spending, keep growing while revenue slows. Client and Gaming operating income keeps falling as costs outrun revenue. A demand shortfall against contracted purchases can also bring inventory charges like the export-control charge in the year-ago quarter. The margin stays at about the trailing level.",
+     "quote": "Client and Gaming operating income was $582 million for the three months ended June 27, 2026, compared to operating income of $767 million for the prior year period.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "earnings_versus_cash.history.years.0.operating_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "ratios.efficiency.days_sales_of_inventory"
+     ],
+     "history": "It is just below the trailing {ratios.profitability.operating_margin|pct}, and above fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct} and the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}. Inventory days of {ratios.efficiency.days_sales_of_inventory} leave room for a write-down."
+    },
+    "operating_margin_year_ten": {
+     "reason": "The deals that win AI share keep costing margin and returns: warrants that vest on purchases, guarantees of partners' leases and investments in counterparties. The company remains the alternative that competes on price. The margin recovers once acquired-intangible amortization runs off, but only to around its best year before the large acquisitions.",
+     "quote": "The main concern is a cluster of arrangements in which the company finances, guarantees, invests in or purchases capacity from the counterparties of its data-center sales.",
+     "quote_from": "analysis_accounting.json",
+     "fields": [
+      "earnings_versus_cash.history.years.4.operating_margin",
+      "ratios.profitability.operating_margin",
+      "terms.balances_now.guarantee_maximum_exposure"
+     ],
+     "history": "It is below the fiscal 2021 high of {earnings_versus_cash.history.years.4.operating_margin|pct} and above the trailing {ratios.profitability.operating_margin|pct}."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "Slower growth would normally need less capital, but the commitments are already contracted. Purchase obligations stand at {terms.balances_now.unconditional_purchase_obligations}, much of them due in the rest of fiscal 2026, and on top of them come supply prepayments, data-center leases and investment commitments. If demand falls short, those purchases turn into inventory, while inventory days are already at {ratios.efficiency.days_sales_of_inventory}. The payables build that MD&A calls timing also reverses. Reinvestment therefore absorbs a larger share of a smaller after-tax operating income.",
+     "quote": "As of June 27, 2026, we had unconditional commitments of approximately $30.3 billion, of which $17.4 billion are for the remainder of fiscal year 2026.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "terms.balances_now.unconditional_purchase_obligations",
+      "ratios.efficiency.days_sales_of_inventory",
+      "earnings_versus_cash.working_capital.accounts_payable.cash_flow_statement_change",
+      "earnings_versus_cash.working_capital.inventory.balance_sheet_change"
+     ],
+     "history": "It is above the base year-one rate despite slower growth. The trailing rate cannot be read because free cash flow to the firm is missing. The trailing cash flows were helped by the payables build of {earnings_versus_cash.working_capital.accounts_payable.cash_flow_statement_change}, which would reverse first in a shortfall, and inventory already rose {earnings_versus_cash.working_capital.inventory.balance_sheet_change} over the year."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "New capital earns only close to what the company's reported return on invested capital, {ratios.profitability.return_on_invested_capital|pct}, earns today. Even the lower terminal growth then needs a larger share of income reinvested than in the base case.",
+     "quote": "Returns are modest for these margins",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "ratios.profitability.return_on_invested_capital"
+     ],
+     "history": "It is above the base and bull year-ten rates. The record shows no mature period, and the reported return on invested capital is the only return measure the calculator holds."
+    }
+   }
+  },
+  "base": {
+   "revenue_growth_year_one": 0.35,
+   "terminal_growth": 0.035,
+   "operating_margin_year_one": 0.21,
+   "operating_margin_year_ten": 0.3,
+   "reinvestment_rate_year_one": 0.4,
+   "reinvestment_rate_year_ten": 0.23,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "Year one is the next four quarters measured against the trailing four. The release guides the coming quarter well above this rate against the year-ago quarter. The chief financial officer expects Data Center sales to accelerate in the second half as Helios racks ramp under the deployment agreements with OpenAI and Meta and the new Anthropic partnership. I set year one a little below the trailing-four-quarter rate rather than at the guided quarter's pace. One guided quarter is not a year, and the ramp rests on a few very large customers. Gaming revenue is falling on lower semi-custom sales, and customer warrants that vest on GPU purchases may be booked as a reduction of revenue. Python's straight-line fade then keeps growth high through the deployment years and brings it down to the terminal rate by year ten.",
+     "quote": "For the third quarter of 2026, AMD expects revenue to be approximately $13 billion, plus or minus $300 million. The mid-point of the revenue range represents year-over-year growth of approximately 41% and a sequential increase of approximately 13%.",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.growth.revenue.trailing_four_quarters",
+      "ratios.growth.revenue.year_over_year",
+      "ratios.growth.revenue.quarter_over_quarter",
+      "earnings_versus_cash.history.years.0.revenue_growth",
+      "earnings_versus_cash.history.years.2.revenue_growth",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.revenue_growth_five_year_compound"
+     ],
+     "history": "Base year-one growth is below the trailing-four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct} and the latest quarter's year-over-year {ratios.growth.revenue.year_over_year|pct}. It is close to fiscal 2025's {earnings_versus_cash.history.years.0.revenue_growth|pct}, and well above the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}. The three-year compound is held down by the fiscal 2023 decline of {earnings_versus_cash.history.years.2.revenue_growth|pct}, so it understates the current run rate. The base asks for a pace the company already showed in fiscal 2025, not a new one."
+    },
+    "terminal_growth": {
+     "reason": "This is a long-run rate for a very large chip company once the AI build-out matures. It is about nominal economic growth, with a little room for compute demand that keeps rising faster than the economy. It sits below the risk-free rate of {cost_of_capital.risk_free_rate|pct}, as the rule requires, and leaves a margin under it, because a company of this size cannot outgrow the economy indefinitely.",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.years.2.revenue_growth",
+      "earnings_versus_cash.history.years.4.revenue_growth"
+     ],
+     "history": "The record holds no steady-state period to compare against. Annual growth has ranged from the fiscal 2023 decline of {earnings_versus_cash.history.years.2.revenue_growth|pct} to the fiscal 2021 surge of {earnings_versus_cash.history.years.4.revenue_growth|pct}. The terminal rate is below every year of positive growth in the history by design, because it describes the company after the current cycle."
+    },
+    "operating_margin_year_one": {
+     "reason": "The trailing operating margin is {ratios.profitability.operating_margin|pct}. The latest quarter already runs above it, with operating income of {ratios.growth.operating_income.this_quarter} on revenue of {ratios.growth.revenue.this_quarter} and a gross margin of {trend_table.quarters-back-0.ratios.gross_margin|pct}, the highest of six quarters. Year one adds the guided revenue step-up and the earnings expansion the chief financial officer expects. Operating expenses grow fast: research and development on AI headcount, and marketing, general and administrative on go-to-market spending. But in the latest quarter each grew more slowly than revenue, and amortization of acquired intangibles is falling as older assets finish amortizing. I stop short of a larger step for two reasons. Rack-scale systems carry more bought-in content than chips. And share-based compensation, {earnings_versus_cash.share_based_compensation_over_revenue|pct} of revenue, stays in the margin as the real cost it is.",
+     "quote": "We expect Data Center sales to accelerate in the second half of 2026, driving stronger overall revenue growth and continued earnings expansion.",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "ratios.growth.operating_income.this_quarter",
+      "ratios.growth.revenue.this_quarter",
+      "trend_table.quarters-back-0.ratios.gross_margin",
+      "earnings_versus_cash.share_based_compensation_over_revenue",
+      "earnings_versus_cash.history.years.0.operating_margin",
+      "earnings_versus_cash.history.years.4.operating_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "trend_table.years-back-4.ratios.soft_asset_share",
+      "trend_table.years-back-3.ratios.soft_asset_share"
+     ],
+     "history": "Base year-one margin is above the trailing {ratios.profitability.operating_margin|pct}, fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct} and the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}. It is just below the fiscal 2021 high of {earnings_versus_cash.history.years.4.operating_margin|pct}. That high came before acquired assets dominated the balance sheet: the soft-asset share was {trend_table.years-back-4.ratios.soft_asset_share|pct}, against {trend_table.years-back-3.ratios.soft_asset_share|pct} a year later. So it was earned without today's amortization charge."
+    },
+    "operating_margin_year_ten": {
+     "reason": "By year ten three things lift GAAP margin above anything the company has filed. Data Center, already the majority of revenue, is a larger share still. The amortization of acquired intangibles has largely run off, and MD&A says part of it already has. And research and development is spread over a revenue base several times today's. I hold the margin well below that of the most profitable AI-accelerator supplier. The company competes against that incumbent partly on price and on deal terms, as the warrants, lease guarantees and investment commitments show. It keeps a large share-based compensation charge. And its Client and Gaming businesses saw operating income fall this year as costs outran revenue.",
+     "quote": "The decrease in both periods was primarily due to certain acquisition-related intangibles that were fully amortized in the prior fiscal year.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "earnings_versus_cash.history.years.4.operating_margin",
+      "ratios.profitability.operating_margin",
+      "earnings_versus_cash.share_based_compensation_over_revenue",
+      "trend_table.years-back-4.ratios.soft_asset_share",
+      "trend_table.years-back-3.ratios.soft_asset_share"
+     ],
+     "history": "Base year-ten margin is above every fiscal year in the record, including the fiscal 2021 high of {earnings_versus_cash.history.years.4.operating_margin|pct}, and well above the trailing {ratios.profitability.operating_margin|pct}. This step is the largest judgment in the base case. It rests on mix and on amortization running off, not on the company's past."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "Growth this fast needs capital. Over the year trade working capital rose from {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier} to {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now}, and capital expenditure rose to {terms.trailing_four_quarters.capital_expenditure} from {terms.trailing_four_quarters_a_year_earlier.capital_expenditure}. Supply agreements are being prepaid, and purchase obligations stand at {terms.balances_now.unconditional_purchase_obligations}. MD&A calls the payables build of {earnings_versus_cash.working_capital.accounts_payable.cash_flow_statement_change} timing, so it should reverse, which adds to working-capital absorption in year one. I also count part of the investment commitments signed after the quarter, which serve the same data-center ramp. On the other side, the large non-cash amortization of acquired intangibles inside operating income offsets part of the capital spending. Net reinvestment is therefore a smaller share of after-tax operating income than gross spending suggests.",
+     "quote": "a $1.0 billion increase in prepaid expenses and other assets primarily due to prepayments of supply agreements, partially offset by a $2.2 billion increase in accounts payable primarily due to timing of payment obligations",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now",
+      "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier",
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters_a_year_earlier.capital_expenditure",
+      "terms.balances_now.unconditional_purchase_obligations",
+      "earnings_versus_cash.working_capital.accounts_payable.cash_flow_statement_change",
+      "free_cash_flow.free_cash_flow_simple",
+      "free_cash_flow.free_cash_flow_over_net_income"
+     ],
+     "history": "The calculator cannot compute free cash flow to the firm, because depreciation and amortization is missing for the period, so the trailing reinvestment rate cannot be read directly. Simple free cash flow of {free_cash_flow.free_cash_flow_simple} was {free_cash_flow.free_cash_flow_over_net_income} times net income, which points to low net reinvestment over the trailing year. But that figure leans on the payables build the accounting analyst removes. The base rate is well above what the trailing cash flows imply, because both capital spending and the commitments behind it are stepping up."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "By year ten growth has faded to the terminal rate, so reinvestment only has to fund that rate. At this rate new capital earns a return well above the cost of capital, as a fabless design company's should, but below the very high returns of the ramp years. That implied return is also well above the reported return on invested capital of {ratios.profitability.return_on_invested_capital|pct}. The reported figure is held down by acquired goodwill and does not measure returns on new organic capital.",
+     "fields": [
+      "ratios.profitability.return_on_invested_capital",
+      "cost_of_capital.risk_free_rate"
+     ],
+     "history": "The base year-ten rate is below the year-one rate. The record cannot show a mature rate. Free cash flow to the firm is missing for the trailing period because depreciation and amortization is missing, and the fiscal years on record are years of acquisition, downturn and ramp."
+    }
+   }
+  },
+  "bull": {
+   "revenue_growth_year_one": 0.45,
+   "terminal_growth": 0.04,
+   "operating_margin_year_one": 0.24,
+   "operating_margin_year_ten": 0.36,
+   "reinvestment_rate_year_one": 0.45,
+   "reinvestment_rate_year_ten": 0.2,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "The second-half acceleration arrives in full. Helios racks ship on schedule to OpenAI, Meta and Anthropic, the guided third quarter is beaten, and each later quarter steps up at least as fast as the guided sequential increase. Year one then grows faster than the trailing four quarters, near the latest quarter's year-over-year pace. The fade leaves growth high for several more years as the multi-gigawatt deployments roll out.",
+     "quote": "Announced a strategic partnership with Anthropic to deploy up to 2 gigawatts of MI450 Series GPUs in AMD Helios racks",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.growth.revenue.trailing_four_quarters",
+      "ratios.growth.revenue.year_over_year",
+      "ratios.growth.revenue.quarter_over_quarter",
+      "earnings_versus_cash.history.years.4.revenue_growth",
+      "earnings_versus_cash.history.years.3.revenue_growth"
+     ],
+     "history": "Bull year-one growth is above the trailing-four-quarter {ratios.growth.revenue.trailing_four_quarters|pct} and below the latest quarter's year-over-year {ratios.growth.revenue.year_over_year|pct}. Only fiscal 2021, at {earnings_versus_cash.history.years.4.revenue_growth|pct}, grew faster in the record; fiscal 2022 grew {earnings_versus_cash.history.years.3.revenue_growth|pct}."
+    },
+    "terminal_growth": {
+     "reason": "AI compute keeps growing faster than the economy for longer, so the company leaves year ten on a slightly higher long-run rate than in the base case. The rate stays below the risk-free rate of {cost_of_capital.risk_free_rate|pct}.",
+     "fields": [
+      "cost_of_capital.risk_free_rate"
+     ],
+     "history": "It is below every year of positive growth in the record. Like the base rate, it describes the company after the current cycle, not during it."
+    },
+    "operating_margin_year_one": {
+     "reason": "Data Center mix rises faster than in the base case, and gross margin holds at the guided level while rack volumes ramp. Operating expenses keep growing more slowly than revenue, so operating leverage shows at once. MD&A already credits part of the latest gross-margin gain to mix, with higher Data Center revenue.",
+     "quote": "a favorable product mix, including higher Data Center segment revenue",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "earnings_versus_cash.history.years.4.operating_margin",
+      "trend_table.quarters-back-0.ratios.gross_margin"
+     ],
+     "history": "It is above the trailing {ratios.profitability.operating_margin|pct} and above the fiscal 2021 high of {earnings_versus_cash.history.years.4.operating_margin|pct}, the best year on record. It needs the latest quarter's gross margin of {trend_table.quarters-back-0.ratios.gross_margin|pct} to hold while revenue grows much faster than costs."
+    },
+    "operating_margin_year_ten": {
+     "reason": "Data Center dominates, amortization has run off, and research spending is a much smaller share of a far larger revenue base. GAAP margin then approaches that of the most profitable large chip companies, net of share-based compensation. In this case the company becomes a full second supplier of AI racks rather than a price-taker.",
+     "quote": "driven by continued strength in our Data Center business, which represented 58% of company revenue in the quarter",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "earnings_versus_cash.history.years.4.operating_margin",
+      "ratios.profitability.operating_margin",
+      "earnings_versus_cash.share_based_compensation_over_revenue"
+     ],
+     "history": "It is far above every fiscal year in the record, including the fiscal 2021 high of {earnings_versus_cash.history.years.4.operating_margin|pct}. It is the bull case's largest departure from the company's past."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "Faster growth needs more working capital, inventory and capacity, and the investment commitments signed after the quarter are drawn sooner. The rate is only a little above the base, because the higher operating income in this case spreads that spending, and payables and supply terms scale with volume.",
+     "quote": "Subsequent to June 27, 2026, we entered into investment commitments of up to $5.0 billion, subject to certain conditions, which are expected to be made through fiscal year 2028",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters_a_year_earlier.capital_expenditure",
+      "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now",
+      "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier"
+     ],
+     "history": "It is above the base year-one rate. The trailing reinvestment rate cannot be read because free cash flow to the firm is missing, but capital expenditure has already risen to {terms.trailing_four_quarters.capital_expenditure} from {terms.trailing_four_quarters_a_year_earlier.capital_expenditure}."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "A mature fabless model at scale earns high returns on new capital, so the terminal rate is funded with less reinvestment than in the base case.",
+     "fields": [
+      "ratios.profitability.return_on_invested_capital"
+     ],
+     "history": "It is below the base year-ten rate. The record shows no mature period to test it against, and the reported return on invested capital of {ratios.profitability.return_on_invested_capital|pct} is held down by acquired goodwill."
+    }
+   }
+  }
+ },
+ "wacc_overrides": {},
+ "dropped_items": [],
+ "dropped_count": 0
+}
