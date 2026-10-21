@@ -1384,10 +1384,45 @@ def test_a_ratio_over_a_loss_or_negative_equity_is_written_missing_with_the_sign
     assert zero["missing"] == "b is zero"
     unguarded = calculator.measure("a / b", {"a": cell(-5.0), "b": cell(-10.0)}, over, denominator="b")
     assert unguarded["value"] == 0.5
-    share = calculator.measure("d / (d + e)", {"d": cell(4.0), "e": cell(-6.0)},
-                               lambda v: v["d"] / (v["d"] + v["e"]), denominator="e", positive=True)
-    assert share["missing"].startswith("e is negative")
+    # debt's share of capital is guarded on the capital sum, the shipped design:
+    # negative equity with the sum still positive is a reading above one, and a
+    # negative sum is missing
+    above_one = calculator.measure("total_debt / capital", {"total_debt": cell(4.0), "capital": cell(1.0)},
+                                   lambda v: v["total_debt"] / v["capital"], denominator="capital", positive=True)
+    assert above_one["value"] == 4.0
+    negative_sum = calculator.measure("total_debt / capital", {"total_debt": cell(4.0), "capital": cell(-2.0)},
+                                      lambda v: v["total_debt"] / v["capital"], denominator="capital", positive=True)
+    assert negative_sum["missing"] == "capital is negative, so the ratio has no reading"
     # a missing input still wins over the sign check
     absent = calculator.measure("a / b", {"a": cell(1.0), "b": {"missing": "not tagged"}}, over,
                                 denominator="b", positive=True)
     assert absent["missing"] == "b: not tagged"
+
+
+def test_a_loss_maker_drives_the_sign_guard_through_the_shipped_code():
+    """Evolv's own statements, read by eye in tests/fixtures/EVLV/10-K/evlv-20251231.htm.gz
+    (fiscal 2025) and tests/fixtures/EVLV/10-Q/evlv-20260630.htm (six months of 2026
+    and 2025), in thousands; trailing four quarters = fiscal 2025 + six months 2026
+    - six months 2025:
+      net loss                 -33,138 + -14,307 - -42,224 =  -5,221
+      operating cash flow       18,669 +   8,723 -    -426 =  27,818
+      loss from operations     -48,463 + -19,023 - -31,882 = -35,604
+      depreciation and amortization 24,340 + 13,938 - 11,318 = 26,960; EBITDA -8,644
+    A net loss and a negative EBITDA reach free_cash_flows() and ratios() as they
+    stand; the ratio over EBITDA is written missing with the sign named (the second
+    lens, 2026-10-21), and the inputs themselves are still there."""
+    out = calculator.calculate(ticker="EVLV", cutoff="2026-08-11", period_end="2026-06-30",
+                               form="10-Q", accession="0001805385-26-000049")
+    ttm = out["terms"]["trailing_four_quarters"]
+    assert ttm["net_income"]["value"] == -5_221 * 1000
+    assert ttm["operating_cash_flow"]["value"] == 27_818 * 1000
+    assert out["ratios"]["solvency"]["ebitda"]["value"] == -8_644 * 1000
+    # the record holds no fiscal-2025 capital expenditure for Evolv, so simple free
+    # cash flow is missing and that, the input, is what the ratio reports: a missing
+    # input wins over the sign, and no number is printed either way
+    over_income = out["free_cash_flow"]["free_cash_flow_over_net_income"]
+    assert "value" not in over_income
+    assert over_income["missing"].startswith("free_cash_flow_simple: capital_expenditure")
+    over_ebitda = out["ratios"]["solvency"]["operating_cash_flow_over_ebitda"]
+    assert "value" not in over_ebitda
+    assert over_ebitda["missing"] == "ebitda is negative, so the ratio has no reading"
