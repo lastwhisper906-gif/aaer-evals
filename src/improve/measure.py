@@ -21,7 +21,8 @@ held-in or held-out. Better and worse are `mine.WATCHED`'s directions. A
 spread of zero with one repeat each side reads any difference as a move, so a
 one-repeat measurement is reported as such in the verdict.
 
-The model is an alias, `opus` by the owner's decision of 2026-10-14; a
+The model is an alias, `fable` by the owner's decision of 2026-10-21 (Opus from
+2026-10-14 to then); a
 version string is refused, so a run never pins what the next model replaces.
 """
 
@@ -46,7 +47,7 @@ except ImportError:  # invoked as a plain script
 
 BAD_INPUT = 2
 OVER_BUDGET = 3
-DEFAULT_MODEL = "opus"
+DEFAULT_MODEL = "fable"
 GATE_KIND = {"accounting-analyst": "accounting", "financial-analyst": "financial",
              "valuation-analyst": "assumptions", "valuation-analyst-second-pass": "valuation"}
 

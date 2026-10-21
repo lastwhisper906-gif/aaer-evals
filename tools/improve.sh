@@ -46,7 +46,7 @@ print(json.dumps({
 EOF
 )"
 exec env -u CLAUDECODE -u CLAUDE_CODE_ENTRYPOINT claude -p \
-  --model opus --effort xhigh \
+  --model fable --effort xhigh \
   --permission-mode dontAsk \
   --setting-sources "" \
   --settings "$SETTINGS" \
