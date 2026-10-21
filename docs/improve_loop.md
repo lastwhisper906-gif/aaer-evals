@@ -19,7 +19,7 @@ fixed, outside the loop, and read-only to it:
 | `evals/`, the graders and the rubric | already: the owner's (`CLAUDE.md`) |
 | the gates: `src/analysis_check.py`, `src/quote_gate.py`, `src/plain_name_check.py`, `src/cutoff_guard.py`, `src/extraction_checks.py`, `src/calculator.py`'s arithmetic | the improve session's settings deny Edit/Write there and a PreToolUse guard on Bash refuses a shell write (`.claude/hooks/guard_fences.py`, the shape of `guard_evals.py`); CI's `fences` job, once the owner labels the workflow change |
 | the measurement: `src/improve/measure.py` and its acceptance rule | the same |
-| the records: `runs/`, `rules/`, `events/`, `history/`, `docs/improve/ledger.jsonl` | already: `src/append_check.py` |
+| the records: `runs/`, `rules/`, `events/`, `history/`, `docs/improve/ledger.jsonl` | already: `src/append_check.py` (the ledger is in its `PROTECTED` list; `CLAUDE.md`'s line does not name it yet, because the second lens refuses a branch that changes `CLAUDE.md`, so that one word is the owner's to add on main) |
 | expected values: `tests/expected_values.py`, `tests/fixtures/**` | already: an unsourced value is refused |
 | the model: an alias (`opus`), never a version string; the effort | `src/improve/measure.py` refuses a run whose manifest names a version the loop chose |
 
