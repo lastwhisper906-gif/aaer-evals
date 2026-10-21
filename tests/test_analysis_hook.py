@@ -139,7 +139,7 @@ class _Done:
 def test_ask_passes_the_settings_before_the_message_and_none_without(tmp_path, monkeypatch):
     calls = []
 
-    def run(command, cwd, capture_output, text, timeout):
+    def run(command, cwd, capture_output, text, timeout, env=None):
         calls.append(command)
         (cwd / "out.json").write_text("{}")
         return _Done()

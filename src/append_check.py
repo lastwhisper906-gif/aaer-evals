@@ -46,7 +46,8 @@ except ImportError:  # invoked as a plain script: python3.12 src/append_check.py
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     from src import interpreter_pin
 
-PROTECTED = ("runs/", "rules/", "events/", "history/", "evals/scoreboard.jsonl")
+PROTECTED = ("runs/", "rules/", "events/", "history/", "evals/scoreboard.jsonl",
+             "docs/improve/ledger.jsonl")
 
 
 def _git(*args: str) -> str:

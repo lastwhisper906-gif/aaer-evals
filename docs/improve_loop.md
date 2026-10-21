@@ -5,7 +5,8 @@ like the dropped findings of 2026-10-14, finds its own remedy (a hook, a
 prompt line, a line of wiring), tests it, and ships it — and that does not go
 stale when the next model arrives. Designed against the seven findings of the
 2026 harness literature read on 2026-10-16 (`docs/structure_changes.md`);
-nothing below is built yet. A line that names a file names what will exist.
+the build order at the end says what exists: steps 1 and 2 were built on
+2026-10-21 (`docs/improve/ledger.jsonl`), the rest is still a plan.
 
 ## What the model does, and what stays fixed
 

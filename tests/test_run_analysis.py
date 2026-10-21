@@ -641,7 +641,7 @@ def _cli(answers):
     """A stand-in for the claude CLI: each call pops the next (exit, json, files) answer."""
     calls = []
 
-    def run(command, cwd, capture_output, text, timeout):
+    def run(command, cwd, capture_output, text, timeout, env=None):
         exit_code, payload, files = answers.pop(0)
         for name, content in (files or {}).items():
             (cwd / name).write_text(content)
@@ -2587,7 +2587,7 @@ def test_two_analysts_in_parallel_the_shape_opens_the_row_and_the_message_confir
     models: dict[str, list[str]] = {}
     lock, financial_on_fable = threading.Lock(), threading.Event()
 
-    def cli(command, cwd, capture_output, text, timeout):
+    def cli(command, cwd, capture_output, text, timeout, env=None):
         agent = command[command.index("--agent") + 1]
         with lock:
             models.setdefault(agent, []).append(command[command.index("--model") + 1])

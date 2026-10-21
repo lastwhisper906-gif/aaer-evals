@@ -16,6 +16,8 @@ branch changed. A run item is done when its run directory is published and
 
 ## Open
 
+[ ] the improvement loop's first pass, by hand, over the runs of 2026-10-14 (`docs/improve_loop.md` build order 3): a weakness file, two or three candidate edits each with its prediction, `measure run` on both sides and `measure compare`, one ledger line per candidate · `.venv/bin/python -m src.improve.measure compare --baseline <rows> --candidate <rows> --held-in <runs> --target <metric>` exits 0 or 1 and prints its verdict, and `.venv/bin/python -m src.append_check --baseline origin/main` passes with the ledger lines appended · the build of 2026-10-21
+
 [ ] new Fable runs for AAPL, GNRC and LFUS, each in `runs/<ticker>/<accession>-rerun-<date>/` · `.venv/bin/python -m evals --runs runs/AAPL runs/GNRC runs/LFUS` · items one to three
 
 [ ] golden consistency runs: three runs of each approved golden case · `.venv/bin/python -m evals.capability.consistency` · the owner approving at least one case in `evals/golden/cases/`

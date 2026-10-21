@@ -7,8 +7,10 @@
 # `PYTHON=python`, which is the interpreter it installed the requirements into.
 PYTHON ?= .venv/bin/python
 BASELINE ?= origin/main
+# The improvement loop's budget for one pass, list-price USD (docs/improve_loop.md).
+BUDGET ?= 60
 
-.PHONY: check append-check archive-check plain-name-check secret-check rule-checks test eval eval-quick fetch
+.PHONY: check append-check archive-check plain-name-check secret-check rule-checks test eval eval-quick fetch improve
 
 # The whole gate. Run this before opening a pull request. CI runs this same
 # target, so the gate is defined once -- the same rule written in two files is
@@ -71,3 +73,9 @@ eval-quick:
 fetch:
 	$(PYTHON) -m src.fsn fetch
 	$(PYTHON) -m src.fsn load
+
+# One pass of the improvement loop (docs/improve_loop.md): a nested Opus session
+# under the fences, with the budget, told the improve skill. It writes its own
+# branches and pull requests; this target itself writes nothing in the tree.
+improve:
+	sh tools/improve.sh $(BUDGET)

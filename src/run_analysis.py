@@ -418,17 +418,17 @@ def ask(directory: Path, *, agent: str, writes: tuple[str, ...], message: str,
         command = ["claude", "-p", "--restricted", "--permission-mode", "acceptEdits",
                    "--agent", agent, "--agents", json.dumps({agent: spec}),
                    "--model", spec["model"], "--effort", EFFORT,
-                   "--output-format", "json", message]
+                   "--output-format", "stream-json", "--verbose", message]
         if settings:
             command[-1:-1] = ["--settings", settings]
         done = subprocess.run(command, cwd=directory, capture_output=True, text=True,
-                              timeout=CALL_TIMEOUT_SECONDS)
+                              timeout=CALL_TIMEOUT_SECONDS, env=nested_env())
         seconds = time.monotonic() - started
         log.write_text(done.stderr[-20000:], encoding="utf-8")
-        try:
-            result = json.loads(done.stdout)
-        except ValueError:
-            result = {"is_error": True, "result": done.stdout[-2000:]}
+        # the whole session, every event, beside the stderr tail and outside the
+        # record: what the improvement loop reads (docs/improve_loop.md)
+        transcript_path(log, attempt).write_text(done.stdout, encoding="utf-8")
+        result = result_of(done.stdout)
         usage = usage_record(result, requested=spec["model"], seconds=seconds, attempt=attempt)
         record.update(usage)
         written = all((directory / name).is_file() for name in writes)
@@ -460,6 +460,49 @@ def ask(directory: Path, *, agent: str, writes: tuple[str, ...], message: str,
             return with_attempts(record, attempts)
         attempts.append(_attempt_entry(usage, "failed"))
     return with_attempts(record, attempts)
+
+
+NESTED_UNSET = ("CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT")
+
+
+def nested_env() -> dict[str, str]:
+    """The environment a nested session is started in: this process's, less the
+    two variables that tell a CLI it is already inside a session, which made a
+    nested call hang (lessons.md 2026-10-14)."""
+    return {key: value for key, value in os.environ.items() if key not in NESTED_UNSET}
+
+
+def transcript_path(log: Path, attempt: int) -> Path:
+    """Where one attempt's whole session goes: `<agent>.<attempt>.transcript.jsonl`
+    beside the agent's stderr log `<agent>.log`."""
+    log = Path(log)
+    return log.with_name(f"{log.stem}.{attempt}.transcript.jsonl")
+
+
+def result_of(stdout: str) -> dict:
+    """The session's result out of its `stream-json` output: the last line whose
+    JSON is of type `result`, which carries what `--output-format json` printed
+    whole (usage, modelUsage, total_cost_usd, num_turns, is_error, result). Output
+    that is one JSON object is read as that object, so a stub answering as the
+    old format still reads; anything else is an error carrying the tail."""
+    result = None
+    for line in stdout.splitlines():
+        line = line.strip()
+        if not line.startswith("{"):
+            continue
+        try:
+            event = json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(event, dict):
+            continue
+        if event.get("type") == "result":
+            result = event
+        elif result is None and "type" not in event:
+            result = event
+    if result is None:
+        return {"is_error": True, "result": stdout[-2000:]}
+    return result
 
 
 def tokens_spent(result: dict) -> int:
