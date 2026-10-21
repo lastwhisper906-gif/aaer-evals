@@ -1,0 +1,500 @@
+{
+  "question": "how healthy is this company?",
+  "sections": {
+    "profitability": {
+      "reading": "Over the trailing four quarters the company earns a gross profit and loses money below it. Gross margin is {ratios.profitability.gross_margin|pct}, operating margin {ratios.profitability.operating_margin|pct} and net margin {ratios.profitability.net_margin|pct}; return on assets is {ratios.profitability.return_on_assets|pct}, return on equity {ratios.profitability.return_on_equity|pct} and return on invested capital {ratios.profitability.return_on_invested_capital|pct}, the last deeply negative because invested capital is small once cash is netted out ({ratios.profitability.return_on_invested_capital.invested_capital}). Against its own history the operating loss is shrinking fast: operating margin was {earnings_versus_cash.history.years.2.operating_margin|pct} in 2023, {earnings_versus_cash.history.years.1.operating_margin|pct} in 2024 and {earnings_versus_cash.history.years.0.operating_margin|pct} in 2025, against a three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}. Gross margin is moving the other way: the quarter's {trend_table.quarters-back-0.ratios.gross_margin|pct} is the third-lowest quarter on record, below the first quarter of 2026 ({trend_table.quarters-back-1.ratios.gross_margin|pct}) and well below the full-year reading for 2024 ({trend_table.years-back-1.ratios.gross_margin|pct}), the best year on record, though slightly above the same quarter of 2025 ({trend_table.quarters-back-4.ratios.gross_margin|pct}). The net margin flatters the business: the trailing pretax loss of {terms.trailing_four_quarters.pretax_income} is far smaller than the trailing operating loss of {terms.trailing_four_quarters.operating_income} because non-operating fair-value gains on the public warrants and the contingent founder shares fill the gap, and both instruments ended in July 2026. The operating line is the measure of earning power here, and it is still negative.",
+      "fields": [
+        "ratios.profitability.gross_margin",
+        "ratios.profitability.operating_margin",
+        "ratios.profitability.net_margin",
+        "ratios.profitability.return_on_assets",
+        "ratios.profitability.return_on_equity",
+        "ratios.profitability.return_on_invested_capital",
+        "ratios.profitability.return_on_invested_capital.invested_capital",
+        "earnings_versus_cash.history.years.0.operating_margin",
+        "earnings_versus_cash.history.years.1.operating_margin",
+        "earnings_versus_cash.history.years.2.operating_margin",
+        "earnings_versus_cash.history.operating_margin_three_year_average",
+        "trend_table.quarters-back-0.ratios.gross_margin",
+        "trend_table.quarters-back-1.ratios.gross_margin",
+        "trend_table.quarters-back-4.ratios.gross_margin",
+        "trend_table.years-back-1.ratios.gross_margin",
+        "terms.trailing_four_quarters.pretax_income",
+        "terms.trailing_four_quarters.operating_income"
+      ],
+      "evidence": [
+        "earnings_quality_gross_margin_quarterly",
+        "earnings_quality_gross_margin_annual",
+        "earnings_quality_product_cost_above_product_revenue_in_release",
+        "earnings_quality_nonoperating_income_narrows_annual_net_loss",
+        "earnings_quality_warrant_fair_value_gain_in_release",
+        "related_parties_contingencies_and_subsequent_events_public_warrants_expired",
+        "estimates_and_discretion_founder_share_valuation_moved_off_monte_carlo"
+      ]
+    },
+    "efficiency": {
+      "reading": "Working capital turns faster than in the company's own past. Trailing days sales outstanding is {ratios.efficiency.days_sales_outstanding} on average receivables; the quarter-end reading of {trend_table.quarters-back-0.ratios.days_sales_outstanding} is the lowest quarter on record, and the full-year reading for 2025 ({trend_table.years-back-0.ratios.days_sales_outstanding}) is the lowest year on record. Trailing days sales of inventory is {ratios.efficiency.days_sales_of_inventory}; the quarter's {trend_table.quarters-back-0.ratios.days_sales_of_inventory} sits near the low of the record, far from the full-year peak for 2024 ({trend_table.years-back-1.ratios.days_sales_of_inventory}), though up from the first quarter of 2026 ({trend_table.quarters-back-1.ratios.days_sales_of_inventory}). Days payables outstanding are {ratios.efficiency.days_payables_outstanding}, leaving a cash conversion cycle of {ratios.efficiency.cash_conversion_cycle} days; the calculator holds no earlier cash conversion cycle to set it against. Asset turnover is {ratios.efficiency.asset_turnover}: the subscription fleet sits on the balance sheet as equipment ({terms.balances_now.property_plant_and_equipment}), so each dollar of assets carries little revenue, though trailing revenue grew {ratios.growth.revenue.trailing_four_quarters|pct} while total assets moved only from {terms.balances_a_year_earlier.assets} to {terms.balances_now.assets}. The one efficiency strain is customer prepayment: current deferred revenue over quarterly revenue is {trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue}, down from {trend_table.quarters-back-4.ratios.contract_liabilities_over_revenue} a year earlier and the second-lowest quarter on record, as the purchase-subscription model books hardware revenue upfront.",
+      "fields": [
+        "ratios.efficiency.days_sales_outstanding",
+        "ratios.efficiency.days_sales_of_inventory",
+        "ratios.efficiency.days_payables_outstanding",
+        "ratios.efficiency.cash_conversion_cycle",
+        "ratios.efficiency.asset_turnover",
+        "trend_table.quarters-back-0.ratios.days_sales_outstanding",
+        "trend_table.years-back-0.ratios.days_sales_outstanding",
+        "trend_table.quarters-back-0.ratios.days_sales_of_inventory",
+        "trend_table.quarters-back-1.ratios.days_sales_of_inventory",
+        "trend_table.years-back-1.ratios.days_sales_of_inventory",
+        "trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue",
+        "trend_table.quarters-back-4.ratios.contract_liabilities_over_revenue",
+        "terms.balances_now.property_plant_and_equipment",
+        "terms.balances_now.assets",
+        "terms.balances_a_year_earlier.assets",
+        "ratios.growth.revenue.trailing_four_quarters"
+      ],
+      "evidence": [
+        "revenue_recognition_days_sales_outstanding_quarterly",
+        "revenue_recognition_days_sales_outstanding_annual",
+        "earnings_quality_days_sales_of_inventory_quarterly",
+        "earnings_quality_days_sales_of_inventory_annual",
+        "revenue_recognition_contract_liabilities_over_revenue_quarterly",
+        "revenue_recognition_deferred_revenue_build_slows_in_release"
+      ]
+    },
+    "liquidity": {
+      "reading": "Liquidity is adequate but thin on the ratio tests. The current ratio is {ratios.liquidity.current_ratio} and the quick ratio {ratios.liquidity.quick_ratio}, so cash, short-term investments and receivables do not by themselves cover current liabilities. Much of current liabilities is deferred revenue ({terms.balances_now.contract_liabilities} of {terms.balances_now.current_liabilities}), which is settled by service rather than cash, so the quick ratio overstates the cash call. Cash and short-term investments are {terms.cash_and_short_term_investments_now}, against cash of {terms.balances_a_year_earlier.cash} a year earlier. Operating cash flow has turned: the trailing four quarters produced {terms.trailing_four_quarters.operating_cash_flow}, against {terms.trailing_four_quarters_a_year_earlier.operating_cash_flow} for the four quarters a year earlier, and the latest quarter alone {ratios.growth.operating_cash_flow.this_quarter}, though it was negative in the first quarter of 2026 ({ratios.growth.operating_cash_flow.quarter_over_quarter.inputs.before}). The cash runway is not computed, and not because free cash flow is positive: the record carries no capital expenditure row for fiscal 2025, so free cash flow itself cannot be built. The term loan carries a minimum-ARR covenant that rises every quarter and a minimum-liquidity covenant that lapses only once the litigation and regulatory matters are resolved; the company states full compliance and expects to stay compliant for the coming year.",
+      "fields": [
+        "ratios.liquidity.current_ratio",
+        "ratios.liquidity.quick_ratio",
+        "ratios.liquidity.cash_runway_months",
+        "terms.balances_now.contract_liabilities",
+        "terms.balances_now.current_liabilities",
+        "terms.cash_and_short_term_investments_now",
+        "terms.balances_a_year_earlier.cash",
+        "terms.trailing_four_quarters.operating_cash_flow",
+        "terms.trailing_four_quarters_a_year_earlier.operating_cash_flow",
+        "ratios.growth.operating_cash_flow.this_quarter",
+        "ratios.growth.operating_cash_flow.quarter_over_quarter.inputs.before"
+      ],
+      "evidence": [
+        "liquidity_and_capital_operating_cash_flow_described_as_inflow",
+        "liquidity_and_capital_operating_cash_flow_turns_positive_in_release",
+        "liquidity_and_capital_minimum_arr_covenant_threshold_updated",
+        "liquidity_and_capital_operating_cash_flow_supported_by_payables_timing",
+        "structure_and_disclosure_changes_restricted_cash_policy_added"
+      ]
+    },
+    "solvency": {
+      "reading": "Leverage is light, but it is not earned by operations. Total debt is {ratios.solvency.total_debt}, all of it non-current ({ratios.solvency.total_debt.parts.debt_current} falls due inside a year), against no debt a year earlier ({terms.debt_a_year_earlier}); the term loan was drawn in 2025 ({terms.cash_flow_families.borrowing_issued}). Cash and short-term investments exceed it, so net debt is negative at {ratios.solvency.net_debt}. Debt over debt plus equity is {ratios.solvency.debt_over_debt_plus_equity|pct}, liabilities over assets {ratios.solvency.liabilities_over_assets|pct}, and operating lease liabilities are {ratios.solvency.operating_lease_liability}, down from {terms.balances_a_year_earlier.operating_lease_liability}. The weak side is earnings cover: trailing EBITDA is {ratios.solvency.ebitda}, so debt over EBITDA ({ratios.solvency.debt_over_ebitda}) carries no meaning, and interest coverage is {ratios.solvency.interest_coverage}, meaning the operating line does not cover trailing interest expense of {terms.trailing_four_quarters.interest_expense}. Interest is met from cash and operating cash flow, which stands at {ratios.solvency.operating_cash_flow_over_total_debt} times total debt on a trailing basis. The loan margin is set by EBITDA and was lower at the end of June 2026 than at the end of March.",
+      "fields": [
+        "ratios.solvency.total_debt",
+        "ratios.solvency.total_debt.parts.debt_current",
+        "terms.debt_a_year_earlier",
+        "terms.cash_flow_families.borrowing_issued",
+        "ratios.solvency.net_debt",
+        "ratios.solvency.debt_over_debt_plus_equity",
+        "ratios.solvency.liabilities_over_assets",
+        "ratios.solvency.operating_lease_liability",
+        "terms.balances_a_year_earlier.operating_lease_liability",
+        "ratios.solvency.ebitda",
+        "ratios.solvency.debt_over_ebitda",
+        "ratios.solvency.interest_coverage",
+        "terms.trailing_four_quarters.interest_expense",
+        "ratios.solvency.operating_cash_flow_over_total_debt"
+      ],
+      "evidence": [
+        "liquidity_and_capital_long_term_debt_appears",
+        "liquidity_and_capital_term_loan_applicable_margin_restated",
+        "liquidity_and_capital_minimum_arr_covenant_threshold_updated"
+      ]
+    },
+    "growth": {
+      "reading": "Growth is strong on the year and soft on the quarter. Revenue rose {ratios.growth.revenue.year_over_year|pct} year over year and {ratios.growth.revenue.trailing_four_quarters|pct} on a trailing four-quarter basis, in line with the record: growth was {earnings_versus_cash.history.years.0.revenue_growth|pct} in fiscal 2025, and the three-year compound rate is {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}. Against the first quarter of 2026, however, revenue changed by {ratios.growth.revenue.quarter_over_quarter|pct}, as license fee revenue ended with the distribution agreement. For the loss lines a positive change means the loss shrank: the operating loss changed {ratios.growth.operating_income.year_over_year|pct} year over year and {ratios.growth.operating_income.trailing_four_quarters|pct} on the trailing basis, but {ratios.growth.operating_income.quarter_over_quarter|pct} on the quarter, so it widened sequentially; the net loss shows the same pattern at {ratios.growth.net_income.year_over_year|pct} year over year and {ratios.growth.net_income.quarter_over_quarter|pct} on the quarter. Operating cash flow changed {ratios.growth.operating_cash_flow.year_over_year|pct} year over year and {ratios.growth.operating_cash_flow.trailing_four_quarters|pct} on the trailing basis, off small or negative bases. The trend table has no cell for the fourth quarter of 2025, so its quarter-over-quarter comparisons for that step are missing. Management raised its revenue outlook for 2026 and reports a rising remaining performance obligation, both benign; but the guided growth range is below the trailing pace.",
+      "fields": [
+        "ratios.growth.revenue.year_over_year",
+        "ratios.growth.revenue.trailing_four_quarters",
+        "ratios.growth.revenue.quarter_over_quarter",
+        "earnings_versus_cash.history.years.0.revenue_growth",
+        "earnings_versus_cash.history.revenue_growth_three_year_compound",
+        "ratios.growth.operating_income.year_over_year",
+        "ratios.growth.operating_income.trailing_four_quarters",
+        "ratios.growth.operating_income.quarter_over_quarter",
+        "ratios.growth.net_income.year_over_year",
+        "ratios.growth.net_income.quarter_over_quarter",
+        "ratios.growth.operating_cash_flow.year_over_year",
+        "ratios.growth.operating_cash_flow.trailing_four_quarters"
+      ],
+      "evidence": [
+        "revenue_recognition_license_fee_revenue_ceased_after_distribution_agreement_expiry",
+        "revenue_recognition_license_fee_revenue_decline_in_release",
+        "revenue_recognition_product_revenue_rise_in_release",
+        "results_against_expectations_full_year_outlook_raised_in_release",
+        "results_against_expectations_remaining_performance_obligation_growth_claim",
+        "revenue_recognition_remaining_performance_obligation_in_release"
+      ]
+    },
+    "free_cash_flow": {
+      "reading": "None of the four free cash flow measures can be read. Simple free cash flow, free cash flow to the firm, free cash flow to equity and quality-adjusted free cash flow are all missing for the one reason printed beside each: the record holds no capital expenditure row for fiscal 2025, so trailing capital expenditure cannot be built; free cash flow over net income is missing for the same reason. That gap matters here because the subscription fleet is capital equipment: net property and equipment rose from {terms.balances_a_year_earlier.property_plant_and_equipment} to {terms.balances_now.property_plant_and_equipment} even after trailing depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization}, so the company kept adding equipment, though part of that may be inventory moved into leased equipment rather than cash spent. Positive trailing operating cash flow of {terms.trailing_four_quarters.operating_cash_flow} therefore cannot be called free cash. The only years with capital expenditure on record show simple free cash flow of {earnings_versus_cash.history.years.4.free_cash_flow_simple} in 2021 and {earnings_versus_cash.history.years.5.free_cash_flow_simple} in 2020. Two cash-quality readings are available: share-based compensation equals {earnings_versus_cash.share_based_compensation_over_operating_cash_flow|pct} of trailing operating cash flow, which a quality-adjusted measure would subtract, and operating cash flow over net income is {earnings_versus_cash.operating_cash_flow_over_net_income}, with cash running ahead of the reported loss.",
+      "fields": [
+        "free_cash_flow.free_cash_flow_simple",
+        "free_cash_flow.free_cash_flow_to_firm",
+        "free_cash_flow.free_cash_flow_to_equity",
+        "free_cash_flow.free_cash_flow_quality_adjusted",
+        "free_cash_flow.free_cash_flow_over_net_income",
+        "terms.balances_a_year_earlier.property_plant_and_equipment",
+        "terms.balances_now.property_plant_and_equipment",
+        "terms.trailing_four_quarters.depreciation_and_amortization",
+        "terms.trailing_four_quarters.operating_cash_flow",
+        "earnings_versus_cash.history.years.4.free_cash_flow_simple",
+        "earnings_versus_cash.history.years.5.free_cash_flow_simple",
+        "earnings_versus_cash.share_based_compensation_over_operating_cash_flow",
+        "earnings_versus_cash.operating_cash_flow_over_net_income"
+      ],
+      "evidence": [
+        "liquidity_and_capital_operating_cash_flow_turns_positive_in_release",
+        "liquidity_and_capital_operating_cash_flow_supported_by_payables_timing",
+        "earnings_quality_accruals_over_total_assets_quarterly_insufficient"
+      ]
+    }
+  },
+  "dupont": {
+    "reading": "Return on equity of {ratios.profitability.return_on_equity|pct} is net margin {ratios.profitability.dupont.net_margin|pct} times asset turnover {ratios.profitability.dupont.asset_turnover} times equity multiplier {ratios.profitability.dupont.equity_multiplier}, which Python multiplies back to {ratios.profitability.dupont.product|pct}. Net margin carries it: it sets the sign, and its smallness keeps return on equity small. Asset turnover damps the result and the equity multiplier magnifies it, but the multiplier reflects deferred revenue and other operating liabilities more than borrowing: current deferred revenue is {terms.balances_now.contract_liabilities} against total debt of {ratios.solvency.total_debt}. The calculator holds no year-earlier DuPont, so movement can only be read through the net margin's inputs: the trailing net loss changed {ratios.growth.net_income.trailing_four_quarters|pct} (a narrowing) while trailing revenue grew {ratios.growth.revenue.trailing_four_quarters|pct}, so net margin is the factor that moved, toward breakeven. Because net margin is lifted by non-operating fair-value gains on instruments that ended in July 2026, return on equity overstates the operating return; the operating margin of {ratios.profitability.operating_margin|pct} is the better guide.",
+    "fields": [
+      "ratios.profitability.return_on_equity",
+      "ratios.profitability.dupont.net_margin",
+      "ratios.profitability.dupont.asset_turnover",
+      "ratios.profitability.dupont.equity_multiplier",
+      "ratios.profitability.dupont.product",
+      "terms.balances_now.contract_liabilities",
+      "ratios.solvency.total_debt",
+      "ratios.growth.net_income.trailing_four_quarters",
+      "ratios.growth.revenue.trailing_four_quarters",
+      "ratios.profitability.operating_margin"
+    ]
+  },
+  "anomalies": [
+    {
+      "id": "results_against_expectations_guidance_rests_on_adjusted_ebitda_while_gaap_ebitda_is_negative",
+      "name": "Outlook set on adjusted EBITDA while GAAP EBITDA is negative",
+      "name_ko": "조정 EBITDA 기준 가이던스, 그러나 GAAP EBITDA는 마이너스",
+      "area": "results_against_expectations",
+      "what": "The release adds a first positive adjusted EBITDA range to the outlook for 2026, but trailing GAAP EBITDA in the calculator is {ratios.solvency.ebitda}. The bridge leans on add-backs: share-based compensation alone is {earnings_versus_cash.share_based_compensation_over_revenue|pct} of trailing revenue, legal and regulatory costs are excluded net of insurance, and the adjusted EBITDA calculation and the definitions of adjusted gross profit and adjusted operating loss were changed and applied back to prior periods. The expectation the company now sets is one its GAAP numbers do not yet meet.",
+      "evidence": [
+        "results_against_expectations_full_year_outlook_raised_in_release",
+        "controls_audit_and_filings_legal_costs_excluded_net_of_insurance_in_release",
+        "articulation_and_the_filed_history_adjusted_ebitda_calculation_refined_in_release",
+        "articulation_and_the_filed_history_adjusted_gross_profit_definition_revised_in_release",
+        "articulation_and_the_filed_history_adjusted_operating_loss_definition_revised_in_release"
+      ],
+      "fields": [
+        "ratios.solvency.ebitda",
+        "earnings_versus_cash.share_based_compensation_over_revenue",
+        "terms.trailing_four_quarters.share_based_compensation"
+      ]
+    },
+    {
+      "id": "results_against_expectations_operating_costs_guided_higher",
+      "name": "Sales, marketing and G&A expected to rise in 2026",
+      "name_ko": "2026년 판매·마케팅비와 일반관리비 증가 예상",
+      "area": "results_against_expectations",
+      "what": "Management expects both sales and marketing and general and administrative expense to be higher in 2026 than in 2025, the latter for a larger team and outside consultants on systems and Sarbanes-Oxley work. With trailing operating margin at {ratios.profitability.operating_margin|pct} and the quarter's operating loss of {ratios.growth.operating_income.this_quarter} already wider than the first quarter's, rising operating costs press against the margin gains of the last two years.",
+      "evidence": [
+        "results_against_expectations_sales_and_marketing_expected_increase",
+        "results_against_expectations_general_and_administrative_expected_increase"
+      ],
+      "fields": [
+        "ratios.profitability.operating_margin",
+        "ratios.growth.operating_income.this_quarter",
+        "ratios.growth.operating_income.quarter_over_quarter"
+      ]
+    },
+    {
+      "id": "profitability_operating_loss_persists_and_widened_in_quarter",
+      "name": "Operating loss persists and widened in the quarter",
+      "name_ko": "영업손실 지속, 이번 분기 손실 확대",
+      "area": "profitability",
+      "what": "The business still loses money at the operating line: trailing operating margin is {ratios.profitability.operating_margin|pct} and return on invested capital {ratios.profitability.return_on_invested_capital|pct}. The quarter's operating loss of {ratios.growth.operating_income.this_quarter} compares with {ratios.growth.operating_income.quarter_over_quarter.inputs.before} in the first quarter of 2026, a change of {ratios.growth.operating_income.quarter_over_quarter|pct}, so the year-over-year improvement of {ratios.growth.operating_income.year_over_year|pct} did not carry into the sequence. Across years the trend is strongly better, from {earnings_versus_cash.history.years.2.operating_margin|pct} in 2023 to {earnings_versus_cash.history.years.0.operating_margin|pct} in 2025.",
+      "evidence": [
+        "earnings_quality_warrant_fair_value_gain_in_release",
+        "earnings_quality_nonoperating_income_behind_small_comparative_ten_q_loss"
+      ],
+      "fields": [
+        "ratios.profitability.operating_margin",
+        "ratios.profitability.return_on_invested_capital",
+        "ratios.growth.operating_income.this_quarter",
+        "ratios.growth.operating_income.quarter_over_quarter",
+        "ratios.growth.operating_income.year_over_year",
+        "earnings_versus_cash.history.years.0.operating_margin",
+        "earnings_versus_cash.history.years.2.operating_margin"
+      ]
+    },
+    {
+      "id": "profitability_net_loss_narrowed_by_non_operating_gains",
+      "name": "Net loss narrowed by non-operating fair-value gains that have ended",
+      "name_ko": "이미 소멸한 비영업 평가이익이 순손실을 축소",
+      "area": "profitability",
+      "what": "Trailing net margin of {ratios.profitability.net_margin|pct} looks far better than the operating margin of {ratios.profitability.operating_margin|pct} because non-operating income closes most of the gap: the trailing pretax loss is {terms.trailing_four_quarters.pretax_income} against an operating loss of {terms.trailing_four_quarters.operating_income}. The sources are fair-value gains on the public warrant liability and the removal of the contingently issuable founder-share liability once management judged the milestones unachievable, which MD&A calls a mark-to-market. The public warrants expired and the founder-share vesting period ended in July 2026, so the gains that narrowed the net loss rest on instruments that no longer exist.",
+      "evidence": [
+        "earnings_quality_warrant_fair_value_gain_in_release",
+        "earnings_quality_nonoperating_income_narrows_annual_net_loss",
+        "earnings_quality_nonoperating_income_behind_small_comparative_ten_q_loss",
+        "related_parties_contingencies_and_subsequent_events_public_warrants_expired",
+        "estimates_and_discretion_founder_share_valuation_moved_off_monte_carlo",
+        "related_parties_contingencies_and_subsequent_events_founder_shares_vesting_period_expired",
+        "across_documents_founder_share_gain_described_as_mark_to_market"
+      ],
+      "fields": [
+        "ratios.profitability.net_margin",
+        "ratios.profitability.operating_margin",
+        "terms.trailing_four_quarters.pretax_income",
+        "terms.trailing_four_quarters.operating_income"
+      ]
+    },
+    {
+      "id": "profitability_gross_margin_drifting_down_with_product_cost_above_product_revenue",
+      "name": "Gross margin below earlier years; product cost above product revenue",
+      "name_ko": "과거보다 낮아진 매출총이익률, 제품 원가가 제품 매출을 초과",
+      "area": "profitability",
+      "what": "Trailing gross margin is {ratios.profitability.gross_margin|pct}. The quarter's {trend_table.quarters-back-0.ratios.gross_margin|pct} is below the first quarter of 2026 ({trend_table.quarters-back-1.ratios.gross_margin|pct}), is the third-lowest quarter on record, and is below the full-year readings for 2024 ({trend_table.years-back-1.ratios.gross_margin|pct}) and for 2025 ({trend_table.years-back-0.ratios.gross_margin|pct}). In the quarter the cost of product revenue exceeded product revenue, and management says the rising purchase-subscription mix is a near-term headwind to gross margin because hardware cost is recognised upfront. The license fee stream has ended. Lower inventory-reserve charges and lower disposal losses on first-generation units helped the quarter's margin.",
+      "evidence": [
+        "earnings_quality_gross_margin_quarterly",
+        "earnings_quality_gross_margin_annual",
+        "earnings_quality_product_cost_above_product_revenue_in_release",
+        "revenue_recognition_purchase_subscription_mix_expectation_raised",
+        "revenue_recognition_purchase_subscription_front_loads_revenue_in_release",
+        "revenue_recognition_license_fee_revenue_ceased_after_distribution_agreement_expiry",
+        "estimates_and_discretion_inventory_reserve_charges_first_generation_parts_quarter",
+        "earnings_quality_subscription_margin_helped_by_lower_disposal_losses_quarter"
+      ],
+      "fields": [
+        "ratios.profitability.gross_margin",
+        "trend_table.quarters-back-0.ratios.gross_margin",
+        "trend_table.quarters-back-1.ratios.gross_margin",
+        "trend_table.years-back-1.ratios.gross_margin",
+        "trend_table.years-back-0.ratios.gross_margin"
+      ]
+    },
+    {
+      "id": "efficiency_customer_prepayments_lag_revenue",
+      "name": "Customer prepayments grow slower than revenue",
+      "name_ko": "고객 선수금(선수수익)이 매출보다 느리게 증가",
+      "area": "efficiency",
+      "what": "Current deferred revenue is {terms.balances_now.contract_liabilities} against {terms.balances_a_year_earlier.contract_liabilities} a year earlier, while quarterly revenue grew {ratios.growth.revenue.year_over_year|pct}; deferred revenue over quarterly revenue fell to {trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue} from {trend_table.quarters-back-4.ratios.contract_liabilities_over_revenue}. The half-year deferred-revenue build in operating cash flow was far smaller than a year earlier, and unbilled contract assets rose. Customer prepayment, which funded part of past operating cash, is now growing slower than the business, leaving operating cash flow more dependent on collections and payables timing.",
+      "evidence": [
+        "revenue_recognition_contract_liabilities_over_revenue_quarterly",
+        "revenue_recognition_deferred_revenue_build_slows_in_release",
+        "revenue_recognition_contract_assets_rise_in_release",
+        "revenue_recognition_contract_assets_increase_attributed_to_sales_volume",
+        "revenue_recognition_contract_liability_description_now_includes_subscription"
+      ],
+      "fields": [
+        "terms.balances_now.contract_liabilities",
+        "terms.balances_a_year_earlier.contract_liabilities",
+        "ratios.growth.revenue.year_over_year",
+        "trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue",
+        "trend_table.quarters-back-4.ratios.contract_liabilities_over_revenue"
+      ]
+    },
+    {
+      "id": "liquidity_and_capital_quick_assets_short_of_current_liabilities",
+      "name": "Quick assets do not cover current liabilities",
+      "name_ko": "당좌자산이 유동부채에 못 미침",
+      "area": "liquidity_and_capital",
+      "what": "The quick ratio is {ratios.liquidity.quick_ratio} and the current ratio {ratios.liquidity.current_ratio}: cash, short-term investments and receivables do not cover current liabilities of {terms.balances_now.current_liabilities}. Most of the shortfall is deferred revenue of {terms.balances_now.contract_liabilities}, a service obligation rather than a cash call, and cash plus short-term investments of {terms.cash_and_short_term_investments_now} exceed all debt. The pressure is mild and follows from a prepaid subscription model, not from strain.",
+      "evidence": [
+        "revenue_recognition_deferred_revenue_build_slows_in_release",
+        "liquidity_and_capital_operating_cash_flow_described_as_inflow"
+      ],
+      "fields": [
+        "ratios.liquidity.quick_ratio",
+        "ratios.liquidity.current_ratio",
+        "terms.balances_now.current_liabilities",
+        "terms.balances_now.contract_liabilities",
+        "terms.cash_and_short_term_investments_now"
+      ]
+    },
+    {
+      "id": "liquidity_and_capital_operating_cash_flow_leans_on_stock_pay_and_payables_timing",
+      "name": "Operating cash flow leans on stock pay and payables timing",
+      "name_ko": "영업현금흐름이 주식보상과 매입채무 지급 시점에 의존",
+      "area": "liquidity_and_capital",
+      "what": "Trailing operating cash flow of {terms.trailing_four_quarters.operating_cash_flow} is a real improvement, but share-based compensation, a non-cash add-back, equals {earnings_versus_cash.share_based_compensation_over_operating_cash_flow|pct} of it, and the half-year inflow includes a payables increase of {terms.trailing_four_quarters.change_in_payables.parts.this_year_to_date} that MD&A attributes to the timing of vendor payments, with no word on when it reverses. A year earlier the first-half payables build was similar ({terms.trailing_four_quarters.change_in_payables.parts.prior_year_to_date}) and the full-year build smaller ({terms.trailing_four_quarters.change_in_payables.parts.prior_fiscal_year}), so part of it unwound in the second half of 2025. Operating cash flow was an outflow in the first quarter of 2026 ({ratios.growth.operating_cash_flow.quarter_over_quarter.inputs.before}).",
+      "evidence": [
+        "liquidity_and_capital_operating_cash_flow_supported_by_payables_timing",
+        "liquidity_and_capital_operating_cash_flow_turns_positive_in_release",
+        "liquidity_and_capital_operating_cash_flow_described_as_inflow",
+        "liquidity_and_capital_accrued_expenses_increase_vendor_payables_and_derivative_accrual"
+      ],
+      "fields": [
+        "terms.trailing_four_quarters.operating_cash_flow",
+        "earnings_versus_cash.share_based_compensation_over_operating_cash_flow",
+        "terms.trailing_four_quarters.change_in_payables.parts.this_year_to_date",
+        "terms.trailing_four_quarters.change_in_payables.parts.prior_year_to_date",
+        "terms.trailing_four_quarters.change_in_payables.parts.prior_fiscal_year",
+        "ratios.growth.operating_cash_flow.quarter_over_quarter.inputs.before"
+      ]
+    },
+    {
+      "id": "liquidity_and_capital_covenants_step_up_and_hinge_on_litigation",
+      "name": "Loan covenants step up and hinge on litigation",
+      "name_ko": "상향되는 대출 약정 기준과 소송 종결에 묶인 유동성 약정",
+      "area": "liquidity_and_capital",
+      "what": "The term loan's minimum-ARR covenant was raised again at the end of June 2026 and keeps rising every quarter; its minimum-liquidity covenant lapses only once the litigation and regulatory matters are resolved, and a minimum EBITDA covenant begins at the end of June 2027. Covenant ARR is defined in the agreement, while the release's ARR definition keeps expired contracts under renegotiation in the count and short-term rentals have been moved out of recurring revenue; whether the reported and covenant measures match is not in the input. The company states full compliance and expects to remain compliant for the coming year. Debt under the loan is {ratios.solvency.total_debt}.",
+      "evidence": [
+        "liquidity_and_capital_minimum_arr_covenant_threshold_updated",
+        "across_documents_arr_definition_and_covenant_metric",
+        "structure_and_disclosure_changes_recurring_revenue_definition_excludes_short_term_rentals"
+      ],
+      "fields": [
+        "ratios.solvency.total_debt",
+        "ratios.solvency.ebitda"
+      ]
+    },
+    {
+      "id": "solvency_operating_earnings_do_not_cover_interest",
+      "name": "Operating earnings do not cover interest on new debt",
+      "name_ko": "영업이익으로 신규 차입 이자를 감당하지 못함",
+      "area": "solvency",
+      "what": "Trailing EBITDA is {ratios.solvency.ebitda} and interest coverage {ratios.solvency.interest_coverage}: the operating line does not cover trailing interest expense of {terms.trailing_four_quarters.interest_expense}, so debt over EBITDA ({ratios.solvency.debt_over_ebitda}) has no meaning. A year earlier the company carried no debt ({terms.debt_a_year_earlier}); the term loan, drawn in 2025, brought interest that was negligible before. A minimum EBITDA covenant starts at the end of June 2027; its EBITDA definition is not in the input, and the GAAP EBITDA here is negative. For now cash and short-term investments exceed the debt (net debt {ratios.solvency.net_debt}) and nothing falls due inside a year ({ratios.solvency.total_debt.parts.debt_current}), so the debt is serviced from the balance sheet and operating cash flow rather than from earnings.",
+      "evidence": [
+        "liquidity_and_capital_long_term_debt_appears",
+        "liquidity_and_capital_term_loan_applicable_margin_restated",
+        "liquidity_and_capital_minimum_arr_covenant_threshold_updated"
+      ],
+      "fields": [
+        "ratios.solvency.ebitda",
+        "ratios.solvency.interest_coverage",
+        "ratios.solvency.debt_over_ebitda",
+        "terms.trailing_four_quarters.interest_expense",
+        "terms.debt_a_year_earlier",
+        "ratios.solvency.net_debt",
+        "ratios.solvency.total_debt.parts.debt_current"
+      ]
+    },
+    {
+      "id": "growth_revenue_fell_sequentially",
+      "name": "Revenue fell from the prior quarter",
+      "name_ko": "직전 분기 대비 매출 감소",
+      "area": "growth",
+      "what": "Quarterly revenue of {ratios.growth.revenue.this_quarter} changed {ratios.growth.revenue.quarter_over_quarter|pct} from the first quarter of 2026. License fee revenue under the distribution agreement that expired at the end of 2025 was nil in the quarter, and related-party revenue was already nil in 2025; product revenue under purchase subscriptions took their place. Year-over-year growth of {ratios.growth.revenue.year_over_year|pct} remains strong, so this is a sequential dip, not a reversal.",
+      "evidence": [
+        "revenue_recognition_license_fee_revenue_ceased_after_distribution_agreement_expiry",
+        "revenue_recognition_license_fee_revenue_decline_in_release",
+        "related_parties_contingencies_and_subsequent_events_related_party_revenue_falls_to_zero",
+        "revenue_recognition_product_revenue_rise_in_release"
+      ],
+      "fields": [
+        "ratios.growth.revenue.this_quarter",
+        "ratios.growth.revenue.quarter_over_quarter",
+        "ratios.growth.revenue.year_over_year"
+      ]
+    },
+    {
+      "id": "growth_outlook_implies_slower_growth_than_trailing_pace",
+      "name": "Raised outlook still implies slower growth",
+      "name_ko": "상향된 가이던스도 성장 둔화를 시사",
+      "area": "growth",
+      "what": "The raised revenue range for the current year, as quoted in the release items, implies growth below the trailing four-quarter rate of {ratios.growth.revenue.trailing_four_quarters|pct}, below the growth of fiscal 2025 ({earnings_versus_cash.history.years.0.revenue_growth|pct}) and below the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}. The company's own outlook therefore points to deceleration even after the raise, and the move of short-term rentals out of recurring revenue lowers the recurring base the growth story rests on.",
+      "evidence": [
+        "results_against_expectations_full_year_outlook_raised_in_release",
+        "results_against_expectations_revenue_outlook_raised_in_release",
+        "structure_and_disclosure_changes_recurring_revenue_definition_excludes_short_term_rentals",
+        "articulation_and_the_filed_history_recurring_revenue_prior_quarters_reclassified_in_release"
+      ],
+      "fields": [
+        "ratios.growth.revenue.trailing_four_quarters",
+        "earnings_versus_cash.history.years.0.revenue_growth",
+        "earnings_versus_cash.history.revenue_growth_three_year_compound"
+      ]
+    },
+    {
+      "id": "narrative_signs_of_operating_pressure_losses_expected_to_continue",
+      "name": "Management expects losses to continue",
+      "name_ko": "경영진, 손실 지속 예상",
+      "area": "narrative_signs_of_operating_pressure",
+      "what": "The liquidity note still says the company expects to continue to generate losses for the foreseeable future, in the same paragraph that first describes an operating cash inflow for the year to date. Management's own reading is that GAAP profitability is not near; trailing net loss is {terms.trailing_four_quarters.net_income} and trailing operating loss {terms.trailing_four_quarters.operating_income}.",
+      "evidence": [
+        "liquidity_and_capital_operating_cash_flow_described_as_inflow"
+      ],
+      "fields": [
+        "terms.trailing_four_quarters.net_income",
+        "terms.trailing_four_quarters.operating_income"
+      ]
+    },
+    {
+      "id": "narrative_signs_of_operating_pressure_sec_investigation_and_litigation_unresolved",
+      "name": "SEC investigation and shareholder litigation still open",
+      "name_ko": "SEC 조사 및 주주 소송 미해결",
+      "area": "narrative_signs_of_operating_pressure",
+      "what": "The company recorded its first accrual for the SEC matter this quarter, and the note still says it is cooperating with the SEC's investigation, with a DOJ letter on record; the release already describes fees for resolving the investigation as a non-GAAP add-back. The class action settlement was funded into a settlement fund mostly by insurers, the derivative settlement awaits final court approval, and estimated insurance recoveries, carried as receivables and booked against G&A, fell year to date. The minimum-liquidity covenant stays in force until these matters close, and costs beyond the insurance estimates would fall on cash and short-term investments of {terms.cash_and_short_term_investments_now}.",
+      "evidence": [
+        "related_parties_contingencies_and_subsequent_events_sec_matter_first_accrual",
+        "across_documents_sec_resolution_fees_in_non_gaap_addback",
+        "related_parties_contingencies_and_subsequent_events_class_action_settlement_funded_into_qualified_settlement_fund",
+        "related_parties_contingencies_and_subsequent_events_derivative_settlement_stipulation_executed",
+        "earnings_quality_general_and_administrative_lower_insurance_recoveries",
+        "earnings_quality_prepaid_increase_attributed_to_estimated_insurance_recoveries"
+      ],
+      "fields": [
+        "terms.cash_and_short_term_investments_now"
+      ]
+    },
+    {
+      "id": "narrative_signs_of_operating_pressure_control_weaknesses_and_systems_rebuild",
+      "name": "Control weaknesses unremediated; systems rebuild still ahead",
+      "name_ko": "내부통제 취약점 미해소, 시스템 재구축 진행 중",
+      "area": "narrative_signs_of_operating_pressure",
+      "what": "Disclosure controls remain not effective and the material weaknesses are unremediated; a new quoting tool is due later in 2026, and the ERP system is slated for 2027. The 8-K index also lists earlier non-reliance filings and late-filing notices. Management ties part of the expected G&A increase to consultants for systems and Sarbanes-Oxley work, so remediation is also a cost on an operating margin of {ratios.profitability.operating_margin|pct}.",
+      "evidence": [
+        "controls_audit_and_filings_quoting_system_release_and_erp_project_timeline",
+        "results_against_expectations_general_and_administrative_expected_increase",
+        "structure_and_disclosure_changes_rebate_asset_relabelled_commission_asset"
+      ],
+      "fields": [
+        "ratios.profitability.operating_margin"
+      ]
+    },
+    {
+      "id": "narrative_signs_of_operating_pressure_contract_manufacturer_transition",
+      "name": "Contract-manufacturer transition carries shortfall commitments",
+      "name_ko": "위탁생산업체 전환에 따른 물량 미달 구매약정 위험",
+      "area": "narrative_signs_of_operating_pressure",
+      "what": "MD&A says the contract with the new contract manufacturer can turn order volumes below forecast into purchase commitments, and that onboarding may temporarily affect working capital through dual production; neither the note nor the calculator gives an amount, and the record tags no purchase obligation. Inventory days are low today at {trend_table.quarters-back-0.ratios.days_sales_of_inventory} but rose from the first quarter of 2026 ({trend_table.quarters-back-1.ratios.days_sales_of_inventory}).",
+      "evidence": [
+        "across_documents_contract_manufacturer_forecast_shortfall_commitment",
+        "liquidity_and_capital_inventory_decrease_attributed_to_inventory_management"
+      ],
+      "fields": [
+        "trend_table.quarters-back-0.ratios.days_sales_of_inventory",
+        "trend_table.quarters-back-1.ratios.days_sales_of_inventory"
+      ]
+    }
+  ],
+  "path_to_distress": {
+    "reading": "Today the filings show pressure, not distress: cash and short-term investments of {terms.cash_and_short_term_investments_now} exceed total debt of {ratios.solvency.total_debt}, nothing falls due inside a year ({ratios.solvency.total_debt.parts.debt_current}), and trailing operating cash flow is positive at {terms.trailing_four_quarters.operating_cash_flow}. For pressure to become distress, the following would have to happen. First, a covenant would have to break, since no maturity is near: ARR falling behind the quarterly-rising minimum, cash falling below the minimum-liquidity floor while the litigation stays open, or EBITDA as the agreement defines it failing the test that begins at the end of June 2027, while GAAP EBITDA ({ratios.solvency.ebitda}) and interest coverage ({ratios.solvency.interest_coverage}) stay negative. Second, operating cash flow would have to turn back to an outflow, as it was in the first quarter of 2026 ({ratios.growth.operating_cash_flow.quarter_over_quarter.inputs.before}) and in fiscal 2024 ({earnings_versus_cash.history.years.1.operating_cash_flow}), for instance if the payables timing reverses, customer prepayments keep lagging revenue, and share-based pay, now {earnings_versus_cash.share_based_compensation_over_operating_cash_flow|pct} of operating cash flow, has to be replaced with cash pay. Third, fleet capital spending, which the record does not show for fiscal 2025, leaving no runway to compute, would have to outrun operating cash flow until net debt ({ratios.solvency.net_debt}) turned positive. Fourth, SEC resolution or litigation costs beyond the insurance estimates would have to draw on the same cash. The filings show none of these as having happened.",
+    "fields": [
+      "terms.cash_and_short_term_investments_now",
+      "ratios.solvency.total_debt",
+      "ratios.solvency.total_debt.parts.debt_current",
+      "terms.trailing_four_quarters.operating_cash_flow",
+      "ratios.solvency.ebitda",
+      "ratios.solvency.interest_coverage",
+      "ratios.growth.operating_cash_flow.quarter_over_quarter.inputs.before",
+      "earnings_versus_cash.history.years.1.operating_cash_flow",
+      "earnings_versus_cash.share_based_compensation_over_operating_cash_flow",
+      "ratios.solvency.net_debt",
+      "ratios.liquidity.cash_runway_months"
+    ]
+  },
+  "summary_ko": {
+    "profitability": "최근 네 분기 기준 매출총이익률은 {ratios.profitability.gross_margin|pct}로 플러스이지만 영업이익률은 {ratios.profitability.operating_margin|pct}로 여전히 적자입니다. 순이익률 {ratios.profitability.net_margin|pct}은 이미 소멸한 워런트 등의 비영업 평가이익 덕분에 영업손실보다 훨씬 작아 보이며, 영업적자는 해마다 줄고 있지만 매출총이익률은 과거 연도보다 낮아졌습니다.",
+    "efficiency": "매출채권 회수일수 {ratios.efficiency.days_sales_outstanding}와 재고일수 {ratios.efficiency.days_sales_of_inventory}는 회사 자체 기록상 낮은 수준으로 개선되었고, 현금전환주기는 {ratios.efficiency.cash_conversion_cycle}일입니다. 다만 선수수익이 매출보다 느리게 늘어 고객 선납금의 자금 지원이 약해지고 있습니다.",
+    "liquidity": "유동비율은 {ratios.liquidity.current_ratio}, 당좌비율은 {ratios.liquidity.quick_ratio}로 당좌자산이 유동부채를 다 덮지 못하지만, 유동부채의 상당 부분은 현금이 아니라 서비스로 갚는 선수수익입니다. 최근 네 분기 영업현금흐름은 {terms.trailing_four_quarters.operating_cash_flow}로 플러스로 돌아섰으나, 직전 회계연도 자본적지출 자료가 기록에 없어 현금 소진 기간은 계산되지 않았습니다.",
+    "solvency": "총차입금 {ratios.solvency.total_debt}은 모두 장기 차입금이고 현금이 이를 웃돌아 순차입금은 {ratios.solvency.net_debt}입니다. 그러나 EBITDA가 {ratios.solvency.ebitda}, 이자보상배율이 {ratios.solvency.interest_coverage}로 영업이익이 이자를 감당하지 못합니다.",
+    "growth": "매출은 전년 동기 대비 {ratios.growth.revenue.year_over_year|pct}, 최근 네 분기 기준 {ratios.growth.revenue.trailing_four_quarters|pct} 성장했지만 직전 분기 대비로는 {ratios.growth.revenue.quarter_over_quarter|pct} 변해 줄었습니다. 회사가 올린 올해 매출 가이던스도 최근 성장 속도보다 낮은 성장을 가리킵니다.",
+    "free_cash_flow": "잉여현금흐름 네 가지 지표(단순, 기업, 주주, 질 조정)는 모두 직전 회계연도 자본적지출 항목이 기록에 없어 계산되지 않았습니다. 구독 장비 투자가 큰 사업이므로 플러스 영업현금흐름을 곧바로 잉여현금으로 볼 수 없으며, 주식보상이 영업현금흐름의 {earnings_versus_cash.share_based_compensation_over_operating_cash_flow|pct}에 해당합니다.",
+    "dupont": "ROE {ratios.profitability.return_on_equity|pct}는 순이익률 {ratios.profitability.dupont.net_margin|pct} × 총자산회전율 {ratios.profitability.dupont.asset_turnover} × 자기자본승수 {ratios.profitability.dupont.equity_multiplier}로 분해되며, 부호와 크기를 정하는 것은 순이익률입니다. 순손실이 크게 줄어 순이익률이 손익분기 쪽으로 움직였지만, 그 개선의 상당 부분은 이미 소멸한 비영업 평가이익에서 왔습니다.",
+    "path_to_distress": "현재는 압박 단계이지 부실 단계가 아닙니다: 현금과 단기투자 {terms.cash_and_short_term_investments_now}가 차입금 {ratios.solvency.total_debt}보다 많고 가까운 만기도 없습니다. 부실로 가려면 ARR·최소유동성·EBITDA 약정 위반, 영업현금흐름의 재차 마이너스 전환, 장비 투자가 영업현금흐름을 웃도는 상황, 보험 범위를 넘는 SEC·소송 비용 같은 일이 실제로 일어나야 합니다."
+  },
+  "limits": "This analysis reads the company's health from its own filed numbers against its own past. It forecasts nothing, and it cannot see what is not in the filings."
+}

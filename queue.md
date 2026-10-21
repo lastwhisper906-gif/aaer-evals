@@ -52,6 +52,8 @@ branch changed. A run item is done when its run directory is published and
 
 ## Done
 
+[x] EVLV's 10-Q filed 2026-08-11 on Opus · `.venv/bin/python -m evals --runs runs/EVLV` · none · 2026-10-21: `--model opus` recorded as `model_override`, every agent served claude-opus-5-5, no fallback; accounting analyst 0 dropped, 0 of 8 areas empty after 1 hook round, 1 adjustment written; financial analyst 0 dropped after 2 rounds; regression pass; analysis-grader 0.937 with 4 dealbreakers
+
 [x] EXTR's 10-K filed 2026-08-17 on Opus · `.venv/bin/python -m evals --runs runs/EXTR` · none · 2026-10-21: `--model opus` recorded as `model_override`, every agent served claude-opus-5-5, no fallback; accounting analyst 0 dropped, 0 of 8 areas empty after 1 hook round, 1 adjustment written; financial analyst 0 dropped; regression pass; analysis-grader 0.949 with 8 dealbreakers
 
 [x] OMCL's 10-Q filed 2026-08-05 on Opus · `.venv/bin/python -m evals --runs runs/OMCL` · none · 2026-10-21: the first run after the write-time gate hook, `--model opus` recorded as `model_override`, every agent served claude-opus-5-5, no fallback; the accounting analyst dropped 0 items with 0 of 8 areas empty after 2 hook rounds, the financial analyst 0 after 1; regression pass; analysis-grader 0.895 with 3 dealbreakers; the lane set the finished run aside for transcript tokens and it was restored unchanged (`docs/reports/2026-10-22.md`)

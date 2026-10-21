@@ -1,0 +1,233 @@
+{
+  "scenarios": {
+    "bear": {
+      "revenue_growth_year_one": 0.10,
+      "terminal_growth": 0.02,
+      "operating_margin_year_one": -0.24,
+      "operating_margin_year_ten": 0.06,
+      "reinvestment_rate_year_one": 0.0,
+      "reinvestment_rate_year_ten": 0.30,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "The bear reads growth from the recurring base and the latest sequence rather than from the trailing year: ARR grew more slowly than reported revenue, revenue changed {ratios.growth.revenue.quarter_over_quarter|pct} on the quarter before, license fee revenue has ended with the distribution agreement, and the hardware revenue that purchase subscriptions pull into the early contract years leaves less to recognise later. It assumes the rest of the current year lands toward the bottom of the outlook and that the slowdown carries into the following year.",
+          "quote": "As of June 30, 2026, ARR was $132.7 million, compared to $110.5 million as of June 30, 2025, representing year over year growth of 20%.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.growth.revenue.quarter_over_quarter",
+            "ratios.growth.revenue.trailing_four_quarters",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound"
+          ],
+          "history": "Well below every growth rate on record, including the trailing {ratios.growth.revenue.trailing_four_quarters|pct} and the three-year compound {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}; the bear treats the record as flattered by upfront hardware recognition, by license fees that have now stopped and by a small starting base."
+        },
+        "terminal_growth": {
+          "reason": "A niche screening product, with one customer at {concentration.facts.5.value|pct} of revenue in the latest fiscal year, settles below nominal growth of the economy; well below the risk-free rate of {cost_of_capital.risk_free_rate|pct}.",
+          "quote": "",
+          "quote_from": "",
+          "fields": [
+            "concentration.facts.5.value",
+            "cost_of_capital.risk_free_rate"
+          ],
+          "history": "Far below the record, which holds no mature years; the gap to the base reflects concentration and competition rather than anything the history shows."
+        },
+        "operating_margin_year_one": {
+          "reason": "The bear holds roughly the latest quarter's loss rate: the quarter's operating loss of {ratios.growth.operating_income.this_quarter} on revenue of {ratios.growth.revenue.this_quarter} was wider than the first quarter's while revenue fell, and management expects sales and marketing and general and administrative expense to rise in 2026. The gains of the past two years, which came largely from falling investigation and restatement costs, are assumed spent.",
+          "quote": "We expect our sales and marketing costs will increase for the year ending December 31, 2026 compared to the year ended December 31, 2025 as we expand our go to market efforts through both direct and channel investments.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.growth.operating_income.this_quarter",
+            "ratios.growth.revenue.this_quarter",
+            "ratios.profitability.operating_margin"
+          ],
+          "history": "Worse than the trailing {ratios.profitability.operating_margin|pct} but far better than fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}; the bear assumes the improvement stalls rather than reverses."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Gross margin stays under pressure from the upfront hardware cost of purchase subscriptions, share-based pay stays a heavy charge near today's {earnings_versus_cash.share_based_compensation_over_revenue|pct} of revenue, and control remediation, litigation and systems work keep administrative cost high; scale lifts the GAAP operating margin only into the single digits.",
+          "quote": "As expected under the purchase subscription model, a higher purchase subscription mix increases revenue recognition in the early years of a typical four year customer contract and creates a modest near-term headwind to reported gross margin percentage as associated hardware costs are recognized upfront.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "trend_table.quarters-back-0.ratios.gross_margin",
+            "trend_table.years-back-1.ratios.gross_margin",
+            "earnings_versus_cash.share_based_compensation_over_revenue"
+          ],
+          "history": "Above every margin on record, all of them negative, but far below the base; the latest quarter's gross margin of {trend_table.quarters-back-0.ratios.gross_margin|pct} is already below the full-year gross margin of the best year on record, {trend_table.years-back-1.ratios.gross_margin|pct}."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Operating income is negative in year one, so the rate is nil and the full loss counts as cash consumed. The bear's real burn would be larger still: the new contract manufacturer's terms can turn forecast shortfalls into purchase commitments, and the payables build behind recent operating cash flow ({terms.trailing_four_quarters.change_in_payables}) is timing that can reverse. A positive rate applied to a loss would only hide that.",
+          "quote": "Our contract with our new contract manufacturer includes provisions for which order volumes that fall short of our forecasts may result in purchase commitments.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "terms.trailing_four_quarters.change_in_payables",
+            "earnings_versus_cash.working_capital.accounts_payable.articulation_gap",
+            "terms.balances_now.property_plant_and_equipment"
+          ],
+          "history": "Capital expenditure is missing from the record for the trailing year, so no trailing reinvestment rate can be computed; the trailing payables increase in the cash-flow statement far exceeds the balance-sheet change, a gap the accounting reader flags."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "In the bear, new capital earns returns near or below a normal cost of capital, so even slow terminal growth takes a larger share of thin operating income for fleet replacement and working capital; first-generation units already show early obsolescence through disposal losses, which shortens the useful life of each unit.",
+          "quote": "The increase in subscription gross profit margin is also driven by a decrease of $1.1 million of expense related to disposals of certain first generation Evolv Express systems during the three months ended June 30, 2026 as compared to the three months ended June 30, 2025.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital",
+            "terms.trailing_four_quarters.depreciation_and_amortization"
+          ],
+          "history": "Return on invested capital on record is {ratios.profitability.return_on_invested_capital|pct}, and nothing in the history shows returns on new capital above the cost of capital; the rate is a steady-state assumption, not an extension of history."
+        }
+      }
+    },
+    "base": {
+      "revenue_growth_year_one": 0.19,
+      "terminal_growth": 0.03,
+      "operating_margin_year_one": -0.15,
+      "operating_margin_year_ten": 0.15,
+      "reinvestment_rate_year_one": 0.0,
+      "reinvestment_rate_year_ten": 0.20,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "The base takes the raised outlook for calendar 2026 as given, but growth here is measured from the trailing four quarters, which already include a first half that grew fast; the outlook leaves a slower second half, and the latest quarter's revenue changed {ratios.growth.revenue.quarter_over_quarter|pct} on the quarter before as license fee revenue ended with the distribution agreement. Part of reported growth is timing, since purchase subscriptions recognise hardware upfront, so year-one growth is set below the guided range for the calendar year.",
+          "quote": "The Company expects total revenues in 2026 to be between $180 to $185 million, reflecting growth of approximately 23% to 27% year-over-year.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "terms.trailing_four_quarters.revenue",
+            "ratios.growth.revenue.quarter_over_quarter",
+            "ratios.growth.revenue.trailing_four_quarters",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound"
+          ],
+          "history": "Below the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct}, fiscal 2025's {earnings_versus_cash.history.years.0.revenue_growth|pct} and the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}. The record was built from a small base, on license fees that have now ended and on the move to upfront hardware recognition; the company's own outlook already points to slower growth, as the financial reader notes."
+        },
+        "terminal_growth": {
+          "reason": "A mature screening and security-technology business whose growth settles near long-run nominal growth of the economy; set below the risk-free rate of {cost_of_capital.risk_free_rate|pct}, as the calculator requires.",
+          "quote": "",
+          "quote_from": "",
+          "fields": [
+            "cost_of_capital.risk_free_rate"
+          ],
+          "history": "Far below every growth rate on record, the three-year compound being {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}; the company has no mature years on file, so the terminal rate rests on the economy rather than on its history."
+        },
+        "operating_margin_year_one": {
+          "reason": "The trailing operating margin is {ratios.profitability.operating_margin|pct}, and the latest quarter's operating loss of {ratios.growth.operating_income.this_quarter} was wider than the first quarter's {ratios.growth.operating_income.quarter_over_quarter.inputs.before.value}. Management expects general and administrative expense, and sales and marketing expense, to rise in 2026, while the investigation and restatement costs that inflated last year fall away. The base allows a modest gain on the trailing year from revenue growing over a largely fixed cost base, read on the GAAP operating line, which charges share-based pay, rather than on the company's Adjusted EBITDA.",
+          "quote": "We expect our general and administrative expenses to increase for the year ending December 31, 2026 compared to the year ended December 31, 2025 primarily due to expansion of our general and administrative team and engagements with external consultants to enhance our systems and Sarbanes-Oxley Act compliance efforts, partially offset by a decrease in expenses related to a previously disclosed investigation and restatement of prior period financial statements incurred in 2025, which are believed to be substantially non-recurring.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.profitability.operating_margin",
+            "ratios.growth.operating_income.this_quarter",
+            "ratios.growth.operating_income.quarter_over_quarter.inputs.before.value",
+            "earnings_versus_cash.share_based_compensation_over_revenue"
+          ],
+          "history": "Better than the trailing {ratios.profitability.operating_margin|pct}, fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct} and the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}, but a much smaller step than the trailing year's, when the operating loss narrowed by {ratios.growth.operating_income.trailing_four_quarters|pct} against the four quarters a year earlier, much of it from legal and consulting savings that cannot repeat."
+        },
+        "operating_margin_year_ten": {
+          "reason": "At maturity the base holds gross margin near its trailing {ratios.profitability.gross_margin|pct} and lets operating expenses, share-based pay included, fall as a share of a revenue base several times today's. The company's margin outlook is set on Adjusted EBITDA, which adds back share-based pay, fleet depreciation and disposal losses, while trailing GAAP EBITDA is {ratios.solvency.ebitda}; those are real costs, so the base GAAP margin sits well below what the adjusted ambition would suggest.",
+          "quote": "The Company expects Adjusted EBITDA2 in 2026 to be between $15 to $16 million with Adjusted EBITDA2 margins in the high single digits.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.profitability.gross_margin",
+            "ratios.solvency.ebitda",
+            "earnings_versus_cash.share_based_compensation_over_revenue",
+            "terms.trailing_four_quarters.depreciation_and_amortization"
+          ],
+          "history": "No year on record has a positive operating margin; the year-ten margin is a forecast of operating leverage the company has not yet shown, resting on the improvement from {earnings_versus_cash.history.years.2.operating_margin|pct} in fiscal 2023 to {earnings_versus_cash.history.years.0.operating_margin|pct} in fiscal 2025 and {ratios.profitability.operating_margin|pct} over the trailing year."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "After-tax operating income is negative in year one, and a positive reinvested share of a negative number would shrink the modelled cash burn below the operating loss; the rate is set at nil so the whole loss counts as cash consumed. The record shows little net reinvestment now: net property and equipment, which carries the subscription fleet, moved only from {terms.balances_a_year_earlier.property_plant_and_equipment} to {terms.balances_now.property_plant_and_equipment}, trade working capital fell from {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier.value} to {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now.value}, and a rising share of new units goes out under purchase subscriptions rather than being carried as company equipment.",
+          "quote": "The Company now expects approximately 60% of new unit deployments in 2026 to be delivered under its purchase subscription model (compared to its prior expectation of approximately 55%), with the remaining 40% deployed through its pure subscription model.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "terms.balances_a_year_earlier.property_plant_and_equipment",
+            "terms.balances_now.property_plant_and_equipment",
+            "terms.trailing_four_quarters.depreciation_and_amortization",
+            "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier.value",
+            "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now.value"
+          ],
+          "history": "Capital expenditure is missing from the record for the trailing year, so no trailing reinvestment rate can be computed; the balance-sheet changes stand in for it. The accounting reader cautions that operating cash flow is lifted by payables timing and by fleet costs classified in investing, so if fleet spending runs ahead of depreciation the true burn is larger than modelled."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "To keep growing at the terminal rate the company must add and replace fleet units and fund working capital. The base assumes new capital earns a return well above today's negative return on invested capital ({ratios.profitability.return_on_invested_capital|pct}) but only moderately above a normal cost of capital, which at the base terminal growth calls for a modest share of after-tax operating income; the business is asset-heavy for its revenue, with asset turnover of {ratios.efficiency.asset_turnover}.",
+          "quote": "The deferral that matters here is structural: subscription units are carried as property and equipment",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital",
+            "ratios.profitability.return_on_invested_capital.invested_capital",
+            "ratios.efficiency.asset_turnover"
+          ],
+          "history": "No reinvestment rate can be read from the record: operating income is negative in every year on file and capital expenditure is missing for every recent fiscal year, so the rate is a steady-state assumption tied to the terminal growth, not an extension of history."
+        }
+      }
+    },
+    "bull": {
+      "revenue_growth_year_one": 0.25,
+      "terminal_growth": 0.04,
+      "operating_margin_year_one": -0.09,
+      "operating_margin_year_ten": 0.22,
+      "reinvestment_rate_year_one": 0.0,
+      "reinvestment_rate_year_ten": 0.20,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "The bull takes the chief financial officer's long-term framework rate as year-one growth: the outlook was raised, ARR is guided to grow faster this year than it did over the trailing year, customers who used to come through the distribution partner now contract directly, and the latest quarter grew {ratios.growth.revenue.year_over_year|pct} on the year-ago quarter.",
+          "quote": "We remain focused on building a durable growth business capable of delivering revenue CAGR of approximately 25% through 2031 while expanding Adjusted EBITDA margins annually.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.growth.revenue.year_over_year",
+            "ratios.growth.revenue.trailing_four_quarters",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound"
+          ],
+          "history": "Still below the trailing {ratios.growth.revenue.trailing_four_quarters|pct} and the three-year compound {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}; even the bull assumes the record's pace slows, part of it having been timing from upfront hardware recognition."
+        },
+        "terminal_growth": {
+          "reason": "A broader security-technology franchise growing slightly faster than the economy at maturity; still below the risk-free rate of {cost_of_capital.risk_free_rate|pct}.",
+          "quote": "",
+          "quote_from": "",
+          "fields": [
+            "cost_of_capital.risk_free_rate"
+          ],
+          "history": "Far below the record, which holds no mature years."
+        },
+        "operating_margin_year_one": {
+          "reason": "The bull assumes the Adjusted EBITDA outlook is met and that fixed-cost leverage, falling investigation and legal costs and lower first-generation reserve and disposal charges carry the GAAP loss rate down sharply within a year, with share-based pay ({terms.trailing_four_quarters.share_based_compensation}) and depreciation ({terms.trailing_four_quarters.depreciation_and_amortization}) growing more slowly than revenue.",
+          "quote": "primarily driven by our ability to leverage our fixed costs over a higher revenue base",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.profitability.operating_margin",
+            "terms.trailing_four_quarters.share_based_compensation",
+            "terms.trailing_four_quarters.depreciation_and_amortization",
+            "ratios.growth.operating_income.trailing_four_quarters"
+          ],
+          "history": "A step up from the trailing {ratios.profitability.operating_margin|pct} that is far smaller than the improvement over the trailing year, when the operating loss narrowed by {ratios.growth.operating_income.trailing_four_quarters|pct} while revenue grew {ratios.growth.revenue.trailing_four_quarters|pct}; the bull extends the recent trend rather than exceeding it."
+        },
+        "operating_margin_year_ten": {
+          "reason": "The bull lets much of the company's stated ambition for combined growth and Adjusted EBITDA margin show up on a GAAP basis at maturity: gross margin recovers toward its best year as recurring service revenue grows in the mix, and operating expenses, share-based pay included, fall well below today's share of revenue.",
+          "quote": "We believe consistent execution against these objectives positions us to achieve Rule of 50 performance over time.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "trend_table.years-back-1.ratios.gross_margin",
+            "ratios.profitability.gross_margin",
+            "earnings_versus_cash.share_based_compensation_over_revenue"
+          ],
+          "history": "No year on record has a positive operating margin; the bull's year-ten margin rests on gross margin returning from the trailing {ratios.profitability.gross_margin|pct} toward the full-year gross margin of the best year on record, {trend_table.years-back-1.ratios.gross_margin|pct}."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Operating income is still negative in year one, so the rate is nil and the loss counts in full as cash consumed; the nearly flat net equipment and falling trade working capital on record show that growth currently takes little net capital, as more customers take systems under purchase subscriptions.",
+          "quote": "As a result, a greater proportion of customers purchased Evolv Express and Evolv eXpedite systems directly from us under our purchase subscription model.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "terms.balances_a_year_earlier.property_plant_and_equipment",
+            "terms.balances_now.property_plant_and_equipment",
+            "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier.value",
+            "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now.value"
+          ],
+          "history": "Capital expenditure is missing from the record for the trailing year; net property and equipment moved from {terms.balances_a_year_earlier.property_plant_and_equipment} to {terms.balances_now.property_plant_and_equipment}, which stands in for it."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "Faster terminal growth needs more capital, but the bull assumes higher returns on it as recurring software and service revenue grows in the mix; it keeps the base's reinvested share, so the extra terminal growth is paid for by better returns rather than by more capital per unit of income.",
+          "quote": "",
+          "quote_from": "",
+          "fields": [
+            "ratios.efficiency.asset_turnover",
+            "ratios.profitability.return_on_invested_capital.invested_capital"
+          ],
+          "history": "As in the base, no reinvestment rate can be read from the record: operating income is negative in every year on file and capital expenditure is missing for every recent fiscal year."
+        }
+      }
+    }
+  },
+  "wacc_overrides": {}
+}
