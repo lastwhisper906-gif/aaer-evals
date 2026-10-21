@@ -22,6 +22,7 @@ branch changed. A run item is done when its run directory is published and
 [ ] AAON's 10-Q filed 2026-08-10 on Opus, the first run of a company added on 2026-10-21 · `.venv/bin/python -m evals --runs runs/AAON` · the fixture set of 2026-10-21
 
 [ ] ATEN's 10-Q filed 2026-08-06 on Opus, the first run of a company added on 2026-10-21 · `.venv/bin/python -m evals --runs runs/ATEN` · the fixture set of 2026-10-21
+    pending, 2026-10-21: the run finished on Opus (every agent written) and was set aside by the plain-name check, which names the filer's XBRL member for its convertible notes (a capital letter and the coupon rate in digits) inside a fact id the numbers reader cited as its `paragraph_id`; the owner's row on reader-written codes carries this second shape; not run again until it is decided
 
 [ ] AIOT's 10-Q filed 2026-08-10 on Opus, the first run of a company added on 2026-10-21 · `.venv/bin/python -m evals --runs runs/AIOT` · the fixture set of 2026-10-21
 
