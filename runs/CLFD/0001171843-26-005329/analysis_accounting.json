@@ -1,0 +1,993 @@
+{
+ "question": "do reported earnings and cash reflect economic reality?",
+ "areas": {
+  "earnings_versus_cash": {
+   "finding": "Over the trailing four quarters operating cash flow is {terms.trailing_four_quarters.operating_cash_flow} against net income of {terms.trailing_four_quarters.net_income}, so operating cash flow over net income is {earnings_versus_cash.operating_cash_flow_over_net_income}, a negative ratio with no clean reading, and accruals over average assets are {earnings_versus_cash.accruals_over_average_assets|pct}, cash ahead of income. Two measurement problems sit inside these figures. First, the numerator is continuing-operations cash while net income carries the loss of the divested Nestor business: trailing pretax income from continuing operations is {terms.trailing_four_quarters.pretax_income} with tax of {terms.trailing_four_quarters.income_tax_expense}, yet net income is negative, and the last quarter of fiscal 2025 shows a net loss of {earnings_versus_cash.smoothness.net_income.3} beside operating cash of {earnings_versus_cash.smoothness.operating_cash_flow.3}, the mark of a non-cash charge; the calculator does not break the discontinued result out. Second, the trailing cash figure joins two concepts: the prior-year nine months use the total operating-cash-flow tag from the prior-year 10-Q, the rest the continuing-operations tag, and the trend table refuses to compare accruals across that change. Against its own history the company has flipped, and the flip shows within one concept between fiscal 2023 and fiscal 2024: in fiscal 2021 to fiscal 2023 income ran ahead of cash (accruals over assets {trend_table.years-back-4.ratios.accruals_over_total_assets.value|pct}, then {trend_table.years-back-3.ratios.accruals_over_total_assets.value|pct} at the fiscal 2022 peak, then {trend_table.years-back-2.ratios.accruals_over_total_assets.value|pct}), with operating cash flow only {earnings_versus_cash.history.years.3.operating_cash_flow_over_net_income|pct} of net income in fiscal 2022; in fiscal 2024 and fiscal 2025 cash ran ahead ({trend_table.years-back-1.ratios.accruals_over_total_assets.value|pct}, {trend_table.years-back-0.ratios.accruals_over_total_assets.value|pct}). That is the inventory cycle: stock built in the boom held income above cash, and it is now being reserved against and sold down. Working capital: inventory is the source of cash. The cash-flow statement's trailing inventory change is {terms.trailing_four_quarters.change_in_inventory}, a decrease that releases cash, and the balance-sheet change is {earnings_versus_cash.working_capital.inventory.balance_sheet_change}. Nine-month operating cash flow of {terms.trailing_four_quarters.operating_cash_flow.parts.this_year_to_date.value} is smaller than the cash released by the nine-month inventory change of {terms.trailing_four_quarters.change_in_inventory.parts.this_year_to_date.value}, so without running down stock the year to date would not have produced cash. Receivables absorbed cash on the cash-flow statement ({terms.trailing_four_quarters.change_in_receivables}) and payables fell on the balance sheet ({earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change}), so neither is being stretched to lift cash. The share-of-income ratios ({earnings_versus_cash.working_capital.receivables.share_of_net_income}, {earnings_versus_cash.working_capital.inventory.share_of_net_income}, {earnings_versus_cash.working_capital.accounts_payable.share_of_net_income}) have no clean reading against a net loss. Articulation does not hold: the receivables balance-sheet change is {earnings_versus_cash.working_capital.receivables.balance_sheet_change} while the cash-flow statement records an increase of {earnings_versus_cash.working_capital.receivables.cash_flow_statement_change}, a gap of {earnings_versus_cash.working_capital.receivables.articulation_gap}; the inventory gap is {earnings_versus_cash.working_capital.inventory.articulation_gap}; the payables line of the cash-flow statement is not tagged in any period, so it cannot be checked. The year-earlier balances come from the prior-year 10-Q, before Nestor was reclassified, and reserve charges cut net inventory without passing through the inventory line; either may explain the gaps, but the record cannot confirm it. Smoothness is {earnings_versus_cash.smoothness}, below one: reported income moves less than cash, even though the income series includes the large loss quarter.",
+   "verdict": "Cash runs ahead of reported income, but because inventory built in the boom is being sold down and reserved against, not because the earnings stream is strong. The ratios are blurred by a discontinued-operations loss, a change of cash-flow concept and working-capital lines that do not articulate. Operating cash flow is flattered by an inventory release that cannot repeat at this rate, and one cash-flow adjustment is written for it.",
+   "evidence": [
+    "earnings_quality_accruals_over_total_assets_annual",
+    "articulation_and_the_filed_history_accruals_operating_cash_flow_concept_change_annual",
+    "articulation_and_the_filed_history_accruals_operating_cash_flow_concept_change_quarterly",
+    "articulation_and_the_filed_history_accruals_concept_change_highest_earlier_year",
+    "articulation_and_the_filed_history_accruals_concept_change_lowest_earlier_year",
+    "earnings_quality_days_sales_of_inventory_quarterly",
+    "liquidity_and_capital_inventory_drawdown_attributed_to_fulfilling_orders_from_stock",
+    "earnings_quality_receivables_increase_attributed_to_period_end_sales_timing",
+    "across_documents_cash_generation_described_as_strong"
+   ],
+   "fields": [
+    "earnings_versus_cash.operating_cash_flow_over_net_income",
+    "earnings_versus_cash.accruals_over_average_assets",
+    "terms.trailing_four_quarters.operating_cash_flow",
+    "terms.trailing_four_quarters.net_income",
+    "terms.trailing_four_quarters.pretax_income",
+    "terms.trailing_four_quarters.change_in_inventory",
+    "terms.trailing_four_quarters.change_in_receivables",
+    "earnings_versus_cash.working_capital.receivables.balance_sheet_change",
+    "earnings_versus_cash.working_capital.receivables.cash_flow_statement_change",
+    "earnings_versus_cash.working_capital.receivables.articulation_gap",
+    "earnings_versus_cash.working_capital.inventory.balance_sheet_change",
+    "earnings_versus_cash.working_capital.inventory.articulation_gap",
+    "earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change",
+    "earnings_versus_cash.smoothness",
+    "earnings_versus_cash.history.years.3.operating_cash_flow_over_net_income",
+    "trend_table.years-back-0.ratios.accruals_over_total_assets.value",
+    "trend_table.years-back-3.ratios.accruals_over_total_assets.value"
+   ]
+  },
+  "revenue_recognition": {
+   "finding": "Quarter-end days sales outstanding on the record's basis is {trend_table.quarters-back-0.ratios.days_sales_outstanding.value}, below the prior quarter's {trend_table.quarters-back-1.ratios.days_sales_outstanding.value} and the year-ago quarter's {trend_table.quarters-back-4.ratios.days_sales_outstanding.value}; receivables over quarterly revenue moved the same way ({trend_table.quarters-back-0.ratios.receivables_over_revenue.value} against {trend_table.quarters-back-4.ratios.receivables_over_revenue.value}). Trailing average-based DSO is {ratios.efficiency.days_sales_outstanding}. At fiscal year-end DSO rose from {trend_table.years-back-1.ratios.days_sales_outstanding.value} in fiscal 2024 to {trend_table.years-back-0.ratios.days_sales_outstanding.value} in fiscal 2025, still well below the fiscal 2022 peak of {trend_table.years-back-3.ratios.days_sales_outstanding.value}. The MD&A says DSO lengthened over the year; the record's year-ago figure says the opposite. The likely cause is that the year-ago receivables balance comes from the prior-year 10-Q and may still hold the divested Nestor business while the year-ago revenue is the recast figure; the MD&A's own basis is not in the calculator, so the disagreement stands as a contradiction until the recast balance is seen. Receivables rose over the nine months by the amount the cash-flow statement records ({terms.trailing_four_quarters.change_in_receivables.parts.this_year_to_date.value}), which the MD&A explains, in the same words as a year earlier, by sales concentrated near the period end; quarter revenue grew {ratios.growth.revenue.quarter_over_quarter|pct} on the prior quarter. The receivable is concentrated: Customer B, a large regional service provider, holds {concentration.facts.33.value|pct} of receivables at quarter end against {concentration.facts.29.value|pct} of the quarter's sales, and the allowance for credit losses is {terms.balances_now.bad_debt_allowance}. Contract liabilities are not tagged in any period, so their movement against revenue cannot be read. The notes reader reports no revenue-policy wording change, no new judgment area (variable consideration, principal versus agent, standalone selling price), no extended payment terms and no bill-and-hold. Fourth-quarter concentration cannot be tested: no derived fourth-quarter revenue is in the record.",
+   "verdict": "No aggregate sign that revenue runs ahead of collection, but the filing's own DSO claim is contradicted by the record's basis, period-end concentration of sales is the explanation for the second year running, and one service-provider customer carries a receivable well above its sales share with no allowance. A watch item, not an adjustment.",
+   "evidence": [
+    "revenue_recognition_days_sales_outstanding_quarterly",
+    "revenue_recognition_receivables_over_revenue_quarterly",
+    "revenue_recognition_days_sales_outstanding_annual",
+    "revenue_recognition_receivables_over_revenue_annual",
+    "revenue_recognition_contract_liabilities_over_revenue_quarterly",
+    "revenue_recognition_contract_liabilities_over_revenue_annual",
+    "earnings_quality_days_sales_outstanding_lengthened",
+    "earnings_quality_receivables_increase_attributed_to_period_end_sales_timing",
+    "structure_and_disclosure_changes_receivables_concentration_large_regional_customer",
+    "structure_and_disclosure_changes_sales_concentration_large_regional_customer"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.days_sales_outstanding.value",
+    "trend_table.quarters-back-1.ratios.days_sales_outstanding.value",
+    "trend_table.quarters-back-4.ratios.days_sales_outstanding.value",
+    "trend_table.quarters-back-0.ratios.receivables_over_revenue.value",
+    "trend_table.quarters-back-4.ratios.receivables_over_revenue.value",
+    "trend_table.years-back-0.ratios.days_sales_outstanding.value",
+    "trend_table.years-back-1.ratios.days_sales_outstanding.value",
+    "trend_table.years-back-3.ratios.days_sales_outstanding.value",
+    "ratios.efficiency.days_sales_outstanding",
+    "terms.trailing_four_quarters.change_in_receivables",
+    "ratios.growth.revenue.quarter_over_quarter",
+    "concentration.facts.33.value",
+    "concentration.facts.29.value",
+    "terms.balances_now.bad_debt_allowance",
+    "terms.balances_a_year_earlier.receivables"
+   ]
+  },
+  "estimates_and_reserves": {
+   "finding": "Inventory reserves are rising, not thinning: reserve over net inventory is {trend_table.quarters-back-0.ratios.inventory_reserve_ratio.value|pct}, the highest of the filled quarters, up from {trend_table.quarters-back-1.ratios.inventory_reserve_ratio.value|pct} a quarter earlier and {trend_table.quarters-back-4.ratios.inventory_reserve_ratio.value|pct} a year earlier, and the fiscal-year ratio climbed from {trend_table.years-back-3.ratios.inventory_reserve_ratio.value|pct} in fiscal 2022 to {trend_table.years-back-0.ratios.inventory_reserve_ratio.value|pct} in fiscal 2025. That fits the charge for finished goods built for an order no longer expected to be fulfilled. The reserve balance itself, {terms.balances_now.inventory_reserve}, is below the year-earlier {terms.balances_a_year_earlier.inventory_reserve}, and the MD&A reports recoveries on sales of previously reserved inventory in the quarter and the nine months: reserves taken in earlier years are now flowing back into gross margin, and no calculator field carries that flow. Several estimate changes raised this quarter's income: a reduction of performance-based compensation accruals, a reversal of previously recognised stock-unit cost after the fiscal 2026 goals were judged no longer probable, and the reserve recoveries. The MD&A nonetheless says changes in estimates had no significant impact on earnings. None of those amounts is a calculator field, so their weight against quarterly operating income of {ratios.growth.operating_income.this_quarter} is not computed here, and no earnings adjustment can be written for them. The allowance for credit losses is zero in every filled quarter and at the fiscal 2024 and fiscal 2025 year-ends, against small positive ratios in fiscal 2021 to fiscal 2023 ({trend_table.years-back-4.ratios.bad_debt_reserve_ratio.value|pct}, {trend_table.years-back-3.ratios.bad_debt_reserve_ratio.value|pct}, {trend_table.years-back-2.ratios.bad_debt_reserve_ratio.value|pct}), while receivables have become more concentrated. Goodwill: the notes say no triggering event occurred in the nine months although the release cuts fiscal 2026 guidance for industry demand constraints and an order was removed from backlog; trailing operating margin is {ratios.profitability.operating_margin|pct} against a three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}; the calculator carries no goodwill balance, discount rate or growth assumption, so headroom cannot be judged, and the annual test falls at fiscal year-end. Warranty reserves are not tagged in any period. Tax: the trailing effective rate is {tax_rate.effective_rate|pct}, above statutory, and the notes reader reports no valuation allowance and no unrecognised tax benefits, so no discrete tax benefit or allowance release is lifting income.",
+   "verdict": "Mixed. Inventory reserves are conservative and rising, but this quarter's income leans on estimate-driven items (reserve recoveries, an incentive-accrual cut, a stock-unit reversal) that the filing calls not significant and the calculator cannot size. The zero credit-loss allowance and the absence of a goodwill trigger are judgments that run in the company's favour.",
+   "evidence": [
+    "estimates_and_discretion_inventory_reserve_ratio_quarterly",
+    "estimates_and_discretion_inventory_reserve_ratio_annual",
+    "estimates_and_discretion_inventory_charge_for_order_no_longer_expected_to_be_fulfilled",
+    "earnings_quality_recoveries_on_sales_of_previously_reserved_inventory",
+    "earnings_quality_performance_compensation_accrual_reduction",
+    "estimates_and_discretion_performance_stock_units_no_longer_probable",
+    "across_documents_estimate_changes_described_as_not_significant",
+    "estimates_and_discretion_bad_debt_reserve_ratio_quarterly",
+    "estimates_and_discretion_bad_debt_reserve_ratio_annual",
+    "across_documents_goodwill_no_triggering_events_despite_reduced_outlook",
+    "estimates_and_discretion_warranty_reserve_ratio_quarterly"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.inventory_reserve_ratio.value",
+    "trend_table.quarters-back-1.ratios.inventory_reserve_ratio.value",
+    "trend_table.quarters-back-4.ratios.inventory_reserve_ratio.value",
+    "trend_table.years-back-0.ratios.inventory_reserve_ratio.value",
+    "trend_table.years-back-3.ratios.inventory_reserve_ratio.value",
+    "terms.balances_now.inventory_reserve",
+    "terms.balances_a_year_earlier.inventory_reserve",
+    "trend_table.years-back-2.ratios.bad_debt_reserve_ratio.value",
+    "trend_table.years-back-4.ratios.bad_debt_reserve_ratio.value",
+    "ratios.growth.operating_income.this_quarter",
+    "ratios.profitability.operating_margin",
+    "earnings_versus_cash.history.operating_margin_three_year_average",
+    "tax_rate.effective_rate"
+   ]
+  },
+  "cost_deferral": {
+   "finding": "Nothing found on capitalised cost: the record tags no capitalised software in any period and carries no research-and-development expense for the current year to date, so a capitalised-against-expensed comparison cannot be made. Capital expenditure is {earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization} times depreciation and amortisation over the trailing year, so assets are not being built faster than they are used up, the opposite of deferral. Soft-asset share is {trend_table.quarters-back-0.ratios.soft_asset_share.value|pct}, below the prior quarter's {trend_table.quarters-back-1.ratios.soft_asset_share.value|pct} but above the year-ago {trend_table.quarters-back-4.ratios.soft_asset_share.value|pct}; the measure counts investment securities ({terms.balances_now.short_term_investments}) as soft, and plant and equipment fell from {terms.balances_a_year_earlier.property_plant_and_equipment} to {terms.balances_now.property_plant_and_equipment} with the divestiture, so the rise is benign on its face. Items called non-recurring: the release says the quarter's tariff refunds will not recur, and they sit inside gross margin, so the quarter's {trend_table.quarters-back-0.ratios.gross_margin.value|pct} overstates the run-rate. Excess-and-obsolete charges are presented as tied to one order, but the reserve ratio has risen in each fiscal year since fiscal 2022, so reserve additions are not a one-off. Non-GAAP gap: companyfacts carries no non-GAAP measure and the notes reader reports no non-GAAP reconciliation, so nothing can be measured.",
+   "verdict": "Clean on deferral: no capitalised-cost build and capital spending below depreciation. The weaker points are presentation: a non-recurring tariff refund inside gross margin, and inventory charges that recur though they are presented as order-specific.",
+   "evidence": [
+    "earnings_quality_soft_asset_share_quarterly",
+    "earnings_quality_soft_asset_share_annual",
+    "earnings_quality_tariff_refunds_not_expected_to_recur",
+    "earnings_quality_gross_margin_quarterly",
+    "estimates_and_discretion_inventory_reserve_ratio_annual",
+    "results_against_expectations_non_gaap_gap_quarterly",
+    "results_against_expectations_non_gaap_gap_annual"
+   ],
+   "fields": [
+    "earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization",
+    "trend_table.quarters-back-0.ratios.soft_asset_share.value",
+    "trend_table.quarters-back-1.ratios.soft_asset_share.value",
+    "trend_table.quarters-back-4.ratios.soft_asset_share.value",
+    "terms.balances_now.short_term_investments",
+    "terms.balances_now.property_plant_and_equipment",
+    "terms.balances_a_year_earlier.property_plant_and_equipment",
+    "trend_table.quarters-back-0.ratios.gross_margin.value"
+   ]
+  },
+  "cash_flow_engineering_and_off_balance_sheet": {
+   "finding": "The record tags no proceeds from sale of receivables, no supplier-finance obligation, no unconditional purchase obligation and no guarantee exposure in any period, and the notes reader reports no such programme for the continuing business; the only factoring it mentions is a paragraph on the divested Nestor business, which it lists as amounts only. That bears on comparison rather than on the present: the year-earlier nine-month operating cash flow inside the trailing figure uses the total operating-cash-flow tag and may include Nestor's operating cash, factored receivables among it. Operating cash flow is lifted by working capital and by spending less, not by financing: trailing capital expenditure is {terms.trailing_four_quarters.capital_expenditure} against {terms.trailing_four_quarters_a_year_earlier.capital_expenditure} a year earlier, and the capital-expenditure line changed tag between periods (productive assets against property, plant and equipment). No shift between operating and investing classification is visible beyond those tag changes. Leases: the Brooklyn Park renewal added a right-of-use asset and liability, yet the operating lease liability is {terms.balances_now.operating_lease_liability} against {terms.balances_a_year_earlier.operating_lease_liability} a year earlier. The revolving line has been extended again for a short term rather than renewed, with nothing drawn: debt is {terms.debt_now} and cash and short-term investments are {terms.cash_and_short_term_investments_now}. No variable-interest entity is reported. Share-based compensation is a real cost even though no cash leaves: {terms.trailing_four_quarters.share_based_compensation} over the trailing year, {earnings_versus_cash.share_based_compensation_over_revenue|pct} of revenue and {earnings_versus_cash.share_based_compensation_over_operating_cash_flow|pct} of operating cash flow, up from {earnings_versus_cash.history.years.5.share_based_compensation} in fiscal 2020 to {earnings_versus_cash.history.years.0.share_based_compensation} in fiscal 2025 while revenue went from a fiscal 2022 peak of {earnings_versus_cash.history.years.3.revenue} to {earnings_versus_cash.history.years.0.revenue}. It is already subtracted in quality-adjusted free cash flow, and this quarter's stock-unit reversal leaves the trailing figure below its run-rate. One adjustment is written: the trailing inventory release is removed from free cash flow ({free_cash_flow.free_cash_flow_simple} before adjustments) because it came from selling stock on hand and cannot repeat at that rate.",
+   "verdict": "Nothing found of factoring, supplier finance, purchase obligations, guarantees or off-balance-sheet entities in the continuing business. Cash flow is lifted by an inventory release and lower capital spending, both real but not repeatable, and the net lease balance moves against the renewal disclosure.",
+   "evidence": [
+    "articulation_and_the_filed_history_accruals_operating_cash_flow_concept_change_annual",
+    "related_parties_contingencies_and_subsequent_events_manufacturing_facility_lease_renewal",
+    "liquidity_and_capital_revolving_credit_line_maturity_extended_again",
+    "estimates_and_discretion_performance_stock_units_no_longer_probable",
+    "liquidity_and_capital_inventory_drawdown_attributed_to_fulfilling_orders_from_stock"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.capital_expenditure",
+    "terms.trailing_four_quarters_a_year_earlier.capital_expenditure",
+    "terms.balances_now.operating_lease_liability",
+    "terms.balances_a_year_earlier.operating_lease_liability",
+    "terms.debt_now",
+    "terms.cash_and_short_term_investments_now",
+    "terms.trailing_four_quarters.share_based_compensation",
+    "earnings_versus_cash.share_based_compensation_over_revenue",
+    "earnings_versus_cash.share_based_compensation_over_operating_cash_flow",
+    "earnings_versus_cash.history.years.0.share_based_compensation",
+    "earnings_versus_cash.history.years.5.share_based_compensation",
+    "free_cash_flow.free_cash_flow_simple",
+    "terms.trailing_four_quarters.change_in_inventory"
+   ]
+  },
+  "controls_audit_and_filing_signals": {
+   "finding": "The controls section concludes that disclosure controls are effective and reports no change in internal control over financial reporting; a 10-Q carries no auditor's report, so no critical audit matter can be read. The 8-K item list between the prior quarterly report and this one shows no auditor change, non-reliance notice or officer departure, and no late-filing notice is listed. Filing-quality slips: the earnings release calls the June quarter's sales the second quarter of fiscal 2026, and the 10-Q MD&A carries a typographical slip in an amount. A material-agreement 8-K filed after quarter end is on the item list, but its body is not in the inputs; the debt note describes a loan amendment made after quarter end, which it most likely records. Quiet restatement: some 10-K facts are marked as re-reported by this 10-Q, but no trace in the inputs says whether a value changed, so none is reported. The customer letters in the concentration note are not stable across filings: for the same fiscal 2025 year-end, the 10-Q for the March quarter tags Customer B at {concentration.facts.17.value|pct} of receivables, while this 10-Q tags Customer A at {concentration.facts.18.value|pct} and Customer C at {concentration.facts.19.value|pct}, so a reader cannot follow one customer from filing to filing. Related-party growth, subsidiary-list changes and SEC comment letters are not in the inputs; nothing found on them for that reason, not because they were checked clean.",
+   "verdict": "Clean on controls and audit signals. The slips are drafting-level, and the shifting customer labels limit comparability across filings rather than signalling a restatement.",
+   "evidence": [
+    "controls_audit_and_filings_earnings_release_mislabels_quarter",
+    "liquidity_and_capital_revolving_credit_line_maturity_extended_again",
+    "structure_and_disclosure_changes_receivables_concentration_large_regional_customer",
+    "articulation_and_the_filed_history_accruals_operating_cash_flow_concept_change_annual"
+   ],
+   "fields": [
+    "concentration.facts.17.value",
+    "concentration.facts.18.value",
+    "concentration.facts.19.value"
+   ]
+  },
+  "cross_document_reconciliation": {
+   "finding": "Every notes item is reconciled below. The numbers confirm the sales and receivables concentration, the quarter's sales growth, the inventory charge, the nine-month receivables increase, the inventory drawdown and the amounts behind the release's mislabelled quarter. They contradict the MD&A's statement that DSO lengthened, the CFO's description of cash generation as strong, and, on the net balance, the lease increase. The rest stay unresolved because the calculator does not carry the amount (backlog, SG&A, goodwill, quarterly stock-unit expense, tax paid) or the horizon has not arrived. The 8-K earnings release against the 10-Q: the release's quarter sales and year-over-year growth match the 10-Q's tagged figures ({ratios.growth.revenue.this_quarter}, {ratios.growth.revenue.year_over_year|pct}), and its causes for the margin and SG&A moves are the 10-Q's, rounded. Differences: the release mislabels the quarter; it calls the removed order a previously booked order where the 10-Q says remaining portion; it gives an inventory provision netted against the recoveries that the 10-Q text does not; it says tariff recoveries will not recur where the 10-Q is silent; and it announces a hyperscale data-centre order after quarter end that the 10-Q does not mention. The numbers reader did not compare the release's condensed statements with the 10-Q line by line, so beyond sales the match is unverified.",
+   "verdict": "The release matches the 10-Q on the amounts that can be checked. Where prose and numbers disagree, the cash-generation description runs in the company's favour, the MD&A's DSO statement is more adverse than the record's basis, and the lease direction does not reconcile on the net balance.",
+   "evidence": [
+    "across_documents_cash_generation_described_as_strong",
+    "earnings_quality_days_sales_outstanding_lengthened",
+    "related_parties_contingencies_and_subsequent_events_manufacturing_facility_lease_renewal",
+    "controls_audit_and_filings_earnings_release_mislabels_quarter",
+    "narrative_signs_of_operating_pressure_backlog_order_no_longer_expected_to_be_fulfilled",
+    "earnings_quality_tariff_refunds_not_expected_to_recur",
+    "related_parties_contingencies_and_subsequent_events_hyperscale_data_center_order",
+    "revenue_recognition_days_sales_outstanding_quarterly"
+   ],
+   "fields": [
+    "ratios.growth.revenue.this_quarter",
+    "ratios.growth.revenue.year_over_year",
+    "ratios.growth.operating_cash_flow.trailing_four_quarters",
+    "terms.balances_now.operating_lease_liability",
+    "trend_table.quarters-back-0.ratios.days_sales_outstanding.value"
+   ]
+  },
+  "industry_lens": {
+   "finding": "Inventory obsolescence: found, and being recognised. Finished goods built for one customer's order are now reserved, the reserve ratio is the highest of the filled quarters ({trend_table.quarters-back-0.ratios.inventory_reserve_ratio.value|pct}), and days of inventory have fallen to {trend_table.quarters-back-0.ratios.days_sales_of_inventory.value} from {trend_table.quarters-back-4.ratios.days_sales_of_inventory.value} a year earlier and {trend_table.quarters-back-6.ratios.days_sales_of_inventory.value} at the high; trailing days of inventory are {ratios.efficiency.days_sales_of_inventory} and the cash conversion cycle is {ratios.efficiency.cash_conversion_cycle}. The risk now runs the other way: reserves taken in fiscal 2024 and fiscal 2025 are being recovered into margin as reserved stock sells. Purchase commitments in excess of need: nothing found; the record tags no purchase obligation in any period and the notes reader reports none, and the inventory charge is on finished goods already built, not on a commitment. Customer concentration: the quarter's customers above the disclosure threshold are a distributor at {concentration.facts.28.value|pct} and a large regional service provider at {concentration.facts.29.value|pct} of sales; the service provider holds {concentration.facts.33.value|pct} of receivables; a year earlier both named customers were distributors, and the letters shift between filings. Channel stuffing: nothing found; the distributor's receivable share is {concentration.facts.34.value|pct}, inventory days are falling, and the receivable build sits with an end customer, not with the channel, though period-end concentration of sales is the pattern to keep watching. Circular or vendor-financed deals: nothing found; the calculator shows no investment in or loan to a customer, short-term investments are securities, and the notes reader reports none; the post-quarter hyperscale order's customer is not named.",
+   "verdict": "Obsolescence is recognised rather than deferred, and the reserve build is now partly reversing into margin. Customer concentration is moving toward a single service provider with an outsized receivable. No purchase-commitment overhang, channel loading or circular dealing is visible.",
+   "evidence": [
+    "estimates_and_discretion_inventory_charge_for_order_no_longer_expected_to_be_fulfilled",
+    "estimates_and_discretion_inventory_reserve_ratio_quarterly",
+    "earnings_quality_days_sales_of_inventory_quarterly",
+    "earnings_quality_recoveries_on_sales_of_previously_reserved_inventory",
+    "structure_and_disclosure_changes_sales_concentration_large_regional_customer",
+    "structure_and_disclosure_changes_receivables_concentration_large_regional_customer",
+    "related_parties_contingencies_and_subsequent_events_hyperscale_data_center_order"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.inventory_reserve_ratio.value",
+    "trend_table.quarters-back-0.ratios.days_sales_of_inventory.value",
+    "trend_table.quarters-back-4.ratios.days_sales_of_inventory.value",
+    "trend_table.quarters-back-6.ratios.days_sales_of_inventory.value",
+    "ratios.efficiency.days_sales_of_inventory",
+    "ratios.efficiency.cash_conversion_cycle",
+    "concentration.facts.28.value",
+    "concentration.facts.29.value",
+    "concentration.facts.33.value",
+    "concentration.facts.34.value"
+   ]
+  }
+ },
+ "reconciliation": [
+  {
+   "notes_item": "liquidity_and_capital_revolving_credit_line_maturity_extended_again",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "The calculator carries no line-of-credit maturity, so the extension cannot be tested. It does show no debt on the balance sheet ({terms.debt_now}) against {terms.debt_a_year_earlier} a year earlier, which fits the statement that nothing is drawn."
+  },
+  {
+   "notes_item": "estimates_and_discretion_performance_stock_units_no_longer_probable",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "The calculator carries no quarterly share-based compensation. The nine-month figure {terms.trailing_four_quarters.share_based_compensation.parts.this_year_to_date.value} is above the prior nine months' {terms.trailing_four_quarters.share_based_compensation.parts.prior_year_to_date.value}, but it covers more than the quarter, so it neither confirms nor contradicts a reversal inside the quarter."
+  },
+  {
+   "notes_item": "estimates_and_discretion_performance_stock_units_excluded_from_diluted_shares",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "The record carries the quarter's diluted share count ({terms.diluted_shares}) but not the excluded units, so the exclusion cannot be checked."
+  },
+  {
+   "notes_item": "structure_and_disclosure_changes_sales_concentration_large_regional_customer",
+   "numbers_items": [],
+   "outcome": "confirms",
+   "why": "Tagged facts give Customer A {concentration.facts.28.value|pct} and Customer B {concentration.facts.29.value|pct} of the quarter's sales, and for the nine months A {concentration.facts.30.value|pct}, C {concentration.facts.31.value|pct} and B {concentration.facts.32.value|pct}, as the note states."
+  },
+  {
+   "notes_item": "structure_and_disclosure_changes_receivables_concentration_large_regional_customer",
+   "numbers_items": [
+    "estimates_and_discretion_bad_debt_reserve_ratio_quarterly"
+   ],
+   "outcome": "confirms",
+   "why": "Tagged facts give Customer B {concentration.facts.33.value|pct} and Customer A {concentration.facts.34.value|pct} of receivables at quarter end, as the note states, and the allowance is {terms.balances_now.bad_debt_allowance}."
+  },
+  {
+   "notes_item": "related_parties_contingencies_and_subsequent_events_manufacturing_facility_lease_renewal",
+   "numbers_items": [],
+   "outcome": "contradicts",
+   "why": "The operating lease liability is {terms.balances_now.operating_lease_liability} now against {terms.balances_a_year_earlier.operating_lease_liability} a year earlier, so over the year the numbers compare the balance moved down, not up. The renewal's increment is not tagged on its own; the exit of the divested Nestor business's leases and ordinary amortisation may be the offsets, but the record cannot show which."
+  },
+  {
+   "notes_item": "across_documents_goodwill_no_triggering_events_despite_reduced_outlook",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "The calculator carries no goodwill or intangible balance. Trailing operating margin of {ratios.profitability.operating_margin|pct} against a three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct} and a fiscal 2022 margin of {earnings_versus_cash.history.years.3.operating_margin|pct} shows the pressure, but whether it amounts to a trigger is a judgment the numbers cannot settle."
+  },
+  {
+   "notes_item": "results_against_expectations_quarter_sales_growth_drivers_by_customer_market",
+   "numbers_items": [
+    "earnings_quality_gross_margin_quarterly"
+   ],
+   "outcome": "confirms",
+   "why": "Quarter revenue of {ratios.growth.revenue.this_quarter} grew {ratios.growth.revenue.year_over_year|pct} on the year-ago quarter and {ratios.growth.revenue.quarter_over_quarter|pct} on the prior quarter. The split by customer market is not in the calculator."
+  },
+  {
+   "notes_item": "across_documents_demand_described_as_both_increased_and_slower",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "Backlog is not in the record and the next quarter has not been reported. The quarter's revenue growth ({ratios.growth.revenue.year_over_year|pct}) bears only on the increased-demand half of the description."
+  },
+  {
+   "notes_item": "narrative_signs_of_operating_pressure_backlog_order_no_longer_expected_to_be_fulfilled",
+   "numbers_items": [
+    "estimates_and_discretion_inventory_reserve_ratio_quarterly"
+   ],
+   "outcome": "unresolved",
+   "why": "Backlog is not a calculator field and the horizon, the next quarter, has not arrived. The same order's inventory charge is confirmed separately by the reserve ratio of {trend_table.quarters-back-0.ratios.inventory_reserve_ratio.value|pct}."
+  },
+  {
+   "notes_item": "estimates_and_discretion_inventory_charge_for_order_no_longer_expected_to_be_fulfilled",
+   "numbers_items": [
+    "estimates_and_discretion_inventory_reserve_ratio_quarterly",
+    "earnings_quality_gross_margin_quarterly"
+   ],
+   "outcome": "confirms",
+   "why": "Reserve over net inventory is {trend_table.quarters-back-0.ratios.inventory_reserve_ratio.value|pct}, the highest of the filled quarters, up from {trend_table.quarters-back-1.ratios.inventory_reserve_ratio.value|pct} and {trend_table.quarters-back-4.ratios.inventory_reserve_ratio.value|pct}; gross margin is {trend_table.quarters-back-0.ratios.gross_margin.value|pct}, down from {trend_table.quarters-back-1.ratios.gross_margin.value|pct} and {trend_table.quarters-back-4.ratios.gross_margin.value|pct}."
+  },
+  {
+   "notes_item": "earnings_quality_recoveries_on_sales_of_previously_reserved_inventory",
+   "numbers_items": [
+    "estimates_and_discretion_inventory_reserve_ratio_quarterly"
+   ],
+   "outcome": "unresolved",
+   "why": "The recoveries are not tagged. The reserve balance of {terms.balances_now.inventory_reserve} is below the year-earlier {terms.balances_a_year_earlier.inventory_reserve}, which fits reserved stock leaving, but the year-earlier balance may include the divested business, and the reserve ratio rose to its highest, as the larger charge predicts. The record cannot separate a recovery from a write-off or a disposal."
+  },
+  {
+   "notes_item": "earnings_quality_tariff_refunds_not_expected_to_recur",
+   "numbers_items": [
+    "earnings_quality_gross_margin_quarterly"
+   ],
+   "outcome": "unresolved",
+   "why": "The refunds are not tagged and the next quarter has not been reported. The quarter's gross margin of {trend_table.quarters-back-0.ratios.gross_margin.value|pct} already includes them and still sits second lowest of the filled quarters."
+  },
+  {
+   "notes_item": "earnings_quality_performance_compensation_accrual_reduction",
+   "numbers_items": [
+    "earnings_quality_gross_margin_quarterly"
+   ],
+   "outcome": "unresolved",
+   "why": "SG&A and accrued compensation are not in the calculator. Quarterly operating income of {ratios.growth.operating_income.this_quarter} rose {ratios.growth.operating_income.year_over_year|pct} on the year-ago quarter while gross margin fell, which is consistent with lower operating costs, but the accrual itself cannot be isolated."
+  },
+  {
+   "notes_item": "earnings_quality_receivables_increase_attributed_to_period_end_sales_timing",
+   "numbers_items": [
+    "revenue_recognition_days_sales_outstanding_quarterly",
+    "revenue_recognition_receivables_over_revenue_quarterly"
+   ],
+   "outcome": "confirms",
+   "why": "The cash-flow statement's nine-month receivables increase of {terms.trailing_four_quarters.change_in_receivables.parts.this_year_to_date.value} is the increase the MD&A states. That sales were concentrated near period end cannot be tested; quarter-end DSO of {trend_table.quarters-back-0.ratios.days_sales_outstanding.value} is below the prior quarter's {trend_table.quarters-back-1.ratios.days_sales_outstanding.value}."
+  },
+  {
+   "notes_item": "earnings_quality_days_sales_outstanding_lengthened",
+   "numbers_items": [
+    "revenue_recognition_days_sales_outstanding_quarterly",
+    "revenue_recognition_receivables_over_revenue_quarterly"
+   ],
+   "outcome": "contradicts",
+   "why": "On the record's basis quarter-end DSO is {trend_table.quarters-back-0.ratios.days_sales_outstanding.value} against {trend_table.quarters-back-4.ratios.days_sales_outstanding.value} a year earlier, down rather than up, and the receivables balance of {terms.balances_now.receivables} is below the year-earlier {terms.balances_a_year_earlier.receivables}. The year-earlier balance comes from the prior-year 10-Q, before the Nestor business was classified as discontinued, while the year-ago revenue is the recast figure, so the record's year-ago DSO may include the divested business's receivables; the MD&A's own basis is not in the calculator."
+  },
+  {
+   "notes_item": "liquidity_and_capital_inventory_drawdown_attributed_to_fulfilling_orders_from_stock",
+   "numbers_items": [
+    "earnings_quality_days_sales_of_inventory_quarterly",
+    "earnings_quality_days_sales_of_inventory_annual"
+   ],
+   "outcome": "confirms",
+   "why": "The nine-month cash-flow inventory change of {terms.trailing_four_quarters.change_in_inventory.parts.this_year_to_date.value} is a decrease, the balance-sheet change on the year is {earnings_versus_cash.working_capital.inventory.balance_sheet_change}, and quarter-end days of inventory of {trend_table.quarters-back-0.ratios.days_sales_of_inventory.value} are the lowest of the filled quarters. The balance-sheet decline exceeds the cash-flow decline, a gap of {earnings_versus_cash.working_capital.inventory.articulation_gap}, so not all of it was cash from selling stock: reserve charges and the divestiture also cut the balance."
+  },
+  {
+   "notes_item": "across_documents_other_assets_increase_attributed_to_income_tax_payments",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "The calculator carries neither other assets nor income tax paid. Trailing income tax expense is {terms.trailing_four_quarters.income_tax_expense}, but expense is not payment, so the explanation cannot be tested."
+  },
+  {
+   "notes_item": "across_documents_estimate_changes_described_as_not_significant",
+   "numbers_items": [
+    "estimates_and_discretion_inventory_reserve_ratio_quarterly"
+   ],
+   "outcome": "unresolved",
+   "why": "The calculator does not carry the estimate-driven amounts the filing names, so their weight against quarterly operating income of {ratios.growth.operating_income.this_quarter} is not computed here. The release itself states the inventory charge and the recoveries in gross-margin points, which sits uneasily with a claim that they are not significant."
+  },
+  {
+   "notes_item": "related_parties_contingencies_and_subsequent_events_hyperscale_data_center_order",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "The order came after quarter end and shipments fall in fiscal 2027; backlog and future revenue are not in the calculator."
+  },
+  {
+   "notes_item": "results_against_expectations_fiscal_year_outlook_reduced",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "Guidance is not a calculator field and the fiscal fourth quarter has not been reported. Trailing revenue of {terms.trailing_four_quarters.revenue} is the last observed figure."
+  },
+  {
+   "notes_item": "across_documents_cash_generation_described_as_strong",
+   "numbers_items": [
+    "earnings_quality_days_sales_of_inventory_quarterly"
+   ],
+   "outcome": "contradicts",
+   "why": "Trailing operating cash flow of {terms.trailing_four_quarters.operating_cash_flow} is below the year-earlier trailing {terms.trailing_four_quarters_a_year_earlier.operating_cash_flow}, a change of {ratios.growth.operating_cash_flow.trailing_four_quarters|pct}. Continuing operating cash flow was negative in the first and second fiscal quarters ({earnings_versus_cash.smoothness.operating_cash_flow.2}, {earnings_versus_cash.smoothness.operating_cash_flow.1}) before the June quarter's {ratios.growth.operating_cash_flow.this_quarter}, and the nine-month operating cash flow of {terms.trailing_four_quarters.operating_cash_flow.parts.this_year_to_date.value} is smaller than the cash released by the nine-month inventory change of {terms.trailing_four_quarters.change_in_inventory.parts.this_year_to_date.value}. The quarter alone was strong; the year to date was not, and the cash it did produce came from running down stock. The year-earlier figures rest on the total operating-cash-flow tag, which blurs the size of the fall but not its direction in the same-concept quarters."
+  },
+  {
+   "notes_item": "controls_audit_and_filings_earnings_release_mislabels_quarter",
+   "numbers_items": [],
+   "outcome": "confirms",
+   "why": "Quarter revenue of {ratios.growth.revenue.this_quarter} and its year-over-year growth of {ratios.growth.revenue.year_over_year|pct} are the June quarter's figures and match the release's amounts, so the second-quarter label is the error, not the figures."
+  }
+ ],
+ "anomalies": [
+  {
+   "id": "earnings_versus_cash_cash_to_income_ratio_mixes_continuing_cash_with_total_loss",
+   "name": "Cash-to-income ratio compares continuing cash with a total net loss",
+   "name_ko": "계속영업 현금흐름과 전체 순손실을 섞은 현금 대비 이익 비율",
+   "area": "earnings_versus_cash",
+   "what": "The trailing ratio {earnings_versus_cash.operating_cash_flow_over_net_income} divides continuing-operations cash flow of {terms.trailing_four_quarters.operating_cash_flow} by net income of {terms.trailing_four_quarters.net_income}, which carries the loss of the divested Nestor business, while pretax income from continuing operations is positive ({terms.trailing_four_quarters.pretax_income}). The fiscal 2025 ratio was also negative ({earnings_versus_cash.history.years.0.operating_cash_flow_over_net_income}) against {earnings_versus_cash.history.years.5.operating_cash_flow_over_net_income} in fiscal 2020. The sign carries no quality reading, and the continuing business's own cash-to-income relation is not in the calculator.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "earnings_quality_accruals_over_total_assets_annual",
+    "across_documents_cash_generation_described_as_strong"
+   ],
+   "fields": [
+    "earnings_versus_cash.operating_cash_flow_over_net_income",
+    "terms.trailing_four_quarters.operating_cash_flow",
+    "terms.trailing_four_quarters.net_income",
+    "terms.trailing_four_quarters.pretax_income",
+    "earnings_versus_cash.history.years.0.operating_cash_flow_over_net_income",
+    "earnings_versus_cash.history.years.5.operating_cash_flow_over_net_income"
+   ]
+  },
+  {
+   "id": "earnings_versus_cash_operating_cash_flow_concept_change_breaks_history",
+   "name": "Operating cash flow changes concept, breaking the accruals history",
+   "name_ko": "영업현금흐름 태그 변경으로 발생액 추세 비교 단절",
+   "area": "earnings_versus_cash",
+   "what": "Fiscal 2025 and the current year rest on the continuing-operations tag, earlier years and the prior-year nine months on the total tag. The trailing operating cash flow of {terms.trailing_four_quarters.operating_cash_flow} therefore joins two concepts, and the trend table will not compare fiscal 2025 accruals ({trend_table.years-back-0.ratios.accruals_over_total_assets.value|pct}) with those of fiscal 2024 ({trend_table.years-back-1.ratios.accruals_over_total_assets.value|pct}). The swing from income ahead of cash to cash ahead of income does show within one concept, from fiscal 2023 ({trend_table.years-back-2.ratios.accruals_over_total_assets.value|pct}) to fiscal 2024.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "articulation_and_the_filed_history_accruals_operating_cash_flow_concept_change_annual",
+    "articulation_and_the_filed_history_accruals_operating_cash_flow_concept_change_quarterly",
+    "earnings_quality_accruals_over_total_assets_annual",
+    "earnings_quality_accruals_over_total_assets_quarterly"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.operating_cash_flow",
+    "trend_table.years-back-0.ratios.accruals_over_total_assets.value",
+    "trend_table.years-back-1.ratios.accruals_over_total_assets.value",
+    "trend_table.years-back-2.ratios.accruals_over_total_assets.value"
+   ]
+  },
+  {
+   "id": "earnings_versus_cash_inventory_release_carries_operating_cash_flow",
+   "name": "Inventory release carries operating cash flow",
+   "name_ko": "재고 축소가 영업현금흐름을 떠받침",
+   "area": "earnings_versus_cash",
+   "what": "The nine-month operating cash flow of {terms.trailing_four_quarters.operating_cash_flow.parts.this_year_to_date.value} is smaller than the cash released by the nine-month inventory change of {terms.trailing_four_quarters.change_in_inventory.parts.this_year_to_date.value}; over the trailing year the inventory change is {terms.trailing_four_quarters.change_in_inventory}. Quarter-end days of inventory are {trend_table.quarters-back-0.ratios.days_sales_of_inventory.value}, the lowest of the filled quarters, so the source is shrinking. Trailing operating cash flow is {terms.trailing_four_quarters.operating_cash_flow} against {terms.trailing_four_quarters_a_year_earlier.operating_cash_flow} a year earlier. The MD&A gives the same cause: inventory on hand used to fill orders.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "liquidity_and_capital_inventory_drawdown_attributed_to_fulfilling_orders_from_stock",
+    "earnings_quality_days_sales_of_inventory_quarterly",
+    "earnings_quality_days_sales_of_inventory_annual"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.change_in_inventory",
+    "terms.trailing_four_quarters.operating_cash_flow",
+    "terms.trailing_four_quarters_a_year_earlier.operating_cash_flow",
+    "trend_table.quarters-back-0.ratios.days_sales_of_inventory.value"
+   ]
+  },
+  {
+   "id": "earnings_versus_cash_receivables_articulation_gap",
+   "name": "Receivables on the balance sheet and the cash-flow statement move in opposite directions",
+   "name_ko": "매출채권의 재무상태표 변동과 현금흐름표 변동 방향 불일치",
+   "area": "earnings_versus_cash",
+   "what": "The receivables balance-sheet change over the year is {earnings_versus_cash.working_capital.receivables.balance_sheet_change}, while the cash-flow statement's trailing receivables line records an increase of {earnings_versus_cash.working_capital.receivables.cash_flow_statement_change}, a gap of {earnings_versus_cash.working_capital.receivables.articulation_gap}. The nine-month cash-flow increase matches the MD&A's stated increase, so the break sits in the year-earlier balance, which comes from the prior-year 10-Q and may include receivables of the Nestor business later divested. The record cannot confirm this.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "earnings_quality_receivables_increase_attributed_to_period_end_sales_timing",
+    "revenue_recognition_receivables_over_revenue_quarterly"
+   ],
+   "fields": [
+    "earnings_versus_cash.working_capital.receivables.balance_sheet_change",
+    "earnings_versus_cash.working_capital.receivables.cash_flow_statement_change",
+    "earnings_versus_cash.working_capital.receivables.articulation_gap",
+    "terms.balances_a_year_earlier.receivables"
+   ]
+  },
+  {
+   "id": "earnings_versus_cash_inventory_articulation_gap",
+   "name": "Inventory balance falls by more than the cash-flow statement shows",
+   "name_ko": "재고 잔액 감소가 현금흐름표상 감소보다 큼",
+   "area": "earnings_versus_cash",
+   "what": "The inventory balance-sheet change is {earnings_versus_cash.working_capital.inventory.balance_sheet_change} against a cash-flow statement change of {earnings_versus_cash.working_capital.inventory.cash_flow_statement_change}, a gap of {earnings_versus_cash.working_capital.inventory.articulation_gap}. Reserve charges for excess and obsolete stock and the removal of the divested business's inventory would both cut the balance without passing through the inventory line; the record cannot say how much each accounts for.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "liquidity_and_capital_inventory_drawdown_attributed_to_fulfilling_orders_from_stock",
+    "estimates_and_discretion_inventory_charge_for_order_no_longer_expected_to_be_fulfilled"
+   ],
+   "fields": [
+    "earnings_versus_cash.working_capital.inventory.balance_sheet_change",
+    "earnings_versus_cash.working_capital.inventory.cash_flow_statement_change",
+    "earnings_versus_cash.working_capital.inventory.articulation_gap"
+   ]
+  },
+  {
+   "id": "earnings_versus_cash_payables_falling_and_cash_flow_line_untagged",
+   "name": "Payables fall and their cash-flow line is untagged",
+   "name_ko": "매입채무 감소, 현금흐름표 항목 미태그",
+   "area": "earnings_versus_cash",
+   "what": "Payables are lower than a year earlier ({earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change}); days payables outstanding are {ratios.efficiency.days_payables_outstanding}. The cash-flow statement's payables line is not tagged in any period, so articulation cannot be checked. Falling payables absorb cash, the opposite of stretching suppliers, and fit lower purchasing while stock is drawn down.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "liquidity_and_capital_inventory_drawdown_attributed_to_fulfilling_orders_from_stock"
+   ],
+   "fields": [
+    "earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change",
+    "ratios.efficiency.days_payables_outstanding"
+   ]
+  },
+  {
+   "id": "earnings_versus_cash_earnings_smoother_than_cash",
+   "name": "Reported income moves less than cash",
+   "name_ko": "보고 이익이 현금흐름보다 덜 변동",
+   "area": "earnings_versus_cash",
+   "what": "Smoothness is {earnings_versus_cash.smoothness}, below one, even though the income series includes the loss of {earnings_versus_cash.smoothness.net_income.3} in the last quarter of fiscal 2025. Quarterly continuing cash swung from {earnings_versus_cash.smoothness.operating_cash_flow.2} and {earnings_versus_cash.smoothness.operating_cash_flow.1} to {earnings_versus_cash.smoothness.operating_cash_flow.0}, while quarterly income moved within a narrower band apart from that loss. The benign reading is that cash swings with inventory timing; the record cannot rule out reserve and accrual estimates damping income.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "earnings_quality_days_sales_of_inventory_quarterly",
+    "across_documents_estimate_changes_described_as_not_significant"
+   ],
+   "fields": [
+    "earnings_versus_cash.smoothness",
+    "earnings_versus_cash.smoothness.net_income.3",
+    "earnings_versus_cash.smoothness.operating_cash_flow.0",
+    "earnings_versus_cash.smoothness.operating_cash_flow.1",
+    "earnings_versus_cash.smoothness.operating_cash_flow.2"
+   ]
+  },
+  {
+   "id": "revenue_recognition_days_sales_outstanding_direction_disagrees_with_mdna",
+   "name": "MD&A says DSO lengthened; the record says it shortened",
+   "name_ko": "MD&A는 DSO 증가, 수치는 감소",
+   "area": "revenue_recognition",
+   "what": "Quarter-end DSO on the record's basis is {trend_table.quarters-back-0.ratios.days_sales_outstanding.value} against {trend_table.quarters-back-4.ratios.days_sales_outstanding.value} a year earlier and {trend_table.quarters-back-1.ratios.days_sales_outstanding.value} a quarter earlier, down on both; the MD&A says DSO rose over the year. The year-earlier receivables of {terms.balances_a_year_earlier.receivables} come from the prior-year 10-Q and may include the divested business, while the year-ago revenue is recast. Until the recast balance is seen, the numbers contradict the prose.",
+   "numbers_vs_prose": "contradicts",
+   "evidence": [
+    "earnings_quality_days_sales_outstanding_lengthened",
+    "revenue_recognition_days_sales_outstanding_quarterly",
+    "revenue_recognition_receivables_over_revenue_quarterly"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.days_sales_outstanding.value",
+    "trend_table.quarters-back-1.ratios.days_sales_outstanding.value",
+    "trend_table.quarters-back-4.ratios.days_sales_outstanding.value",
+    "terms.balances_a_year_earlier.receivables"
+   ]
+  },
+  {
+   "id": "revenue_recognition_receivables_concentrated_in_one_service_provider",
+   "name": "One service-provider customer holds a receivable far above its sales share",
+   "name_ko": "한 통신사 고객의 매출채권 비중이 매출 비중을 크게 웃돔",
+   "area": "revenue_recognition",
+   "what": "Customer B, a large regional service provider, holds {concentration.facts.33.value|pct} of receivables at quarter end against {concentration.facts.29.value|pct} of the quarter's sales and {concentration.facts.32.value|pct} of nine-month sales, both within this 10-Q. The MD&A ties the receivables increase to sales concentrated near period end, and the allowance for credit losses is {terms.balances_now.bad_debt_allowance}. Late-quarter shipments or longer terms to this customer would both produce the pattern; the filing does not say which.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "structure_and_disclosure_changes_receivables_concentration_large_regional_customer",
+    "structure_and_disclosure_changes_sales_concentration_large_regional_customer",
+    "earnings_quality_receivables_increase_attributed_to_period_end_sales_timing"
+   ],
+   "fields": [
+    "concentration.facts.33.value",
+    "concentration.facts.29.value",
+    "concentration.facts.32.value",
+    "terms.balances_now.bad_debt_allowance"
+   ]
+  },
+  {
+   "id": "revenue_recognition_period_end_sales_timing_explanation_repeats",
+   "name": "Period-end sales concentration is the explanation for a second year",
+   "name_ko": "기말 매출 집중이 두 해 연속 같은 설명",
+   "area": "revenue_recognition",
+   "what": "The nine-month receivables increase of {terms.trailing_four_quarters.change_in_receivables.parts.this_year_to_date.value} is explained by sales concentrated near the period end, in the same words the prior-year 10-Q used for its increase of {terms.trailing_four_quarters.change_in_receivables.parts.prior_year_to_date.value}. A concentration that repeats is a pattern rather than a timing accident. Fiscal year-end DSO rose from {trend_table.years-back-1.ratios.days_sales_outstanding.value} to {trend_table.years-back-0.ratios.days_sales_outstanding.value}.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "earnings_quality_receivables_increase_attributed_to_period_end_sales_timing",
+    "revenue_recognition_days_sales_outstanding_annual",
+    "revenue_recognition_receivables_over_revenue_annual"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.change_in_receivables",
+    "trend_table.years-back-0.ratios.days_sales_outstanding.value",
+    "trend_table.years-back-1.ratios.days_sales_outstanding.value"
+   ]
+  },
+  {
+   "id": "estimates_and_reserves_credit_loss_allowance_zero",
+   "name": "Credit-loss allowance at zero against more concentrated receivables",
+   "name_ko": "매출채권 집중 속 대손충당금 없음",
+   "area": "estimates_and_reserves",
+   "what": "The allowance is {terms.balances_now.bad_debt_allowance}: the ratio is zero in every filled quarter and at the fiscal 2024 and fiscal 2025 year-ends, against {trend_table.years-back-4.ratios.bad_debt_reserve_ratio.value|pct}, {trend_table.years-back-3.ratios.bad_debt_reserve_ratio.value|pct} and {trend_table.years-back-2.ratios.bad_debt_reserve_ratio.value|pct} in fiscal 2021 to fiscal 2023. Receivables now sit more heavily with one customer ({concentration.facts.33.value|pct}). The note states the allowance as zero, so the prose and numbers agree; the judgment behind it differs from the company's own past.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "estimates_and_discretion_bad_debt_reserve_ratio_quarterly",
+    "estimates_and_discretion_bad_debt_reserve_ratio_annual",
+    "structure_and_disclosure_changes_receivables_concentration_large_regional_customer"
+   ],
+   "fields": [
+    "terms.balances_now.bad_debt_allowance",
+    "trend_table.years-back-2.ratios.bad_debt_reserve_ratio.value",
+    "trend_table.years-back-3.ratios.bad_debt_reserve_ratio.value",
+    "trend_table.years-back-4.ratios.bad_debt_reserve_ratio.value",
+    "concentration.facts.33.value"
+   ]
+  },
+  {
+   "id": "estimates_and_reserves_inventory_reserve_ratio_at_its_high",
+   "name": "Inventory reserve ratio at its highest",
+   "name_ko": "재고충당금 비율 최고 수준",
+   "area": "estimates_and_reserves",
+   "what": "Reserve over net inventory is {trend_table.quarters-back-0.ratios.inventory_reserve_ratio.value|pct}, the highest of the filled quarters, against {trend_table.quarters-back-6.ratios.inventory_reserve_ratio.value|pct} at the low; the fiscal-year ratio went from {trend_table.years-back-3.ratios.inventory_reserve_ratio.value|pct} in fiscal 2022 to {trend_table.years-back-0.ratios.inventory_reserve_ratio.value|pct} in fiscal 2025. It fits the charge for an order no longer expected to be fulfilled. The direction is conservative, but a reserve this large relative to net inventory becomes a store that later recoveries can draw on.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "estimates_and_discretion_inventory_reserve_ratio_quarterly",
+    "estimates_and_discretion_inventory_reserve_ratio_annual",
+    "estimates_and_discretion_inventory_charge_for_order_no_longer_expected_to_be_fulfilled"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.inventory_reserve_ratio.value",
+    "trend_table.quarters-back-6.ratios.inventory_reserve_ratio.value",
+    "trend_table.years-back-0.ratios.inventory_reserve_ratio.value",
+    "trend_table.years-back-3.ratios.inventory_reserve_ratio.value"
+   ]
+  },
+  {
+   "id": "estimates_and_reserves_reserved_inventory_recoveries_flow_into_margin",
+   "name": "Recoveries on previously reserved inventory lift gross margin",
+   "name_ko": "과거 충당금 설정 재고 판매 회수가 매출총이익률을 끌어올림",
+   "area": "estimates_and_reserves",
+   "what": "The MD&A reports recoveries on sales of previously reserved inventory in the quarter and the nine months, and the release puts their net effect in gross-margin points. The reserve balance of {terms.balances_now.inventory_reserve} is below the year-earlier {terms.balances_a_year_earlier.inventory_reserve}. Part of the quarter's gross margin of {trend_table.quarters-back-0.ratios.gross_margin.value|pct} is therefore reserve taken in earlier years coming back, not current-period pricing. No calculator field carries the recovery, so no earnings adjustment can be written.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "earnings_quality_recoveries_on_sales_of_previously_reserved_inventory",
+    "estimates_and_discretion_inventory_reserve_ratio_quarterly",
+    "earnings_quality_gross_margin_quarterly"
+   ],
+   "fields": [
+    "terms.balances_now.inventory_reserve",
+    "terms.balances_a_year_earlier.inventory_reserve",
+    "trend_table.quarters-back-0.ratios.gross_margin.value"
+   ]
+  },
+  {
+   "id": "estimates_and_reserves_compensation_estimate_changes_raise_quarter_income",
+   "name": "Compensation estimate changes raise the quarter's income",
+   "name_ko": "보상 관련 추정 변경이 분기 이익을 높임",
+   "area": "estimates_and_reserves",
+   "what": "In the quarter the company cut performance-based compensation accruals and reversed previously recognised stock-unit cost after judging the fiscal 2026 goals no longer probable. Both raise income in the quarter in which operating income turned to {ratios.growth.operating_income.this_quarter}, up {ratios.growth.operating_income.year_over_year|pct} on the year-ago quarter. Neither amount is a calculator field, so their share of the improvement is not computed, and the incentive accrual will reset in fiscal 2027.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "earnings_quality_performance_compensation_accrual_reduction",
+    "estimates_and_discretion_performance_stock_units_no_longer_probable"
+   ],
+   "fields": [
+    "ratios.growth.operating_income.this_quarter",
+    "ratios.growth.operating_income.year_over_year"
+   ]
+  },
+  {
+   "id": "estimates_and_reserves_estimate_changes_called_not_significant",
+   "name": "Estimate changes called not significant",
+   "name_ko": "추정 변경이 중요하지 않다는 설명",
+   "area": "estimates_and_reserves",
+   "what": "The MD&A says changes in estimates had no significant impact on earnings, while the same filing describes an excess-and-obsolete charge, reserve recoveries, an accrual cut and a stock-unit reversal, and the release states the charge and recoveries in gross-margin points. Against quarterly operating income of {ratios.growth.operating_income.this_quarter}, the claim cannot be tested because none of those amounts is in the calculator.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "across_documents_estimate_changes_described_as_not_significant",
+    "estimates_and_discretion_inventory_charge_for_order_no_longer_expected_to_be_fulfilled",
+    "earnings_quality_recoveries_on_sales_of_previously_reserved_inventory",
+    "earnings_quality_performance_compensation_accrual_reduction"
+   ],
+   "fields": [
+    "ratios.growth.operating_income.this_quarter"
+   ]
+  },
+  {
+   "id": "estimates_and_reserves_goodwill_no_trigger_despite_guidance_cut",
+   "name": "No goodwill trigger despite a guidance cut and a lost order",
+   "name_ko": "가이던스 하향과 주문 취소에도 영업권 손상 징후 없음 판단",
+   "area": "estimates_and_reserves",
+   "what": "The notes roll forward the statement that no triggering event occurred, while the release cuts fiscal 2026 guidance for industry demand constraints and backlog loses an order. Trailing operating margin is {ratios.profitability.operating_margin|pct} against a three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}. The calculator carries no goodwill balance or assumption, so headroom is unknown; the annual test at fiscal year-end is the next point of evidence.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "across_documents_goodwill_no_triggering_events_despite_reduced_outlook",
+    "results_against_expectations_fiscal_year_outlook_reduced",
+    "narrative_signs_of_operating_pressure_backlog_order_no_longer_expected_to_be_fulfilled"
+   ],
+   "fields": [
+    "ratios.profitability.operating_margin",
+    "earnings_versus_cash.history.operating_margin_three_year_average"
+   ]
+  },
+  {
+   "id": "cost_deferral_soft_asset_share_above_year_ago",
+   "name": "Soft-asset share above its year-ago level",
+   "name_ko": "연성자산 비중이 전년보다 높음",
+   "area": "cost_deferral",
+   "what": "Soft-asset share is {trend_table.quarters-back-0.ratios.soft_asset_share.value|pct} against {trend_table.quarters-back-4.ratios.soft_asset_share.value|pct} a year earlier, though below the prior quarter's {trend_table.quarters-back-1.ratios.soft_asset_share.value|pct}. The measure counts investment securities ({terms.balances_now.short_term_investments}) as soft, and plant and equipment fell to {terms.balances_now.property_plant_and_equipment} from {terms.balances_a_year_earlier.property_plant_and_equipment} with the divestiture; no capitalised cost is tagged, so the benign reading holds on what the record shows.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "earnings_quality_soft_asset_share_quarterly",
+    "earnings_quality_soft_asset_share_annual"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.soft_asset_share.value",
+    "trend_table.quarters-back-1.ratios.soft_asset_share.value",
+    "trend_table.quarters-back-4.ratios.soft_asset_share.value",
+    "terms.balances_now.short_term_investments",
+    "terms.balances_now.property_plant_and_equipment",
+    "terms.balances_a_year_earlier.property_plant_and_equipment"
+   ]
+  },
+  {
+   "id": "cost_deferral_non_recurring_tariff_refunds_inside_gross_margin",
+   "name": "Non-recurring tariff refunds sit inside gross margin",
+   "name_ko": "반복되지 않는 관세 환급이 매출총이익률에 포함",
+   "area": "cost_deferral",
+   "what": "The release says the quarter's tariff recoveries will not recur; they are booked in cost of sales, so the quarter's gross margin of {trend_table.quarters-back-0.ratios.gross_margin.value|pct} includes a benefit the company itself does not expect again, and the 10-Q does not repeat the warning. The refunds are not a calculator field, so no earnings adjustment can be written.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "earnings_quality_tariff_refunds_not_expected_to_recur",
+    "earnings_quality_gross_margin_quarterly"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.gross_margin.value",
+    "trend_table.quarters-back-1.ratios.gross_margin.value"
+   ]
+  },
+  {
+   "id": "cost_deferral_inventory_charges_recur_though_presented_as_order_specific",
+   "name": "Excess-and-obsolete charges recur though presented as tied to one order",
+   "name_ko": "특정 주문 탓으로 설명된 재고 진부화 손실이 매년 반복",
+   "area": "cost_deferral",
+   "what": "The quarter's charge is presented as driven by one customer order, but the fiscal-year reserve ratio has risen in each year since fiscal 2022: {trend_table.years-back-3.ratios.inventory_reserve_ratio.value|pct}, {trend_table.years-back-2.ratios.inventory_reserve_ratio.value|pct}, {trend_table.years-back-1.ratios.inventory_reserve_ratio.value|pct}, {trend_table.years-back-0.ratios.inventory_reserve_ratio.value|pct}. Reserve additions are a recurring cost of this business, not a one-off, and the MD&A's own wording of higher excess-and-obsolete charges agrees.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "estimates_and_discretion_inventory_reserve_ratio_annual",
+    "estimates_and_discretion_inventory_charge_for_order_no_longer_expected_to_be_fulfilled"
+   ],
+   "fields": [
+    "trend_table.years-back-0.ratios.inventory_reserve_ratio.value",
+    "trend_table.years-back-1.ratios.inventory_reserve_ratio.value",
+    "trend_table.years-back-2.ratios.inventory_reserve_ratio.value",
+    "trend_table.years-back-3.ratios.inventory_reserve_ratio.value"
+   ]
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_divested_business_cash_in_comparative",
+   "name": "Year-earlier operating cash may include the divested business and its factoring",
+   "name_ko": "전년 비교 영업현금흐름에 매각 사업과 팩토링 현금이 섞였을 가능성",
+   "area": "cash_flow_engineering_and_off_balance_sheet",
+   "what": "The prior-year nine months inside the trailing operating cash flow of {terms.trailing_four_quarters.operating_cash_flow} rest on the total operating-cash-flow tag ({terms.trailing_four_quarters.operating_cash_flow.parts.prior_year_to_date.value}), which may include the Nestor business, whose receivables factoring the notes reader lists as amounts only. Proceeds from sale of receivables are not tagged in any period, so how much factoring lifted the comparative cannot be measured. It does not bear on the continuing business going forward.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "articulation_and_the_filed_history_accruals_operating_cash_flow_concept_change_annual",
+    "articulation_and_the_filed_history_accruals_operating_cash_flow_concept_change_quarterly"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.operating_cash_flow",
+    "terms.trailing_four_quarters_a_year_earlier.operating_cash_flow"
+   ]
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_capital_expenditure_below_depreciation",
+   "name": "Capital spending below depreciation and falling",
+   "name_ko": "설비투자가 감가상각보다 적고 감소 중",
+   "area": "cash_flow_engineering_and_off_balance_sheet",
+   "what": "Trailing capital expenditure is {terms.trailing_four_quarters.capital_expenditure} against {terms.trailing_four_quarters_a_year_earlier.capital_expenditure} a year earlier and {earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization} times depreciation and amortisation. Lower spending lifts free cash flow ({free_cash_flow.free_cash_flow_simple}) for now. The capital-expenditure tag also changed between periods, from property, plant and equipment to productive assets, which may widen what the line holds.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "across_documents_cash_generation_described_as_strong",
+    "earnings_quality_soft_asset_share_quarterly"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.capital_expenditure",
+    "terms.trailing_four_quarters_a_year_earlier.capital_expenditure",
+    "earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization",
+    "free_cash_flow.free_cash_flow_simple"
+   ]
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_lease_liability_lower_despite_renewal",
+   "name": "Lease liability lower than a year earlier despite a renewal that raised it",
+   "name_ko": "리스 갱신에도 리스부채가 전년보다 낮음",
+   "area": "cash_flow_engineering_and_off_balance_sheet",
+   "what": "The lease note says the Brooklyn Park renewal raised the right-of-use asset and the lease liability; the operating lease liability is {terms.balances_now.operating_lease_liability} against {terms.balances_a_year_earlier.operating_lease_liability} a year earlier. The exit of the divested business's leases and ordinary amortisation may explain the fall, but the record shows only the net balance, and on that basis the direction disagrees with the note.",
+   "numbers_vs_prose": "contradicts",
+   "evidence": [
+    "related_parties_contingencies_and_subsequent_events_manufacturing_facility_lease_renewal"
+   ],
+   "fields": [
+    "terms.balances_now.operating_lease_liability",
+    "terms.balances_a_year_earlier.operating_lease_liability"
+   ]
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_revolver_extended_in_short_steps",
+   "name": "Revolving line extended in short steps rather than renewed",
+   "name_ko": "회전신용한도가 갱신 대신 단기 연장 반복",
+   "area": "cash_flow_engineering_and_off_balance_sheet",
+   "what": "The line's maturity was moved again after quarter end, following an earlier short extension, while the MD&A still counts the line among sources sufficient beyond the next twelve months. Nothing is drawn: debt is {terms.debt_now} and cash and short-term investments are {terms.cash_and_short_term_investments_now}. The pattern differs from a normal renewal but does not touch reported earnings or operating cash.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "liquidity_and_capital_revolving_credit_line_maturity_extended_again"
+   ],
+   "fields": [
+    "terms.debt_now",
+    "terms.cash_and_short_term_investments_now"
+   ]
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_share_based_compensation_large_against_cash",
+   "name": "Share-based compensation large against operating cash and rising over time",
+   "name_ko": "주식보상비가 영업현금흐름 대비 크고 장기적으로 증가",
+   "area": "cash_flow_engineering_and_off_balance_sheet",
+   "what": "Trailing share-based compensation is {terms.trailing_four_quarters.share_based_compensation}, {earnings_versus_cash.share_based_compensation_over_operating_cash_flow|pct} of operating cash flow and {earnings_versus_cash.share_based_compensation_over_revenue|pct} of revenue, up from {earnings_versus_cash.history.years.5.share_based_compensation} in fiscal 2020 to {earnings_versus_cash.history.years.0.share_based_compensation} in fiscal 2025 while revenue fell from its fiscal 2022 peak. It is a real cost already subtracted in quality-adjusted free cash flow; this quarter's stock-unit reversal leaves the trailing figure below its run-rate.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "estimates_and_discretion_performance_stock_units_no_longer_probable"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.share_based_compensation",
+    "earnings_versus_cash.share_based_compensation_over_operating_cash_flow",
+    "earnings_versus_cash.share_based_compensation_over_revenue",
+    "earnings_versus_cash.history.years.0.share_based_compensation",
+    "earnings_versus_cash.history.years.5.share_based_compensation"
+   ]
+  },
+  {
+   "id": "controls_audit_and_filing_signals_release_mislabels_quarter",
+   "name": "Earnings release labels the June quarter as the second quarter",
+   "name_ko": "실적 발표문의 분기 명칭 오기",
+   "area": "controls_audit_and_filing_signals",
+   "what": "Under the heading for the June quarter the release calls the sales the second quarter of fiscal 2026. The amounts match the June quarter ({ratios.growth.revenue.this_quarter}, {ratios.growth.revenue.year_over_year|pct}), so the error is in drafting, not in the figures.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "controls_audit_and_filings_earnings_release_mislabels_quarter"
+   ],
+   "fields": [
+    "ratios.growth.revenue.this_quarter",
+    "ratios.growth.revenue.year_over_year"
+   ]
+  },
+  {
+   "id": "controls_audit_and_filing_signals_customer_letters_shift_between_filings",
+   "name": "Customer letters in the concentration note change between filings",
+   "name_ko": "공시마다 고객 알파벳 표기가 바뀜",
+   "area": "controls_audit_and_filing_signals",
+   "what": "For the same fiscal 2025 year-end, the 10-Q for the March quarter tags Customer B at {concentration.facts.17.value|pct} of receivables, while this 10-Q tags Customer A at {concentration.facts.18.value|pct} and Customer C at {concentration.facts.19.value|pct}. For fiscal 2025 sales the 10-K names A at {concentration.facts.15.value|pct} and B at {concentration.facts.16.value|pct}, while this 10-Q's prior-year nine months name C at {concentration.facts.13.value|pct} and A at {concentration.facts.14.value|pct}. The letters appear to be reassigned in each filing, so a single customer cannot be followed across periods.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "structure_and_disclosure_changes_receivables_concentration_large_regional_customer",
+    "structure_and_disclosure_changes_sales_concentration_large_regional_customer"
+   ],
+   "fields": [
+    "concentration.facts.13.value",
+    "concentration.facts.14.value",
+    "concentration.facts.15.value",
+    "concentration.facts.16.value",
+    "concentration.facts.17.value",
+    "concentration.facts.18.value",
+    "concentration.facts.19.value"
+   ]
+  },
+  {
+   "id": "cross_document_reconciliation_cash_generation_called_strong",
+   "name": "Release calls cash generation strong while the year to date leans on inventory",
+   "name_ko": "발표문은 강한 현금 창출이라 했지만 올해 현금은 재고 처분에 의존",
+   "area": "cross_document_reconciliation",
+   "what": "Trailing operating cash flow of {terms.trailing_four_quarters.operating_cash_flow} is below the year-earlier {terms.trailing_four_quarters_a_year_earlier.operating_cash_flow} ({ratios.growth.operating_cash_flow.trailing_four_quarters|pct}); the first and second fiscal quarters were negative ({earnings_versus_cash.smoothness.operating_cash_flow.2}, {earnings_versus_cash.smoothness.operating_cash_flow.1}); and the nine-month operating cash flow of {terms.trailing_four_quarters.operating_cash_flow.parts.this_year_to_date.value} is smaller than the cash released by the inventory change of {terms.trailing_four_quarters.change_in_inventory.parts.this_year_to_date.value}. Only the June quarter ({ratios.growth.operating_cash_flow.this_quarter}) supports the description.",
+   "numbers_vs_prose": "contradicts",
+   "evidence": [
+    "across_documents_cash_generation_described_as_strong",
+    "liquidity_and_capital_inventory_drawdown_attributed_to_fulfilling_orders_from_stock"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.operating_cash_flow",
+    "terms.trailing_four_quarters_a_year_earlier.operating_cash_flow",
+    "ratios.growth.operating_cash_flow.trailing_four_quarters",
+    "ratios.growth.operating_cash_flow.this_quarter",
+    "terms.trailing_four_quarters.change_in_inventory"
+   ]
+  },
+  {
+   "id": "cross_document_reconciliation_order_and_recovery_details_differ",
+   "name": "Release and 10-Q describe the removed order and the recoveries differently",
+   "name_ko": "취소 주문과 회수액 설명이 발표문과 10-Q에서 다름",
+   "area": "cross_document_reconciliation",
+   "what": "The release calls the order removed from backlog a previously booked order, where the 10-Q says the remaining portion of one, implying part was already shipped; the release also nets an inventory provision against the recoveries that the 10-Q text does not give. Neither amount is in the calculator, so the two cannot be reconciled with the numbers; the reserve ratio of {trend_table.quarters-back-0.ratios.inventory_reserve_ratio.value|pct} is the only related figure.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "narrative_signs_of_operating_pressure_backlog_order_no_longer_expected_to_be_fulfilled",
+    "earnings_quality_recoveries_on_sales_of_previously_reserved_inventory"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.inventory_reserve_ratio.value"
+   ]
+  },
+  {
+   "id": "cross_document_reconciliation_tariff_non_recurrence_only_in_release",
+   "name": "Only the release warns that tariff refunds will not recur",
+   "name_ko": "관세 환급 비반복 경고가 발표문에만 있음",
+   "area": "cross_document_reconciliation",
+   "what": "The 10-Q MD&A reports the quarter's and the nine months' tariff refunds but does not say they will not recur; the release does. The quarter's gross margin of {trend_table.quarters-back-0.ratios.gross_margin.value|pct} includes them.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "earnings_quality_tariff_refunds_not_expected_to_recur"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.gross_margin.value"
+   ]
+  },
+  {
+   "id": "cross_document_reconciliation_hyperscale_order_only_in_release",
+   "name": "Post-quarter hyperscale order appears only in the release",
+   "name_ko": "분기 후 하이퍼스케일 수주가 발표문에만 등장",
+   "area": "cross_document_reconciliation",
+   "what": "The release announces a first significant hyperscale data-centre order after quarter end, with shipments in early fiscal 2027; no 10-Q paragraph in the inputs mentions it, and the 10-Q says all of the quarter's sales went to broadband service providers. The customer is not named. Trailing revenue of {terms.trailing_four_quarters.revenue} is unaffected.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "related_parties_contingencies_and_subsequent_events_hyperscale_data_center_order"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.revenue"
+   ]
+  },
+  {
+   "id": "cross_document_reconciliation_demand_described_both_ways",
+   "name": "Demand described as both increased and slower in the same quarter",
+   "name_ko": "같은 분기에 수요가 늘었다는 설명과 둔화됐다는 설명이 공존",
+   "area": "cross_document_reconciliation",
+   "what": "The MD&A credits sales growth to increased demand and blames the backlog decline on slower demand, and the release cuts guidance for demand constraints. Quarter revenue grew {ratios.growth.revenue.year_over_year|pct} year over year; backlog is not in the calculator, so whether shipments came out of existing orders while new orders slowed cannot be tested.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "across_documents_demand_described_as_both_increased_and_slower",
+    "results_against_expectations_quarter_sales_growth_drivers_by_customer_market",
+    "results_against_expectations_fiscal_year_outlook_reduced"
+   ],
+   "fields": [
+    "ratios.growth.revenue.year_over_year",
+    "ratios.growth.revenue.quarter_over_quarter"
+   ]
+  },
+  {
+   "id": "industry_lens_inventory_obsolescence_on_order_specific_finished_goods",
+   "name": "Obsolescence on finished goods built for one order",
+   "name_ko": "특정 주문용 완제품의 진부화",
+   "area": "industry_lens",
+   "what": "Finished goods built for a customer order no longer expected to be fulfilled are now reserved; the reserve ratio is {trend_table.quarters-back-0.ratios.inventory_reserve_ratio.value|pct} and days of inventory have fallen to {trend_table.quarters-back-0.ratios.days_sales_of_inventory.value} from {trend_table.quarters-back-6.ratios.days_sales_of_inventory.value} at the high. Obsolescence is being recognised rather than deferred, and the order behind it is the same one removed from backlog.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "estimates_and_discretion_inventory_charge_for_order_no_longer_expected_to_be_fulfilled",
+    "narrative_signs_of_operating_pressure_backlog_order_no_longer_expected_to_be_fulfilled",
+    "estimates_and_discretion_inventory_reserve_ratio_quarterly",
+    "earnings_quality_days_sales_of_inventory_quarterly"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.inventory_reserve_ratio.value",
+    "trend_table.quarters-back-0.ratios.days_sales_of_inventory.value",
+    "trend_table.quarters-back-6.ratios.days_sales_of_inventory.value"
+   ]
+  },
+  {
+   "id": "industry_lens_customer_concentration_shifts_to_a_service_provider",
+   "name": "Concentration shifts from distributors to a service provider",
+   "name_ko": "고객 집중이 유통사에서 통신사로 이동",
+   "area": "industry_lens",
+   "what": "The quarter's named customers are a distributor at {concentration.facts.28.value|pct} and a large regional service provider at {concentration.facts.29.value|pct} of sales, where a year earlier both named customers were distributors ({concentration.facts.11.value|pct}, {concentration.facts.12.value|pct}). The MD&A credits the quarter's growth mainly to large regional service providers. A direct carrier customer brings larger single orders and the risk of order removal seen this quarter.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "structure_and_disclosure_changes_sales_concentration_large_regional_customer",
+    "results_against_expectations_quarter_sales_growth_drivers_by_customer_market"
+   ],
+   "fields": [
+    "concentration.facts.28.value",
+    "concentration.facts.29.value",
+    "concentration.facts.11.value",
+    "concentration.facts.12.value"
+   ]
+  }
+ ],
+ "adjustments": [
+  {
+   "name": "Remove the trailing inventory release from free cash flow",
+   "direction": "reduce",
+   "applies_to": "cash_flow",
+   "recurs": false,
+   "calculator_field": "terms.trailing_four_quarters.change_in_inventory",
+   "quote": "The decrease in inventory is due to the Company utilizing existing inventory on hand to fulfill customer orders to support sales demand.",
+   "quote_from": "report_notes_text.md",
+   "evidence": [
+    "liquidity_and_capital_inventory_drawdown_attributed_to_fulfilling_orders_from_stock",
+    "earnings_quality_days_sales_of_inventory_quarterly",
+    "earnings_quality_days_sales_of_inventory_annual"
+   ]
+  }
+ ],
+ "summary_ko": {
+  "earnings_versus_cash": "최근 네 분기 영업현금흐름은 {terms.trailing_four_quarters.operating_cash_flow}로 순이익 {terms.trailing_four_quarters.net_income}보다 크지만, 이익이 좋아서가 아니라 호황기에 쌓은 재고를 팔아 현금을 회수했기 때문입니다(올해 아홉 달 영업현금흐름 {terms.trailing_four_quarters.operating_cash_flow.parts.this_year_to_date.value}이 같은 기간 재고 변동액 {terms.trailing_four_quarters.change_in_inventory.parts.this_year_to_date.value}이 풀어 준 현금보다 작습니다). 순손실에는 매각된 Nestor 사업의 손실이 섞여 있고 현금흐름 태그도 기간마다 달라서 비율 {earnings_versus_cash.operating_cash_flow_over_net_income}은 그대로 해석하기 어렵습니다.",
+  "revenue_recognition": "분기말 매출채권회수기간(DSO)은 {trend_table.quarters-back-0.ratios.days_sales_outstanding.value}일로 전년 동기 {trend_table.quarters-back-4.ratios.days_sales_outstanding.value}일보다 낮아, DSO가 늘었다는 MD&A 설명과 방향이 반대입니다(전년 잔액에 매각 사업의 채권이 섞였을 가능성이 있습니다). 한 대형 지역 통신사 고객이 분기 매출의 {concentration.facts.29.value|pct}이면서 매출채권의 {concentration.facts.33.value|pct}를 차지하고 대손충당금은 {terms.balances_now.bad_debt_allowance}이어서 계속 지켜봐야 합니다.",
+  "estimates_and_reserves": "재고충당금 비율은 {trend_table.quarters-back-0.ratios.inventory_reserve_ratio.value|pct}로 관측된 분기 중 가장 높아 보수적으로 쌓이고 있지만, 이번 분기 이익에는 과거 충당금을 쌓았던 재고의 판매 회수, 성과급 충당금 축소, 성과주식 보상비 환입 같은 추정 변경이 들어 있습니다. 회사는 이를 중요하지 않다고 하지만 계산기에 금액이 없어 크기를 확인할 수 없고, 대손충당금은 {terms.balances_now.bad_debt_allowance}이며 가이던스를 낮췄는데도 영업권 손상 징후가 없다고 판단했습니다.",
+  "cost_deferral": "자본화된 소프트웨어나 개발비는 기록에 없고 설비투자는 감가상각의 {earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization}배 수준이라 비용을 자산으로 미룬 흔적은 없습니다. 다만 회사 스스로 반복되지 않는다고 한 관세 환급이 분기 매출총이익률 {trend_table.quarters-back-0.ratios.gross_margin.value|pct}에 들어 있어 정상 수준보다 높게 보입니다.",
+  "cash_flow_engineering_and_off_balance_sheet": "계속영업에서는 매출채권 팩토링, 공급망 금융, 구매약정, 보증이 기록에 나타나지 않습니다. 현금흐름은 재고 축소와 설비투자 감소(최근 네 분기 {terms.trailing_four_quarters.capital_expenditure}, 전년 {terms.trailing_four_quarters_a_year_earlier.capital_expenditure})로 늘었으며, 반복되기 어려운 재고 축소분은 잉여현금흐름에서 빼는 조정을 했고 주식보상비 {terms.trailing_four_quarters.share_based_compensation}은 현금이 나가지 않아도 실제 비용으로 이미 차감되어 있습니다.",
+  "controls_audit_and_filing_signals": "공시통제는 유효하다고 결론 내렸고 감사인 교체나 임원 이탈 공시는 없습니다. 다만 실적 발표문이 분기를 잘못 표기했고, 고객 알파벳이 공시마다 바뀌어(같은 회계연도 말 매출채권 비중이 한 공시에서는 고객 B {concentration.facts.17.value|pct}, 다른 공시에서는 고객 C {concentration.facts.19.value|pct}) 고객별 추적이 어렵습니다.",
+  "cross_document_reconciliation": "8-K 실적 발표의 분기 매출 {ratios.growth.revenue.this_quarter}과 전년 대비 성장률 {ratios.growth.revenue.year_over_year|pct}은 10-Q와 일치합니다. 그러나 '강한 현금 창출'이라는 설명은 최근 네 분기 영업현금흐름 변화율 {ratios.growth.operating_cash_flow.trailing_four_quarters|pct}과 올해 현금이 재고 처분에서 나왔다는 점과 맞지 않고, MD&A의 DSO 증가와 리스부채 증가 설명도 수치와 방향이 다릅니다.",
+  "industry_lens": "재고 진부화는 특정 고객 주문용 완제품에 대한 충당금으로 인식되고 있고 재고일수는 {trend_table.quarters-back-0.ratios.days_sales_of_inventory.value}일로 낮아졌습니다. 과다 구매약정이나 고객에 투자한 뒤 매출로 돌아오는 순환 거래는 발견되지 않았고, 매출채권이 유통사가 아닌 최종 고객에게 몰려 있어 채널 밀어내기 신호는 약하지만 고객 집중은 계속 관찰해야 합니다."
+ },
+ "limits": "This analysis finds where the numbers and the explanations disagree, and where the company differs from its own past. It does not judge intent, and it cannot see evidence outside the filings, such as invoices or contracts.",
+ "normalized_quotes": 0,
+ "dropped_items": [],
+ "dropped_count": 0
+}

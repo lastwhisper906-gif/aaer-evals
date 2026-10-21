@@ -21,8 +21,6 @@ branch changed. A run item is done when its run directory is published and
 
 [ ] AMD's 10-Q filed 2026-08-05 on Opus, the first run of a company added on 2026-10-21 · `.venv/bin/python -m evals --runs runs/AMD` · the fixture set of 2026-10-21
 
-[ ] CLFD's 10-Q filed 2026-08-06 on Opus, the first run of a company added on 2026-10-21 · `.venv/bin/python -m evals --runs runs/CLFD` · the fixture set of 2026-10-21
-
 [ ] AAON's 10-Q filed 2026-08-10 on Opus, the first run of a company added on 2026-10-21 · `.venv/bin/python -m evals --runs runs/AAON` · the fixture set of 2026-10-21
 
 [ ] ATEN's 10-Q filed 2026-08-06 on Opus, the first run of a company added on 2026-10-21 · `.venv/bin/python -m evals --runs runs/ATEN` · the fixture set of 2026-10-21
@@ -66,6 +64,8 @@ branch changed. A run item is done when its run directory is published and
 [ ] MU, Micron Technology, the reading's pick under 3674 (`docs/structure_changes.md`, 2026-10-14): fixtures as of the day it is fetched, the two 10-K headers and Exhibit 21 documents by hand, expected values with the 43 keys, and its row · `.venv/bin/python -m pytest tests -q -k "MU"` passes with every defect a strict expected failure · none
 
 ## Done
+
+[x] CLFD's 10-Q filed 2026-08-06 on Opus, the first run of a company added on 2026-10-21 · `.venv/bin/python -m evals --runs runs/CLFD` · the fixture set of 2026-10-21 · 2026-10-21: `--model opus` recorded as `model_override`, every agent served claude-opus-5-5, no fallback; a first attempt at 10:02 UTC hit the Opus session limit in both readers and was set aside, the run made again at 14:08 on a fresh store; accounting analyst 0 dropped, 0 of 8 areas empty after 1 hook round, 1 adjustment; financial analyst 0 dropped after 1 round; regression pass; analysis-grader 0.856 with 4 dealbreakers
 
 [x] MU's 10-K filed 2026-10-09 on Opus, the first run of a company added on 2026-10-21 · `.venv/bin/python -m evals --runs runs/MU` · the fixture set of 2026-10-21 · 2026-10-21: `--model opus` recorded as `model_override`, every agent served claude-opus-5-5, no fallback; accounting analyst 0 dropped, 0 of 8 areas empty after 1 hook round, no adjustment; financial analyst 0 dropped after 1 round; regression pass; analysis-grader 0.928 with 5 dealbreakers
 

@@ -1,0 +1,410 @@
+{
+ "run": "CLFD/0001171843-26-005329",
+ "rubric": "evals/capability/rubric.md",
+ "dealbreakers": [
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "earnings_versus_cash_receivables_articulation_gap",
+   "where": "analysis_accounting.json anomalies[3].what",
+   "why": "The balance-sheet and cash-flow receivables changes disagree and the anomaly stops at 'The record cannot confirm this', yet notes:114 lists the divested business's receivables in held-for-sale and 8k_2_02:28 with 8k_2_02:30 show the year-to-date change articulating from the fiscal year-end balance, which settles that the gap sits in the pre-divestiture year-earlier balance."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "earnings_versus_cash_inventory_articulation_gap",
+   "where": "analysis_accounting.json anomalies[4].what",
+   "why": "It says the record cannot split the gap between reserve charges and the divestiture, but notes:93 with 8k_2_02:30 shows the year-to-date inventory change articulating on the continuing basis and notes:114 shows the divested business's inventory held for sale, so the inputs settle that the gap is the year-earlier balance, not reserve charges."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "cash_flow_engineering_and_off_balance_sheet_divested_business_cash_in_comparative",
+   "where": "analysis_accounting.json anomalies[19].what",
+   "why": "It leaves open how much factoring lifted the total-tag comparative, but mdna:40 states the divested business used operating cash in the prior-year period and mdna:48 places its factoring flows in financing, so the inputs settle that factoring did not lift operating cash and the comparative is understated, not flattered."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "growth_operating_cash_flow_lower_year_to_date_and_trailing",
+   "where": "analysis_financial.json anomalies[16].what",
+   "why": "It leaves 'part of the gap may be the business since sold' open, but mdna:38 and 8k_2_02:30 give the continuing prior-year operating cash flow and mdna:40 the divested business's outflow, so the sold business made the year-earlier figure smaller and the like-for-like fall is larger."
+  }
+ ],
+ "items": [
+  {
+   "id": "earnings_versus_cash_cash_to_income_ratio_mixes_continuing_cash_with_total_loss",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.operating_cash_flow_over_net_income is negative while terms.trailing_four_quarters.pretax_income is positive, and notes:110 puts the divested business's impairment in the quarter behind earnings_versus_cash.smoothness.net_income.3."
+  },
+  {
+   "id": "earnings_versus_cash_operating_cash_flow_concept_change_breaks_history",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.operating_cash_flow.tags_differ and the trends accruals rows (trends:accruals_over_total_assets paragraphs) show the tag switch and the within-concept flip between years-back-2 and years-back-1."
+  },
+  {
+   "id": "earnings_versus_cash_inventory_release_carries_operating_cash_flow",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "terms.trailing_four_quarters.operating_cash_flow.parts.this_year_to_date.value is smaller than the release in terms.trailing_four_quarters.change_in_inventory.parts.this_year_to_date.value, days of inventory is 'lowest of the 6 filled quarters', and mdna:37 gives the same cause."
+  },
+  {
+   "id": "earnings_versus_cash_receivables_articulation_gap",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The gap in earnings_versus_cash.working_capital.receivables.articulation_gap is real and correctly placed in the year-earlier balance, but the anomaly calls it unconfirmable when notes:114 and 8k_2_02:28/30 confirm it; struck under dealbreakers."
+  },
+  {
+   "id": "earnings_versus_cash_inventory_articulation_gap",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "medium",
+   "why": "notes:93 with 8k_2_02:30 shows the year-to-date inventory change articulating on the continuing basis, so reserve charges explain none of earnings_versus_cash.working_capital.inventory.articulation_gap; the divested inventory in notes:114 does, and the anomaly leaves that open."
+  },
+  {
+   "id": "earnings_versus_cash_payables_falling_and_cash_flow_line_untagged",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change is negative and its cash-flow line is missing in the calculator; 8k_2_02:30 shows payables and accruals absorbing cash."
+  },
+  {
+   "id": "earnings_versus_cash_earnings_smoother_than_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "earnings_versus_cash.smoothness reads, by its own formula, as income moving less than cash, with the quarterly series as stated; the benign reading is hedged."
+  },
+  {
+   "id": "revenue_recognition_days_sales_outstanding_direction_disagrees_with_mdna",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "trend_table quarters-back-0 and quarters-back-4 days_sales_outstanding do run against mdna:37, but terms.balances_a_year_earlier.receivables predates the held-for-sale split shown in notes:114, so the record's direction does not settle a contradiction."
+  },
+  {
+   "id": "revenue_recognition_receivables_concentrated_in_one_service_provider",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "concentration.facts.33.value against concentration.facts.29.value and concentration.facts.32.value match notes:90 and notes:88, with no allowance in terms.balances_now.bad_debt_allowance."
+  },
+  {
+   "id": "revenue_recognition_period_end_sales_timing_explanation_repeats",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:37 and mdna:38 use the same timing wording and the prior increase matches terms.trailing_four_quarters.change_in_receivables.parts.prior_year_to_date.value; the comparative paragraph sits in this 10-Q, not the prior one."
+  },
+  {
+   "id": "estimates_and_reserves_credit_loss_allowance_zero",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table bad_debt_reserve_ratio is nil in recent periods against positive years-back-2 to years-back-4 values, notes:85 states the allowance, and concentration.facts.33.value shows the concentration."
+  },
+  {
+   "id": "estimates_and_reserves_inventory_reserve_ratio_at_its_high",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0.ratios.inventory_reserve_ratio is 'highest of the 6 filled quarters' and the fiscal-year ratio rises from years-back-3 to years-back-0; mdna:16 gives the order charge."
+  },
+  {
+   "id": "estimates_and_reserves_reserved_inventory_recoveries_flow_into_margin",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:16 and 8k_2_02:14 state the recoveries and their margin effect; the reserve-balance comparison it leans on is mixed-basis, since notes:93 shows the continuing reserve above its fiscal year-end level."
+  },
+  {
+   "id": "estimates_and_reserves_compensation_estimate_changes_raise_quarter_income",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "mdna:17 and notes:67 state the accrual cut and stock-unit reversal in the quarter of ratios.growth.operating_income.this_quarter, and 8k_2_02:15 ties the expense drop to the accrual cut."
+  },
+  {
+   "id": "estimates_and_reserves_estimate_changes_called_not_significant",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:52 sits beside mdna:16, mdna:17 and notes:67; the inputs do not list which estimates are critical, so leaving the size test open is fair."
+  },
+  {
+   "id": "estimates_and_reserves_goodwill_no_trigger_despite_guidance_cut",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:96 states no trigger while 8k_2_02:17 cuts guidance; low weight because 8k_2_02:28 prints a small goodwill balance."
+  },
+  {
+   "id": "cost_deferral_soft_asset_share_above_year_ago",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "trend_table soft_asset_share values are as stated and the formula counts securities as soft; the benign reading is offered, not overclaimed."
+  },
+  {
+   "id": "cost_deferral_non_recurring_tariff_refunds_inside_gross_margin",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:14 says tariff recoveries will not recur and mdna:16 places them in the margin behind trend_table.quarters-back-0.ratios.gross_margin.value."
+  },
+  {
+   "id": "cost_deferral_inventory_charges_recur_though_presented_as_order_specific",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The fiscal-year inventory_reserve_ratio rises each year from years-back-3 to years-back-0, and 8k_2_02:14 shows an ordinary provision beside the order-specific charge."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_divested_business_cash_in_comparative",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "medium",
+   "why": "mdna:40 and mdna:48 show the divested business's operating cash was an outflow and its factoring sat in financing, so factoring did not lift terms.trailing_four_quarters.operating_cash_flow.parts.prior_year_to_date; struck under dealbreakers."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_capital_expenditure_below_depreciation",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.capital_expenditure sits below its year-earlier value and under depreciation per earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization; 8k_2_02:30 confirms lower continuing spending."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_lease_liability_lower_despite_renewal",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "low",
+   "why": "notes:123 gives only the renewal increment, notes:114 moves the divested business's lease liabilities to held for sale, and 8k_2_02:28 shows the continuing lease liability higher at quarter end than at the fiscal year-end, so the balance does not run against the note."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_revolver_extended_in_short_steps",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:132 records successive short extensions and mdna:35 still counts the line among sources beyond the coming year; terms.debt_now confirms nothing drawn."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_share_based_compensation_large_against_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "earnings_versus_cash.share_based_compensation_over_operating_cash_flow and the history share_based_compensation paths are as stated; notes:67 supports the reversal."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_release_mislabels_quarter",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:12 says 'the second quarter of fiscal 2026' under the June-quarter heading while ratios.growth.revenue.this_quarter matches the amount."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_customer_letters_shift_between_filings",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "concentration.facts.17 against concentration.facts.18 and concentration.facts.19 for the same date, with notes:90 naming A and C at the fiscal year-end; hedged as letters that 'appear to be reassigned'."
+  },
+  {
+   "id": "cross_document_reconciliation_cash_generation_called_strong",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:11 'strong cash generation' against negative quarters in earnings_versus_cash.smoothness.operating_cash_flow and a year-to-date fall that the continuing figures in 8k_2_02:30 confirm."
+  },
+  {
+   "id": "cross_document_reconciliation_order_and_recovery_details_differ",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:13 and mdna:15 describe the removed order differently and 8k_2_02:14 adds a provision mdna:16 omits; presentation only."
+  },
+  {
+   "id": "cross_document_reconciliation_tariff_non_recurrence_only_in_release",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:14 carries the non-recurrence warning; mdna:16 and mdna:26 report the refunds without it."
+  },
+  {
+   "id": "cross_document_reconciliation_hyperscale_order_only_in_release",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:5 announces the order; mdna:13 says all quarter sales went to broadband service providers and no 10-Q paragraph mentions it."
+  },
+  {
+   "id": "cross_document_reconciliation_demand_described_both_ways",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:14 and mdna:15 describe demand both ways and 8k_2_02:17 cites demand constraints; the test it declines needs backlog the calculator lacks."
+  },
+  {
+   "id": "industry_lens_inventory_obsolescence_on_order_specific_finished_goods",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:16 ties the charge to finished goods for the dropped order, mdna:15 removes the same order from backlog, and the reserve and days-of-inventory paths are as stated."
+  },
+  {
+   "id": "industry_lens_customer_concentration_shifts_to_a_service_provider",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:88 and notes:89 show a service provider replacing a distributor among named customers, concentration.facts.28/29 and concentration.facts.11/12 match, and mdna:14 credits large regional providers."
+  },
+  {
+   "id": "results_against_expectations_fiscal_year_outlook_reduced",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "8k_2_02:17 cuts the outlook and its fourth-quarter range sits below ratios.growth.revenue.this_quarter; it says the size of the cut is unknown."
+  },
+  {
+   "id": "results_against_expectations_performance_goals_no_longer_probable",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "notes:67 and mdna:17 state the probability reassessment and the accrual cut, both lowering the expense behind ratios.growth.operating_income.this_quarter."
+  },
+  {
+   "id": "liquidity_and_capital_revolving_credit_line_short_interim_extensions",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:132 and mdna:35 as described; ratios.solvency.total_debt shows the line undrawn."
+  },
+  {
+   "id": "liquidity_and_capital_liquid_assets_drawn_down_by_buybacks",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The cash and equity paths fall as stated and terms.trailing_four_quarters.share_repurchases exceeds free_cash_flow.free_cash_flow_simple; on the continuing figures in 8k_2_02:30 the shortfall would be wider."
+  },
+  {
+   "id": "liquidity_and_capital_cash_flow_resting_on_working_capital_release",
+   "frame": "finance",
+   "verdict": "unclear",
+   "severity": "high",
+   "why": "mdna:37 and the days-of-inventory path support reliance on the drawdown, but free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital starts from a year-earlier balance holding the divested business (notes:114), and 8k_2_02:30 shows receivables and payables absorbing most of the inventory release."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_booked_order_removed_from_backlog",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:15 and mdna:16 tie the backlog removal and the charge to one order; trend_table.quarters-back-0.ratios.inventory_reserve_ratio as stated."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_slower_demand_and_shrinking_customer_markets",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:14, mdna:15 and 8k_2_02:17 as described; the existing-orders reading is framed as an inference."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_goodwill_untested_despite_weaker_outlook",
+   "frame": "finance",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "notes:96 states no trigger despite the outlook cut, but the anomaly says the goodwill carrying amount is 'not in my files' while 8k_2_02:28 prints it, so whether an impairment would matter is left unsettled."
+  },
+  {
+   "id": "profitability_operating_loss_over_trailing_four_quarters",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.profitability.operating_margin against the history operating_margin paths; 8k_2_02:29 shows investment income carrying pretax income."
+  },
+  {
+   "id": "profitability_quarter_gross_margin_near_low_with_non_recurring_items",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:14 names the charge, recoveries and tariff items pulling both ways; trend_table gross_margin values for quarters-back-0 and quarters-back-4 as stated."
+  },
+  {
+   "id": "profitability_quarter_profit_helped_by_estimate_changes",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "mdna:17, notes:67 and 8k_2_02:15 tie the quarter's expense drop to the accrual cut and the reversal; ratios.growth.operating_income.quarter_over_quarter.inputs.before as stated."
+  },
+  {
+   "id": "profitability_trailing_net_loss_and_negative_returns",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.net_income beside positive pretax_income, and notes:110 places the loss in the divested business's impairment in the oldest trailing quarter."
+  },
+  {
+   "id": "efficiency_inventory_reserve_ratio_at_high_of_history",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table inventory_reserve_ratio reads 'highest of the 6 filled quarters' and 'highest of the 5 filled years' as claimed."
+  },
+  {
+   "id": "efficiency_long_cash_conversion_cycle_and_low_asset_turnover",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "ratios.efficiency paths as stated, with the mixed-basis averages disclosed."
+  },
+  {
+   "id": "efficiency_receivables_concentrated_and_unreserved",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:90, notes:85 and mdna:37 as stated; calling the collection trend unsettled is fair because the record's year-ago receivables predate the divestiture split."
+  },
+  {
+   "id": "growth_trailing_operating_and_net_income_below_a_year_earlier",
+   "frame": "finance",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "The net-income comparison holds on consolidated figures, but terms.trailing_four_quarters_a_year_earlier.operating_income takes its prior-year-to-date leg from a filing made before the divested business was recast, which the anomaly does not flag."
+  },
+  {
+   "id": "growth_operating_cash_flow_lower_year_to_date_and_trailing",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The fall is real and larger on a like basis, but the anomaly leaves its divestiture caveat open though mdna:38, mdna:40 and 8k_2_02:30 settle it the other way; struck under dealbreakers."
+  },
+  {
+   "id": "growth_revenue_below_earlier_peak",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "earnings_versus_cash.history.revenue_growth_three_year_compound and the revenue history paths as stated; 8k_2_02:17 supports the muted outlook."
+  }
+ ],
+ "coverage": {
+  "answer": "yes",
+  "why": "All seven accounting areas and industry_lens carry findings and verdicts, the financial analysis answers every section plus dupont and path_to_distress, and input_manifest.json analysis_stages record no item dropped from either analysis after the gate feedback."
+ },
+ "calibration": {
+  "answer": "yes",
+  "why": "Each area verdict tracks its anomalies, e.g. cost_deferral's 'Clean on deferral' beside presentation-only items and revenue_recognition's 'A watch item, not an adjustment' beside the concentration and DSO items; the cash-flow verdict repeats the lease reading its own anomaly makes, which is itself unsupported."
+ },
+ "valuation_reading": {
+  "answer": "no",
+  "why": "valuation.missing, market.missing and implied_growth_beside_history.implied_ten_year_revenue_growth.missing leave no range, price position or implied growth, and the two assumptions named are ranked by scenario spread, not a calculator sensitivity; the reading says so rather than inventing them."
+ },
+ "score": 0.856,
+ "grader": {
+  "model_requested": "opus",
+  "model_served": "claude-opus-5-5",
+  "input_tokens": 44,
+  "output_tokens": 98543,
+  "cost_usd": 7.2861128,
+  "seconds": 888.8
+ }
+}
