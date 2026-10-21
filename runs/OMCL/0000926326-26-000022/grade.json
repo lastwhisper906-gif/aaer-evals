@@ -1,0 +1,397 @@
+{
+ "run": "OMCL/analysis-grader-l9f5jqsn",
+ "rubric": "evals/capability/rubric.md",
+ "dealbreakers": [
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "cross_document_reconciliation_refund_amount_stated_three_ways",
+   "where": "analysis_accounting.json anomalies[21].numbers_vs_prose",
+   "why": "The inputs settle the figures: mdna:101 '$14.0 million refund' plus mdna:113 '$0.5 million of interest income' make up mdna:49 '$14.5 million in refunds', which 8k_2_02:17 rounds to '$15 million in refunds'. The analyst cites all four, describes this split, and still marks it unresolved."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "profitability_quarter_gross_margin_lifted_by_non_recurring_tariff_refund",
+   "where": "analysis_financial.json anomalies[13].what",
+   "why": "It reports the refund 'stated at different amounts' and says its margin share 'is not in the filings read', yet mdna:101 and mdna:103 tie the gross-margin rise to a '$14.0 million refund'. mdna:113 supplies the interest piece that reconciles it to mdna:49 and 8k_2_02:17. The cited evidence includes both sides."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": null,
+   "where": "assumptions.json scenarios.base.reasons.reinvestment_rate_year_ten.reason",
+   "why": "'roughly ten per cent' return on invested capital at the year-ten margin is a figure in the analyst's own words. No calculator path supplies it; ratios.profitability.return_on_invested_capital.value is trailing only."
+  }
+ ],
+ "items": [
+  {
+   "id": "earnings_versus_cash_tariff_refund_inside_operating_cash_and_earnings",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "8k_2_02:17 says the refund 'increased the GAAP net income' and 'cash flows'. mdna:49 records it 'primarily as a reduction to cost of product revenues' and expects no further material refunds. ratios.growth.operating_cash_flow.this_quarter.value and both year_over_year paths resolve."
+  },
+  {
+   "id": "earnings_versus_cash_gross_margin_at_six_quarter_high",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0.ratios.gross_margin is 'highest of the 6 filled quarters'. quarters-back-1, before the second-quarter refund in mdna:49, already exceeds quarters-back-4 and years-back-0, which fits the mix and efficiency causes in mdna:106."
+  },
+  {
+   "id": "earnings_versus_cash_earnings_smoother_than_cash_flow",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "earnings_versus_cash.smoothness.value is below one over the quarters the calculator reads. The cited reader items add little, but the claim is the calculator's own reading."
+  },
+  {
+   "id": "earnings_versus_cash_cash_multiple_below_recent_years",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The history.years.0 and years.1 operating_cash_flow_over_net_income values sit far above the trailing value, while trailing net_income and operating_cash_flow both rose against the year-earlier terms. accruals_over_average_assets falls inside the range of the years-back-0 to years-back-4 annual cells."
+  },
+  {
+   "id": "earnings_versus_cash_inventory_release_without_stated_cause",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:142 lists 'a decrease in inventories of $4.2 million' with no cause, where mdna:143 gave 'advanced purchases of certain components' a year earlier. The inventory and accounts_payable balance_sheet_change paths resolve as described."
+  },
+  {
+   "id": "revenue_recognition_contract_liabilities_at_high_with_advance_invoicing",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The cells read 'second highest of the 6 filled quarters' and 'highest of the 5 filled years'. notes:47 adds 'in advance' against note_history:41, and mdna:142 ties the deferred-revenue rise to billings."
+  },
+  {
+   "id": "revenue_recognition_days_sales_outstanding_at_low_with_receivables_sold",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The DSO cells read 'lowest of the 6 filled quarters' and 'lowest of the 5 filled years'. The 10-K derecognised-receivables facts sit outside ReceivablesNetCurrent, and terms.trailing_four_quarters.proceeds_from_sale_of_receivables is missing."
+  },
+  {
+   "id": "revenue_recognition_backlog_falling_while_deferred_revenue_rises",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:48 puts RPO at June below note_history:42 at March, and the numbers reader's 10-K fact is higher than both. Current deferred revenue rose from year-end to June (terms.balances_now.contract_liabilities.value), and the anomaly rightly leaves the cause open."
+  },
+  {
+   "id": "estimates_and_reserves_credit_loss_allowance_thinning_against_customer_strain",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "bad_debt_reserve_ratio for quarters-back-0 sits below quarters-back-4 and years-back-0, and terms.balances_now.bad_debt_allowance is below the year-earlier path. mdna:112 and mdna:116 cite the lower allowance with no cause, while mdna:75 says reforms 'have increased financial strain on smaller LTC providers'."
+  },
+  {
+   "id": "estimates_and_reserves_deferred_tax_assets_drawn_down",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:78 shows deferred income taxes as an add-back this half against a benefit a year earlier, and 8k_2_02:74 shows lower long-term deferred tax assets. tax_rate.effective_rate exceeds tax_rate.value, and notes:146 confirms the IRS examination."
+  },
+  {
+   "id": "cost_deferral_nonrecurring_charges_recur",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:87 shows the new restructuring add-backs, plus legal, severance and transition add-backs in the prior-year half. The 8-K index lists repeated Item 2.05 exit-cost filings, and 8k_2_02:61 says 'we expect to incur expenses similar to certain of the non-GAAP adjustments'."
+  },
+  {
+   "id": "cost_deferral_one_time_refund_kept_in_non_gaap",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "8k_2_02:17 says the refund 'increased the GAAP net income, non-GAAP net income, non-GAAP EBITDA', and 8k_2_02:39 to 8k_2_02:49 list no refund adjustment while h) and i) remove the restructurings. 8k_2_02:25 raises full-year guidance on the quarter."
+  },
+  {
+   "id": "cost_deferral_soft_asset_share_at_five_year_high",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "soft_asset_share for years-back-0 is 'highest of the 5 filled years', and quarters-back-3 is the quarterly peak. The funds-held-for-clients fact and the convertible repayment explain the rise, as the anomaly says."
+  },
+  {
+   "id": "cost_deferral_services_restructuring_booked_in_product_cost",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:83 shows Professional Services restructuring inside GAAP product gross profit and removed from non-GAAP product gross profit. notes:19 records the prior-year recast."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_receivables_sale_programme_unmeasured",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The numbers reader's 10-K derecognised-assets facts exist at the year-ends cited, and terms.trailing_four_quarters.proceeds_from_sale_of_receivables is missing, so the cash effect is indeed unmeasured."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_purchase_obligations_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.balances_now.unconditional_purchase_obligations.value exceeds the year-earlier path, and notes:136 exceeds note_history:4 for March. mdna:151 compares against a 10-K figure that no report carries, so unresolved is the right status."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_customer_funds_and_accrued_liabilities_swing",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "medium",
+   "why": "notes:61 lists 'Customer fund liabilities' inside accrued liabilities, moving exactly with 'Funds held for customers', and 8k_2_02:78 shows the operating accrued-liabilities line at '(234)'. The inputs answer the open question and show a pass-through with no operating-cash effect."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_conversion_sentence_partly_rolled_forward",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:99 pairs 'three months ended June 30, 2026' with 'December 31, 2025' and 'first quarter of 2026', against note_history:16."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_segment_prior_year_expenses_recast",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:19 states 'certain prior-year significant expenses have been recast' with no amount, and says adjusted cost of product revenues excludes restructuring and severance charges."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_officer_changes_not_visible",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The 8-K index shows Item 5.02 filings on 2026-07-01 and 2026-05-26 whose bodies are absent, and 8k_2_02:22 covers only the President and COO appointment."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_superseded_capitalized_software_fact",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "low",
+   "why": "notes:67 in the current 10-Q prints the December 31, 2025 software line at '165,885', the same value the numbers reader quotes from the 10-K. The input therefore shows no quiet change."
+  },
+  {
+   "id": "cross_document_reconciliation_refund_amount_stated_three_ways",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "low",
+   "why": "The three figures reconcile in mdna:49, mdna:101, mdna:113 and 8k_2_02:17, so 'unresolved' is wrong. This is a dealbreaker (see above)."
+  },
+  {
+   "id": "cross_document_reconciliation_operating_cash_narrative_omits_refund",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:17 says the refund increased 'cash flows', and mdna:142 explains operating cash flow without naming it. terms.trailing_four_quarters.operating_cash_flow.parts.this_year_to_date matches 8k_2_02:99."
+  },
+  {
+   "id": "cross_document_reconciliation_release_omits_robotics_decline_and_pricing",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:13 names connected devices, SaaS and technical services. mdna:89 and mdna:90 add the robotics decline and 'the impact of pricing actions'."
+  },
+  {
+   "id": "cross_document_reconciliation_guidance_raised_on_refund_quarter",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "8k_2_02:25 raises full-year guidance on 'strong second quarter 2026 profitability', and 8k_2_02:17 puts the refund in that profitability. 8k_2_02:26 guides next-quarter EBITDA and product revenues below the quarter reported."
+  },
+  {
+   "id": "industry_lens_purchase_commitments_rising_into_softer_demand_guidance",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The purchase-obligation paths, and notes:136 against note_history:4, rise while earnings_versus_cash.working_capital.inventory.balance_sheet_change is negative. 8k_2_02:25, 8k_2_02:26 and 8k_2_02:36 carry the softer demand signals."
+  },
+  {
+   "id": "industry_lens_inventory_obsolescence_untestable_through_product_transition",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "inventory_reserve_ratio is missing in every period and terms.trailing_four_quarters.inventory_write_down is missing for the year to date. quarters-back-0 days_sales_of_inventory is 'third highest of the 6 filled quarters', and 8k_2_02:36 names the Titan XT timing risk."
+  },
+  {
+   "id": "industry_lens_customer_lease_financing",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:142 lists 'a decrease in investment in sales-type leases of $4.0 million' with no cause, and 8k_2_02:36 names lease-financing credit risk. The calculator carries only the trade allowance."
+  },
+  {
+   "id": "results_against_expectations_next_quarter_ebitda_guide_steps_down",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "8k_2_02:26 guides 'Non-GAAP EBITDA | $32 million - $37 million' and total revenues below ratios.growth.revenue.this_quarter, and 8k_2_02:16 reports '$67 million' for the quarter."
+  },
+  {
+   "id": "results_against_expectations_full_year_raise_rests_on_non_recurring_refund",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "8k_2_02:25 raises guidance on second-quarter profitability, 8k_2_02:17 puts the refund in non-GAAP results, and mdna:49 expects no further material refunds. 8k_2_02:87 prints non-GAAP net income above ratios.growth.net_income.this_quarter."
+  },
+  {
+   "id": "results_against_expectations_arr_growth_opportunities_delayed",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:25 says growth opportunities 'will take longer to develop than previously projected', and notes:48 states RPO below note_history:42. ratios.growth.revenue.quarter_over_quarter resolves."
+  },
+  {
+   "id": "results_against_expectations_product_bookings_guidance_reset",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:25 updates bookings 'to reflect our current assessment of the range of potential outcomes'. 8k_2_02:26 gives the wide range, and 8k_2_02:36 names the forecasting difficulty."
+  },
+  {
+   "id": "liquidity_and_capital_cash_cushion_below_year_earlier",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.balances_now.cash is below the year-earlier cash, and borrowing_repaid and share_repurchases fall in the window. free_cash_flow.free_cash_flow_to_equity is negative through net_borrowing, and notes:171 concludes both programs."
+  },
+  {
+   "id": "liquidity_and_capital_purchase_commitments_rising",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The purchase-obligation paths rise, and notes:136 exceeds note_history:4 with only 'current manufacturing needs' as the stated basis. mdna:151 claims no significant change, and the numbers reader's primary-supplier payments rose."
+  },
+  {
+   "id": "liquidity_and_capital_customer_funds_and_accrued_liabilities_outflow",
+   "frame": "finance",
+   "verdict": "unsupported",
+   "severity": "medium",
+   "why": "notes:61 shows 'Funds held for customers' and 'Customer fund liabilities' falling together, so the outflow is a pass-through. Both lines sit inside the current assets and current liabilities that ratios.liquidity.current_ratio uses, so the claim that the movement does not show in the calculator's liquidity measures is wrong."
+  },
+  {
+   "id": "liquidity_and_capital_operating_cash_includes_non_recurring_refund",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "8k_2_02:17 says the refund increased 'cash flows', mdna:142 omits it, and mdna:49 expects no recurrence. ratios.growth.operating_cash_flow.this_quarter and terms.trailing_four_quarters.operating_cash_flow resolve."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_purchase_timing_and_titan_xt_deferral",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:8 is carried as changed text naming 'the timing of purchasing decisions', and 8k_2_02:36 says the Titan XT announcement 'may influence or impact purchasing decisions'."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_robotics_revenue_decline",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:89 and mdna:93 name the robotics decline and mdna:90 the pricing actions; 8k_2_02:13 omits both."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_tariffs_and_component_supply",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:50 dates the Section 301 replacement and expects no material impact. mdna:101, mdna:103, mdna:106 and mdna:108 cite 'ongoing tariffs', and mdna:19 names semiconductor chips."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_customer_credit_strain_with_lower_allowance",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "The evidence is the same as for the accounting allowance anomaly: mdna:75, mdna:112 and 8k_2_02:36, plus the bad-debt cells and the allowance paths."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_restructuring_and_leadership_change",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:87 shows both restructuring add-backs, with dashes a year earlier. mdna:112 and mdna:116 name the restructuring and consulting charges, and 8k_2_02:22 names the President and COO."
+  },
+  {
+   "id": "profitability_quarter_gross_margin_lifted_by_non_recurring_tariff_refund",
+   "frame": "finance",
+   "verdict": "unclear",
+   "severity": "high",
+   "why": "The record margin and the refund are supported by the gross-margin cells and mdna:49. But mdna:101 and mdna:103 contradict 'not in the filings read', and the 'different amounts' reconcile. This is a dealbreaker (see above)."
+  },
+  {
+   "id": "profitability_returns_on_capital_thin",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The ratios.profitability return paths and operating_margin resolve. earnings_versus_cash.history.years.0 to years.3 operating_income sit near zero or below, and years-back-0 gross margin is 'second lowest of the 5 filled years'."
+  },
+  {
+   "id": "profitability_tax_rate_above_statutory_drags_net_margin",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "tax_rate.effective_rate exceeds tax_rate.value, and terms.trailing_four_quarters.pretax_income exceeds ebit.value, so the gap is tax. 8k_2_02:78 and notes:146 support the deferred charge and the IRS examination."
+  },
+  {
+   "id": "efficiency_days_sales_outstanding_not_comparable_after_receivable_sales",
+   "frame": "finance",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "Sold receivables do sit outside the DSO input, but the numbers reader's 10-K facts show a lower sold balance at the later year-end while DSO fell, and no 2026 value exists. The evidence does not show the improvement 'partly' reflects sales."
+  },
+  {
+   "id": "efficiency_cash_conversion_cycle_long_as_payables_shrink",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The ratios.efficiency cycle and days paths and the accounts_payable balances resolve. quarters-back-0 days_sales_of_inventory exceeds quarters-back-1 on a cost of revenue that 8k_2_02:17 says the refund lowered."
+  },
+  {
+   "id": "efficiency_low_asset_turnover_on_soft_asset_base",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "ratios.efficiency.asset_turnover is below one, and years-back-0 soft_asset_share is 'highest of the 5 filled years'. Blaming turnover alone for low return on assets overlooks the thin margin the run's own DuPont reading blames."
+  },
+  {
+   "id": "solvency_convertible_notes_missing_from_calculator_debt",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "ratios.solvency.total_debt is zero, with 'no line on record' for both debt groups, while 8k_2_02:74 and notes:107 carry the notes ('Convertible senior notes, net | 168,203'). ratios.solvency.interest_coverage is missing for the stated reason."
+  },
+  {
+   "id": "growth_profit_growth_off_depressed_base",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The operating_income and net_income year_over_year paths resolve against terms.trailing_four_quarters.operating_income.parts.prior_fiscal_year. mdna:101 and 8k_2_02:26 support the refund and the lower guidance."
+  },
+  {
+   "id": "growth_revenue_flat_on_quarter_and_guided_lower",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.growth.revenue.quarter_over_quarter is small, and 8k_2_02:26 guides next-quarter total revenues below ratios.growth.revenue.this_quarter. earnings_versus_cash.history.revenue_growth_three_year_compound is negative."
+  }
+ ],
+ "coverage": {
+  "answer": "yes",
+  "why": "All seven accounting areas and the industry lens carry a finding and verdict, and every financial section plus DuPont and path to distress is answered. The manifest shows zero items dropped in both frames after the gate rewrites."
+ },
+ "calibration": {
+  "answer": "yes",
+  "why": "Area verdicts track their anomalies (e.g. estimates_and_reserves names the one allowance exception it lists as 'contradicts'). The one stretch: the cash_flow_engineering verdict says the receivables-sale programme lifts operating cash, while its own anomaly leaves that effect unmeasured."
+ },
+ "valuation_reading": {
+  "answer": "no",
+  "why": "With market.missing and implied_growth_beside_history.implied_ten_year_revenue_growth.missing, it cannot say where the price sits or what growth it implies. valuation.missing leaves no sensitivity grid, so its two assumptions are chosen against history, not from the calculator. It reports all three gaps honestly."
+ },
+ "score": 0.895,
+ "grader": {
+  "model_requested": "opus",
+  "model_served": "claude-opus-5-5",
+  "input_tokens": 36,
+  "output_tokens": 73233,
+  "cost_usd": 5.821498,
+  "seconds": 622.4
+ }
+}

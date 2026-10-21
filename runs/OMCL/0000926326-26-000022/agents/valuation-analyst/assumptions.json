@@ -1,0 +1,243 @@
+{
+  "scenarios": {
+    "bear": {
+      "revenue_growth_year_one": 0.0,
+      "terminal_growth": 0.015,
+      "operating_margin_year_one": 0.025,
+      "operating_margin_year_ten": 0.04,
+      "reinvestment_rate_year_one": 0.0,
+      "reinvestment_rate_year_ten": 0.4,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "Customers wait for Titan XT, product bookings land at the low end of the reset range, robotics keeps declining, and service growth only offsets the product gap, so revenue is flat on the trailing base.",
+          "quote": "difficulty forecasting product bookings due to the size and mix of potential customer opportunities or that the announcement of Titan XT may influence or impact purchasing decisions, including the timing of those decisions",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.growth.revenue.trailing_four_quarters.value",
+            "earnings_versus_cash.history.years.1.revenue_growth",
+            "earnings_versus_cash.history.years.2.revenue_growth",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound"
+          ],
+          "history": "Below the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters.value|pct}, but above the two annual declines before the latest fiscal year, {earnings_versus_cash.history.years.2.revenue_growth|pct} and {earnings_versus_cash.history.years.1.revenue_growth|pct}, and above the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}. The bear case is a stall rather than a repeat of those contractions, because service revenue, a little under half the total, recurs."
+        },
+        "terminal_growth": {
+          "reason": "Slower long-run growth if adoption of dispensing automation saturates, robotics keeps shrinking and pricing pressure on long-term-care customers limits price increases. Set well under the risk-free rate of {cost_of_capital.risk_free_rate.value|pct}.",
+          "quote": "partially offset by a decrease in revenues from robotics, including products related to our Central Pharmacy Dispensing Service and IV Compounding Service offering.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate.value",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "Above the negative three-year compound growth of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and well below the five-year compound growth of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}. It assumes the long run looks more like the recent three years than the five."
+        },
+        "operating_margin_year_one": {
+          "reason": "The tariff refund drops out. Replacement tariffs and semiconductor costs press on product cost and cannot all be passed on, restructuring and consulting costs continue, and flat volume de-levers the cost base. The release guides next-quarter EBITDA well below the quarter just reported.",
+          "quote": "availability and sources of raw materials and components, in particular with regard to semiconductor chips, price fluctuations and an inability to pass increased costs on to our customers, or shortages or interruptions of supply;",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.profitability.operating_margin.value",
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average"
+          ],
+          "history": "Well below the trailing {ratios.profitability.operating_margin.value|pct}, but above the latest fiscal year's margin of {earnings_versus_cash.history.years.0.operating_margin|pct} and the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}. The bear case gives back most, not all, of the recovery."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Margin recovers only to about the level of the earliest year on record. Services and SaaS scale, but tariffs, price pressure and the restructuring charges that come back in most years absorb most of the operating leverage.",
+          "quote": "Charges the release calls nonrecurring keep coming back under new names.",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "earnings_versus_cash.history.years.5.operating_margin",
+            "earnings_versus_cash.history.years.4.operating_margin"
+          ],
+          "history": "About the margin of the earliest year on record, {earnings_versus_cash.history.years.5.operating_margin|pct}, and well below the peak year's {earnings_versus_cash.history.years.4.operating_margin|pct}."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "The cushion between depreciation and capital spending is used up. Non-cancelable purchase commitments of {terms.balances_now.unconditional_purchase_obligations.value}, up from {terms.balances_a_year_earlier.unconditional_purchase_obligations.value} a year earlier, turn into inventory as demand softens. The advance billing behind contract liabilities of {terms.balances_now.contract_liabilities.value} stops growing, and capitalized software outside the calculator's capex line keeps absorbing cash. Free cash flow falls to after-tax operating income.",
+          "quote": "Commitments rising into softer demand guidance is an anomaly.",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "terms.balances_now.unconditional_purchase_obligations.value",
+            "terms.balances_a_year_earlier.unconditional_purchase_obligations.value",
+            "terms.balances_now.contract_liabilities.value",
+            "trend_table.years-back-3.ratios.days_sales_of_inventory.value",
+            "earnings_versus_cash.history.years.3.free_cash_flow_simple"
+          ],
+          "history": "Far above the negative reinvestment of the trailing year. The nearest parallel on record is the year when inventory days were the highest of the five filled years, at {trend_table.years-back-3.ratios.days_sales_of_inventory.value}, and simple free cash flow fell to {earnings_versus_cash.history.years.3.free_cash_flow_simple}, the lowest of the six years."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "Return on capital stays low, near the trailing {ratios.profitability.return_on_invested_capital.value|pct}. Even the bear terminal growth then needs a large share of after-tax operating income reinvested, and growth at that return adds little value.",
+          "quote": "",
+          "quote_from": "",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital.value",
+            "ratios.profitability.return_on_invested_capital.inputs.invested_capital.value"
+          ],
+          "history": "Above any reinvestment the record shows. The record's negative reinvestment comes from amortization of past spending running above new capital spending, and that runs out."
+        }
+      }
+    },
+    "base": {
+      "revenue_growth_year_one": 0.04,
+      "terminal_growth": 0.025,
+      "operating_margin_year_one": 0.045,
+      "operating_margin_year_ten": 0.075,
+      "reinvestment_rate_year_one": -0.25,
+      "reinvestment_rate_year_ten": 0.25,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "The base case starts below the recent pace because the release points to a softer next twelve months. Next-quarter revenue is guided below the quarter just reported, full-year revenue guidance was only tightened, product bookings guidance was reset to a range of outcomes, and recurring-revenue growth was pushed out. Revenue grew only {ratios.growth.revenue.quarter_over_quarter.value|pct} on the prior quarter. Installed-base growth, pricing in technical services, and demand for SaaS and specialty pharmacy keep growth positive.",
+          "quote": "We are also updating our product bookings guidance to reflect our current assessment of the range of potential outcomes for full year 2026 and our annual recurring revenue guidance to reflect certain growth opportunities that we now expect will take longer to develop than previously projected.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.growth.revenue.quarter_over_quarter.value",
+            "ratios.growth.revenue.year_over_year.value",
+            "ratios.growth.revenue.trailing_four_quarters.value",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "Below the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters.value|pct}, the year-on-year quarterly growth of {ratios.growth.revenue.year_over_year.value|pct} and the five-year compound rate of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, which includes a surge year early in its window. Above the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, which includes a sharp contraction. The trailing figure is a recovery from that contraction, and the company's own near-term guide does not extend it."
+        },
+        "terminal_growth": {
+          "reason": "Long-run demand for medication-management automation rests on provider efficiency and pharmacy workforce shortages, which the release says providers keep prioritizing. In perpetuity the business is assumed to grow at about the pace of the wider economy, well under the risk-free rate of {cost_of_capital.risk_free_rate.value|pct}.",
+          "quote": "we continue to see healthcare providers prioritize solutions that are designed to improve operational efficiency, optimize medication workflows, and help address ongoing workforce challenges.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate.value",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "Between the three-year compound growth of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and the five-year compound growth of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}. The record swings from contraction to surge, and a perpetual rate belongs near the middle of it, not at either end."
+        },
+        "operating_margin_year_one": {
+          "reason": "The trailing operating margin of {ratios.profitability.operating_margin.value|pct} includes the one-time IEEPA tariff refund, booked mainly against product cost, which management does not expect to recur materially. Without it the run rate is lower. Even so, in the first quarter, before the refund, gross margin was already {trend_table.quarters-back-1.ratios.gross_margin.value|pct}, and the MD&A credits scale, installation efficiencies and mix. Restructuring charges, replacement tariffs and a next-quarter EBITDA guide well below the quarter just reported keep year one a little under the trailing figure.",
+          "quote": "During the second quarter of 2026, the Company received $14.5 million in refunds for previously paid IEEPA tariffs, which were recorded primarily as a reduction to cost of product revenues.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.profitability.operating_margin.value",
+            "trend_table.quarters-back-0.ratios.gross_margin.value",
+            "trend_table.quarters-back-1.ratios.gross_margin.value",
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "earnings_versus_cash.history.years.4.operating_margin"
+          ],
+          "history": "Just under the trailing {ratios.profitability.operating_margin.value|pct}, far above the latest fiscal year's margin of {earnings_versus_cash.history.years.0.operating_margin|pct} and the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}, and below the peak year's {earnings_versus_cash.history.years.4.operating_margin|pct}. It assumes the first-half recovery holds once the refund drops out, but not the refund itself."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Margin widens over the decade for three reasons. Service, SaaS and specialty pharmacy revenue grows on the installed base. Depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization.value}, now well above capital expenditure of {terms.trailing_four_quarters.capital_expenditure.value}, falls back toward it as past spending finishes amortizing. And the restructurings under way lower cost. Tariffs and the restructuring charges that come back in most years cap the gain near the best year on record.",
+          "quote": "favorable impact of scale and efficiencies in installations as well as product and customer mix, partially offset by the impact of ongoing tariffs during the six months ended June 30, 2026.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "earnings_versus_cash.history.years.4.operating_margin",
+            "earnings_versus_cash.history.years.5.operating_margin",
+            "terms.trailing_four_quarters.depreciation_and_amortization.value",
+            "terms.trailing_four_quarters.capital_expenditure.value"
+          ],
+          "history": "Just under the best of the six years on record, {earnings_versus_cash.history.years.4.operating_margin|pct}, and above the earliest, {earnings_versus_cash.history.years.5.operating_margin|pct}. The base case has the company regain, not surpass, its earlier peak by the end of the decade."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Over the trailing year the calculator's free cash flow to the firm, {free_cash_flow.free_cash_flow_to_firm.value}, ran above after-tax operating income on EBIT of {ebit.value}. Depreciation and amortization exceeded capital expenditure and trade working capital released cash, so measured reinvestment was negative. The base case keeps it negative but by less, for three reasons: capitalized software is tagged outside the capex line the calculator reads, the trailing cash includes the refund and advance billing, and rising purchase commitments may draw cash into inventory.",
+          "quote": "The calculator's capitalized-over-expensed ratio is insufficient because the company tags capitalized software under a different concept from the one the baseline reads.",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "free_cash_flow.free_cash_flow_to_firm.value",
+            "ebit.value",
+            "terms.trailing_four_quarters.depreciation_and_amortization.value",
+            "terms.trailing_four_quarters.capital_expenditure.value",
+            "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital.value"
+          ],
+          "history": "Simple free cash flow ran ahead of operating income in every year on record, including years with operating losses, so negative reinvestment is the company's own pattern. The base case keeps a smaller cushion than the trailing year shows."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "By year ten the gap between depreciation and capital spending has closed, and growth at the terminal rate has to be funded. Return on invested capital rises from the trailing {ratios.profitability.return_on_invested_capital.value|pct} to roughly ten per cent at the year-ten margin, so terminal growth needs about a quarter of after-tax operating income reinvested.",
+          "quote": "",
+          "quote_from": "",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital.value",
+            "ratios.profitability.return_on_invested_capital.inputs.invested_capital.value"
+          ],
+          "history": "Well above the negative reinvestment of the trailing year and of every year on record. The record covers a period when amortization of past spending ran above new capital spending, and a firm growing in perpetuity cannot keep reinvesting less than nothing."
+        }
+      }
+    },
+    "bull": {
+      "revenue_growth_year_one": 0.075,
+      "terminal_growth": 0.03,
+      "operating_margin_year_one": 0.06,
+      "operating_margin_year_ten": 0.1,
+      "reinvestment_rate_year_one": -0.4,
+      "reinvestment_rate_year_ten": 0.2,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "The recent pace holds. Automated dispensing and XTExtend upgrades keep product revenue rising, technical services grow with the installed base and pricing, SaaS and specialty pharmacy keep adding, and Titan XT orders land rather than slip.",
+          "quote": "Product revenues increased by $11.9 million, primarily driven by an increase in revenues from our automated dispensing systems and XTExtend offering",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.growth.revenue.year_over_year.value",
+            "ratios.growth.revenue.trailing_four_quarters.value",
+            "earnings_versus_cash.history.years.0.revenue_growth",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "About the year-on-year quarterly growth of {ratios.growth.revenue.year_over_year.value|pct}, a little under the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters.value|pct}, and above both the latest fiscal year's growth of {earnings_versus_cash.history.years.0.revenue_growth|pct} and the five-year compound rate of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}."
+        },
+        "terminal_growth": {
+          "reason": "Workforce shortages and reimbursement pressure keep pushing hospitals and long-term-care pharmacies toward centralized, automated fulfillment, so the business grows a little faster than in the base case in perpetuity. Still under the risk-free rate of {cost_of_capital.risk_free_rate.value|pct}.",
+          "quote": "Legislative and pricing reforms, including updates to Medicare Part D, have increased financial strain on smaller LTC providers, which we believe will accelerate a shift toward centralized, automation-enabled fulfillment models",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate.value",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound"
+          ],
+          "history": "Well below the five-year compound growth of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct} and well above the three-year compound growth of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}."
+        },
+        "operating_margin_year_one": {
+          "reason": "The first-half margin without the refund carries forward. Scale, installation efficiencies and mix hold, the restructurings lower cost, and the replacement tariffs prove immaterial, as management expects. Quarterly operating income was {ratios.growth.operating_income.this_quarter.value}, refund included.",
+          "quote": "At this time, we do not currently expect these recent tariff changes to have a material impact on our business, operating results, cash flow or financial condition.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.profitability.operating_margin.value",
+            "ratios.growth.operating_income.this_quarter.value",
+            "trend_table.quarters-back-1.ratios.gross_margin.value",
+            "earnings_versus_cash.history.years.4.operating_margin"
+          ],
+          "history": "Above the trailing {ratios.profitability.operating_margin.value|pct}, which carries the refund but also a weak second half of the latest fiscal year, and below the peak year's {earnings_versus_cash.history.years.4.operating_margin|pct}. It treats the first half of this year, refund removed, as the run rate."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Recurring SaaS, Expert Services and specialty pharmacy become a larger share of revenue. Depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization.value} fall back toward capital expenditure of {terms.trailing_four_quarters.capital_expenditure.value}, and operating leverage on a stable cost base lifts margin past the earlier peak.",
+          "quote": "an increase of $4.8 million in technical services revenues primarily as a result of growth in our installed customer base and the impact of pricing actions, as well as an increase of $5.0 million in SaaS and Expert Services revenues due to continued customer demand, including an increase in revenues from our Specialty Pharmacy Services offering.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "earnings_versus_cash.history.years.4.operating_margin",
+            "terms.trailing_four_quarters.depreciation_and_amortization.value",
+            "terms.trailing_four_quarters.capital_expenditure.value"
+          ],
+          "history": "Above every year on record, including the peak year's {earnings_versus_cash.history.years.4.operating_margin|pct}. The bull case assumes a business mix the record has not yet shown."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Most of the gap between depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization.value} and capital expenditure of {terms.trailing_four_quarters.capital_expenditure.value} persists through year one, and deferred revenue keeps growing with advance billing. Cash runs well ahead of after-tax operating income, as it did over the trailing year, when free cash flow to the firm was {free_cash_flow.free_cash_flow_to_firm.value} on EBIT of {ebit.value}.",
+          "quote": "The favorable working capital was primarily due to an increase in deferred revenues of $13.1 million, driven primarily by an increase in billings for certain technical services, SaaS and Expert Services, and connected devices offerings",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "free_cash_flow.free_cash_flow_to_firm.value",
+            "ebit.value",
+            "terms.trailing_four_quarters.depreciation_and_amortization.value",
+            "terms.trailing_four_quarters.capital_expenditure.value"
+          ],
+          "history": "Nearer the trailing year than either other case, but less negative, because the refund does not recur and capitalized software outside the capex line still absorbs cash. Simple free cash flow was positive in every year on record."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "At the wider bull margin, return on invested capital rises well above the trailing {ratios.profitability.return_on_invested_capital.value|pct}, so the bull terminal growth needs a smaller share of after-tax operating income reinvested than the base case.",
+          "quote": "",
+          "quote_from": "",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital.value",
+            "ratios.profitability.return_on_invested_capital.inputs.invested_capital.value"
+          ],
+          "history": "Above the negative reinvestment of every year on record, which reflects amortization of past spending that runs out. Below the base case, because each unit of growth costs less capital at a higher return."
+        }
+      }
+    }
+  },
+  "wacc_overrides": {}
+}

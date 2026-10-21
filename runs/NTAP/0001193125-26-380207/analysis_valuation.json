@@ -1,0 +1,77 @@
+{
+ "question": "what is this company worth, and what does the price already assume?",
+ "value_range": {
+  "reading": "Python computed no value range and no scenario enterprise value, equity value or value per share. The calculator prints the reason under valuation.missing: \"WACC is not computed: the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". Under cost_of_capital.missing it prints the same root cause: \"the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". The missing input is therefore the price series, along with everything built on it: the price at the cutoff, the beta, the market value of equity, the cost of equity, the capital weights and the WACC. The other components are on record: the risk-free rate of {cost_of_capital.risk_free_rate|pct}, the equity risk premium of {cost_of_capital.equity_risk_premium|pct}, a pre-tax cost of debt of {cost_of_capital.pre_tax_cost_of_debt|pct}, taken from cash interest paid because the quarter has no interest-expense row, and the tax rate of {cost_of_capital.tax_rate|pct}. The cash-flow base the DCF would start from is also on record: trailing revenue of {terms.trailing_four_quarters.revenue}, a trailing operating margin of {ratios.profitability.operating_margin|pct}, free cash flow to the firm of {free_cash_flow.free_cash_flow_to_firm}, and net debt of {ratios.solvency.net_debt}, a net cash position, which would be carried from enterprise value to equity. Without a discount rate none of these becomes a value, and no value is estimated here.",
+  "fields": [
+   "valuation.missing",
+   "cost_of_capital.missing",
+   "cost_of_capital.risk_free_rate",
+   "cost_of_capital.equity_risk_premium",
+   "cost_of_capital.pre_tax_cost_of_debt",
+   "cost_of_capital.tax_rate",
+   "terms.trailing_four_quarters.revenue",
+   "ratios.profitability.operating_margin",
+   "free_cash_flow.free_cash_flow_to_firm",
+   "ratios.solvency.net_debt"
+  ]
+ },
+ "price_position": {
+  "reading": "Not computed. There is no price to place: the calculator holds no market.price and no cost_of_capital.price_at_cutoff, and market.missing reads \"no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". There is also no range to place a price in, as explained above. The free-cash-flow yield cross-check fails for the same reason, because its enterprise value needs the market value of equity. Nothing in this file says whether the price sits below, inside or above any of the three scenarios.",
+  "fields": []
+ },
+ "market_implied_growth": {
+  "reading": "Not computed. The reverse DCF needs both the price and the WACC, and under implied_growth_beside_history the calculator prints: \"no reverse DCF: WACC is not computed: the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". So there is no growth rate the price can be said to assume. What can be put side by side is the record and the guidance that any price would be set against. The company's own record is slow: compound revenue growth of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} over three fiscal years and {earnings_versus_cash.history.revenue_growth_five_year_compound|pct} over five, with fiscal 2026 at {earnings_versus_cash.history.years.0.revenue_growth|pct}. The recent step-up is much faster: trailing-four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct} and latest-quarter growth of {ratios.growth.revenue.year_over_year|pct}. The latest-quarter figure is flattered by a fourteen-week quarter and by price increases that pass memory costs through. The release says full-year revenue guidance was raised significantly (quoted), and its second-quarter revenue range starts at the first quarter's actual even though the second quarter is shorter. My base case starts revenue growth at ten per cent and fades it to three per cent by year ten. That path is above the three-year and five-year record and below the trailing pace. Whether the price requires more growth than that path or less cannot be read from this file.",
+  "fields": [
+   "earnings_versus_cash.history.revenue_growth_three_year_compound",
+   "earnings_versus_cash.history.revenue_growth_five_year_compound",
+   "earnings_versus_cash.history.years.0.revenue_growth",
+   "ratios.growth.revenue.trailing_four_quarters",
+   "ratios.growth.revenue.year_over_year"
+  ],
+  "quote": "Significantly raised fiscal year 2027 revenue and earnings per share guidance",
+  "quote_from": "input_8k.md"
+ },
+ "most_sensitive": [
+  {
+   "assumption": "Revenue growth in year one, and the ten-year fade that follows it",
+   "reading": "The sensitivity grid was not computed, because every cell in it is a DCF run that needs the WACC. No value response can be read, so neither assumption here is ranked by its effect on value. What can be read is where my own scenarios disagree most. Year-one growth runs from two per cent in the bear case through ten in the base to seventeen in the bull. That spans from below the five-year compound growth of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct} to above every fiscal year on record, the best being fiscal 2022 at {earnings_versus_cash.history.years.4.revenue_growth|pct}. Because Python fades growth in a straight line to the terminal rate, the year-one choice carries into several later years, and that is where the record offers the least support. The open question behind this driver is how much of the trailing {ratios.growth.revenue.trailing_four_quarters|pct} is volume rather than calendar and price.",
+   "fields": [
+    "earnings_versus_cash.history.revenue_growth_five_year_compound",
+    "earnings_versus_cash.history.years.4.revenue_growth",
+    "ratios.growth.revenue.trailing_four_quarters"
+   ]
+  },
+  {
+   "assumption": "Operating margin at year ten",
+   "reading": "The next widest spread in my drivers is the year-ten operating margin: nineteen per cent in the bear case, twenty-four in the base and twenty-eight in the bull. For comparison, the trailing margin is {ratios.profitability.operating_margin|pct}, fiscal 2026 was {earnings_versus_cash.history.years.0.operating_margin|pct}, the three-year average is {earnings_versus_cash.history.operating_margin_three_year_average|pct} and the fiscal 2023 low was {earnings_versus_cash.history.years.3.operating_margin|pct}. In the formula Python runs, the year-ten margin sets the operating income the terminal value is built on. It therefore reaches value through the terminal value as well as through the forecast years, but how far it moves value per share here was not computed. The open question is whether the margin gains of the last three years hold while memory costs stay high and the second-quarter gross-margin guidance sits below the latest quarter's {trend_table.quarters-back-0.ratios.gross_margin|pct}.",
+   "fields": [
+    "ratios.profitability.operating_margin",
+    "earnings_versus_cash.history.years.0.operating_margin",
+    "earnings_versus_cash.history.operating_margin_three_year_average",
+    "earnings_versus_cash.history.years.3.operating_margin",
+    "trend_table.quarters-back-0.ratios.gross_margin"
+   ]
+  }
+ ],
+ "accounting_adjustments": {
+  "reading": "There were none, and there was no value for them to move. The accounting reader wrote no adjustment: its adjustments list is empty. The quality-adjusted free cash flow of {free_cash_flow.free_cash_flow_quality_adjusted} lists no adjustment applied or refused; following its formula, it deducts only share-based compensation of {terms.trailing_four_quarters.share_based_compensation} and acquisition cash of {terms.cash_flow_families.acquisitions}. Because no valuation was computed, there is also no adjusted or unadjusted value to compare. The risks that reader flagged are carried in my drivers instead. The inventory of {terms.balances_now.inventory} and the unconditional purchase obligations of {terms.balances_now.unconditional_purchase_obligations}, which have no visible reserve, sit in the bear case's higher reinvestment and lower margin. Restructuring that recurs every year stays inside the GAAP operating margins the drivers use, as does share-based compensation. The DataPelago contingent consideration has no calculator field, so it appears in no figure.",
+  "fields": [
+   "free_cash_flow.free_cash_flow_quality_adjusted",
+   "terms.trailing_four_quarters.share_based_compensation",
+   "terms.cash_flow_families.acquisitions",
+   "terms.balances_now.inventory",
+   "terms.balances_now.unconditional_purchase_obligations"
+  ]
+ },
+ "summary_ko": {
+  "value_range": "주가 자료가 주어지지 않아 베타, 자기자본 시장가치, 자기자본비용, WACC를 계산하지 못했고, 그래서 DCF 가치 범위와 시나리오별 주당 가치도 계산되지 않았습니다. 확보된 입력은 무위험이자율 {cost_of_capital.risk_free_rate|pct}, 주식위험프리미엄 {cost_of_capital.equity_risk_premium|pct}, 세전 부채비용 {cost_of_capital.pre_tax_cost_of_debt|pct}뿐이며, 할인율이 없으므로 가치를 따로 추정하지 않았습니다.",
+  "price_position": "기준일 주가가 없고 비교할 가치 범위도 없어서, 주가가 약세·기본·강세 시나리오 중 어디에 있는지 판단할 수 없습니다.",
+  "market_implied_growth": "주가와 WACC가 모두 없어 역DCF로 시장이 가정하는 성장률을 구할 수 없습니다. 비교할 수 있는 것은 회사의 기록과 가이던스뿐입니다. 세 회계연도 연평균 매출 성장률은 {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, 최근 네 분기 성장률은 {ratios.growth.revenue.trailing_four_quarters|pct}이고, 회사는 2027 회계연도 매출 가이던스를 크게 올렸다고 밝혔습니다.",
+  "most_sensitive": "민감도 표가 계산되지 않아 가치에 가장 큰 영향을 주는 가정을 숫자로 읽을 수 없습니다. 시나리오 사이에서 가장 크게 갈리는 가정은 첫해 매출 성장률과 십 년째 영업이익률이며, 비교 기준은 현재 영업이익률 {ratios.profitability.operating_margin|pct}와 세 회계연도 평균 {earnings_versus_cash.history.operating_margin_three_year_average|pct}입니다.",
+  "accounting_adjustments": "회계 분석이 제시한 가치 조정 항목은 없고 가치도 계산되지 않았으므로, 조정으로 가치가 움직인 크기도 없습니다. 충당금이 보이지 않는 재고 {terms.balances_now.inventory}와 구매약정 {terms.balances_now.unconditional_purchase_obligations}의 위험은 조정 대신 약세 시나리오의 가정에 반영했습니다."
+ },
+ "limits": "This valuation is a set of stated assumptions run through a stated formula. It states no recommendation to trade, and a different reader choosing different drivers would reach a different value.",
+ "normalized_quotes": 0,
+ "dropped_items": [],
+ "dropped_count": 0
+}
