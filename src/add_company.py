@@ -105,7 +105,7 @@ HOW_TO_READ = {
     "notes.10-Q.textblock_count": ("already judged", "tests/test_extract_notes.py::_count_by_hand"),
     "numbers.10-K.fact_count": ("already judged", "tests/test_extract_numbers.py::_count_by_hand"),
     "numbers.10-Q.fact_count": ("already judged", "tests/test_extract_numbers.py::_count_by_hand"),
-    "prior_period_diff.10-Q.prior_accession": ("the submissions index", "the 10-Q a year earlier"),
+    "prior_period_diff.10-Q.prior_accession": ("the submissions index", "the latest 10-Q before the current one (tests/test_diff_periods.py)"),
     "risk_factors.10-K.ends_before": ("read by eye", "tests/independent_text.py::block_paragraphs"),
     "risk_factors.10-K.opens_at": ("read by eye", "tests/independent_text.py::block_paragraphs"),
     "risk_factors.10-Q.ends_before": ("read by eye", "tests/independent_text.py::block_paragraphs"),
