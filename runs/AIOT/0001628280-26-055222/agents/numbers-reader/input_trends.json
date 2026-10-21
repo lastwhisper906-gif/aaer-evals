@@ -1,0 +1,3521 @@
+{
+  "coverage": {
+    "periods_on_record": 8,
+    "periods_with_at_least_one_ratio": 8,
+    "quarters": [
+      {
+        "end": "2026-06-30",
+        "label": "quarters-back-0",
+        "ratios_filled": 9,
+        "ratios_missing": {
+          "inventory_reserve_ratio": "no row for inventory_reserve in 2026-06-30: us-gaap:InventoryValuationReserves is in the record, but not for this period",
+          "non_gaap_gap": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only"
+        },
+        "start": "2026-04-01",
+        "status": "filled",
+        "target_end": "2026-06-30"
+      },
+      {
+        "label": "quarters-back-1",
+        "reason": "no quarter ending within 20 days of 2026-03-31 is in the companyfacts record; the commonest cause is a fiscal fourth quarter, which no filing reports as a duration \u2014 the 10-K states the year and the three 10-Qs state the first three quarters, so it is derived by src/fourth_quarter.py",
+        "status": "missing",
+        "target_end": "2026-03-31"
+      },
+      {
+        "end": "2025-12-31",
+        "label": "quarters-back-2",
+        "ratios_filled": 8,
+        "ratios_missing": {
+          "accruals_over_total_assets": "no row for operating_cash_flow in 2025-10-01..2025-12-31: us-gaap:NetCashProvidedByUsedInOperatingActivities, us-gaap:NetCashProvidedByUsedInOperatingActivitiesContinuingOperations is in the record, but not for this period",
+          "inventory_reserve_ratio": "no row for inventory_reserve in 2025-12-31: us-gaap:InventoryValuationReserves is in the record, but not for this period",
+          "non_gaap_gap": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only"
+        },
+        "start": "2025-10-01",
+        "status": "filled",
+        "target_end": "2025-12-30"
+      },
+      {
+        "end": "2025-09-30",
+        "label": "quarters-back-3",
+        "ratios_filled": 8,
+        "ratios_missing": {
+          "accruals_over_total_assets": "no row for operating_cash_flow in 2025-07-01..2025-09-30: us-gaap:NetCashProvidedByUsedInOperatingActivities, us-gaap:NetCashProvidedByUsedInOperatingActivitiesContinuingOperations is in the record, but not for this period",
+          "inventory_reserve_ratio": "no row for inventory_reserve in 2025-09-30: us-gaap:InventoryValuationReserves is in the record, but not for this period",
+          "non_gaap_gap": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only"
+        },
+        "start": "2025-07-01",
+        "status": "filled",
+        "target_end": "2025-09-30"
+      },
+      {
+        "end": "2025-06-30",
+        "label": "quarters-back-4",
+        "ratios_filled": 9,
+        "ratios_missing": {
+          "inventory_reserve_ratio": "no row for inventory_reserve in 2025-06-30: us-gaap:InventoryValuationReserves is in the record, but not for this period",
+          "non_gaap_gap": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only"
+        },
+        "start": "2025-04-01",
+        "status": "filled",
+        "target_end": "2025-07-01"
+      },
+      {
+        "label": "quarters-back-5",
+        "reason": "no quarter ending within 20 days of 2025-04-01 is in the companyfacts record; the commonest cause is a fiscal fourth quarter, which no filing reports as a duration \u2014 the 10-K states the year and the three 10-Qs state the first three quarters, so it is derived by src/fourth_quarter.py",
+        "status": "missing",
+        "target_end": "2025-04-01"
+      },
+      {
+        "end": "2024-12-31",
+        "label": "quarters-back-6",
+        "ratios_filled": 9,
+        "ratios_missing": {
+          "accruals_over_total_assets": "no row for operating_cash_flow in 2024-10-01..2024-12-31: us-gaap:NetCashProvidedByUsedInOperatingActivities, us-gaap:NetCashProvidedByUsedInOperatingActivitiesContinuingOperations is in the record, but not for this period",
+          "non_gaap_gap": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only"
+        },
+        "start": "2024-10-01",
+        "status": "filled",
+        "target_end": "2024-12-31"
+      },
+      {
+        "end": "2024-09-30",
+        "label": "quarters-back-7",
+        "ratios_filled": 9,
+        "ratios_missing": {
+          "accruals_over_total_assets": "no row for operating_cash_flow in 2024-07-01..2024-09-30: us-gaap:NetCashProvidedByUsedInOperatingActivities, us-gaap:NetCashProvidedByUsedInOperatingActivitiesContinuingOperations is in the record, but not for this period",
+          "non_gaap_gap": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only"
+        },
+        "start": "2024-07-01",
+        "status": "filled",
+        "target_end": "2024-10-01"
+      }
+    ],
+    "ratios": [
+      {
+        "filled": 8,
+        "missing": [
+          {
+            "period": "quarters-back-1",
+            "reason": "no quarter ending within 20 days of 2026-03-31 is in the companyfacts record; the commonest cause is a fiscal fourth quarter, which no filing reports as a duration \u2014 the 10-K states the year and the three 10-Qs state the first three quarters, so it is derived by src/fourth_quarter.py"
+          },
+          {
+            "period": "quarters-back-5",
+            "reason": "no quarter ending within 20 days of 2025-04-01 is in the companyfacts record; the commonest cause is a fiscal fourth quarter, which no filing reports as a duration \u2014 the 10-K states the year and the three 10-Qs state the first three quarters, so it is derived by src/fourth_quarter.py"
+          },
+          {
+            "period": "years-back-2",
+            "reason": "no year ending within 20 days of 2024-04-02 is in the companyfacts record"
+          },
+          {
+            "period": "years-back-3",
+            "reason": "no year ending within 20 days of 2023-04-04 is in the companyfacts record"
+          },
+          {
+            "period": "years-back-4",
+            "reason": "no year ending within 20 days of 2022-04-05 is in the companyfacts record"
+          }
+        ],
+        "ratio": "receivables_over_revenue"
+      },
+      {
+        "filled": 8,
+        "missing": [
+          {
+            "period": "quarters-back-1",
+            "reason": "no quarter ending within 20 days of 2026-03-31 is in the companyfacts record; the commonest cause is a fiscal fourth quarter, which no filing reports as a duration \u2014 the 10-K states the year and the three 10-Qs state the first three quarters, so it is derived by src/fourth_quarter.py"
+          },
+          {
+            "period": "quarters-back-5",
+            "reason": "no quarter ending within 20 days of 2025-04-01 is in the companyfacts record; the commonest cause is a fiscal fourth quarter, which no filing reports as a duration \u2014 the 10-K states the year and the three 10-Qs state the first three quarters, so it is derived by src/fourth_quarter.py"
+          },
+          {
+            "period": "years-back-2",
+            "reason": "no year ending within 20 days of 2024-04-02 is in the companyfacts record"
+          },
+          {
+            "period": "years-back-3",
+            "reason": "no year ending within 20 days of 2023-04-04 is in the companyfacts record"
+          },
+          {
+            "period": "years-back-4",
+            "reason": "no year ending within 20 days of 2022-04-05 is in the companyfacts record"
+          }
+        ],
+        "ratio": "days_sales_outstanding"
+      },
+      {
+        "filled": 8,
+        "missing": [
+          {
+            "period": "quarters-back-1",
+            "reason": "no quarter ending within 20 days of 2026-03-31 is in the companyfacts record; the commonest cause is a fiscal fourth quarter, which no filing reports as a duration \u2014 the 10-K states the year and the three 10-Qs state the first three quarters, so it is derived by src/fourth_quarter.py"
+          },
+          {
+            "period": "quarters-back-5",
+            "reason": "no quarter ending within 20 days of 2025-04-01 is in the companyfacts record; the commonest cause is a fiscal fourth quarter, which no filing reports as a duration \u2014 the 10-K states the year and the three 10-Qs state the first three quarters, so it is derived by src/fourth_quarter.py"
+          },
+          {
+            "period": "years-back-2",
+            "reason": "no year ending within 20 days of 2024-04-02 is in the companyfacts record"
+          },
+          {
+            "period": "years-back-3",
+            "reason": "no year ending within 20 days of 2023-04-04 is in the companyfacts record"
+          },
+          {
+            "period": "years-back-4",
+            "reason": "no year ending within 20 days of 2022-04-05 is in the companyfacts record"
+          }
+        ],
+        "ratio": "days_sales_of_inventory"
+      },
+      {
+        "filled": 4,
+        "missing": [
+          {
+            "period": "quarters-back-1",
+            "reason": "no quarter ending within 20 days of 2026-03-31 is in the companyfacts record; the commonest cause is a fiscal fourth quarter, which no filing reports as a duration \u2014 the 10-K states the year and the three 10-Qs state the first three quarters, so it is derived by src/fourth_quarter.py"
+          },
+          {
+            "period": "quarters-back-2",
+            "reason": "no row for operating_cash_flow in 2025-10-01..2025-12-31: us-gaap:NetCashProvidedByUsedInOperatingActivities, us-gaap:NetCashProvidedByUsedInOperatingActivitiesContinuingOperations is in the record, but not for this period"
+          },
+          {
+            "period": "quarters-back-3",
+            "reason": "no row for operating_cash_flow in 2025-07-01..2025-09-30: us-gaap:NetCashProvidedByUsedInOperatingActivities, us-gaap:NetCashProvidedByUsedInOperatingActivitiesContinuingOperations is in the record, but not for this period"
+          },
+          {
+            "period": "quarters-back-5",
+            "reason": "no quarter ending within 20 days of 2025-04-01 is in the companyfacts record; the commonest cause is a fiscal fourth quarter, which no filing reports as a duration \u2014 the 10-K states the year and the three 10-Qs state the first three quarters, so it is derived by src/fourth_quarter.py"
+          },
+          {
+            "period": "quarters-back-6",
+            "reason": "no row for operating_cash_flow in 2024-10-01..2024-12-31: us-gaap:NetCashProvidedByUsedInOperatingActivities, us-gaap:NetCashProvidedByUsedInOperatingActivitiesContinuingOperations is in the record, but not for this period"
+          },
+          {
+            "period": "quarters-back-7",
+            "reason": "no row for operating_cash_flow in 2024-07-01..2024-09-30: us-gaap:NetCashProvidedByUsedInOperatingActivities, us-gaap:NetCashProvidedByUsedInOperatingActivitiesContinuingOperations is in the record, but not for this period"
+          },
+          {
+            "period": "years-back-2",
+            "reason": "no year ending within 20 days of 2024-04-02 is in the companyfacts record"
+          },
+          {
+            "period": "years-back-3",
+            "reason": "no year ending within 20 days of 2023-04-04 is in the companyfacts record"
+          },
+          {
+            "period": "years-back-4",
+            "reason": "no year ending within 20 days of 2022-04-05 is in the companyfacts record"
+          }
+        ],
+        "ratio": "accruals_over_total_assets"
+      },
+      {
+        "filled": 8,
+        "missing": [
+          {
+            "period": "quarters-back-1",
+            "reason": "no quarter ending within 20 days of 2026-03-31 is in the companyfacts record; the commonest cause is a fiscal fourth quarter, which no filing reports as a duration \u2014 the 10-K states the year and the three 10-Qs state the first three quarters, so it is derived by src/fourth_quarter.py"
+          },
+          {
+            "period": "quarters-back-5",
+            "reason": "no quarter ending within 20 days of 2025-04-01 is in the companyfacts record; the commonest cause is a fiscal fourth quarter, which no filing reports as a duration \u2014 the 10-K states the year and the three 10-Qs state the first three quarters, so it is derived by src/fourth_quarter.py"
+          },
+          {
+            "period": "years-back-2",
+            "reason": "no year ending within 20 days of 2024-04-02 is in the companyfacts record"
+          },
+          {
+            "period": "years-back-3",
+            "reason": "no year ending within 20 days of 2023-04-04 is in the companyfacts record"
+          },
+          {
+            "period": "years-back-4",
+            "reason": "no year ending within 20 days of 2022-04-05 is in the companyfacts record"
+          }
+        ],
+        "ratio": "gross_margin"
+      },
+      {
+        "filled": 8,
+        "missing": [
+          {
+            "period": "quarters-back-1",
+            "reason": "no quarter ending within 20 days of 2026-03-31 is in the companyfacts record; the commonest cause is a fiscal fourth quarter, which no filing reports as a duration \u2014 the 10-K states the year and the three 10-Qs state the first three quarters, so it is derived by src/fourth_quarter.py"
+          },
+          {
+            "period": "quarters-back-5",
+            "reason": "no quarter ending within 20 days of 2025-04-01 is in the companyfacts record; the commonest cause is a fiscal fourth quarter, which no filing reports as a duration \u2014 the 10-K states the year and the three 10-Qs state the first three quarters, so it is derived by src/fourth_quarter.py"
+          },
+          {
+            "period": "years-back-2",
+            "reason": "no year ending within 20 days of 2024-04-02 is in the companyfacts record"
+          },
+          {
+            "period": "years-back-3",
+            "reason": "no year ending within 20 days of 2023-04-04 is in the companyfacts record"
+          },
+          {
+            "period": "years-back-4",
+            "reason": "no year ending within 20 days of 2022-04-05 is in the companyfacts record"
+          }
+        ],
+        "ratio": "bad_debt_reserve_ratio"
+      },
+      {
+        "filled": 2,
+        "missing": [
+          {
+            "period": "quarters-back-0",
+            "reason": "no row for inventory_reserve in 2026-06-30: us-gaap:InventoryValuationReserves is in the record, but not for this period"
+          },
+          {
+            "period": "quarters-back-1",
+            "reason": "no quarter ending within 20 days of 2026-03-31 is in the companyfacts record; the commonest cause is a fiscal fourth quarter, which no filing reports as a duration \u2014 the 10-K states the year and the three 10-Qs state the first three quarters, so it is derived by src/fourth_quarter.py"
+          },
+          {
+            "period": "quarters-back-2",
+            "reason": "no row for inventory_reserve in 2025-12-31: us-gaap:InventoryValuationReserves is in the record, but not for this period"
+          },
+          {
+            "period": "quarters-back-3",
+            "reason": "no row for inventory_reserve in 2025-09-30: us-gaap:InventoryValuationReserves is in the record, but not for this period"
+          },
+          {
+            "period": "quarters-back-4",
+            "reason": "no row for inventory_reserve in 2025-06-30: us-gaap:InventoryValuationReserves is in the record, but not for this period"
+          },
+          {
+            "period": "quarters-back-5",
+            "reason": "no quarter ending within 20 days of 2025-04-01 is in the companyfacts record; the commonest cause is a fiscal fourth quarter, which no filing reports as a duration \u2014 the 10-K states the year and the three 10-Qs state the first three quarters, so it is derived by src/fourth_quarter.py"
+          },
+          {
+            "period": "years-back-0",
+            "reason": "no row for inventory_reserve in 2026-03-31: us-gaap:InventoryValuationReserves is in the record, but not for this period"
+          },
+          {
+            "period": "years-back-1",
+            "reason": "no row for inventory_reserve in 2025-03-31: us-gaap:InventoryValuationReserves is in the record, but not for this period"
+          },
+          {
+            "period": "years-back-2",
+            "reason": "no year ending within 20 days of 2024-04-02 is in the companyfacts record"
+          },
+          {
+            "period": "years-back-3",
+            "reason": "no year ending within 20 days of 2023-04-04 is in the companyfacts record"
+          },
+          {
+            "period": "years-back-4",
+            "reason": "no year ending within 20 days of 2022-04-05 is in the companyfacts record"
+          }
+        ],
+        "ratio": "inventory_reserve_ratio"
+      },
+      {
+        "filled": 8,
+        "missing": [
+          {
+            "period": "quarters-back-1",
+            "reason": "no quarter ending within 20 days of 2026-03-31 is in the companyfacts record; the commonest cause is a fiscal fourth quarter, which no filing reports as a duration \u2014 the 10-K states the year and the three 10-Qs state the first three quarters, so it is derived by src/fourth_quarter.py"
+          },
+          {
+            "period": "quarters-back-5",
+            "reason": "no quarter ending within 20 days of 2025-04-01 is in the companyfacts record; the commonest cause is a fiscal fourth quarter, which no filing reports as a duration \u2014 the 10-K states the year and the three 10-Qs state the first three quarters, so it is derived by src/fourth_quarter.py"
+          },
+          {
+            "period": "years-back-2",
+            "reason": "no year ending within 20 days of 2024-04-02 is in the companyfacts record"
+          },
+          {
+            "period": "years-back-3",
+            "reason": "no year ending within 20 days of 2023-04-04 is in the companyfacts record"
+          },
+          {
+            "period": "years-back-4",
+            "reason": "no year ending within 20 days of 2022-04-05 is in the companyfacts record"
+          }
+        ],
+        "ratio": "warranty_reserve_ratio"
+      },
+      {
+        "filled": 8,
+        "missing": [
+          {
+            "period": "quarters-back-1",
+            "reason": "no quarter ending within 20 days of 2026-03-31 is in the companyfacts record; the commonest cause is a fiscal fourth quarter, which no filing reports as a duration \u2014 the 10-K states the year and the three 10-Qs state the first three quarters, so it is derived by src/fourth_quarter.py"
+          },
+          {
+            "period": "quarters-back-5",
+            "reason": "no quarter ending within 20 days of 2025-04-01 is in the companyfacts record; the commonest cause is a fiscal fourth quarter, which no filing reports as a duration \u2014 the 10-K states the year and the three 10-Qs state the first three quarters, so it is derived by src/fourth_quarter.py"
+          },
+          {
+            "period": "years-back-2",
+            "reason": "no year ending within 20 days of 2024-04-02 is in the companyfacts record"
+          },
+          {
+            "period": "years-back-3",
+            "reason": "no year ending within 20 days of 2023-04-04 is in the companyfacts record"
+          },
+          {
+            "period": "years-back-4",
+            "reason": "no year ending within 20 days of 2022-04-05 is in the companyfacts record"
+          }
+        ],
+        "ratio": "soft_asset_share"
+      },
+      {
+        "filled": 8,
+        "missing": [
+          {
+            "period": "quarters-back-1",
+            "reason": "no quarter ending within 20 days of 2026-03-31 is in the companyfacts record; the commonest cause is a fiscal fourth quarter, which no filing reports as a duration \u2014 the 10-K states the year and the three 10-Qs state the first three quarters, so it is derived by src/fourth_quarter.py"
+          },
+          {
+            "period": "quarters-back-5",
+            "reason": "no quarter ending within 20 days of 2025-04-01 is in the companyfacts record; the commonest cause is a fiscal fourth quarter, which no filing reports as a duration \u2014 the 10-K states the year and the three 10-Qs state the first three quarters, so it is derived by src/fourth_quarter.py"
+          },
+          {
+            "period": "years-back-2",
+            "reason": "no year ending within 20 days of 2024-04-02 is in the companyfacts record"
+          },
+          {
+            "period": "years-back-3",
+            "reason": "no year ending within 20 days of 2023-04-04 is in the companyfacts record"
+          },
+          {
+            "period": "years-back-4",
+            "reason": "no year ending within 20 days of 2022-04-05 is in the companyfacts record"
+          }
+        ],
+        "ratio": "contract_liabilities_over_revenue"
+      },
+      {
+        "filled": 0,
+        "missing": [
+          {
+            "period": "quarters-back-0",
+            "reason": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only"
+          },
+          {
+            "period": "quarters-back-1",
+            "reason": "no quarter ending within 20 days of 2026-03-31 is in the companyfacts record; the commonest cause is a fiscal fourth quarter, which no filing reports as a duration \u2014 the 10-K states the year and the three 10-Qs state the first three quarters, so it is derived by src/fourth_quarter.py"
+          },
+          {
+            "period": "quarters-back-2",
+            "reason": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only"
+          },
+          {
+            "period": "quarters-back-3",
+            "reason": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only"
+          },
+          {
+            "period": "quarters-back-4",
+            "reason": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only"
+          },
+          {
+            "period": "quarters-back-5",
+            "reason": "no quarter ending within 20 days of 2025-04-01 is in the companyfacts record; the commonest cause is a fiscal fourth quarter, which no filing reports as a duration \u2014 the 10-K states the year and the three 10-Qs state the first three quarters, so it is derived by src/fourth_quarter.py"
+          },
+          {
+            "period": "quarters-back-6",
+            "reason": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only"
+          },
+          {
+            "period": "quarters-back-7",
+            "reason": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only"
+          },
+          {
+            "period": "years-back-0",
+            "reason": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only"
+          },
+          {
+            "period": "years-back-1",
+            "reason": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only"
+          },
+          {
+            "period": "years-back-2",
+            "reason": "no year ending within 20 days of 2024-04-02 is in the companyfacts record"
+          },
+          {
+            "period": "years-back-3",
+            "reason": "no year ending within 20 days of 2023-04-04 is in the companyfacts record"
+          },
+          {
+            "period": "years-back-4",
+            "reason": "no year ending within 20 days of 2022-04-05 is in the companyfacts record"
+          }
+        ],
+        "ratio": "non_gaap_gap"
+      }
+    ],
+    "requested": {
+      "quarters": 8,
+      "years": 5
+    },
+    "years": [
+      {
+        "end": "2026-03-31",
+        "label": "years-back-0",
+        "ratios_filled": 9,
+        "ratios_missing": {
+          "inventory_reserve_ratio": "no row for inventory_reserve in 2026-03-31: us-gaap:InventoryValuationReserves is in the record, but not for this period",
+          "non_gaap_gap": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only"
+        },
+        "start": "2025-04-01",
+        "status": "filled",
+        "target_end": "2026-03-31"
+      },
+      {
+        "end": "2025-03-31",
+        "label": "years-back-1",
+        "ratios_filled": 9,
+        "ratios_missing": {
+          "inventory_reserve_ratio": "no row for inventory_reserve in 2025-03-31: us-gaap:InventoryValuationReserves is in the record, but not for this period",
+          "non_gaap_gap": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only"
+        },
+        "start": "2024-04-01",
+        "status": "filled",
+        "target_end": "2025-04-01"
+      },
+      {
+        "label": "years-back-2",
+        "reason": "no year ending within 20 days of 2024-04-02 is in the companyfacts record",
+        "status": "missing",
+        "target_end": "2024-04-02"
+      },
+      {
+        "label": "years-back-3",
+        "reason": "no year ending within 20 days of 2023-04-04 is in the companyfacts record",
+        "status": "missing",
+        "target_end": "2023-04-04"
+      },
+      {
+        "label": "years-back-4",
+        "reason": "no year ending within 20 days of 2022-04-05 is in the companyfacts record",
+        "status": "missing",
+        "target_end": "2022-04-05"
+      }
+    ]
+  },
+  "cutoff": "2026-08-10",
+  "quarters": [
+    {
+      "days": 91,
+      "end": "2026-06-30",
+      "filled": true,
+      "label": "quarters-back-0",
+      "ratios": {
+        "accruals_over_total_assets": {
+          "formula": "(net_income - operating_cash_flow) / assets",
+          "inputs": {
+            "assets": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:Assets:2026-06-30",
+              "period": "2026-06-30",
+              "tag": "Assets",
+              "unit": "USD",
+              "value": 962562000.0
+            },
+            "net_income": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:NetIncomeLoss:2026-04-01..2026-06-30",
+              "period": "2026-04-01..2026-06-30",
+              "tag": "NetIncomeLoss",
+              "unit": "USD",
+              "value": -8440000.0
+            },
+            "operating_cash_flow": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:NetCashProvidedByUsedInOperatingActivities:2026-04-01..2026-06-30",
+              "period": "2026-04-01..2026-06-30",
+              "tag": "NetCashProvidedByUsedInOperatingActivities",
+              "unit": "USD",
+              "value": 8443000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:accruals_over_total_assets:2026-04-01..2026-06-30",
+          "position_in_history": "lowest of the 2 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-1",
+            "reason": "accruals_over_total_assets is not filled in quarters-back-1"
+          },
+          "value": -0.017539649394013063,
+          "year_over_year": {
+            "against": "quarters-back-4",
+            "change": -0.0014725144472693581
+          }
+        },
+        "bad_debt_reserve_ratio": {
+          "formula": "bad_debt_allowance / (receivables + bad_debt_allowance)",
+          "inputs": {
+            "bad_debt_allowance": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:AllowanceForDoubtfulAccountsReceivableCurrent:2026-06-30",
+              "period": "2026-06-30",
+              "tag": "AllowanceForDoubtfulAccountsReceivableCurrent",
+              "unit": "USD",
+              "value": 9344000.0
+            },
+            "receivables": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:AccountsReceivableNetCurrent:2026-06-30",
+              "period": "2026-06-30",
+              "tag": "AccountsReceivableNetCurrent",
+              "unit": "USD",
+              "value": 91399000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:bad_debt_reserve_ratio:2026-04-01..2026-06-30",
+          "position_in_history": "third lowest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-1",
+            "reason": "bad_debt_reserve_ratio is not filled in quarters-back-1"
+          },
+          "value": 0.09275086110201206,
+          "year_over_year": {
+            "against": "quarters-back-4",
+            "change": -0.0010780293438336502
+          }
+        },
+        "contract_liabilities_over_revenue": {
+          "formula": "contract_liabilities / revenue",
+          "inputs": {
+            "contract_liabilities": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:ContractWithCustomerLiabilityCurrent:2026-06-30",
+              "period": "2026-06-30",
+              "tag": "ContractWithCustomerLiabilityCurrent",
+              "unit": "USD",
+              "value": 20857000.0
+            },
+            "revenue": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2026-04-01..2026-06-30",
+              "period": "2026-04-01..2026-06-30",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 110793000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:contract_liabilities_over_revenue:2026-04-01..2026-06-30",
+          "position_in_history": "highest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-1",
+            "reason": "contract_liabilities_over_revenue is not filled in quarters-back-1"
+          },
+          "value": 0.188251965376874,
+          "year_over_year": {
+            "against": "quarters-back-4",
+            "change": 0.02386629870060311
+          }
+        },
+        "days_sales_of_inventory": {
+          "formula": "inventory / cost_of_revenue * days_in_period",
+          "inputs": {
+            "cost_of_revenue": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:CostOfGoodsAndServicesSold:2026-04-01..2026-06-30",
+              "period": "2026-04-01..2026-06-30",
+              "tag": "CostOfGoodsAndServicesSold",
+              "unit": "USD",
+              "value": 49632000.0
+            },
+            "inventory": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:InventoryNet:2026-06-30",
+              "period": "2026-06-30",
+              "tag": "InventoryNet",
+              "unit": "USD",
+              "value": 21645000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:days_sales_of_inventory:2026-04-01..2026-06-30",
+          "position_in_history": "lowest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-1",
+            "reason": "days_sales_of_inventory is not filled in quarters-back-1"
+          },
+          "value": 39.685988878143135,
+          "year_over_year": {
+            "against": "quarters-back-4",
+            "change": -5.95154260800296
+          }
+        },
+        "days_sales_outstanding": {
+          "formula": "receivables / revenue * days_in_period",
+          "inputs": {
+            "receivables": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:AccountsReceivableNetCurrent:2026-06-30",
+              "period": "2026-06-30",
+              "tag": "AccountsReceivableNetCurrent",
+              "unit": "USD",
+              "value": 91399000.0
+            },
+            "revenue": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2026-04-01..2026-06-30",
+              "period": "2026-04-01..2026-06-30",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 110793000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:days_sales_outstanding:2026-04-01..2026-06-30",
+          "position_in_history": "second highest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-1",
+            "reason": "days_sales_outstanding is not filled in quarters-back-1"
+          },
+          "value": 75.07070843825873,
+          "year_over_year": {
+            "against": "quarters-back-4",
+            "change": 3.8568130665277636
+          }
+        },
+        "gross_margin": {
+          "formula": "(revenue - cost_of_revenue) / revenue",
+          "inputs": {
+            "cost_of_revenue": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:CostOfGoodsAndServicesSold:2026-04-01..2026-06-30",
+              "period": "2026-04-01..2026-06-30",
+              "tag": "CostOfGoodsAndServicesSold",
+              "unit": "USD",
+              "value": 49632000.0
+            },
+            "revenue": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2026-04-01..2026-06-30",
+              "period": "2026-04-01..2026-06-30",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 110793000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:gross_margin:2026-04-01..2026-06-30",
+          "position_in_history": "third lowest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-1",
+            "reason": "gross_margin is not filled in quarters-back-1"
+          },
+          "value": 0.5520294603449677,
+          "year_over_year": {
+            "against": "quarters-back-4",
+            "change": 0.00957404789214833
+          }
+        },
+        "inventory_reserve_ratio": {
+          "missing": "no row for inventory_reserve in 2026-06-30: us-gaap:InventoryValuationReserves is in the record, but not for this period",
+          "paragraph_id": "0001628280-26-055222:trends:inventory_reserve_ratio:2026-04-01..2026-06-30",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "inventory_reserve_ratio is not filled in quarters-back-0"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "inventory_reserve_ratio is not filled in quarters-back-0"
+          }
+        },
+        "non_gaap_gap": {
+          "missing": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only",
+          "paragraph_id": "0001628280-26-055222:trends:non_gaap_gap:2026-04-01..2026-06-30",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "non_gaap_gap is not filled in quarters-back-0"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "non_gaap_gap is not filled in quarters-back-0"
+          }
+        },
+        "receivables_over_revenue": {
+          "formula": "receivables / revenue",
+          "inputs": {
+            "receivables": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:AccountsReceivableNetCurrent:2026-06-30",
+              "period": "2026-06-30",
+              "tag": "AccountsReceivableNetCurrent",
+              "unit": "USD",
+              "value": 91399000.0
+            },
+            "revenue": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2026-04-01..2026-06-30",
+              "period": "2026-04-01..2026-06-30",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 110793000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:receivables_over_revenue:2026-04-01..2026-06-30",
+          "position_in_history": "second highest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-1",
+            "reason": "receivables_over_revenue is not filled in quarters-back-1"
+          },
+          "value": 0.8249528399808652,
+          "year_over_year": {
+            "against": "quarters-back-4",
+            "change": 0.04238256117063477
+          }
+        },
+        "soft_asset_share": {
+          "formula": "(assets - property_plant_and_equipment - cash) / assets",
+          "inputs": {
+            "assets": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:Assets:2026-06-30",
+              "period": "2026-06-30",
+              "tag": "Assets",
+              "unit": "USD",
+              "value": 962562000.0
+            },
+            "cash": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:CashAndCashEquivalentsAtCarryingValue:2026-06-30",
+              "period": "2026-06-30",
+              "tag": "CashAndCashEquivalentsAtCarryingValue",
+              "unit": "USD",
+              "value": 32824000.0
+            },
+            "property_plant_and_equipment": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:PropertyPlantAndEquipmentNet:2026-06-30",
+              "period": "2026-06-30",
+              "tag": "PropertyPlantAndEquipmentNet",
+              "unit": "USD",
+              "value": 63800000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:soft_asset_share:2026-04-01..2026-06-30",
+          "position_in_history": "third lowest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-1",
+            "reason": "soft_asset_share is not filled in quarters-back-1"
+          },
+          "value": 0.8996178947434036,
+          "year_over_year": {
+            "against": "quarters-back-4",
+            "change": 0.0005094031739490967
+          }
+        },
+        "warranty_reserve_ratio": {
+          "formula": "warranty_accrual / revenue",
+          "inputs": {
+            "revenue": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2026-04-01..2026-06-30",
+              "period": "2026-04-01..2026-06-30",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 110793000.0
+            },
+            "warranty_accrual": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:ProductWarrantyAccrual:2026-06-30",
+              "period": "2026-06-30",
+              "tag": "ProductWarrantyAccrual",
+              "unit": "USD",
+              "value": 2123000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:warranty_reserve_ratio:2026-04-01..2026-06-30",
+          "position_in_history": "lowest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-1",
+            "reason": "warranty_reserve_ratio is not filled in quarters-back-1"
+          },
+          "value": 0.01916186040634336,
+          "year_over_year": {
+            "against": "quarters-back-4",
+            "change": -0.01452010576762731
+          }
+        }
+      },
+      "start": "2026-04-01",
+      "target_end": "2026-06-30"
+    },
+    {
+      "filled": false,
+      "label": "quarters-back-1",
+      "ratios": {},
+      "reason": "no quarter ending within 20 days of 2026-03-31 is in the companyfacts record; the commonest cause is a fiscal fourth quarter, which no filing reports as a duration \u2014 the 10-K states the year and the three 10-Qs state the first three quarters, so it is derived by src/fourth_quarter.py",
+      "target_end": "2026-03-31"
+    },
+    {
+      "days": 92,
+      "end": "2025-12-31",
+      "filled": true,
+      "label": "quarters-back-2",
+      "ratios": {
+        "accruals_over_total_assets": {
+          "missing": "no row for operating_cash_flow in 2025-10-01..2025-12-31: us-gaap:NetCashProvidedByUsedInOperatingActivities, us-gaap:NetCashProvidedByUsedInOperatingActivitiesContinuingOperations is in the record, but not for this period",
+          "paragraph_id": "0001628280-26-055222:trends:accruals_over_total_assets:2025-10-01..2025-12-31",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "accruals_over_total_assets is not filled in quarters-back-2"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "accruals_over_total_assets is not filled in quarters-back-2"
+          }
+        },
+        "bad_debt_reserve_ratio": {
+          "formula": "bad_debt_allowance / (receivables + bad_debt_allowance)",
+          "inputs": {
+            "bad_debt_allowance": {
+              "accession": "0001628280-26-006487",
+              "filed": "2026-02-09",
+              "id": "0001628280-26-006487:facts:AllowanceForDoubtfulAccountsReceivableCurrent:2025-12-31",
+              "period": "2025-12-31",
+              "tag": "AllowanceForDoubtfulAccountsReceivableCurrent",
+              "unit": "USD",
+              "value": 9667000.0
+            },
+            "receivables": {
+              "accession": "0001628280-26-006487",
+              "filed": "2026-02-09",
+              "id": "0001628280-26-006487:facts:AccountsReceivableNetCurrent:2025-12-31",
+              "period": "2025-12-31",
+              "tag": "AccountsReceivableNetCurrent",
+              "unit": "USD",
+              "value": 92223000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:bad_debt_reserve_ratio:2025-10-01..2025-12-31",
+          "position_in_history": "second highest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-3",
+            "change": -0.005523078948268326
+          },
+          "value": 0.09487682795171264,
+          "year_over_year": {
+            "against": "quarters-back-6",
+            "change": 0.03232120901275086
+          }
+        },
+        "contract_liabilities_over_revenue": {
+          "formula": "contract_liabilities / revenue",
+          "inputs": {
+            "contract_liabilities": {
+              "accession": "0001628280-26-006487",
+              "filed": "2026-02-09",
+              "id": "0001628280-26-006487:facts:ContractWithCustomerLiabilityCurrent:2025-12-31",
+              "period": "2025-12-31",
+              "tag": "ContractWithCustomerLiabilityCurrent",
+              "unit": "USD",
+              "value": 16217000.0
+            },
+            "revenue": {
+              "accession": "0001628280-26-006487",
+              "filed": "2026-02-09",
+              "id": "0001628280-26-006487:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-10-01..2025-12-31",
+              "period": "2025-10-01..2025-12-31",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 113487000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:contract_liabilities_over_revenue:2025-10-01..2025-12-31",
+          "position_in_history": "second lowest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-3",
+            "change": -0.011106461763350978
+          },
+          "value": 0.14289742437459796,
+          "year_over_year": {
+            "against": "quarters-back-6",
+            "change": -0.02540256904824731
+          }
+        },
+        "days_sales_of_inventory": {
+          "formula": "inventory / cost_of_revenue * days_in_period",
+          "inputs": {
+            "cost_of_revenue": {
+              "accession": "0001628280-26-006487",
+              "filed": "2026-02-09",
+              "id": "0001628280-26-006487:facts:CostOfGoodsAndServicesSold:2025-10-01..2025-12-31",
+              "period": "2025-10-01..2025-12-31",
+              "tag": "CostOfGoodsAndServicesSold",
+              "unit": "USD",
+              "value": 50799000.0
+            },
+            "inventory": {
+              "accession": "0001628280-26-006487",
+              "filed": "2026-02-09",
+              "id": "0001628280-26-006487:facts:InventoryNet:2025-12-31",
+              "period": "2025-12-31",
+              "tag": "InventoryNet",
+              "unit": "USD",
+              "value": 22064000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:days_sales_of_inventory:2025-10-01..2025-12-31",
+          "position_in_history": "second lowest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-3",
+            "change": -2.144516051304194
+          },
+          "value": 39.959211795507784,
+          "year_over_year": {
+            "against": "quarters-back-6",
+            "change": -14.077223582068513
+          }
+        },
+        "days_sales_outstanding": {
+          "formula": "receivables / revenue * days_in_period",
+          "inputs": {
+            "receivables": {
+              "accession": "0001628280-26-006487",
+              "filed": "2026-02-09",
+              "id": "0001628280-26-006487:facts:AccountsReceivableNetCurrent:2025-12-31",
+              "period": "2025-12-31",
+              "tag": "AccountsReceivableNetCurrent",
+              "unit": "USD",
+              "value": 92223000.0
+            },
+            "revenue": {
+              "accession": "0001628280-26-006487",
+              "filed": "2026-02-09",
+              "id": "0001628280-26-006487:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-10-01..2025-12-31",
+              "period": "2025-10-01..2025-12-31",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 113487000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:days_sales_outstanding:2025-10-01..2025-12-31",
+          "position_in_history": "third highest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-3",
+            "change": 4.71352975551541
+          },
+          "value": 74.76200798329324,
+          "year_over_year": {
+            "against": "quarters-back-6",
+            "change": 3.7347127911933455
+          }
+        },
+        "gross_margin": {
+          "formula": "(revenue - cost_of_revenue) / revenue",
+          "inputs": {
+            "cost_of_revenue": {
+              "accession": "0001628280-26-006487",
+              "filed": "2026-02-09",
+              "id": "0001628280-26-006487:facts:CostOfGoodsAndServicesSold:2025-10-01..2025-12-31",
+              "period": "2025-10-01..2025-12-31",
+              "tag": "CostOfGoodsAndServicesSold",
+              "unit": "USD",
+              "value": 50799000.0
+            },
+            "revenue": {
+              "accession": "0001628280-26-006487",
+              "filed": "2026-02-09",
+              "id": "0001628280-26-006487:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-10-01..2025-12-31",
+              "period": "2025-10-01..2025-12-31",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 113487000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:gross_margin:2025-10-01..2025-12-31",
+          "position_in_history": "second highest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-3",
+            "change": -0.008056159632003013
+          },
+          "value": 0.5523804488619842,
+          "year_over_year": {
+            "against": "quarters-back-6",
+            "change": 5.918304157814802e-05
+          }
+        },
+        "inventory_reserve_ratio": {
+          "missing": "no row for inventory_reserve in 2025-12-31: us-gaap:InventoryValuationReserves is in the record, but not for this period",
+          "paragraph_id": "0001628280-26-055222:trends:inventory_reserve_ratio:2025-10-01..2025-12-31",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "inventory_reserve_ratio is not filled in quarters-back-2"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "inventory_reserve_ratio is not filled in quarters-back-2"
+          }
+        },
+        "non_gaap_gap": {
+          "missing": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only",
+          "paragraph_id": "0001628280-26-055222:trends:non_gaap_gap:2025-10-01..2025-12-31",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "non_gaap_gap is not filled in quarters-back-2"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "non_gaap_gap is not filled in quarters-back-2"
+          }
+        },
+        "receivables_over_revenue": {
+          "formula": "receivables / revenue",
+          "inputs": {
+            "receivables": {
+              "accession": "0001628280-26-006487",
+              "filed": "2026-02-09",
+              "id": "0001628280-26-006487:facts:AccountsReceivableNetCurrent:2025-12-31",
+              "period": "2025-12-31",
+              "tag": "AccountsReceivableNetCurrent",
+              "unit": "USD",
+              "value": 92223000.0
+            },
+            "revenue": {
+              "accession": "0001628280-26-006487",
+              "filed": "2026-02-09",
+              "id": "0001628280-26-006487:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-10-01..2025-12-31",
+              "period": "2025-10-01..2025-12-31",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 113487000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:receivables_over_revenue:2025-10-01..2025-12-31",
+          "position_in_history": "third highest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-3",
+            "change": 0.05123401908168923
+          },
+          "value": 0.8126305215575352,
+          "year_over_year": {
+            "against": "quarters-back-6",
+            "change": 0.04059470425210154
+          }
+        },
+        "soft_asset_share": {
+          "formula": "(assets - property_plant_and_equipment - cash) / assets",
+          "inputs": {
+            "assets": {
+              "accession": "0001628280-26-006487",
+              "filed": "2026-02-09",
+              "id": "0001628280-26-006487:facts:Assets:2025-12-31",
+              "period": "2025-12-31",
+              "tag": "Assets",
+              "unit": "USD",
+              "value": 959459000.0
+            },
+            "cash": {
+              "accession": "0001628280-26-006487",
+              "filed": "2026-02-09",
+              "id": "0001628280-26-006487:facts:CashAndCashEquivalentsAtCarryingValue:2025-12-31",
+              "period": "2025-12-31",
+              "tag": "CashAndCashEquivalentsAtCarryingValue",
+              "unit": "USD",
+              "value": 31215000.0
+            },
+            "property_plant_and_equipment": {
+              "accession": "0001628280-26-006487",
+              "filed": "2026-02-09",
+              "id": "0001628280-26-006487:facts:PropertyPlantAndEquipmentNet:2025-12-31",
+              "period": "2025-12-31",
+              "tag": "PropertyPlantAndEquipmentNet",
+              "unit": "USD",
+              "value": 63018000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:soft_asset_share:2025-10-01..2025-12-31",
+          "position_in_history": "third highest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-3",
+            "change": -0.0008983806675677553
+          },
+          "value": 0.9017852769112593,
+          "year_over_year": {
+            "against": "quarters-back-6",
+            "change": -0.00038922227381243957
+          }
+        },
+        "warranty_reserve_ratio": {
+          "formula": "warranty_accrual / revenue",
+          "inputs": {
+            "revenue": {
+              "accession": "0001628280-26-006487",
+              "filed": "2026-02-09",
+              "id": "0001628280-26-006487:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-10-01..2025-12-31",
+              "period": "2025-10-01..2025-12-31",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 113487000.0
+            },
+            "warranty_accrual": {
+              "accession": "0001628280-26-006487",
+              "filed": "2026-02-09",
+              "id": "0001628280-26-006487:facts:ProductWarrantyAccrual:2025-12-31",
+              "period": "2025-12-31",
+              "tag": "ProductWarrantyAccrual",
+              "unit": "USD",
+              "value": 2337000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:warranty_reserve_ratio:2025-10-01..2025-12-31",
+          "position_in_history": "second lowest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-3",
+            "change": -0.0019540964902866644
+          },
+          "value": 0.02059266700150678,
+          "year_over_year": {
+            "against": "quarters-back-6",
+            "change": -0.013561557880809132
+          }
+        }
+      },
+      "start": "2025-10-01",
+      "target_end": "2025-12-30"
+    },
+    {
+      "days": 92,
+      "end": "2025-09-30",
+      "filled": true,
+      "label": "quarters-back-3",
+      "ratios": {
+        "accruals_over_total_assets": {
+          "missing": "no row for operating_cash_flow in 2025-07-01..2025-09-30: us-gaap:NetCashProvidedByUsedInOperatingActivities, us-gaap:NetCashProvidedByUsedInOperatingActivitiesContinuingOperations is in the record, but not for this period",
+          "paragraph_id": "0001628280-26-055222:trends:accruals_over_total_assets:2025-07-01..2025-09-30",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "accruals_over_total_assets is not filled in quarters-back-3"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "accruals_over_total_assets is not filled in quarters-back-3"
+          }
+        },
+        "bad_debt_reserve_ratio": {
+          "formula": "bad_debt_allowance / (receivables + bad_debt_allowance)",
+          "inputs": {
+            "bad_debt_allowance": {
+              "accession": "0001628280-25-051024",
+              "filed": "2025-11-10",
+              "id": "0001628280-25-051024:facts:AllowanceForDoubtfulAccountsReceivableCurrent:2025-09-30",
+              "period": "2025-09-30",
+              "tag": "AllowanceForDoubtfulAccountsReceivableCurrent",
+              "unit": "USD",
+              "value": 9490000.0
+            },
+            "receivables": {
+              "accession": "0001628280-25-051024",
+              "filed": "2025-11-10",
+              "id": "0001628280-25-051024:facts:AccountsReceivableNetCurrent:2025-09-30",
+              "period": "2025-09-30",
+              "tag": "AccountsReceivableNetCurrent",
+              "unit": "USD",
+              "value": 85032000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:bad_debt_reserve_ratio:2025-07-01..2025-09-30",
+          "position_in_history": "highest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-4",
+            "change": 0.006571016454135256
+          },
+          "value": 0.10039990689998096,
+          "year_over_year": {
+            "against": "quarters-back-7",
+            "change": 0.024537346306881452
+          }
+        },
+        "contract_liabilities_over_revenue": {
+          "formula": "contract_liabilities / revenue",
+          "inputs": {
+            "contract_liabilities": {
+              "accession": "0001628280-25-051024",
+              "filed": "2025-11-10",
+              "id": "0001628280-25-051024:facts:ContractWithCustomerLiabilityCurrent:2025-09-30",
+              "period": "2025-09-30",
+              "tag": "ContractWithCustomerLiabilityCurrent",
+              "unit": "USD",
+              "value": 17199000.0
+            },
+            "revenue": {
+              "accession": "0001628280-25-051024",
+              "filed": "2025-11-10",
+              "id": "0001628280-25-051024:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-07-01..2025-09-30",
+              "period": "2025-07-01..2025-09-30",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 111679000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:contract_liabilities_over_revenue:2025-07-01..2025-09-30",
+          "position_in_history": "third lowest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-4",
+            "change": -0.01038178053832195
+          },
+          "value": 0.15400388613794894,
+          "year_over_year": {
+            "against": "quarters-back-7",
+            "change": 0.01836027035981916
+          }
+        },
+        "days_sales_of_inventory": {
+          "formula": "inventory / cost_of_revenue * days_in_period",
+          "inputs": {
+            "cost_of_revenue": {
+              "accession": "0001628280-25-051024",
+              "filed": "2025-11-10",
+              "id": "0001628280-25-051024:facts:CostOfGoodsAndServicesSold:2025-07-01..2025-09-30",
+              "period": "2025-07-01..2025-09-30",
+              "tag": "CostOfGoodsAndServicesSold",
+              "unit": "USD",
+              "value": 49090000.0
+            },
+            "inventory": {
+              "accession": "0001628280-25-051024",
+              "filed": "2025-11-10",
+              "id": "0001628280-25-051024:facts:InventoryNet:2025-09-30",
+              "period": "2025-09-30",
+              "tag": "InventoryNet",
+              "unit": "USD",
+              "value": 22466000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:days_sales_of_inventory:2025-07-01..2025-09-30",
+          "position_in_history": "third lowest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-4",
+            "change": -3.533803639334117
+          },
+          "value": 42.10372784681198,
+          "year_over_year": {
+            "against": "quarters-back-7",
+            "change": -18.467989041765456
+          }
+        },
+        "days_sales_outstanding": {
+          "formula": "receivables / revenue * days_in_period",
+          "inputs": {
+            "receivables": {
+              "accession": "0001628280-25-051024",
+              "filed": "2025-11-10",
+              "id": "0001628280-25-051024:facts:AccountsReceivableNetCurrent:2025-09-30",
+              "period": "2025-09-30",
+              "tag": "AccountsReceivableNetCurrent",
+              "unit": "USD",
+              "value": 85032000.0
+            },
+            "revenue": {
+              "accession": "0001628280-25-051024",
+              "filed": "2025-11-10",
+              "id": "0001628280-25-051024:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-07-01..2025-09-30",
+              "period": "2025-07-01..2025-09-30",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 111679000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:days_sales_outstanding:2025-07-01..2025-09-30",
+          "position_in_history": "lowest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-4",
+            "change": -1.1654171439531353
+          },
+          "value": 70.04847822777784,
+          "year_over_year": {
+            "against": "quarters-back-7",
+            "change": -7.379499647524042
+          }
+        },
+        "gross_margin": {
+          "formula": "(revenue - cost_of_revenue) / revenue",
+          "inputs": {
+            "cost_of_revenue": {
+              "accession": "0001628280-25-051024",
+              "filed": "2025-11-10",
+              "id": "0001628280-25-051024:facts:CostOfGoodsAndServicesSold:2025-07-01..2025-09-30",
+              "period": "2025-07-01..2025-09-30",
+              "tag": "CostOfGoodsAndServicesSold",
+              "unit": "USD",
+              "value": 49090000.0
+            },
+            "revenue": {
+              "accession": "0001628280-25-051024",
+              "filed": "2025-11-10",
+              "id": "0001628280-25-051024:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-07-01..2025-09-30",
+              "period": "2025-07-01..2025-09-30",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 111679000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:gross_margin:2025-07-01..2025-09-30",
+          "position_in_history": "highest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-4",
+            "change": 0.01798119604116788
+          },
+          "value": 0.5604366084939872,
+          "year_over_year": {
+            "against": "quarters-back-7",
+            "change": 0.023640015489754473
+          }
+        },
+        "inventory_reserve_ratio": {
+          "missing": "no row for inventory_reserve in 2025-09-30: us-gaap:InventoryValuationReserves is in the record, but not for this period",
+          "paragraph_id": "0001628280-26-055222:trends:inventory_reserve_ratio:2025-07-01..2025-09-30",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "inventory_reserve_ratio is not filled in quarters-back-3"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "inventory_reserve_ratio is not filled in quarters-back-3"
+          }
+        },
+        "non_gaap_gap": {
+          "missing": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only",
+          "paragraph_id": "0001628280-26-055222:trends:non_gaap_gap:2025-07-01..2025-09-30",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "non_gaap_gap is not filled in quarters-back-3"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "non_gaap_gap is not filled in quarters-back-3"
+          }
+        },
+        "receivables_over_revenue": {
+          "formula": "receivables / revenue",
+          "inputs": {
+            "receivables": {
+              "accession": "0001628280-25-051024",
+              "filed": "2025-11-10",
+              "id": "0001628280-25-051024:facts:AccountsReceivableNetCurrent:2025-09-30",
+              "period": "2025-09-30",
+              "tag": "AccountsReceivableNetCurrent",
+              "unit": "USD",
+              "value": 85032000.0
+            },
+            "revenue": {
+              "accession": "0001628280-25-051024",
+              "filed": "2025-11-10",
+              "id": "0001628280-25-051024:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-07-01..2025-09-30",
+              "period": "2025-07-01..2025-09-30",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 111679000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:receivables_over_revenue:2025-07-01..2025-09-30",
+          "position_in_history": "lowest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-4",
+            "change": -0.021173776334384442
+          },
+          "value": 0.761396502475846,
+          "year_over_year": {
+            "against": "quarters-back-7",
+            "change": -0.08021195269047876
+          }
+        },
+        "soft_asset_share": {
+          "formula": "(assets - property_plant_and_equipment - cash) / assets",
+          "inputs": {
+            "assets": {
+              "accession": "0001628280-25-051024",
+              "filed": "2025-11-10",
+              "id": "0001628280-25-051024:facts:Assets:2025-09-30",
+              "period": "2025-09-30",
+              "tag": "Assets",
+              "unit": "USD",
+              "value": 936893000.0
+            },
+            "cash": {
+              "accession": "0001628280-25-051024",
+              "filed": "2025-11-10",
+              "id": "0001628280-25-051024:facts:CashAndCashEquivalentsAtCarryingValue:2025-09-30",
+              "period": "2025-09-30",
+              "tag": "CashAndCashEquivalentsAtCarryingValue",
+              "unit": "USD",
+              "value": 27898000.0
+            },
+            "property_plant_and_equipment": {
+              "accession": "0001628280-25-051024",
+              "filed": "2025-11-10",
+              "id": "0001628280-25-051024:facts:PropertyPlantAndEquipmentNet:2025-09-30",
+              "period": "2025-09-30",
+              "tag": "PropertyPlantAndEquipmentNet",
+              "unit": "USD",
+              "value": 63277000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:soft_asset_share:2025-07-01..2025-09-30",
+          "position_in_history": "highest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-4",
+            "change": 0.0035751660093725768
+          },
+          "value": 0.9026836575788271,
+          "year_over_year": {
+            "against": "quarters-back-7",
+            "change": 0.006768058281720779
+          }
+        },
+        "warranty_reserve_ratio": {
+          "formula": "warranty_accrual / revenue",
+          "inputs": {
+            "revenue": {
+              "accession": "0001628280-25-051024",
+              "filed": "2025-11-10",
+              "id": "0001628280-25-051024:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-07-01..2025-09-30",
+              "period": "2025-07-01..2025-09-30",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 111679000.0
+            },
+            "warranty_accrual": {
+              "accession": "0001628280-25-051024",
+              "filed": "2025-11-10",
+              "id": "0001628280-25-051024:facts:ProductWarrantyAccrual:2025-09-30",
+              "period": "2025-09-30",
+              "tag": "ProductWarrantyAccrual",
+              "unit": "USD",
+              "value": 2518000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:warranty_reserve_ratio:2025-07-01..2025-09-30",
+          "position_in_history": "third lowest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-4",
+            "change": -0.011135202682177228
+          },
+          "value": 0.022546763491793444,
+          "year_over_year": {
+            "against": "quarters-back-7",
+            "change": -0.021209241597925844
+          }
+        }
+      },
+      "start": "2025-07-01",
+      "target_end": "2025-09-30"
+    },
+    {
+      "days": 91,
+      "end": "2025-06-30",
+      "filled": true,
+      "label": "quarters-back-4",
+      "ratios": {
+        "accruals_over_total_assets": {
+          "formula": "(net_income - operating_cash_flow) / assets",
+          "inputs": {
+            "assets": {
+              "accession": "0001628280-25-039575",
+              "filed": "2025-08-11",
+              "id": "0001628280-25-039575:facts:Assets:2025-06-30",
+              "period": "2025-06-30",
+              "tag": "Assets",
+              "unit": "USD",
+              "value": 930782000.0
+            },
+            "net_income": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:NetIncomeLoss:2025-04-01..2025-06-30",
+              "period": "2025-04-01..2025-06-30",
+              "tag": "NetIncomeLoss",
+              "unit": "USD",
+              "value": -10234000.0
+            },
+            "operating_cash_flow": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:NetCashProvidedByUsedInOperatingActivities:2025-04-01..2025-06-30",
+              "period": "2025-04-01..2025-06-30",
+              "tag": "NetCashProvidedByUsedInOperatingActivities",
+              "unit": "USD",
+              "value": 4721000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:accruals_over_total_assets:2025-04-01..2025-06-30",
+          "position_in_history": "highest of the 2 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-5",
+            "reason": "accruals_over_total_assets is not filled in quarters-back-5"
+          },
+          "value": -0.016067134946743705,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        },
+        "bad_debt_reserve_ratio": {
+          "formula": "bad_debt_allowance / (receivables + bad_debt_allowance)",
+          "inputs": {
+            "bad_debt_allowance": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:AllowanceForDoubtfulAccountsReceivableCurrent:2025-06-30",
+              "period": "2025-06-30",
+              "tag": "AllowanceForDoubtfulAccountsReceivableCurrent",
+              "unit": "USD",
+              "value": 8437000.0
+            },
+            "receivables": {
+              "accession": "0001628280-25-039575",
+              "filed": "2025-08-11",
+              "id": "0001628280-25-039575:facts:AccountsReceivableNetCurrent:2025-06-30",
+              "period": "2025-06-30",
+              "tag": "AccountsReceivableNetCurrent",
+              "unit": "USD",
+              "value": 81482000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:bad_debt_reserve_ratio:2025-04-01..2025-06-30",
+          "position_in_history": "third highest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-5",
+            "reason": "bad_debt_reserve_ratio is not filled in quarters-back-5"
+          },
+          "value": 0.0938288904458457,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        },
+        "contract_liabilities_over_revenue": {
+          "formula": "contract_liabilities / revenue",
+          "inputs": {
+            "contract_liabilities": {
+              "accession": "0001628280-25-039575",
+              "filed": "2025-08-11",
+              "id": "0001628280-25-039575:facts:ContractWithCustomerLiabilityCurrent:2025-06-30",
+              "period": "2025-06-30",
+              "tag": "ContractWithCustomerLiabilityCurrent",
+              "unit": "USD",
+              "value": 17116000.0
+            },
+            "revenue": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-04-01..2025-06-30",
+              "period": "2025-04-01..2025-06-30",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 104121000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:contract_liabilities_over_revenue:2025-04-01..2025-06-30",
+          "position_in_history": "third highest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-5",
+            "reason": "contract_liabilities_over_revenue is not filled in quarters-back-5"
+          },
+          "value": 0.1643856666762709,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        },
+        "days_sales_of_inventory": {
+          "formula": "inventory / cost_of_revenue * days_in_period",
+          "inputs": {
+            "cost_of_revenue": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:CostOfGoodsAndServicesSold:2025-04-01..2025-06-30",
+              "period": "2025-04-01..2025-06-30",
+              "tag": "CostOfGoodsAndServicesSold",
+              "unit": "USD",
+              "value": 47640000.0
+            },
+            "inventory": {
+              "accession": "0001628280-25-039575",
+              "filed": "2025-08-11",
+              "id": "0001628280-25-039575:facts:InventoryNet:2025-06-30",
+              "period": "2025-06-30",
+              "tag": "InventoryNet",
+              "unit": "USD",
+              "value": 23892000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:days_sales_of_inventory:2025-04-01..2025-06-30",
+          "position_in_history": "third highest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-5",
+            "reason": "days_sales_of_inventory is not filled in quarters-back-5"
+          },
+          "value": 45.637531486146095,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        },
+        "days_sales_outstanding": {
+          "formula": "receivables / revenue * days_in_period",
+          "inputs": {
+            "receivables": {
+              "accession": "0001628280-25-039575",
+              "filed": "2025-08-11",
+              "id": "0001628280-25-039575:facts:AccountsReceivableNetCurrent:2025-06-30",
+              "period": "2025-06-30",
+              "tag": "AccountsReceivableNetCurrent",
+              "unit": "USD",
+              "value": 81482000.0
+            },
+            "revenue": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-04-01..2025-06-30",
+              "period": "2025-04-01..2025-06-30",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 104121000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:days_sales_outstanding:2025-04-01..2025-06-30",
+          "position_in_history": "third lowest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-5",
+            "reason": "days_sales_outstanding is not filled in quarters-back-5"
+          },
+          "value": 71.21389537173097,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        },
+        "gross_margin": {
+          "formula": "(revenue - cost_of_revenue) / revenue",
+          "inputs": {
+            "cost_of_revenue": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:CostOfGoodsAndServicesSold:2025-04-01..2025-06-30",
+              "period": "2025-04-01..2025-06-30",
+              "tag": "CostOfGoodsAndServicesSold",
+              "unit": "USD",
+              "value": 47640000.0
+            },
+            "revenue": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-04-01..2025-06-30",
+              "period": "2025-04-01..2025-06-30",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 104121000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:gross_margin:2025-04-01..2025-06-30",
+          "position_in_history": "second lowest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-5",
+            "reason": "gross_margin is not filled in quarters-back-5"
+          },
+          "value": 0.5424554124528194,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        },
+        "inventory_reserve_ratio": {
+          "missing": "no row for inventory_reserve in 2025-06-30: us-gaap:InventoryValuationReserves is in the record, but not for this period",
+          "paragraph_id": "0001628280-26-055222:trends:inventory_reserve_ratio:2025-04-01..2025-06-30",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "inventory_reserve_ratio is not filled in quarters-back-4"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "inventory_reserve_ratio is not filled in quarters-back-4"
+          }
+        },
+        "non_gaap_gap": {
+          "missing": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only",
+          "paragraph_id": "0001628280-26-055222:trends:non_gaap_gap:2025-04-01..2025-06-30",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "non_gaap_gap is not filled in quarters-back-4"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "non_gaap_gap is not filled in quarters-back-4"
+          }
+        },
+        "receivables_over_revenue": {
+          "formula": "receivables / revenue",
+          "inputs": {
+            "receivables": {
+              "accession": "0001628280-25-039575",
+              "filed": "2025-08-11",
+              "id": "0001628280-25-039575:facts:AccountsReceivableNetCurrent:2025-06-30",
+              "period": "2025-06-30",
+              "tag": "AccountsReceivableNetCurrent",
+              "unit": "USD",
+              "value": 81482000.0
+            },
+            "revenue": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-04-01..2025-06-30",
+              "period": "2025-04-01..2025-06-30",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 104121000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:receivables_over_revenue:2025-04-01..2025-06-30",
+          "position_in_history": "third lowest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-5",
+            "reason": "receivables_over_revenue is not filled in quarters-back-5"
+          },
+          "value": 0.7825702788102304,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        },
+        "soft_asset_share": {
+          "formula": "(assets - property_plant_and_equipment - cash) / assets",
+          "inputs": {
+            "assets": {
+              "accession": "0001628280-25-039575",
+              "filed": "2025-08-11",
+              "id": "0001628280-25-039575:facts:Assets:2025-06-30",
+              "period": "2025-06-30",
+              "tag": "Assets",
+              "unit": "USD",
+              "value": 930782000.0
+            },
+            "cash": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:CashAndCashEquivalentsAtCarryingValue:2025-06-30",
+              "period": "2025-06-30",
+              "tag": "CashAndCashEquivalentsAtCarryingValue",
+              "unit": "USD",
+              "value": 31196000.0
+            },
+            "property_plant_and_equipment": {
+              "accession": "0001628280-25-039575",
+              "filed": "2025-08-11",
+              "id": "0001628280-25-039575:facts:PropertyPlantAndEquipmentNet:2025-06-30",
+              "period": "2025-06-30",
+              "tag": "PropertyPlantAndEquipmentNet",
+              "unit": "USD",
+              "value": 62712000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:soft_asset_share:2025-04-01..2025-06-30",
+          "position_in_history": "second lowest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-5",
+            "reason": "soft_asset_share is not filled in quarters-back-5"
+          },
+          "value": 0.8991084915694545,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        },
+        "warranty_reserve_ratio": {
+          "formula": "warranty_accrual / revenue",
+          "inputs": {
+            "revenue": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-04-01..2025-06-30",
+              "period": "2025-04-01..2025-06-30",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 104121000.0
+            },
+            "warranty_accrual": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:ProductWarrantyAccrual:2025-06-30",
+              "period": "2025-06-30",
+              "tag": "ProductWarrantyAccrual",
+              "unit": "USD",
+              "value": 3507000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:warranty_reserve_ratio:2025-04-01..2025-06-30",
+          "position_in_history": "third highest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-5",
+            "reason": "warranty_reserve_ratio is not filled in quarters-back-5"
+          },
+          "value": 0.03368196617397067,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        }
+      },
+      "start": "2025-04-01",
+      "target_end": "2025-07-01"
+    },
+    {
+      "filled": false,
+      "label": "quarters-back-5",
+      "ratios": {},
+      "reason": "no quarter ending within 20 days of 2025-04-01 is in the companyfacts record; the commonest cause is a fiscal fourth quarter, which no filing reports as a duration \u2014 the 10-K states the year and the three 10-Qs state the first three quarters, so it is derived by src/fourth_quarter.py",
+      "target_end": "2025-04-01"
+    },
+    {
+      "days": 92,
+      "end": "2024-12-31",
+      "filled": true,
+      "label": "quarters-back-6",
+      "ratios": {
+        "accruals_over_total_assets": {
+          "missing": "no row for operating_cash_flow in 2024-10-01..2024-12-31: us-gaap:NetCashProvidedByUsedInOperatingActivities, us-gaap:NetCashProvidedByUsedInOperatingActivitiesContinuingOperations is in the record, but not for this period",
+          "paragraph_id": "0001628280-26-055222:trends:accruals_over_total_assets:2024-10-01..2024-12-31",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "accruals_over_total_assets is not filled in quarters-back-6"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "accruals_over_total_assets is not filled in quarters-back-6"
+          }
+        },
+        "bad_debt_reserve_ratio": {
+          "formula": "bad_debt_allowance / (receivables + bad_debt_allowance)",
+          "inputs": {
+            "bad_debt_allowance": {
+              "accession": "0001628280-26-006487",
+              "filed": "2026-02-09",
+              "id": "0001628280-26-006487:facts:AllowanceForDoubtfulAccountsReceivableCurrent:2024-12-31",
+              "period": "2024-12-31",
+              "tag": "AllowanceForDoubtfulAccountsReceivableCurrent",
+              "unit": "USD",
+              "value": 5483000.0
+            },
+            "receivables": {
+              "accession": "0001628280-25-004642",
+              "filed": "2025-02-10",
+              "id": "0001628280-25-004642:facts:AccountsReceivableNetCurrent:2024-12-31",
+              "period": "2024-12-31",
+              "tag": "AccountsReceivableNetCurrent",
+              "unit": "USD",
+              "value": 82167000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:bad_debt_reserve_ratio:2024-10-01..2024-12-31",
+          "position_in_history": "lowest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-7",
+            "change": -0.013306941654137733
+          },
+          "value": 0.06255561893896178,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        },
+        "contract_liabilities_over_revenue": {
+          "formula": "contract_liabilities / revenue",
+          "inputs": {
+            "contract_liabilities": {
+              "accession": "0001628280-25-004642",
+              "filed": "2025-02-10",
+              "id": "0001628280-25-004642:facts:ContractWithCustomerLiabilityCurrent:2024-12-31",
+              "period": "2024-12-31",
+              "tag": "ContractWithCustomerLiabilityCurrent",
+              "unit": "USD",
+              "value": 17912000.0
+            },
+            "revenue": {
+              "accession": "0001628280-26-006487",
+              "filed": "2026-02-09",
+              "id": "0001628280-26-006487:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2024-10-01..2024-12-31",
+              "period": "2024-10-01..2024-12-31",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 106429000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:contract_liabilities_over_revenue:2024-10-01..2024-12-31",
+          "position_in_history": "second highest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-7",
+            "change": 0.03265637764471549
+          },
+          "value": 0.16829999342284527,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        },
+        "days_sales_of_inventory": {
+          "formula": "inventory / cost_of_revenue * days_in_period",
+          "inputs": {
+            "cost_of_revenue": {
+              "accession": "0001628280-26-006487",
+              "filed": "2026-02-09",
+              "id": "0001628280-26-006487:facts:CostOfGoodsAndServicesSold:2024-10-01..2024-12-31",
+              "period": "2024-10-01..2024-12-31",
+              "tag": "CostOfGoodsAndServicesSold",
+              "unit": "USD",
+              "value": 47646000.0
+            },
+            "inventory": {
+              "accession": "0001628280-25-004642",
+              "filed": "2025-02-10",
+              "id": "0001628280-25-004642:facts:InventoryNet:2024-12-31",
+              "period": "2024-12-31",
+              "tag": "InventoryNet",
+              "unit": "USD",
+              "value": 27985000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:days_sales_of_inventory:2024-10-01..2024-12-31",
+          "position_in_history": "second highest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-7",
+            "change": -6.535281511001138
+          },
+          "value": 54.036435377576296,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        },
+        "days_sales_outstanding": {
+          "formula": "receivables / revenue * days_in_period",
+          "inputs": {
+            "receivables": {
+              "accession": "0001628280-25-004642",
+              "filed": "2025-02-10",
+              "id": "0001628280-25-004642:facts:AccountsReceivableNetCurrent:2024-12-31",
+              "period": "2024-12-31",
+              "tag": "AccountsReceivableNetCurrent",
+              "unit": "USD",
+              "value": 82167000.0
+            },
+            "revenue": {
+              "accession": "0001628280-26-006487",
+              "filed": "2026-02-09",
+              "id": "0001628280-26-006487:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2024-10-01..2024-12-31",
+              "period": "2024-10-01..2024-12-31",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 106429000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:days_sales_outstanding:2024-10-01..2024-12-31",
+          "position_in_history": "second lowest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-7",
+            "change": -6.400682683201978
+          },
+          "value": 71.0272951920999,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        },
+        "gross_margin": {
+          "formula": "(revenue - cost_of_revenue) / revenue",
+          "inputs": {
+            "cost_of_revenue": {
+              "accession": "0001628280-26-006487",
+              "filed": "2026-02-09",
+              "id": "0001628280-26-006487:facts:CostOfGoodsAndServicesSold:2024-10-01..2024-12-31",
+              "period": "2024-10-01..2024-12-31",
+              "tag": "CostOfGoodsAndServicesSold",
+              "unit": "USD",
+              "value": 47646000.0
+            },
+            "revenue": {
+              "accession": "0001628280-26-006487",
+              "filed": "2026-02-09",
+              "id": "0001628280-26-006487:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2024-10-01..2024-12-31",
+              "period": "2024-10-01..2024-12-31",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 106429000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:gross_margin:2024-10-01..2024-12-31",
+          "position_in_history": "third highest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-7",
+            "change": 0.015524672816173313
+          },
+          "value": 0.5523212658204061,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        },
+        "inventory_reserve_ratio": {
+          "formula": "inventory_reserve / inventory",
+          "inputs": {
+            "inventory": {
+              "accession": "0001628280-25-004642",
+              "filed": "2025-02-10",
+              "id": "0001628280-25-004642:facts:InventoryNet:2024-12-31",
+              "period": "2024-12-31",
+              "tag": "InventoryNet",
+              "unit": "USD",
+              "value": 27985000.0
+            },
+            "inventory_reserve": {
+              "accession": "0001628280-25-004642",
+              "filed": "2025-02-10",
+              "id": "0001628280-25-004642:facts:InventoryValuationReserves:2024-12-31",
+              "period": "2024-12-31",
+              "tag": "InventoryValuationReserves",
+              "unit": "USD",
+              "value": 758000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:inventory_reserve_ratio:2024-10-01..2024-12-31",
+          "position_in_history": "lowest of the 2 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-7",
+            "change": -0.029538720504707905
+          },
+          "value": 0.027085938895837054,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        },
+        "non_gaap_gap": {
+          "missing": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only",
+          "paragraph_id": "0001628280-26-055222:trends:non_gaap_gap:2024-10-01..2024-12-31",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "non_gaap_gap is not filled in quarters-back-6"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "non_gaap_gap is not filled in quarters-back-6"
+          }
+        },
+        "receivables_over_revenue": {
+          "formula": "receivables / revenue",
+          "inputs": {
+            "receivables": {
+              "accession": "0001628280-25-004642",
+              "filed": "2025-02-10",
+              "id": "0001628280-25-004642:facts:AccountsReceivableNetCurrent:2024-12-31",
+              "period": "2024-12-31",
+              "tag": "AccountsReceivableNetCurrent",
+              "unit": "USD",
+              "value": 82167000.0
+            },
+            "revenue": {
+              "accession": "0001628280-26-006487",
+              "filed": "2026-02-09",
+              "id": "0001628280-26-006487:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2024-10-01..2024-12-31",
+              "period": "2024-10-01..2024-12-31",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 106429000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:receivables_over_revenue:2024-10-01..2024-12-31",
+          "position_in_history": "second lowest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-7",
+            "change": -0.06957263786089107
+          },
+          "value": 0.7720358173054337,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        },
+        "soft_asset_share": {
+          "formula": "(assets - property_plant_and_equipment - cash) / assets",
+          "inputs": {
+            "assets": {
+              "accession": "0001628280-25-004642",
+              "filed": "2025-02-10",
+              "id": "0001628280-25-004642:facts:Assets:2024-12-31",
+              "period": "2024-12-31",
+              "tag": "Assets",
+              "unit": "USD",
+              "value": 908669000.0
+            },
+            "cash": {
+              "accession": "0001628280-26-006487",
+              "filed": "2026-02-09",
+              "id": "0001628280-26-006487:facts:CashAndCashEquivalentsAtCarryingValue:2024-12-31",
+              "period": "2024-12-31",
+              "tag": "CashAndCashEquivalentsAtCarryingValue",
+              "unit": "USD",
+              "value": 33634000.0
+            },
+            "property_plant_and_equipment": {
+              "accession": "0001628280-25-004642",
+              "filed": "2025-02-10",
+              "id": "0001628280-25-004642:facts:PropertyPlantAndEquipmentNet:2024-12-31",
+              "period": "2024-12-31",
+              "tag": "PropertyPlantAndEquipmentNet",
+              "unit": "USD",
+              "value": 55257000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:soft_asset_share:2024-10-01..2024-12-31",
+          "position_in_history": "second highest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-7",
+            "change": 0.006258899887965463
+          },
+          "value": 0.9021744991850718,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        },
+        "warranty_reserve_ratio": {
+          "formula": "warranty_accrual / revenue",
+          "inputs": {
+            "revenue": {
+              "accession": "0001628280-26-006487",
+              "filed": "2026-02-09",
+              "id": "0001628280-26-006487:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2024-10-01..2024-12-31",
+              "period": "2024-10-01..2024-12-31",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 106429000.0
+            },
+            "warranty_accrual": {
+              "accession": "0001628280-26-006487",
+              "filed": "2026-02-09",
+              "id": "0001628280-26-006487:facts:ProductWarrantyAccrual:2024-12-31",
+              "period": "2024-12-31",
+              "tag": "ProductWarrantyAccrual",
+              "unit": "USD",
+              "value": 3635000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:warranty_reserve_ratio:2024-10-01..2024-12-31",
+          "position_in_history": "second highest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": "quarters-back-7",
+            "change": -0.009601780207403376
+          },
+          "value": 0.03415422488231591,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        }
+      },
+      "start": "2024-10-01",
+      "target_end": "2024-12-31"
+    },
+    {
+      "days": 92,
+      "end": "2024-09-30",
+      "filled": true,
+      "label": "quarters-back-7",
+      "ratios": {
+        "accruals_over_total_assets": {
+          "missing": "no row for operating_cash_flow in 2024-07-01..2024-09-30: us-gaap:NetCashProvidedByUsedInOperatingActivities, us-gaap:NetCashProvidedByUsedInOperatingActivitiesContinuingOperations is in the record, but not for this period",
+          "paragraph_id": "0001628280-26-055222:trends:accruals_over_total_assets:2024-07-01..2024-09-30",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "accruals_over_total_assets is not filled in quarters-back-7"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "accruals_over_total_assets is not filled in quarters-back-7"
+          }
+        },
+        "bad_debt_reserve_ratio": {
+          "formula": "bad_debt_allowance / (receivables + bad_debt_allowance)",
+          "inputs": {
+            "bad_debt_allowance": {
+              "accession": "0001628280-25-051024",
+              "filed": "2025-11-10",
+              "id": "0001628280-25-051024:facts:AllowanceForDoubtfulAccountsReceivableCurrent:2024-09-30",
+              "period": "2024-09-30",
+              "tag": "AllowanceForDoubtfulAccountsReceivableCurrent",
+              "unit": "USD",
+              "value": 5321000.0
+            },
+            "receivables": {
+              "accession": "0001628280-24-047133",
+              "filed": "2024-11-12",
+              "id": "0001628280-24-047133:facts:AccountsReceivableNetCurrent:2024-09-30",
+              "period": "2024-09-30",
+              "tag": "AccountsReceivableNetCurrent",
+              "unit": "USD",
+              "value": 64819000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:bad_debt_reserve_ratio:2024-07-01..2024-09-30",
+          "position_in_history": "second lowest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "the quarter 1 back is outside the requested window"
+          },
+          "value": 0.07586256059309951,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        },
+        "contract_liabilities_over_revenue": {
+          "formula": "contract_liabilities / revenue",
+          "inputs": {
+            "contract_liabilities": {
+              "accession": "0001628280-24-047133",
+              "filed": "2024-11-12",
+              "id": "0001628280-24-047133:facts:ContractWithCustomerLiabilityCurrent:2024-09-30",
+              "period": "2024-09-30",
+              "tag": "ContractWithCustomerLiabilityCurrent",
+              "unit": "USD",
+              "value": 10447000.0
+            },
+            "revenue": {
+              "accession": "0001628280-25-051024",
+              "filed": "2025-11-10",
+              "id": "0001628280-25-051024:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2024-07-01..2024-09-30",
+              "period": "2024-07-01..2024-09-30",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 77018000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:contract_liabilities_over_revenue:2024-07-01..2024-09-30",
+          "position_in_history": "lowest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "the quarter 1 back is outside the requested window"
+          },
+          "value": 0.13564361577812978,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        },
+        "days_sales_of_inventory": {
+          "formula": "inventory / cost_of_revenue * days_in_period",
+          "inputs": {
+            "cost_of_revenue": {
+              "accession": "0001628280-25-051024",
+              "filed": "2025-11-10",
+              "id": "0001628280-25-051024:facts:CostOfGoodsAndServicesSold:2024-07-01..2024-09-30",
+              "period": "2024-07-01..2024-09-30",
+              "tag": "CostOfGoodsAndServicesSold",
+              "unit": "USD",
+              "value": 35675000.0
+            },
+            "inventory": {
+              "accession": "0001628280-24-047133",
+              "filed": "2024-11-12",
+              "id": "0001628280-24-047133:facts:InventoryNet:2024-09-30",
+              "period": "2024-09-30",
+              "tag": "InventoryNet",
+              "unit": "USD",
+              "value": 23488000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:days_sales_of_inventory:2024-07-01..2024-09-30",
+          "position_in_history": "highest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "the quarter 1 back is outside the requested window"
+          },
+          "value": 60.571716888577434,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        },
+        "days_sales_outstanding": {
+          "formula": "receivables / revenue * days_in_period",
+          "inputs": {
+            "receivables": {
+              "accession": "0001628280-24-047133",
+              "filed": "2024-11-12",
+              "id": "0001628280-24-047133:facts:AccountsReceivableNetCurrent:2024-09-30",
+              "period": "2024-09-30",
+              "tag": "AccountsReceivableNetCurrent",
+              "unit": "USD",
+              "value": 64819000.0
+            },
+            "revenue": {
+              "accession": "0001628280-25-051024",
+              "filed": "2025-11-10",
+              "id": "0001628280-25-051024:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2024-07-01..2024-09-30",
+              "period": "2024-07-01..2024-09-30",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 77018000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:days_sales_outstanding:2024-07-01..2024-09-30",
+          "position_in_history": "highest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "the quarter 1 back is outside the requested window"
+          },
+          "value": 77.42797787530188,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        },
+        "gross_margin": {
+          "formula": "(revenue - cost_of_revenue) / revenue",
+          "inputs": {
+            "cost_of_revenue": {
+              "accession": "0001628280-25-051024",
+              "filed": "2025-11-10",
+              "id": "0001628280-25-051024:facts:CostOfGoodsAndServicesSold:2024-07-01..2024-09-30",
+              "period": "2024-07-01..2024-09-30",
+              "tag": "CostOfGoodsAndServicesSold",
+              "unit": "USD",
+              "value": 35675000.0
+            },
+            "revenue": {
+              "accession": "0001628280-25-051024",
+              "filed": "2025-11-10",
+              "id": "0001628280-25-051024:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2024-07-01..2024-09-30",
+              "period": "2024-07-01..2024-09-30",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 77018000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:gross_margin:2024-07-01..2024-09-30",
+          "position_in_history": "lowest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "the quarter 1 back is outside the requested window"
+          },
+          "value": 0.5367965930042328,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        },
+        "inventory_reserve_ratio": {
+          "formula": "inventory_reserve / inventory",
+          "inputs": {
+            "inventory": {
+              "accession": "0001628280-24-047133",
+              "filed": "2024-11-12",
+              "id": "0001628280-24-047133:facts:InventoryNet:2024-09-30",
+              "period": "2024-09-30",
+              "tag": "InventoryNet",
+              "unit": "USD",
+              "value": 23488000.0
+            },
+            "inventory_reserve": {
+              "accession": "0001628280-24-047133",
+              "filed": "2024-11-12",
+              "id": "0001628280-24-047133:facts:InventoryValuationReserves:2024-09-30",
+              "period": "2024-09-30",
+              "tag": "InventoryValuationReserves",
+              "unit": "USD",
+              "value": 1330000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:inventory_reserve_ratio:2024-07-01..2024-09-30",
+          "position_in_history": "highest of the 2 filled quarters",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "the quarter 1 back is outside the requested window"
+          },
+          "value": 0.05662465940054496,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        },
+        "non_gaap_gap": {
+          "missing": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only",
+          "paragraph_id": "0001628280-26-055222:trends:non_gaap_gap:2024-07-01..2024-09-30",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "non_gaap_gap is not filled in quarters-back-7"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "non_gaap_gap is not filled in quarters-back-7"
+          }
+        },
+        "receivables_over_revenue": {
+          "formula": "receivables / revenue",
+          "inputs": {
+            "receivables": {
+              "accession": "0001628280-24-047133",
+              "filed": "2024-11-12",
+              "id": "0001628280-24-047133:facts:AccountsReceivableNetCurrent:2024-09-30",
+              "period": "2024-09-30",
+              "tag": "AccountsReceivableNetCurrent",
+              "unit": "USD",
+              "value": 64819000.0
+            },
+            "revenue": {
+              "accession": "0001628280-25-051024",
+              "filed": "2025-11-10",
+              "id": "0001628280-25-051024:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2024-07-01..2024-09-30",
+              "period": "2024-07-01..2024-09-30",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 77018000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:receivables_over_revenue:2024-07-01..2024-09-30",
+          "position_in_history": "highest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "the quarter 1 back is outside the requested window"
+          },
+          "value": 0.8416084551663248,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        },
+        "soft_asset_share": {
+          "formula": "(assets - property_plant_and_equipment - cash) / assets",
+          "inputs": {
+            "assets": {
+              "accession": "0001628280-24-047133",
+              "filed": "2024-11-12",
+              "id": "0001628280-24-047133:facts:Assets:2024-09-30",
+              "period": "2024-09-30",
+              "tag": "Assets",
+              "unit": "USD",
+              "value": 748335000.0
+            },
+            "cash": {
+              "accession": "0001628280-25-051024",
+              "filed": "2025-11-10",
+              "id": "0001628280-25-051024:facts:CashAndCashEquivalentsAtCarryingValue:2024-09-30",
+              "period": "2024-09-30",
+              "tag": "CashAndCashEquivalentsAtCarryingValue",
+              "unit": "USD",
+              "value": 25962000.0
+            },
+            "property_plant_and_equipment": {
+              "accession": "0001628280-24-047133",
+              "filed": "2024-11-12",
+              "id": "0001628280-24-047133:facts:PropertyPlantAndEquipmentNet:2024-09-30",
+              "period": "2024-09-30",
+              "tag": "PropertyPlantAndEquipmentNet",
+              "unit": "USD",
+              "value": 51928000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:soft_asset_share:2024-07-01..2024-09-30",
+          "position_in_history": "lowest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "the quarter 1 back is outside the requested window"
+          },
+          "value": 0.8959155992971063,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        },
+        "warranty_reserve_ratio": {
+          "formula": "warranty_accrual / revenue",
+          "inputs": {
+            "revenue": {
+              "accession": "0001628280-25-051024",
+              "filed": "2025-11-10",
+              "id": "0001628280-25-051024:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2024-07-01..2024-09-30",
+              "period": "2024-07-01..2024-09-30",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 77018000.0
+            },
+            "warranty_accrual": {
+              "accession": "0001628280-25-051024",
+              "filed": "2025-11-10",
+              "id": "0001628280-25-051024:facts:ProductWarrantyAccrual:2024-09-30",
+              "period": "2024-09-30",
+              "tag": "ProductWarrantyAccrual",
+              "unit": "USD",
+              "value": 3370000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:warranty_reserve_ratio:2024-07-01..2024-09-30",
+          "position_in_history": "highest of the 6 filled quarters",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "the quarter 1 back is outside the requested window"
+          },
+          "value": 0.04375600508971929,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        }
+      },
+      "start": "2024-07-01",
+      "target_end": "2024-10-01"
+    }
+  ],
+  "source": {
+    "cik": "0001774170",
+    "entity_name": "Powerfleet, Inc.",
+    "filings_read": [
+      "0001628280-24-047133",
+      "0001628280-25-004642",
+      "0001628280-25-039575",
+      "0001628280-25-051024",
+      "0001628280-26-006487",
+      "0001628280-26-043187",
+      "0001628280-26-055222"
+    ],
+    "record": "companyfacts",
+    "rows": 11554
+  },
+  "ticker": "AIOT",
+  "window": {
+    "anchored_on": "the triggering report's period of report",
+    "quarters_end": "2026-06-30",
+    "record_newest_filing": "2026-08-10",
+    "record_predates_the_trigger": null,
+    "triggering_period_end": "2026-06-30",
+    "years_end": "2026-03-31"
+  },
+  "years": [
+    {
+      "days": 365,
+      "end": "2026-03-31",
+      "filled": true,
+      "label": "years-back-0",
+      "ratios": {
+        "accruals_over_total_assets": {
+          "formula": "(net_income - operating_cash_flow) / assets",
+          "inputs": {
+            "assets": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:Assets:2026-03-31",
+              "period": "2026-03-31",
+              "tag": "Assets",
+              "unit": "USD",
+              "value": 955565000.0
+            },
+            "net_income": {
+              "accession": "0001628280-26-043187",
+              "filed": "2026-06-15",
+              "id": "0001628280-26-043187:facts:NetIncomeLoss:2025-04-01..2026-03-31",
+              "period": "2025-04-01..2026-03-31",
+              "tag": "NetIncomeLoss",
+              "unit": "USD",
+              "value": -20552000.0
+            },
+            "operating_cash_flow": {
+              "accession": "0001628280-26-043187",
+              "filed": "2026-06-15",
+              "id": "0001628280-26-043187:facts:NetCashProvidedByUsedInOperatingActivities:2025-04-01..2026-03-31",
+              "period": "2025-04-01..2026-03-31",
+              "tag": "NetCashProvidedByUsedInOperatingActivities",
+              "unit": "USD",
+              "value": 30461000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:accruals_over_total_assets:2025-04-01..2026-03-31",
+          "position_in_history": "lowest of the 2 filled years",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": -0.05338517003029621,
+          "year_over_year": {
+            "against": "years-back-1",
+            "change": -0.001035408308408578
+          }
+        },
+        "bad_debt_reserve_ratio": {
+          "formula": "bad_debt_allowance / (receivables + bad_debt_allowance)",
+          "inputs": {
+            "bad_debt_allowance": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:AllowanceForDoubtfulAccountsReceivableCurrent:2026-03-31",
+              "period": "2026-03-31",
+              "tag": "AllowanceForDoubtfulAccountsReceivableCurrent",
+              "unit": "USD",
+              "value": 9177000.0
+            },
+            "receivables": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:AccountsReceivableNetCurrent:2026-03-31",
+              "period": "2026-03-31",
+              "tag": "AccountsReceivableNetCurrent",
+              "unit": "USD",
+              "value": 93820000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:bad_debt_reserve_ratio:2025-04-01..2026-03-31",
+          "position_in_history": "highest of the 2 filled years",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 0.0890996825150247,
+          "year_over_year": {
+            "against": "years-back-1",
+            "change": 0.04003098391802422
+          }
+        },
+        "contract_liabilities_over_revenue": {
+          "formula": "contract_liabilities / revenue",
+          "inputs": {
+            "contract_liabilities": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:ContractWithCustomerLiabilityCurrent:2026-03-31",
+              "period": "2026-03-31",
+              "tag": "ContractWithCustomerLiabilityCurrent",
+              "unit": "USD",
+              "value": 20159000.0
+            },
+            "revenue": {
+              "accession": "0001628280-26-043187",
+              "filed": "2026-06-15",
+              "id": "0001628280-26-043187:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-04-01..2026-03-31",
+              "period": "2025-04-01..2026-03-31",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 443777000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:contract_liabilities_over_revenue:2025-04-01..2026-03-31",
+          "position_in_history": "lowest of the 2 filled years",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 0.04542596844811696,
+          "year_over_year": {
+            "against": "years-back-1",
+            "change": -0.0025030827635570407
+          }
+        },
+        "days_sales_of_inventory": {
+          "formula": "inventory / cost_of_revenue * days_in_period",
+          "inputs": {
+            "cost_of_revenue": {
+              "accession": "0001628280-26-043187",
+              "filed": "2026-06-15",
+              "id": "0001628280-26-043187:facts:CostOfGoodsAndServicesSold:2025-04-01..2026-03-31",
+              "period": "2025-04-01..2026-03-31",
+              "tag": "CostOfGoodsAndServicesSold",
+              "unit": "USD",
+              "value": 197355000.0
+            },
+            "inventory": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:InventoryNet:2026-03-31",
+              "period": "2026-03-31",
+              "tag": "InventoryNet",
+              "unit": "USD",
+              "value": 22448000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:days_sales_of_inventory:2025-04-01..2026-03-31",
+          "position_in_history": "highest of the 2 filled years",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 41.516657799397024,
+          "year_over_year": {
+            "against": "years-back-1",
+            "change": 1.6438768399856727
+          }
+        },
+        "days_sales_outstanding": {
+          "formula": "receivables / revenue * days_in_period",
+          "inputs": {
+            "receivables": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:AccountsReceivableNetCurrent:2026-03-31",
+              "period": "2026-03-31",
+              "tag": "AccountsReceivableNetCurrent",
+              "unit": "USD",
+              "value": 93820000.0
+            },
+            "revenue": {
+              "accession": "0001628280-26-043187",
+              "filed": "2026-06-15",
+              "id": "0001628280-26-043187:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-04-01..2026-03-31",
+              "period": "2025-04-01..2026-03-31",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 443777000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:days_sales_outstanding:2025-04-01..2026-03-31",
+          "position_in_history": "lowest of the 2 filled years",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 77.16555837729311,
+          "year_over_year": {
+            "against": "years-back-1",
+            "change": -1.9963935419378203
+          }
+        },
+        "gross_margin": {
+          "formula": "(revenue - cost_of_revenue) / revenue",
+          "inputs": {
+            "cost_of_revenue": {
+              "accession": "0001628280-26-043187",
+              "filed": "2026-06-15",
+              "id": "0001628280-26-043187:facts:CostOfGoodsAndServicesSold:2025-04-01..2026-03-31",
+              "period": "2025-04-01..2026-03-31",
+              "tag": "CostOfGoodsAndServicesSold",
+              "unit": "USD",
+              "value": 197355000.0
+            },
+            "revenue": {
+              "accession": "0001628280-26-043187",
+              "filed": "2026-06-15",
+              "id": "0001628280-26-043187:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-04-01..2026-03-31",
+              "period": "2025-04-01..2026-03-31",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 443777000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:gross_margin:2025-04-01..2026-03-31",
+          "position_in_history": "highest of the 2 filled years",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 0.5552833968412063,
+          "year_over_year": {
+            "against": "years-back-1",
+            "change": 0.018651809182764545
+          }
+        },
+        "inventory_reserve_ratio": {
+          "missing": "no row for inventory_reserve in 2026-03-31: us-gaap:InventoryValuationReserves is in the record, but not for this period",
+          "paragraph_id": "0001628280-26-055222:trends:inventory_reserve_ratio:2025-04-01..2026-03-31",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "inventory_reserve_ratio is not filled in years-back-0"
+          }
+        },
+        "non_gaap_gap": {
+          "missing": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only",
+          "paragraph_id": "0001628280-26-055222:trends:non_gaap_gap:2025-04-01..2026-03-31",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "non_gaap_gap is not filled in years-back-0"
+          }
+        },
+        "receivables_over_revenue": {
+          "formula": "receivables / revenue",
+          "inputs": {
+            "receivables": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:AccountsReceivableNetCurrent:2026-03-31",
+              "period": "2026-03-31",
+              "tag": "AccountsReceivableNetCurrent",
+              "unit": "USD",
+              "value": 93820000.0
+            },
+            "revenue": {
+              "accession": "0001628280-26-043187",
+              "filed": "2026-06-15",
+              "id": "0001628280-26-043187:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-04-01..2026-03-31",
+              "period": "2025-04-01..2026-03-31",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 443777000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:receivables_over_revenue:2025-04-01..2026-03-31",
+          "position_in_history": "lowest of the 2 filled years",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 0.2114124887049126,
+          "year_over_year": {
+            "against": "years-back-1",
+            "change": -0.005469571347774871
+          }
+        },
+        "soft_asset_share": {
+          "formula": "(assets - property_plant_and_equipment - cash) / assets",
+          "inputs": {
+            "assets": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:Assets:2026-03-31",
+              "period": "2026-03-31",
+              "tag": "Assets",
+              "unit": "USD",
+              "value": 955565000.0
+            },
+            "cash": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:CashAndCashEquivalentsAtCarryingValue:2026-03-31",
+              "period": "2026-03-31",
+              "tag": "CashAndCashEquivalentsAtCarryingValue",
+              "unit": "USD",
+              "value": 36496000.0
+            },
+            "property_plant_and_equipment": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:PropertyPlantAndEquipmentNet:2026-03-31",
+              "period": "2026-03-31",
+              "tag": "PropertyPlantAndEquipmentNet",
+              "unit": "USD",
+              "value": 62398000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:soft_asset_share:2025-04-01..2026-03-31",
+          "position_in_history": "highest of the 2 filled years",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 0.8965073019627131,
+          "year_over_year": {
+            "against": "years-back-1",
+            "change": 0.009029292005248268
+          }
+        },
+        "warranty_reserve_ratio": {
+          "formula": "warranty_accrual / revenue",
+          "inputs": {
+            "revenue": {
+              "accession": "0001628280-26-043187",
+              "filed": "2026-06-15",
+              "id": "0001628280-26-043187:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-04-01..2026-03-31",
+              "period": "2025-04-01..2026-03-31",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 443777000.0
+            },
+            "warranty_accrual": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:ProductWarrantyAccrual:2026-03-31",
+              "period": "2026-03-31",
+              "tag": "ProductWarrantyAccrual",
+              "unit": "USD",
+              "value": 2202000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:warranty_reserve_ratio:2025-04-01..2026-03-31",
+          "position_in_history": "lowest of the 2 filled years",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 0.004961951610831566,
+          "year_over_year": {
+            "against": "years-back-1",
+            "change": -0.005018325067374854
+          }
+        }
+      },
+      "research_and_development_capitalized": {
+        "book_value_with_rnd_capitalized": {
+          "missing": "2 year(s) back: no year ending within 20 days of 2024-04-02 is in the companyfacts record; 3 year(s) back: no year ending within 20 days of 2023-04-04 is in the companyfacts record; 4 year(s) back: no year ending within 20 days of 2022-04-05 is in the companyfacts record"
+        },
+        "capitalized_development_cost": {
+          "missing": "no row for capitalized_development_cost: the companyfacts record tags none of us-gaap:CapitalizedComputerSoftwareAdditions in any period. companyfacts holds the entity-wide fact alone, so this is either a concept the company does not tag or one it states only by segment \u2014 the filing says which, and this record cannot"
+        },
+        "capitalized_over_expense": {
+          "missing": "no row for capitalized_development_cost: the companyfacts record tags none of us-gaap:CapitalizedComputerSoftwareAdditions in any period. companyfacts holds the entity-wide fact alone, so this is either a concept the company does not tag or one it states only by segment \u2014 the filing says which, and this record cannot"
+        },
+        "earnings_with_rnd_capitalized": {
+          "missing": "2 year(s) back: no year ending within 20 days of 2024-04-02 is in the companyfacts record; 3 year(s) back: no year ending within 20 days of 2023-04-04 is in the companyfacts record; 4 year(s) back: no year ending within 20 days of 2022-04-05 is in the companyfacts record; 5 year(s) back: no year ending within 20 days of 2021-04-06 is in the companyfacts record"
+        },
+        "formulas": {
+          "book_value_with_rnd_capitalized": "stockholders_equity + research_and_development_asset",
+          "capitalized_over_expense": "capitalized_development_cost / research_and_development_expense[year]",
+          "earnings_with_rnd_capitalized": "net_income + research_and_development_expense[year] - research_and_development_amortization",
+          "research_and_development_amortization": "sum over k = 1..5 of research_and_development_expense[year - k] / 5",
+          "research_and_development_asset": "sum over k = 0..4 of research_and_development_expense[year - k] * (5 - k) / 5"
+        },
+        "life_years": 5,
+        "net_income": {
+          "accession": "0001628280-26-043187",
+          "filed": "2026-06-15",
+          "id": "0001628280-26-043187:facts:NetIncomeLoss:2025-04-01..2026-03-31",
+          "period": "2025-04-01..2026-03-31",
+          "tag": "NetIncomeLoss",
+          "unit": "USD",
+          "value": -20552000.0
+        },
+        "research_and_development_amortization": {
+          "missing": "2 year(s) back: no year ending within 20 days of 2024-04-02 is in the companyfacts record; 3 year(s) back: no year ending within 20 days of 2023-04-04 is in the companyfacts record; 4 year(s) back: no year ending within 20 days of 2022-04-05 is in the companyfacts record; 5 year(s) back: no year ending within 20 days of 2021-04-06 is in the companyfacts record"
+        },
+        "research_and_development_asset": {
+          "missing": "2 year(s) back: no year ending within 20 days of 2024-04-02 is in the companyfacts record; 3 year(s) back: no year ending within 20 days of 2023-04-04 is in the companyfacts record; 4 year(s) back: no year ending within 20 days of 2022-04-05 is in the companyfacts record"
+        },
+        "research_and_development_expense": [
+          {
+            "accession": "0001628280-26-043187",
+            "filed": "2026-06-15",
+            "id": "0001628280-26-043187:facts:ResearchAndDevelopmentExpense:2025-04-01..2026-03-31",
+            "period": "2025-04-01..2026-03-31",
+            "tag": "ResearchAndDevelopmentExpense",
+            "unit": "USD",
+            "value": 18359000.0,
+            "years_back": 0
+          },
+          {
+            "accession": "0001628280-26-043187",
+            "filed": "2026-06-15",
+            "id": "0001628280-26-043187:facts:ResearchAndDevelopmentExpense:2024-04-01..2025-03-31",
+            "period": "2024-04-01..2025-03-31",
+            "tag": "ResearchAndDevelopmentExpense",
+            "unit": "USD",
+            "value": 16061000.0,
+            "years_back": 1
+          },
+          {
+            "missing": "2 year(s) back: no year ending within 20 days of 2024-04-02 is in the companyfacts record",
+            "years_back": 2
+          },
+          {
+            "missing": "3 year(s) back: no year ending within 20 days of 2023-04-04 is in the companyfacts record",
+            "years_back": 3
+          },
+          {
+            "missing": "4 year(s) back: no year ending within 20 days of 2022-04-05 is in the companyfacts record",
+            "years_back": 4
+          },
+          {
+            "missing": "5 year(s) back: no year ending within 20 days of 2021-04-06 is in the companyfacts record",
+            "years_back": 5
+          }
+        ],
+        "stockholders_equity": {
+          "accession": "0001628280-26-055222",
+          "filed": "2026-08-10",
+          "id": "0001628280-26-055222:facts:StockholdersEquity:2026-03-31",
+          "period": "2026-03-31",
+          "tag": "StockholdersEquity",
+          "unit": "USD",
+          "value": 475494000.0
+        }
+      },
+      "start": "2025-04-01",
+      "target_end": "2026-03-31"
+    },
+    {
+      "days": 365,
+      "end": "2025-03-31",
+      "filled": true,
+      "label": "years-back-1",
+      "ratios": {
+        "accruals_over_total_assets": {
+          "formula": "(net_income - operating_cash_flow) / assets",
+          "inputs": {
+            "assets": {
+              "accession": "0001628280-26-043187",
+              "filed": "2026-06-15",
+              "id": "0001628280-26-043187:facts:Assets:2025-03-31",
+              "period": "2025-03-31",
+              "tag": "Assets",
+              "unit": "USD",
+              "value": 910071000.0
+            },
+            "net_income": {
+              "accession": "0001628280-26-043187",
+              "filed": "2026-06-15",
+              "id": "0001628280-26-043187:facts:NetIncomeLoss:2024-04-01..2025-03-31",
+              "period": "2024-04-01..2025-03-31",
+              "tag": "NetIncomeLoss",
+              "unit": "USD",
+              "value": -50987000.0
+            },
+            "operating_cash_flow": {
+              "accession": "0001628280-26-043187",
+              "filed": "2026-06-15",
+              "id": "0001628280-26-043187:facts:NetCashProvidedByUsedInOperatingActivities:2024-04-01..2025-03-31",
+              "period": "2024-04-01..2025-03-31",
+              "tag": "NetCashProvidedByUsedInOperatingActivities",
+              "unit": "USD",
+              "value": -3345000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:accruals_over_total_assets:2024-04-01..2025-03-31",
+          "position_in_history": "highest of the 2 filled years",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": -0.052349761721887635,
+          "year_over_year": {
+            "against": "years-back-2",
+            "reason": "accruals_over_total_assets is not filled in years-back-2"
+          }
+        },
+        "bad_debt_reserve_ratio": {
+          "formula": "bad_debt_allowance / (receivables + bad_debt_allowance)",
+          "inputs": {
+            "bad_debt_allowance": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:AllowanceForDoubtfulAccountsReceivableCurrent:2025-03-31",
+              "period": "2025-03-31",
+              "tag": "AllowanceForDoubtfulAccountsReceivableCurrent",
+              "unit": "USD",
+              "value": 4057000.0
+            },
+            "receivables": {
+              "accession": "0001628280-26-043187",
+              "filed": "2026-06-15",
+              "id": "0001628280-26-043187:facts:AccountsReceivableNetCurrent:2025-03-31",
+              "period": "2025-03-31",
+              "tag": "AccountsReceivableNetCurrent",
+              "unit": "USD",
+              "value": 78623000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:bad_debt_reserve_ratio:2024-04-01..2025-03-31",
+          "position_in_history": "lowest of the 2 filled years",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 0.049068698597000485,
+          "year_over_year": {
+            "against": "years-back-2",
+            "reason": "bad_debt_reserve_ratio is not filled in years-back-2"
+          }
+        },
+        "contract_liabilities_over_revenue": {
+          "formula": "contract_liabilities / revenue",
+          "inputs": {
+            "contract_liabilities": {
+              "accession": "0001628280-26-043187",
+              "filed": "2026-06-15",
+              "id": "0001628280-26-043187:facts:ContractWithCustomerLiabilityCurrent:2025-03-31",
+              "period": "2025-03-31",
+              "tag": "ContractWithCustomerLiabilityCurrent",
+              "unit": "USD",
+              "value": 17375000.0
+            },
+            "revenue": {
+              "accession": "0001628280-26-043187",
+              "filed": "2026-06-15",
+              "id": "0001628280-26-043187:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2024-04-01..2025-03-31",
+              "period": "2024-04-01..2025-03-31",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 362515000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:contract_liabilities_over_revenue:2024-04-01..2025-03-31",
+          "position_in_history": "highest of the 2 filled years",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 0.047929051211674,
+          "year_over_year": {
+            "against": "years-back-2",
+            "reason": "contract_liabilities_over_revenue is not filled in years-back-2"
+          }
+        },
+        "days_sales_of_inventory": {
+          "formula": "inventory / cost_of_revenue * days_in_period",
+          "inputs": {
+            "cost_of_revenue": {
+              "accession": "0001628280-26-043187",
+              "filed": "2026-06-15",
+              "id": "0001628280-26-043187:facts:CostOfGoodsAndServicesSold:2024-04-01..2025-03-31",
+              "period": "2024-04-01..2025-03-31",
+              "tag": "CostOfGoodsAndServicesSold",
+              "unit": "USD",
+              "value": 167978000.0
+            },
+            "inventory": {
+              "accession": "0001628280-26-043187",
+              "filed": "2026-06-15",
+              "id": "0001628280-26-043187:facts:InventoryNet:2025-03-31",
+              "period": "2025-03-31",
+              "tag": "InventoryNet",
+              "unit": "USD",
+              "value": 18350000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:days_sales_of_inventory:2024-04-01..2025-03-31",
+          "position_in_history": "lowest of the 2 filled years",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 39.87278095941135,
+          "year_over_year": {
+            "against": "years-back-2",
+            "reason": "days_sales_of_inventory is not filled in years-back-2"
+          }
+        },
+        "days_sales_outstanding": {
+          "formula": "receivables / revenue * days_in_period",
+          "inputs": {
+            "receivables": {
+              "accession": "0001628280-26-043187",
+              "filed": "2026-06-15",
+              "id": "0001628280-26-043187:facts:AccountsReceivableNetCurrent:2025-03-31",
+              "period": "2025-03-31",
+              "tag": "AccountsReceivableNetCurrent",
+              "unit": "USD",
+              "value": 78623000.0
+            },
+            "revenue": {
+              "accession": "0001628280-26-043187",
+              "filed": "2026-06-15",
+              "id": "0001628280-26-043187:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2024-04-01..2025-03-31",
+              "period": "2024-04-01..2025-03-31",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 362515000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:days_sales_outstanding:2024-04-01..2025-03-31",
+          "position_in_history": "highest of the 2 filled years",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 79.16195191923093,
+          "year_over_year": {
+            "against": "years-back-2",
+            "reason": "days_sales_outstanding is not filled in years-back-2"
+          }
+        },
+        "gross_margin": {
+          "formula": "(revenue - cost_of_revenue) / revenue",
+          "inputs": {
+            "cost_of_revenue": {
+              "accession": "0001628280-26-043187",
+              "filed": "2026-06-15",
+              "id": "0001628280-26-043187:facts:CostOfGoodsAndServicesSold:2024-04-01..2025-03-31",
+              "period": "2024-04-01..2025-03-31",
+              "tag": "CostOfGoodsAndServicesSold",
+              "unit": "USD",
+              "value": 167978000.0
+            },
+            "revenue": {
+              "accession": "0001628280-26-043187",
+              "filed": "2026-06-15",
+              "id": "0001628280-26-043187:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2024-04-01..2025-03-31",
+              "period": "2024-04-01..2025-03-31",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 362515000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:gross_margin:2024-04-01..2025-03-31",
+          "position_in_history": "lowest of the 2 filled years",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 0.5366315876584418,
+          "year_over_year": {
+            "against": "years-back-2",
+            "reason": "gross_margin is not filled in years-back-2"
+          }
+        },
+        "inventory_reserve_ratio": {
+          "missing": "no row for inventory_reserve in 2025-03-31: us-gaap:InventoryValuationReserves is in the record, but not for this period",
+          "paragraph_id": "0001628280-26-055222:trends:inventory_reserve_ratio:2024-04-01..2025-03-31",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "inventory_reserve_ratio is not filled in years-back-1"
+          }
+        },
+        "non_gaap_gap": {
+          "missing": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only",
+          "paragraph_id": "0001628280-26-055222:trends:non_gaap_gap:2024-04-01..2025-03-31",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "non_gaap_gap is not filled in years-back-1"
+          }
+        },
+        "receivables_over_revenue": {
+          "formula": "receivables / revenue",
+          "inputs": {
+            "receivables": {
+              "accession": "0001628280-26-043187",
+              "filed": "2026-06-15",
+              "id": "0001628280-26-043187:facts:AccountsReceivableNetCurrent:2025-03-31",
+              "period": "2025-03-31",
+              "tag": "AccountsReceivableNetCurrent",
+              "unit": "USD",
+              "value": 78623000.0
+            },
+            "revenue": {
+              "accession": "0001628280-26-043187",
+              "filed": "2026-06-15",
+              "id": "0001628280-26-043187:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2024-04-01..2025-03-31",
+              "period": "2024-04-01..2025-03-31",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 362515000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:receivables_over_revenue:2024-04-01..2025-03-31",
+          "position_in_history": "highest of the 2 filled years",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 0.21688206005268748,
+          "year_over_year": {
+            "against": "years-back-2",
+            "reason": "receivables_over_revenue is not filled in years-back-2"
+          }
+        },
+        "soft_asset_share": {
+          "formula": "(assets - property_plant_and_equipment - cash) / assets",
+          "inputs": {
+            "assets": {
+              "accession": "0001628280-26-043187",
+              "filed": "2026-06-15",
+              "id": "0001628280-26-043187:facts:Assets:2025-03-31",
+              "period": "2025-03-31",
+              "tag": "Assets",
+              "unit": "USD",
+              "value": 910071000.0
+            },
+            "cash": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:CashAndCashEquivalentsAtCarryingValue:2025-03-31",
+              "period": "2025-03-31",
+              "tag": "CashAndCashEquivalentsAtCarryingValue",
+              "unit": "USD",
+              "value": 44392000.0
+            },
+            "property_plant_and_equipment": {
+              "accession": "0001628280-26-043187",
+              "filed": "2026-06-15",
+              "id": "0001628280-26-043187:facts:PropertyPlantAndEquipmentNet:2025-03-31",
+              "period": "2025-03-31",
+              "tag": "PropertyPlantAndEquipmentNet",
+              "unit": "USD",
+              "value": 58011000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:soft_asset_share:2024-04-01..2025-03-31",
+          "position_in_history": "lowest of the 2 filled years",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 0.8874780099574648,
+          "year_over_year": {
+            "against": "years-back-2",
+            "reason": "soft_asset_share is not filled in years-back-2"
+          }
+        },
+        "warranty_reserve_ratio": {
+          "formula": "warranty_accrual / revenue",
+          "inputs": {
+            "revenue": {
+              "accession": "0001628280-26-043187",
+              "filed": "2026-06-15",
+              "id": "0001628280-26-043187:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2024-04-01..2025-03-31",
+              "period": "2024-04-01..2025-03-31",
+              "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+              "unit": "USD",
+              "value": 362515000.0
+            },
+            "warranty_accrual": {
+              "accession": "0001628280-26-055222",
+              "filed": "2026-08-10",
+              "id": "0001628280-26-055222:facts:ProductWarrantyAccrual:2025-03-31",
+              "period": "2025-03-31",
+              "tag": "ProductWarrantyAccrual",
+              "unit": "USD",
+              "value": 3618000.0
+            }
+          },
+          "paragraph_id": "0001628280-26-055222:trends:warranty_reserve_ratio:2024-04-01..2025-03-31",
+          "position_in_history": "highest of the 2 filled years",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 0.00998027667820642,
+          "year_over_year": {
+            "against": "years-back-2",
+            "reason": "warranty_reserve_ratio is not filled in years-back-2"
+          }
+        }
+      },
+      "research_and_development_capitalized": {
+        "book_value_with_rnd_capitalized": {
+          "missing": "1 year(s) back: no year ending within 20 days of 2024-04-01 is in the companyfacts record; 2 year(s) back: no year ending within 20 days of 2023-04-03 is in the companyfacts record; 3 year(s) back: no year ending within 20 days of 2022-04-04 is in the companyfacts record; 4 year(s) back: no year ending within 20 days of 2021-04-05 is in the companyfacts record"
+        },
+        "capitalized_development_cost": {
+          "missing": "no row for capitalized_development_cost: the companyfacts record tags none of us-gaap:CapitalizedComputerSoftwareAdditions in any period. companyfacts holds the entity-wide fact alone, so this is either a concept the company does not tag or one it states only by segment \u2014 the filing says which, and this record cannot"
+        },
+        "capitalized_over_expense": {
+          "missing": "no row for capitalized_development_cost: the companyfacts record tags none of us-gaap:CapitalizedComputerSoftwareAdditions in any period. companyfacts holds the entity-wide fact alone, so this is either a concept the company does not tag or one it states only by segment \u2014 the filing says which, and this record cannot"
+        },
+        "earnings_with_rnd_capitalized": {
+          "missing": "1 year(s) back: no year ending within 20 days of 2024-04-01 is in the companyfacts record; 2 year(s) back: no year ending within 20 days of 2023-04-03 is in the companyfacts record; 3 year(s) back: no year ending within 20 days of 2022-04-04 is in the companyfacts record; 4 year(s) back: no year ending within 20 days of 2021-04-05 is in the companyfacts record; 5 year(s) back: no year ending within 20 days of 2020-04-06 is in the companyfacts record"
+        },
+        "formulas": {
+          "book_value_with_rnd_capitalized": "stockholders_equity + research_and_development_asset",
+          "capitalized_over_expense": "capitalized_development_cost / research_and_development_expense[year]",
+          "earnings_with_rnd_capitalized": "net_income + research_and_development_expense[year] - research_and_development_amortization",
+          "research_and_development_amortization": "sum over k = 1..5 of research_and_development_expense[year - k] / 5",
+          "research_and_development_asset": "sum over k = 0..4 of research_and_development_expense[year - k] * (5 - k) / 5"
+        },
+        "life_years": 5,
+        "net_income": {
+          "accession": "0001628280-26-043187",
+          "filed": "2026-06-15",
+          "id": "0001628280-26-043187:facts:NetIncomeLoss:2024-04-01..2025-03-31",
+          "period": "2024-04-01..2025-03-31",
+          "tag": "NetIncomeLoss",
+          "unit": "USD",
+          "value": -50987000.0
+        },
+        "research_and_development_amortization": {
+          "missing": "1 year(s) back: no year ending within 20 days of 2024-04-01 is in the companyfacts record; 2 year(s) back: no year ending within 20 days of 2023-04-03 is in the companyfacts record; 3 year(s) back: no year ending within 20 days of 2022-04-04 is in the companyfacts record; 4 year(s) back: no year ending within 20 days of 2021-04-05 is in the companyfacts record; 5 year(s) back: no year ending within 20 days of 2020-04-06 is in the companyfacts record"
+        },
+        "research_and_development_asset": {
+          "missing": "1 year(s) back: no year ending within 20 days of 2024-04-01 is in the companyfacts record; 2 year(s) back: no year ending within 20 days of 2023-04-03 is in the companyfacts record; 3 year(s) back: no year ending within 20 days of 2022-04-04 is in the companyfacts record; 4 year(s) back: no year ending within 20 days of 2021-04-05 is in the companyfacts record"
+        },
+        "research_and_development_expense": [
+          {
+            "accession": "0001628280-26-043187",
+            "filed": "2026-06-15",
+            "id": "0001628280-26-043187:facts:ResearchAndDevelopmentExpense:2024-04-01..2025-03-31",
+            "period": "2024-04-01..2025-03-31",
+            "tag": "ResearchAndDevelopmentExpense",
+            "unit": "USD",
+            "value": 16061000.0,
+            "years_back": 0
+          },
+          {
+            "missing": "1 year(s) back: no year ending within 20 days of 2024-04-01 is in the companyfacts record",
+            "years_back": 1
+          },
+          {
+            "missing": "2 year(s) back: no year ending within 20 days of 2023-04-03 is in the companyfacts record",
+            "years_back": 2
+          },
+          {
+            "missing": "3 year(s) back: no year ending within 20 days of 2022-04-04 is in the companyfacts record",
+            "years_back": 3
+          },
+          {
+            "missing": "4 year(s) back: no year ending within 20 days of 2021-04-05 is in the companyfacts record",
+            "years_back": 4
+          },
+          {
+            "missing": "5 year(s) back: no year ending within 20 days of 2020-04-06 is in the companyfacts record",
+            "years_back": 5
+          }
+        ],
+        "stockholders_equity": {
+          "accession": "0001628280-26-043187",
+          "filed": "2026-06-15",
+          "id": "0001628280-26-043187:facts:StockholdersEquity:2025-03-31",
+          "period": "2025-03-31",
+          "tag": "StockholdersEquity",
+          "unit": "USD",
+          "value": 446592000.0
+        }
+      },
+      "start": "2024-04-01",
+      "target_end": "2025-04-01"
+    },
+    {
+      "filled": false,
+      "label": "years-back-2",
+      "ratios": {},
+      "reason": "no year ending within 20 days of 2024-04-02 is in the companyfacts record",
+      "research_and_development_capitalized": {
+        "missing": "no fiscal year in this slot: no year ending within 20 days of 2024-04-02 is in the companyfacts record"
+      },
+      "target_end": "2024-04-02"
+    },
+    {
+      "filled": false,
+      "label": "years-back-3",
+      "ratios": {},
+      "reason": "no year ending within 20 days of 2023-04-04 is in the companyfacts record",
+      "research_and_development_capitalized": {
+        "missing": "no fiscal year in this slot: no year ending within 20 days of 2023-04-04 is in the companyfacts record"
+      },
+      "target_end": "2023-04-04"
+    },
+    {
+      "filled": false,
+      "label": "years-back-4",
+      "ratios": {},
+      "reason": "no year ending within 20 days of 2022-04-05 is in the companyfacts record",
+      "research_and_development_capitalized": {
+        "missing": "no fiscal year in this slot: no year ending within 20 days of 2022-04-05 is in the companyfacts record"
+      },
+      "target_end": "2022-04-05"
+    }
+  ]
+}

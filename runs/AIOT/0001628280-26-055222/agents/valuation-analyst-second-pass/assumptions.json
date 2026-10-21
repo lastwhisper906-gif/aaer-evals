@@ -1,0 +1,241 @@
+{
+ "scenarios": {
+  "bear": {
+   "revenue_growth_year_one": 0.01,
+   "terminal_growth": 0.015,
+   "operating_margin_year_one": 0.03,
+   "operating_margin_year_ten": 0.08,
+   "reinvestment_rate_year_one": -0.5,
+   "reinvestment_rate_year_ten": 0.35,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "The quarter's year-over-year growth of {ratios.growth.revenue.year_over_year|pct} includes acquired RTS revenue and rand translation, and revenue moved {ratios.growth.revenue.quarter_over_quarter|pct} against the prior quarter. In this case the company forgoes more South African revenue than planned while the National Treasury deployment ramps slowly, product revenue keeps falling as component transitions delay deliveries, and United States and Europe revenue keep shrinking, which leaves organic growth near flat.",
+     "quote": "Component transitions of this nature may require additional engineering time and expense and could delay the completion and delivery of finished products in future periods.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.growth.revenue.year_over_year",
+      "ratios.growth.revenue.quarter_over_quarter",
+      "earnings_versus_cash.history.years.2.revenue_growth"
+     ],
+     "history": "Below the quarter's year-over-year rate and far below fiscal 2026's acquisition-driven {earnings_versus_cash.history.years.0.revenue_growth|pct}; a little above the weakest year the legacy business filed, a change of {earnings_versus_cash.history.years.2.revenue_growth|pct} in 2023."
+    },
+    "terminal_growth": {
+     "reason": "A leveraged company losing ground in hardware and in its older markets, and leaning more on one government customer, grows below nominal output in the long run. Set well under the risk-free rate of {cost_of_capital.risk_free_rate|pct}.",
+     "quote": "The year-over-year gains are real, but by the company's own account the direction for the rest of fiscal 2027 is down: guidance was updated for the South African reprioritization and some product revenue may slip into a later quarter.",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "cost_of_capital.risk_free_rate"
+     ],
+     "history": "Below the legacy business's positive years, such as {earnings_versus_cash.history.years.3.revenue_growth|pct} in 2022, and above its {earnings_versus_cash.history.years.2.revenue_growth|pct} in 2023; the rest of the filed record is acquisitions and says little about a steady state."
+    },
+    "operating_margin_year_one": {
+     "reason": "This quarter's operating income was {ratios.growth.operating_income.this_quarter}, near break-even, after a derived fourth quarter of {ratios.growth.operating_income.quarter_over_quarter.inputs.before} whose cause is not explained and which cash did not match. The bear case reads the quarter as closer to the run-rate than the trailing year: product gross margin compressed by mix, go-to-market spending rising, restructuring recurring, credit losses rising, and a warranty reserve at the lowest of the filed quarters, {trend_table.quarters-back-0.ratios.warranty_reserve_ratio|pct} of quarterly revenue, that may need rebuilding as firmware problems surface.",
+     "quote": "Gross profit as a percentage of product revenues was negatively impacted by an unfavorable shift in product mix.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.growth.operating_income.this_quarter",
+      "ratios.growth.operating_income.quarter_over_quarter.inputs.before",
+      "ratios.profitability.operating_margin",
+      "trend_table.quarters-back-0.ratios.warranty_reserve_ratio"
+     ],
+     "history": "Below the trailing {ratios.profitability.operating_margin|pct} and fiscal 2026's {earnings_versus_cash.history.years.0.operating_margin|pct}, but still above fiscal 2025's {earnings_versus_cash.history.years.1.operating_margin|pct} and the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}."
+    },
+    "operating_margin_year_ten": {
+     "reason": "Amortization of acquired intangibles still runs off and lifts GAAP margin mechanically, but in this case the company keeps acquiring and adding new amortization, share-based compensation keeps rising from {earnings_versus_cash.share_based_compensation_over_revenue|pct} of revenue, and hardware price pressure holds EBITDA margin near today's level, EBITDA of {ratios.solvency.ebitda} on revenue of {terms.trailing_four_quarters.revenue}.",
+     "quote": "Share-based compensation rose year over year after new restricted and performance unit grants",
+     "quote_from": "analysis_accounting.json",
+     "fields": [
+      "ratios.solvency.ebitda",
+      "terms.trailing_four_quarters.revenue",
+      "earnings_versus_cash.share_based_compensation_over_revenue",
+      "terms.trailing_four_quarters.depreciation_and_amortization"
+     ],
+     "history": "Above every year on record, the best being fiscal 2026's {earnings_versus_cash.history.years.0.operating_margin|pct}; the rise comes only from amortization ending, with no improvement assumed in the underlying business."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "Depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization} still exceed capital expenditure of {terms.trailing_four_quarters.capital_expenditure}, so the rate stays negative, but less so than in the base: engineering to fix component transitions and software development absorb more cash, receivable days near the top of their range, {trend_table.quarters-back-0.ratios.days_sales_outstanding}, keep trade working capital rising after it absorbed {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital} over the year, and contract asset recoveries run off. With the thinner margin, this case leaves the least cash of the three.",
+     "quote": "This contract asset is being recovered post-acquisition through customer billings.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "terms.trailing_four_quarters.depreciation_and_amortization",
+      "terms.trailing_four_quarters.capital_expenditure",
+      "trend_table.quarters-back-0.ratios.days_sales_outstanding",
+      "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital"
+     ],
+     "history": "Less negative than the trailing calculator measure, free cash flow to the firm of {free_cash_flow.free_cash_flow_to_firm} on operating income of {ebit}; the release's own free cash flow for the quarter, which deducts software development, was negative."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "Growth is funded at a return on new capital below the pre-tax cost of debt of {cost_of_capital.pre_tax_cost_of_debt|pct}, though above today's return on invested capital of {ratios.profitability.return_on_invested_capital|pct}: the company has not shown it can earn its cost of borrowing on the capital it has deployed, and by its own account operations do not yet fund all its capital needs.",
+     "quote": "Although we expect to generate incremental cash flow benefits through operational synergies, we have not yet generated sufficient cash flow solely from operations to fund all our capital and financing needs.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "cost_of_capital.pre_tax_cost_of_debt",
+      "ratios.profitability.return_on_invested_capital",
+      "earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization"
+     ],
+     "history": "No year on record shows steady-state reinvestment: capital expenditure has run at only {earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization|pct} of depreciation and amortization while acquired intangibles amortize."
+    }
+   }
+  },
+  "base": {
+   "revenue_growth_year_one": 0.06,
+   "terminal_growth": 0.025,
+   "operating_margin_year_one": 0.05,
+   "operating_margin_year_ten": 0.14,
+   "reinvestment_rate_year_one": -0.6,
+   "reinvestment_rate_year_ten": 0.25,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "The revised fiscal 2027 guidance puts growth at its midpoint close to this driver, and the quarter's own year-over-year growth was {ratios.growth.revenue.year_over_year|pct}. I hold the base slightly under what the guidance and the stated end-of-year run-rate together imply for the next twelve months: part of the quarter's growth is acquired RTS revenue and rand translation that the release does not separate, revenue moved {ratios.growth.revenue.quarter_over_quarter|pct} against the prior quarter, some product revenue is expected to slip a further quarter, and the same release guides a full-year net loss that the first quarter already exceeds, which lowers the weight I give its figures.",
+     "quote": "Revenue is expected to range from $468 million to $473 million, representing approximately 6% year-over-year growth at the midpoint.",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.growth.revenue.year_over_year",
+      "ratios.growth.revenue.quarter_over_quarter",
+      "ratios.growth.revenue.trailing_four_quarters",
+      "terms.trailing_four_quarters.revenue",
+      "earnings_versus_cash.history.years.0.revenue_growth"
+     ],
+     "history": "Far below the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct}, fiscal 2026's {earnings_versus_cash.history.years.0.revenue_growth|pct} and fiscal 2025's {earnings_versus_cash.history.years.1.revenue_growth|pct}, all of which carry the MiX Telematics and Fleet Complete acquisitions; close to the quarter's year-over-year {ratios.growth.revenue.year_over_year|pct}, and inside the range the legacy business showed before those deals, from {earnings_versus_cash.history.years.2.revenue_growth|pct} in 2023 to {earnings_versus_cash.history.years.4.revenue_growth|pct} in 2021. The three-year compound rate cannot be read, because the change of fiscal year leaves a gap in the record."
+    },
+    "terminal_growth": {
+     "reason": "A mature, leveraged fleet-telematics business growing roughly with nominal output once the National Treasury ramp is absorbed; product, United States and Europe revenue are already falling, so I assume no long-run growth above the general economy. Set well under the risk-free rate of {cost_of_capital.risk_free_rate|pct}.",
+     "quote": "Service revenue grew while product revenue, US revenue and Europe and Middle East revenue fell.",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "cost_of_capital.risk_free_rate"
+     ],
+     "history": "Below the legacy business's positive years, such as {earnings_versus_cash.history.years.3.revenue_growth|pct} in 2022, and above its {earnings_versus_cash.history.years.2.revenue_growth|pct} in 2023; the filed history since then is mostly acquisitions, so it says little about a steady state."
+    },
+    "operating_margin_year_one": {
+     "reason": "Trailing operating margin is {ratios.profitability.operating_margin|pct}, but it rests on a strong derived fourth quarter, {ratios.growth.operating_income.quarter_over_quarter.inputs.before}, while this quarter earned only {ratios.growth.operating_income.this_quarter}. Product gross margin fell on mix, SG&A rose on go-to-market spending, restructuring recurs, and part of the operating result comes from capitalizing more development cost and from a warranty reserve at its low. Against that, guidance calls for adjusted EBITDA to grow well ahead of revenue. I set the next twelve months about at the trailing level, not at the improvement the guidance implies.",
+     "quote": "Adjusted EBITDA is expected to range from $111 million to $114 million, representing approximately 16% year-over-year growth and a margin of approximately 24% at the midpoint.",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "ratios.growth.operating_income.this_quarter",
+      "ratios.growth.operating_income.quarter_over_quarter.inputs.before",
+      "earnings_versus_cash.history.years.0.operating_margin"
+     ],
+     "history": "Close to the trailing {ratios.profitability.operating_margin|pct} and to fiscal 2026's {earnings_versus_cash.history.years.0.operating_margin|pct}, the best year on record; well above fiscal 2025's {earnings_versus_cash.history.years.1.operating_margin|pct} and the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}. Every year before fiscal 2026 was an operating loss."
+    },
+    "operating_margin_year_ten": {
+     "reason": "Most of trailing depreciation and amortization, {terms.trailing_four_quarters.depreciation_and_amortization}, is amortization of intangibles acquired with MiX Telematics and Fleet Complete; capital expenditure is only {earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization|pct} of it. As those intangibles finish amortizing, GAAP operating margin moves toward EBITDA margin less replacement depreciation, software amortization and share-based pay. Trailing EBITDA is {ratios.solvency.ebitda} on revenue of {terms.trailing_four_quarters.revenue}, and the company targets a higher adjusted EBITDA margin by the end of fiscal 2027. The base takes the run-off as given but only part of the targeted margin expansion, because share-based compensation is rising, restructuring keeps recurring and the company keeps acquiring, which adds new amortization.",
+     "quote": "with adjusted EBITDA margins of approximately 27%",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "terms.trailing_four_quarters.depreciation_and_amortization",
+      "earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization",
+      "ratios.solvency.ebitda",
+      "terms.trailing_four_quarters.revenue",
+      "earnings_versus_cash.share_based_compensation_over_revenue"
+     ],
+     "history": "Far above anything filed: the best year is fiscal 2026 at {earnings_versus_cash.history.years.0.operating_margin|pct} and the three-year average is {earnings_versus_cash.history.operating_margin_three_year_average|pct}. The gap is mainly mechanical, the end of acquired-intangible amortization, not an assumed operating turnaround; it is the driver I am least sure of."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "The calculator's free cash flow to the firm, {free_cash_flow.free_cash_flow_to_firm}, is far larger than operating income of {ebit}, because depreciation and amortization exceed capital expenditure of {terms.trailing_four_quarters.capital_expenditure}; read as a reinvestment rate, the trailing year is deeply negative. I keep the rate negative but take away a large part of that cushion: the calculator does not deduct cash paid to develop software, which the release's own free cash flow deducts and which made that measure negative for the quarter; operating cash includes recoveries of an acquired contract asset that is running off; and trade working capital absorbed {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital} over the year as receivable days rose. The company's fiscal 2027 free cash flow guidance, which is after interest and after software development, points the same way.",
+     "quote": "Cash quality is modestly flattered by run-off recoveries of an acquired contract asset and by development spending kept outside capital expenditure, and fourth-quarter operating income was not matched by cash; none of these is quantified in the input.",
+     "quote_from": "analysis_accounting.json",
+     "fields": [
+      "free_cash_flow.free_cash_flow_to_firm",
+      "ebit",
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters.depreciation_and_amortization",
+      "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital"
+     ],
+     "history": "The company moved from consuming cash to producing it: simple free cash flow was {earnings_versus_cash.history.years.1.free_cash_flow_simple} in fiscal 2025 and {earnings_versus_cash.history.years.0.free_cash_flow_simple} in fiscal 2026, and is {free_cash_flow.free_cash_flow_simple} over the trailing four quarters. The driver is less negative than the trailing calculator measure, for the omissions named above."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "By year ten the acquired intangibles have largely amortized, depreciation approaches replacement spending, and growth has to be funded. The rate is set so that terminal growth earns a return on new capital about equal to the pre-tax cost of debt of {cost_of_capital.pre_tax_cost_of_debt|pct}, above today's return on invested capital of {ratios.profitability.return_on_invested_capital|pct}, which the goodwill from past acquisitions holds down.",
+     "quote": "Return on invested capital is below the weighted-average rate the notes give for short-term borrowings, so the capital employed does not yet earn the cost of the debt that funds it.",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "cost_of_capital.pre_tax_cost_of_debt",
+      "ratios.profitability.return_on_invested_capital",
+      "earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization"
+     ],
+     "history": "Well above the negative rate the trailing year implies, because the amortization cushion is gone by then; capital expenditure has run at only {earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization|pct} of depreciation and amortization, so no year on record shows the business reinvesting at a steady state."
+    }
+   }
+  },
+  "bull": {
+   "revenue_growth_year_one": 0.1,
+   "terminal_growth": 0.03,
+   "operating_margin_year_one": 0.065,
+   "operating_margin_year_ten": 0.18,
+   "reinvestment_rate_year_one": -0.6,
+   "reinvestment_rate_year_ten": 0.2,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "The National Treasury contract is ramping much faster than planned, with near-term recurring revenue above the top of the original expectation, and the company states an annualized revenue run-rate for the end of fiscal 2027 well above trailing revenue of {terms.trailing_four_quarters.revenue}. The bull case takes that run-rate as reached, with AI video bookings and new multi-product contracts adding to services growth and the delayed product revenue recaptured within the year.",
+     "quote": "We anticipate annualized Q4’27 revenue of approximately $495 million,",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "terms.trailing_four_quarters.revenue",
+      "ratios.growth.revenue.year_over_year",
+      "ratios.growth.revenue.trailing_four_quarters"
+     ],
+     "history": "Above the quarter's year-over-year {ratios.growth.revenue.year_over_year|pct} but below the trailing four-quarter {ratios.growth.revenue.trailing_four_quarters|pct} and fiscal 2026's {earnings_versus_cash.history.years.0.revenue_growth|pct}, both of which carry acquisitions; close to the legacy business's best year, {earnings_versus_cash.history.years.4.revenue_growth|pct} in 2021."
+    },
+    "terminal_growth": {
+     "reason": "Connected-fleet safety and video software keeps growing a little above nominal output as adoption deepens, and the South African fleet still has room to deploy beyond the vehicles mandated so far; still under the risk-free rate of {cost_of_capital.risk_free_rate|pct}.",
+     "quote": "and are expected to reach 80,000 to 90,000 over the next two quarters, against a total addressable fleet of 150,000 vehicles.",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "cost_of_capital.risk_free_rate"
+     ],
+     "history": "Below the legacy business's growth in 2021 and 2022, {earnings_versus_cash.history.years.4.revenue_growth|pct} and {earnings_versus_cash.history.years.3.revenue_growth|pct}."
+    },
+    "operating_margin_year_one": {
+     "reason": "Guidance calls for adjusted EBITDA to grow much faster than revenue in fiscal 2027; if it does, with depreciation and amortization roughly flat at {terms.trailing_four_quarters.depreciation_and_amortization}, operating margin rises above the trailing {ratios.profitability.operating_margin|pct}. The bull case also takes the production problem as the discrete, already-solved issue the release describes.",
+     "quote": "is a discrete production and revenue-recognition timing issue, not a reflection of customer demand or a broader production constraint.",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "terms.trailing_four_quarters.depreciation_and_amortization",
+      "ratios.solvency.ebitda"
+     ],
+     "history": "Above every year on record, the best being fiscal 2026's {earnings_versus_cash.history.years.0.operating_margin|pct}; below the margin of the derived fourth quarter of fiscal 2026, which earned operating income of {ratios.growth.operating_income.quarter_over_quarter.inputs.before} on revenue of {ratios.growth.revenue.quarter_over_quarter.inputs.before}."
+    },
+    "operating_margin_year_ten": {
+     "reason": "The company reaches and holds the adjusted EBITDA margin it targets for the end of fiscal 2027, acquired-intangible amortization runs off, and services, now most of revenue, keep gross margin high, so GAAP operating margin approaches that EBITDA margin less replacement depreciation, software amortization and share-based pay. Trailing EBITDA is {ratios.solvency.ebitda} on revenue of {terms.trailing_four_quarters.revenue}.",
+     "quote": "with adjusted EBITDA margins of approximately 27%",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.solvency.ebitda",
+      "terms.trailing_four_quarters.revenue",
+      "ratios.profitability.gross_margin",
+      "earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization"
+     ],
+     "history": "Far above anything filed, the best year being fiscal 2026's {earnings_versus_cash.history.years.0.operating_margin|pct}; trailing gross margin is {ratios.profitability.gross_margin|pct}, above fiscal 2026's {trend_table.years-back-0.ratios.gross_margin|pct} and fiscal 2025's {trend_table.years-back-1.ratios.gross_margin|pct}, and no filed year shows a net profit."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "As in the base, depreciation and amortization well above capital expenditure of {terms.trailing_four_quarters.capital_expenditure} keep the rate negative, net of software development and the run-off of contract asset recoveries. Faster growth needs somewhat more working capital, but receivables are collected at the company's better annual pace, and the company meets its free cash flow guidance.",
+     "quote": "Free cash flow is expected to range from $20 million to $23 million, consistent with the revised adjusted EBITDA guidance.",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "free_cash_flow.free_cash_flow_to_firm",
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters.depreciation_and_amortization",
+      "trend_table.years-back-0.ratios.days_sales_outstanding"
+     ],
+     "history": "Same as the base, and less negative than the trailing calculator measure, free cash flow to the firm of {free_cash_flow.free_cash_flow_to_firm} on operating income of {ebit}, because that measure omits software development payments."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "Growth is funded at a return on new capital well above the pre-tax cost of debt of {cost_of_capital.pre_tax_cost_of_debt|pct}, since a services-led platform, with growth coming from safety and AI video software, needs little physical capital for each added customer.",
+     "quote": "The increase in services revenues for the combined business (reflecting Powerfleet following the completion of the MiX Combination and FC Acquisition) was driven primarily by Unity safety and AI video solutions.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "cost_of_capital.pre_tax_cost_of_debt",
+      "ratios.profitability.return_on_invested_capital",
+      "earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization"
+     ],
+     "history": "Far above today's return on invested capital of {ratios.profitability.return_on_invested_capital|pct}, which acquired goodwill holds down; capital expenditure today is only {earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization|pct} of depreciation and amortization."
+    }
+   }
+  }
+ },
+ "wacc_overrides": {},
+ "dropped_items": [],
+ "dropped_count": 0
+}
