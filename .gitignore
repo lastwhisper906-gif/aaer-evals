@@ -7,3 +7,7 @@ __pycache__/
 .harness.lock/
 logs/
 .lens/
+# an agent session's whole transcript, about a megabyte each, kept beside the run for the
+# improvement loop to read on the machine that made it (docs/improve_loop.md); the
+# stderr tail in the same directory is committed as before
+runs/*/.*.logs/*.transcript.jsonl

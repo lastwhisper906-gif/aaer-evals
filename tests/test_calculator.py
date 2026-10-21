@@ -1320,3 +1320,44 @@ def test_the_free_cash_flow_yield_and_wacc_components_never_reach_the_filings_on
         assert name not in view
         assert name in view["sections_removed_for_this_view"]
         assert name in calculator.PRICED_SECTIONS
+
+
+# --- the ratios added on 2026-10-22 (docs/reports/2026-10-22-expert-metrics.md) -----------
+#
+# Every expected value is worked from NVIDIA's own statements, read by eye in
+# tests/fixtures/NVDA/10-K/nvda-20260125.htm (fiscal 2026) and
+# tests/fixtures/NVDA/10-Q/nvda-20260726.htm (six months of 2027 and 2026), in
+# millions; trailing four quarters = fiscal 2026 + six months 2027 - six months 2026,
+# the same arithmetic the tests above use for operating cash flow and capex.
+#   depreciation and amortization  2,843 + 2,124 - 1,280 =   3,687
+#   stock-based compensation       6,386 + 3,954 - 3,099 =   7,241
+#   operating income             130,387 + 117,270 - 50,078 = 197,579
+#   total revenue                215,938 + 177,837 - 90,805 = 302,970
+#   net income (above)                                       192,880
+#   operating cash flow (above)                              134,360
+#   capital expenditure (above)                                7,354;  free cash flow 127,006
+# Balance sheet at 2026-07-26: long-term debt 32,366, short-term debt 1,000 (total 33,366);
+# total shareholders' equity 228,984.
+
+def test_free_cash_flow_over_net_income_is_the_two_trailing_figures(nvda):
+    cell = nvda["free_cash_flow"]["free_cash_flow_over_net_income"]
+    assert cell["value"] == pytest.approx(127_006 / 192_880)
+    assert cell["formula"] == "free_cash_flow_simple / net_income"
+
+
+def test_capital_expenditure_over_depreciation_and_the_compensation_weights(nvda):
+    evc = nvda["earnings_versus_cash"]
+    assert evc["capital_expenditure_over_depreciation_and_amortization"]["value"] == pytest.approx(7_354 / 3_687)
+    assert evc["share_based_compensation_over_revenue"]["value"] == pytest.approx(7_241 / 302_970)
+    assert evc["share_based_compensation_over_operating_cash_flow"]["value"] == pytest.approx(7_241 / 134_360)
+
+
+def test_the_cash_flow_and_capital_structure_pair_of_the_rating_agencies(nvda):
+    """EBITDA is operating income plus depreciation and amortization, 197,579 + 3,687 =
+    201,266, the definition the solvency block already carries."""
+    solvency = nvda["ratios"]["solvency"]
+    assert solvency["ebitda"]["value"] == 201_266 * MILLION
+    assert solvency["operating_cash_flow_over_ebitda"]["value"] == pytest.approx(134_360 / 201_266)
+    assert solvency["total_debt"]["value"] == 33_366 * MILLION
+    assert solvency["operating_cash_flow_over_total_debt"]["value"] == pytest.approx(134_360 / 33_366)
+    assert solvency["debt_over_debt_plus_equity"]["value"] == pytest.approx(33_366 / (33_366 + 228_984))

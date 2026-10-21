@@ -58,8 +58,16 @@ by how cheap the arithmetic is from terms the calculator already holds.
 | 9 | effective tax rate against the statutory rate, and the discrete-items share | `calculator: tax_rate` exists as a rate; the statutory comparison is missing | yes for the rate | hand computation; the statutory rate is a constant with its source |
 | 10 | days payable against the supplier-finance obligation (stretched payables disguised as financing) | `cash_flow_engineering` area | yes (`supplier_finance_obligation`, `accounts_payable`) | hand computation |
 
-Rows 1 to 3, 5 and 9 are arithmetic over terms every run already holds and are
-one pull request with their tests; rows 4, 7 and 8 need new companyfacts terms
+Rows 1 to 3 and 5 were added the same night (`src/calculator.py`:
+`free_cash_flow.free_cash_flow_over_net_income`,
+`ratios.solvency.operating_cash_flow_over_ebitda`,
+`ratios.solvency.operating_cash_flow_over_total_debt`,
+`ratios.solvency.debt_over_debt_plus_equity`,
+`earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization`,
+`earnings_versus_cash.share_based_compensation_over_revenue` and
+`..._over_operating_cash_flow`), each judged by NVIDIA's statements read by eye
+in `tests/test_calculator.py`; row 9 is arithmetic over terms every run already
+holds and is one pull request with its test; rows 4, 7 and 8 need new companyfacts terms
 first; row 6 is for the valuation analyst and changes what that layer sees,
 which `src/agent_inputs.py` and its test hold. All of them are calculator
 formulas, so by the owner's rule of 2026-09-28 each pull request needs the two

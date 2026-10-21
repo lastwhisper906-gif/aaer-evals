@@ -1029,6 +1029,21 @@ def ratios(record: Record, terms: dict, periods: dict) -> dict:
                                            {"total_liabilities": now["total_liabilities"],
                                             "assets": now["assets"]},
                                            lambda v: v["total_liabilities"] / v["assets"]),
+        # the rating agencies' cash-flow and capital-structure pair (docs/reports/
+        # 2026-10-22-expert-metrics.md, rows 1 and 3): cash flow against the debt it
+        # services, and debt's share of the capital that funds the assets
+        "operating_cash_flow_over_ebitda": measure(
+            "operating_cash_flow / ebitda",
+            {"operating_cash_flow": ttm["operating_cash_flow"], "ebitda": ebitda},
+            lambda v: v["operating_cash_flow"] / v["ebitda"], denominator="ebitda"),
+        "operating_cash_flow_over_total_debt": measure(
+            "operating_cash_flow / total_debt",
+            {"operating_cash_flow": ttm["operating_cash_flow"], "total_debt": debt},
+            lambda v: v["operating_cash_flow"] / v["total_debt"], denominator="total_debt"),
+        "debt_over_debt_plus_equity": measure(
+            "total_debt / (total_debt + stockholders_equity)",
+            {"total_debt": debt, "stockholders_equity": now["stockholders_equity"]},
+            lambda v: v["total_debt"] / (v["total_debt"] + v["stockholders_equity"])),
         "operating_lease_liability": record.latest_balance("operating_lease_liability",
                                                            periods["balance_now"]),
     }
@@ -1133,6 +1148,24 @@ def earnings_versus_cash(record: Record, terms: dict, periods: dict) -> dict:
                      "as the taxonomy defines it"),
         }
     out["working_capital"] = absorbed
+    # Schilit's capitalization lens and the add-back's weight in cash flow
+    # (docs/reports/2026-10-22-expert-metrics.md, rows 2 and 5)
+    out["capital_expenditure_over_depreciation_and_amortization"] = measure(
+        "capital_expenditure / depreciation_and_amortization",
+        {"capital_expenditure": ttm["capital_expenditure"],
+         "depreciation_and_amortization": ttm["depreciation_and_amortization"]},
+        lambda v: v["capital_expenditure"] / v["depreciation_and_amortization"],
+        denominator="depreciation_and_amortization")
+    out["share_based_compensation_over_revenue"] = measure(
+        "share_based_compensation / revenue",
+        {"share_based_compensation": ttm["share_based_compensation"], "revenue": ttm["revenue"]},
+        lambda v: v["share_based_compensation"] / v["revenue"], denominator="revenue")
+    out["share_based_compensation_over_operating_cash_flow"] = measure(
+        "share_based_compensation / operating_cash_flow",
+        {"share_based_compensation": ttm["share_based_compensation"],
+         "operating_cash_flow": ttm["operating_cash_flow"]},
+        lambda v: v["share_based_compensation"] / v["operating_cash_flow"],
+        denominator="operating_cash_flow")
     out["smoothness"] = smoothness(record, periods)
     out["history"] = annual_history(record, periods)
     return out
@@ -1338,7 +1371,12 @@ def free_cash_flows(terms: dict, sections: dict, adjustments: list | None,
 
     quality = quality_adjusted(simple, ttm["share_based_compensation"], families["acquisitions"],
                                adjustments, fields)
-    return {"free_cash_flow_simple": simple, "free_cash_flow_to_firm": to_firm,
+    over_net_income = measure(
+        "free_cash_flow_simple / net_income",
+        {"free_cash_flow_simple": simple, "net_income": terms["trailing_four_quarters"]["net_income"]},
+        lambda v: v["free_cash_flow_simple"] / v["net_income"], denominator="net_income")
+    return {"free_cash_flow_simple": simple, "free_cash_flow_over_net_income": over_net_income,
+            "free_cash_flow_to_firm": to_firm,
             "free_cash_flow_to_equity": to_equity, "free_cash_flow_quality_adjusted": quality}
 
 

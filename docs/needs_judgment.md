@@ -152,6 +152,8 @@ force.
 
 [ ] **the improvement loop's budget per pass** · 60 USD at list price (`Makefile` `BUDGET`, `tools/improve.sh`, the skill): about one company's two analysts run twice on each side of a comparison, which is what `measure` needs for one held-in run and nothing held out · deciding sets the number; a pass under it draws held-out runs only when the plan fits
 
+[ ] **AAON's auditor's report: the parser finds two critical audit matters where the report states one** · AAON, Inc. (CIK 0000824142, SIC 3585), the next filer under 3585 by the owner's rule of 2026-10-07, was fetched by `src/add_company.py` on 2026-10-21 and refused at the bundle: `src/split_sections.py` raises `CriticalAuditMatterCountUnclear` ("the report states one critical audit matter, found 2") on its 10-K, so no baseline and no universe row were written and its store is kept outside the tree (`scratchpad/deferred/AAON`) · **default in force:** AAON stays out of the universe; the SIC's slot is filled by the next qualifying filer when the universe is next extended · deciding reads the report by eye: either the heading pattern counts a paragraph that is not a matter (a parser defect to fix in `src/split_sections.py` with the report as the expected value) or the report does state two, in which case the count the parser reads off the sentence is the defect
+
 ## Settled by default
 
 Every other row that was open on 2026-09-28. Nothing waits on any of them: the
