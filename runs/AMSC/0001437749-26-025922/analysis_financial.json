@@ -1,0 +1,637 @@
+{
+ "question": "how healthy is this company?",
+ "sections": {
+  "profitability": {
+   "reading": "Over the trailing four quarters gross margin is {ratios.profitability.gross_margin|pct}, operating margin {ratios.profitability.operating_margin|pct} and net margin {ratios.profitability.net_margin|pct}; return on assets is {ratios.profitability.return_on_assets|pct}, return on equity {ratios.profitability.return_on_equity|pct} and return on invested capital {ratios.profitability.return_on_invested_capital|pct}. The gap between the net line and the operating line is the main finding. Trailing net income is {terms.trailing_four_quarters.net_income} against pretax income of {terms.trailing_four_quarters.pretax_income}, because the fiscal year ended March 2026 carries a large income tax benefit, almost all of it deferred (trailing tax line {terms.trailing_four_quarters.income_tax_expense}). The effective rate is therefore negative ({tax_rate.effective_rate|pct}), and the calculator holds the tax rate at {tax_rate|pct} for return on invested capital. Return on assets and return on equity measure a one-time tax release, not the business. Return on invested capital, built on operating income, is the reading of operating returns, and it is low. Against its own history the operating line has improved. Operating margin was {earnings_versus_cash.history.years.2.operating_margin|pct} in the fiscal year ended March 2024 and {earnings_versus_cash.history.years.1.operating_margin|pct} in the year ended March 2025, against {earnings_versus_cash.history.years.0.operating_margin|pct} in the year ended March 2026; the three-year average is {earnings_versus_cash.history.operating_margin_three_year_average|pct}. Annual gross margin of {trend_table.years-back-0.ratios.gross_margin|pct} is the highest of five filled years. The latest quarter turns the other way. Its gross margin of {trend_table.quarters-back-0.ratios.gross_margin|pct} is the lowest of six filled quarters, against {trend_table.quarters-back-4.ratios.gross_margin|pct} a year earlier, and MD&A blames product mix and Comtrafo purchase accounting. The quarter's operating income of {ratios.growth.operating_income.this_quarter} includes a non-cash gain from lowering the Comtrafo earnout liability, and MD&A says that gain drove the rise in net income. The non-GAAP measure, which removes the gain, fell against the year-earlier quarter. The quarter also now bears income tax expense after the valuation allowance release.",
+   "fields": [
+    "ratios.profitability.gross_margin",
+    "ratios.profitability.operating_margin",
+    "ratios.profitability.net_margin",
+    "ratios.profitability.return_on_assets",
+    "ratios.profitability.return_on_equity",
+    "ratios.profitability.return_on_invested_capital",
+    "terms.trailing_four_quarters.net_income",
+    "terms.trailing_four_quarters.pretax_income",
+    "terms.trailing_four_quarters.income_tax_expense",
+    "tax_rate.effective_rate",
+    "tax_rate",
+    "earnings_versus_cash.history.years.0.operating_margin",
+    "earnings_versus_cash.history.years.1.operating_margin",
+    "earnings_versus_cash.history.years.2.operating_margin",
+    "earnings_versus_cash.history.operating_margin_three_year_average",
+    "trend_table.years-back-0.ratios.gross_margin",
+    "trend_table.quarters-back-0.ratios.gross_margin",
+    "trend_table.quarters-back-4.ratios.gross_margin",
+    "ratios.growth.operating_income.this_quarter"
+   ],
+   "evidence": [
+    "earnings_quality_gross_margin_quarterly",
+    "earnings_quality_gross_margin_annual",
+    "earnings_quality_annual_tax_benefit_against_operating_income",
+    "earnings_quality_contingent_consideration_gain_within_operating_expenses",
+    "narrative_signs_of_operating_pressure_gross_margin_decrease_product_mix_and_purchase_accounting",
+    "earnings_quality_net_income_increase_driven_by_contingent_consideration_gain",
+    "earnings_quality_non_gaap_net_income_below_gaap",
+    "earnings_quality_quarterly_income_tax_expense"
+   ]
+  },
+  "efficiency": {
+   "reading": "On trailing flows and average balances, days sales outstanding is {ratios.efficiency.days_sales_outstanding}, days sales of inventory {ratios.efficiency.days_sales_of_inventory} and days payables outstanding {ratios.efficiency.days_payables_outstanding}. That gives a cash conversion cycle of {ratios.efficiency.cash_conversion_cycle} days, and asset turnover is {ratios.efficiency.asset_turnover}. The cycle is long, and suppliers fund only a small part of it. Receivables are getting slower to collect. The quarter's days sales outstanding of {trend_table.quarters-back-0.ratios.days_sales_outstanding} is the second highest of six filled quarters, up from {trend_table.quarters-back-4.ratios.days_sales_outstanding} a year earlier, and the fiscal-year figure rose to {trend_table.years-back-0.ratios.days_sales_outstanding} from {trend_table.years-back-1.ratios.days_sales_outstanding}. Inventory looks better on the quarter: {trend_table.quarters-back-0.ratios.days_sales_of_inventory} days is the lowest of six filled quarters, and inventory released cash in the quarter. The fiscal-year figure of {trend_table.years-back-0.ratios.days_sales_of_inventory}, though, is the highest of five filled years. Part of that is timing: the year-end balance holds acquired Comtrafo inventory, while cost of revenue holds only part of a year of Comtrafo. Inventory write-downs over the trailing four quarters total {terms.trailing_four_quarters.inventory_write_down}, and the quarter's provision rose against the year-earlier quarter. Total assets jumped from {terms.balances_a_year_earlier.assets} to {terms.balances_now.assets}, which holds asset turnover down. Much of the increase is goodwill and the deferred tax asset: the soft-asset share is {trend_table.quarters-back-0.ratios.soft_asset_share|pct}, against {trend_table.quarters-back-4.ratios.soft_asset_share|pct} a year earlier.",
+   "fields": [
+    "ratios.efficiency.days_sales_outstanding",
+    "ratios.efficiency.days_sales_of_inventory",
+    "ratios.efficiency.days_payables_outstanding",
+    "ratios.efficiency.cash_conversion_cycle",
+    "ratios.efficiency.asset_turnover",
+    "trend_table.quarters-back-0.ratios.days_sales_outstanding",
+    "trend_table.quarters-back-4.ratios.days_sales_outstanding",
+    "trend_table.years-back-0.ratios.days_sales_outstanding",
+    "trend_table.years-back-1.ratios.days_sales_outstanding",
+    "trend_table.quarters-back-0.ratios.days_sales_of_inventory",
+    "trend_table.years-back-0.ratios.days_sales_of_inventory",
+    "terms.trailing_four_quarters.inventory_write_down",
+    "terms.balances_a_year_earlier.assets",
+    "terms.balances_now.assets",
+    "trend_table.quarters-back-0.ratios.soft_asset_share",
+    "trend_table.quarters-back-4.ratios.soft_asset_share"
+   ],
+   "evidence": [
+    "revenue_recognition_days_sales_outstanding_quarterly",
+    "revenue_recognition_days_sales_outstanding_annual",
+    "estimates_and_discretion_days_sales_of_inventory_quarterly",
+    "estimates_and_discretion_days_sales_of_inventory_annual",
+    "estimates_and_discretion_excess_obsolete_inventory_provision",
+    "structure_and_disclosure_changes_soft_asset_share_quarterly"
+   ]
+  },
+  "liquidity": {
+   "reading": "The current ratio is {ratios.liquidity.current_ratio} and the quick ratio {ratios.liquidity.quick_ratio}; both are comfortable. No cash runway is computed, because free cash flow over the trailing four quarters is not negative: the company is not burning cash. Cash is {terms.balances_now.cash}, down from {terms.balances_a_year_earlier.cash} a year earlier. The Comtrafo purchase used {terms.cash_flow_families.acquisitions} in cash and Comtrafo's acquired debt of {terms.cash_flow_families.borrowing_repaid} was repaid. The year-earlier quarter brought in an equity offering; this quarter raised nothing. Current liabilities rose from {terms.balances_a_year_earlier.current_liabilities} to {terms.balances_now.current_liabilities}, while current assets slipped from {terms.balances_a_year_earlier.current_assets} to {terms.balances_now.current_assets}. The cushion has thinned but is still wide. Much of current liabilities is customer deposits ({terms.balances_now.contract_liabilities} of current contract liabilities), which are settled by shipping product rather than by paying cash, so on that point the ratios understate liquidity. Capital spending has stepped up: {terms.trailing_four_quarters.capital_expenditure} over the trailing four quarters, against {terms.trailing_four_quarters_a_year_earlier.capital_expenditure} a year earlier, mostly for the Brazilian real estate purchase. Part of the cash sits in foreign bank accounts, and MD&A names the effective shelf registration as a further source of liquidity. The record has no short-term investments line for this date, so cash alone stands for liquid assets.",
+   "fields": [
+    "ratios.liquidity.current_ratio",
+    "ratios.liquidity.quick_ratio",
+    "ratios.liquidity.cash_runway_months",
+    "terms.balances_now.cash",
+    "terms.balances_a_year_earlier.cash",
+    "terms.cash_flow_families.acquisitions",
+    "terms.cash_flow_families.borrowing_repaid",
+    "terms.balances_a_year_earlier.current_liabilities",
+    "terms.balances_now.current_liabilities",
+    "terms.balances_a_year_earlier.current_assets",
+    "terms.balances_now.current_assets",
+    "terms.balances_now.contract_liabilities",
+    "terms.trailing_four_quarters.capital_expenditure",
+    "terms.trailing_four_quarters_a_year_earlier.capital_expenditure"
+   ],
+   "evidence": [
+    "liquidity_and_capital_capital_expenditure_increase",
+    "liquidity_and_capital_operating_cash_flow_deferred_revenue",
+    "liquidity_and_capital_foreign_bank_account_cash_and_liquidity_sources",
+    "liquidity_and_capital_comtrafo_debt_repaid_and_debt_note_removed",
+    "liquidity_and_capital_property_plant_and_equipment_purchases"
+   ]
+  },
+  "solvency": {
+   "reading": "The company carries no debt. Total debt is {ratios.solvency.total_debt}, net debt is {ratios.solvency.net_debt} (that is, net cash), debt over EBITDA is {ratios.solvency.debt_over_ebitda} and debt over debt plus equity is {ratios.solvency.debt_over_debt_plus_equity}. Liabilities are {ratios.solvency.liabilities_over_assets|pct} of assets and operating lease liabilities are {ratios.solvency.operating_lease_liability}. Operating cash flow is {ratios.solvency.operating_cash_flow_over_ebitda} times trailing EBITDA of {ratios.solvency.ebitda}. Interest coverage is not in the calculator, because the record holds no interest expense row for the fiscal year ended March 2026. With no debt, and net interest income in the release, that gap is not a sign of strain. Comtrafo's pre-acquisition debt was paid off during that year. Total liabilities rose from {terms.balances_a_year_earlier.total_liabilities} to {terms.balances_now.total_liabilities}, mostly customer deposits and acquisition-related balances. The debt measures leave out the Comtrafo earnout. It is a liability carried at fair value, remeasured each quarter under an open material weakness, with its range tagged in Brazilian reais and payment tied to Comtrafo EBITDA over three years. The record also tags no purchase obligations, guarantees or supplier-finance balances, so those cannot be read. Equity is debt-free, but much of it rests on goodwill and the newly recognized deferred tax asset.",
+   "fields": [
+    "ratios.solvency.total_debt",
+    "ratios.solvency.net_debt",
+    "ratios.solvency.debt_over_ebitda",
+    "ratios.solvency.debt_over_debt_plus_equity",
+    "ratios.solvency.liabilities_over_assets",
+    "ratios.solvency.operating_lease_liability",
+    "ratios.solvency.operating_cash_flow_over_ebitda",
+    "ratios.solvency.ebitda",
+    "ratios.solvency.interest_coverage",
+    "terms.balances_a_year_earlier.total_liabilities",
+    "terms.balances_now.total_liabilities"
+   ],
+   "evidence": [
+    "liquidity_and_capital_comtrafo_debt_repaid_and_debt_note_removed",
+    "liquidity_and_capital_contingent_consideration_liability",
+    "estimates_and_discretion_contingent_consideration_earnout_range",
+    "estimates_and_discretion_goodwill_no_impairment_trigger_identified",
+    "liquidity_and_capital_interest_income_attributed_to_higher_cash_balances"
+   ]
+  },
+  "growth": {
+   "reading": "Revenue grew {ratios.growth.revenue.quarter_over_quarter|pct} on the prior quarter, {ratios.growth.revenue.year_over_year|pct} on the year-earlier quarter and {ratios.growth.revenue.trailing_four_quarters|pct} over the trailing four quarters. The history shows sustained expansion: three-year compound growth of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and five-year compound growth of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}. Part of the latest growth was bought. Comtrafo, acquired in December 2025, contributed revenue in the quarter, MD&A names Comtrafo as the only driver of Grid growth, and the filings do not split organic from acquired growth. Wind grew on control-system shipments. Operating income grew {ratios.growth.operating_income.year_over_year|pct} on the year-earlier quarter and {ratios.growth.operating_income.trailing_four_quarters|pct} over the trailing four quarters. The quarter-over-quarter figure of {ratios.growth.operating_income.quarter_over_quarter|pct} starts from a derived March 2026 quarter with an operating loss of {ratios.growth.operating_income.quarter_over_quarter.inputs.before}, and the latest quarter includes the earnout gain, so neither figure says much about the run rate. Net income grew {ratios.growth.net_income.quarter_over_quarter|pct} on the prior quarter and {ratios.growth.net_income.year_over_year|pct} on the year; the trailing figure of {ratios.growth.net_income.trailing_four_quarters|pct} is the tax benefit. Operating cash flow grew {ratios.growth.operating_cash_flow.quarter_over_quarter|pct} on the prior quarter, {ratios.growth.operating_cash_flow.year_over_year|pct} on the year and {ratios.growth.operating_cash_flow.trailing_four_quarters|pct} over the trailing four quarters. Yet the latest full fiscal year produced less operating cash ({earnings_versus_cash.history.years.0.operating_cash_flow}) than the year before ({earnings_versus_cash.history.years.1.operating_cash_flow}). Forward signs in the release and notes are mixed. Management guides next-quarter revenue and GAAP net income below this quarter's, while it reports record orders and a larger twelve-month remaining performance obligation.",
+   "fields": [
+    "ratios.growth.revenue.quarter_over_quarter",
+    "ratios.growth.revenue.year_over_year",
+    "ratios.growth.revenue.trailing_four_quarters",
+    "earnings_versus_cash.history.revenue_growth_three_year_compound",
+    "earnings_versus_cash.history.revenue_growth_five_year_compound",
+    "ratios.growth.operating_income.quarter_over_quarter",
+    "ratios.growth.operating_income.quarter_over_quarter.inputs.before",
+    "ratios.growth.operating_income.year_over_year",
+    "ratios.growth.operating_income.trailing_four_quarters",
+    "ratios.growth.net_income.quarter_over_quarter",
+    "ratios.growth.net_income.year_over_year",
+    "ratios.growth.net_income.trailing_four_quarters",
+    "ratios.growth.operating_cash_flow.quarter_over_quarter",
+    "ratios.growth.operating_cash_flow.year_over_year",
+    "ratios.growth.operating_cash_flow.trailing_four_quarters",
+    "earnings_versus_cash.history.years.0.operating_cash_flow",
+    "earnings_versus_cash.history.years.1.operating_cash_flow"
+   ],
+   "evidence": [
+    "structure_and_disclosure_changes_comtrafo_in_revenue_growth",
+    "structure_and_disclosure_changes_comtrafo_quarter_contribution",
+    "narrative_signs_of_operating_pressure_grid_revenue_growth_attributed_to_comtrafo",
+    "results_against_expectations_wind_revenue_from_ecs_shipments",
+    "results_against_expectations_revenue_guidance_below_reported",
+    "results_against_expectations_net_income_guidance",
+    "results_against_expectations_record_orders_utility_mining",
+    "results_against_expectations_remaining_performance_obligations_restated"
+   ]
+  },
+  "free_cash_flow": {
+   "reading": "All four measures are computed; none is missing. Simple free cash flow over the trailing four quarters is {free_cash_flow.free_cash_flow_simple}. The history shows it positive for three straight fiscal years: {earnings_versus_cash.history.years.2.free_cash_flow_simple} in the year ended March 2024, {earnings_versus_cash.history.years.1.free_cash_flow_simple} in the year ended March 2025 and {earnings_versus_cash.history.years.0.free_cash_flow_simple} in the year ended March 2026, after negative years before that. Even so, it is only {free_cash_flow.free_cash_flow_over_net_income|pct} of net income, because net income carries the non-cash tax benefit. Free cash flow to equity is {free_cash_flow.free_cash_flow_to_equity}: simple free cash flow less the repayment of Comtrafo's acquired debt ({free_cash_flow.free_cash_flow_to_equity.net_borrowing}). The formula uses borrowing flows only, and the record tags no dividends and no repurchase line for this year to date. Free cash flow to the firm is negative at {free_cash_flow.free_cash_flow_to_firm}. It starts from operating income at the zero tax rate the calculator holds, adds depreciation, and subtracts capital spending and a rise in trade working capital of {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital}. That rise is read from the balance sheets and likely includes the receivables and inventory acquired with Comtrafo, which the cash flow statement's own working-capital lines do not count: the inventory articulation gap is {earnings_versus_cash.working_capital.inventory.articulation_gap}. So the firm measure overstates the organic working-capital drain. Quality-adjusted free cash flow is {free_cash_flow.free_cash_flow_quality_adjusted}, after subtracting share-based compensation of {terms.trailing_four_quarters.share_based_compensation} and acquisition cash of {free_cash_flow.free_cash_flow_quality_adjusted.inputs.acquisitions.cash_spent}; no other adjustment was applied or refused. Share-based compensation equals {earnings_versus_cash.share_based_compensation_over_operating_cash_flow|pct} of operating cash flow. Counted as a cost, it leaves little cash beyond what the business reinvests.",
+   "fields": [
+    "free_cash_flow.free_cash_flow_simple",
+    "free_cash_flow.free_cash_flow_over_net_income",
+    "free_cash_flow.free_cash_flow_to_equity",
+    "free_cash_flow.free_cash_flow_to_equity.net_borrowing",
+    "free_cash_flow.free_cash_flow_to_firm",
+    "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital",
+    "free_cash_flow.free_cash_flow_quality_adjusted",
+    "free_cash_flow.free_cash_flow_quality_adjusted.inputs.acquisitions.cash_spent",
+    "terms.trailing_four_quarters.share_based_compensation",
+    "earnings_versus_cash.share_based_compensation_over_operating_cash_flow",
+    "earnings_versus_cash.working_capital.inventory.articulation_gap",
+    "earnings_versus_cash.history.years.0.free_cash_flow_simple",
+    "earnings_versus_cash.history.years.1.free_cash_flow_simple",
+    "earnings_versus_cash.history.years.2.free_cash_flow_simple"
+   ],
+   "evidence": [
+    "liquidity_and_capital_capital_expenditure_increase",
+    "liquidity_and_capital_comtrafo_debt_repaid_and_debt_note_removed",
+    "liquidity_and_capital_operating_cash_flow_deferred_revenue",
+    "earnings_quality_non_gaap_net_income_below_gaap"
+   ]
+  }
+ },
+ "dupont": {
+  "reading": "Return on equity of {ratios.profitability.dupont.product|pct} is net margin {ratios.profitability.dupont.net_margin|pct} times asset turnover {ratios.profitability.dupont.asset_turnover} times an equity multiplier of {ratios.profitability.dupont.equity_multiplier}. Net margin carries it, and that margin comes mostly from the deferred tax benefit booked in the fiscal year ended March 2026, not from operations: trailing operating margin is {ratios.profitability.operating_margin|pct}. Asset turnover is modest, diluted as assets grew from {terms.balances_a_year_earlier.assets} to {terms.balances_now.assets} with Comtrafo goodwill and the deferred tax asset. The equity multiplier is close to one because there is no debt, so leverage adds little. The calculator holds no earlier DuPont split, so the shift can be read only from the history. Net income was {earnings_versus_cash.history.years.1.net_income} in the fiscal year ended March 2025 and {earnings_versus_cash.history.years.2.net_income} the year before. Return on equity therefore moved almost entirely through the net-margin leg, on a benefit booked in a single quarter.",
+  "fields": [
+   "ratios.profitability.dupont.product",
+   "ratios.profitability.dupont.net_margin",
+   "ratios.profitability.dupont.asset_turnover",
+   "ratios.profitability.dupont.equity_multiplier",
+   "ratios.profitability.operating_margin",
+   "terms.balances_a_year_earlier.assets",
+   "terms.balances_now.assets",
+   "earnings_versus_cash.history.years.1.net_income",
+   "earnings_versus_cash.history.years.2.net_income"
+  ]
+ },
+ "anomalies": [
+  {
+   "id": "results_against_expectations_next_quarter_guidance_below_reported_quarter",
+   "name": "Next-quarter guidance below the quarter just reported",
+   "name_ko": "다음 분기 가이던스가 이번 분기 실적보다 낮음",
+   "area": "results_against_expectations",
+   "what": "For the quarter ending September 2026 the release guides revenue and GAAP net income below what the quarter just reported (revenue {ratios.growth.revenue.this_quarter}, net income {ratios.growth.net_income.this_quarter}). The GAAP guidance assumes no further change in the earnout's fair value, so the gain that lifted this quarter is not expected to recur. The input holds no consensus and no earlier guidance, so results against outside expectations cannot be judged. This is management's own expectation of a weaker quarter.",
+   "evidence": [
+    "results_against_expectations_revenue_guidance_below_reported",
+    "results_against_expectations_net_income_guidance",
+    "results_against_expectations_second_quarter_guidance_assumes_no_contingent_consideration_change"
+   ],
+   "fields": [
+    "ratios.growth.revenue.this_quarter",
+    "ratios.growth.net_income.this_quarter"
+   ]
+  },
+  {
+   "id": "liquidity_and_capital_cash_lower_after_acquisition_with_no_new_financing",
+   "name": "Cash lower after the acquisition, with no new financing",
+   "name_ko": "인수 후 현금 감소, 신규 자금조달 없음",
+   "area": "liquidity_and_capital",
+   "what": "Cash is {terms.balances_now.cash}, against {terms.balances_a_year_earlier.cash} a year earlier. Over the trailing four quarters the Comtrafo purchase used {terms.cash_flow_families.acquisitions} and Comtrafo's acquired debt of {terms.cash_flow_families.borrowing_repaid} was repaid. The year-earlier quarter brought in an equity offering; this quarter had no financing inflow. Part of the cash is held in foreign bank accounts. Current liabilities rose from {terms.balances_a_year_earlier.current_liabilities} to {terms.balances_now.current_liabilities}. With a current ratio of {ratios.liquidity.current_ratio}, the cushion is thinner but there is no shortage.",
+   "evidence": [
+    "liquidity_and_capital_capital_expenditure_increase",
+    "liquidity_and_capital_foreign_bank_account_cash_and_liquidity_sources",
+    "liquidity_and_capital_comtrafo_debt_repaid_and_debt_note_removed"
+   ],
+   "fields": [
+    "terms.balances_now.cash",
+    "terms.balances_a_year_earlier.cash",
+    "terms.cash_flow_families.acquisitions",
+    "terms.cash_flow_families.borrowing_repaid",
+    "terms.balances_a_year_earlier.current_liabilities",
+    "terms.balances_now.current_liabilities",
+    "ratios.liquidity.current_ratio"
+   ]
+  },
+  {
+   "id": "liquidity_and_capital_capital_spending_step_up",
+   "name": "Capital spending stepped up sharply",
+   "name_ko": "설비투자 급증",
+   "area": "liquidity_and_capital",
+   "what": "Capital spending over the trailing four quarters is {terms.trailing_four_quarters.capital_expenditure}, against {terms.trailing_four_quarters_a_year_earlier.capital_expenditure} a year earlier, and it now runs at {earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization} times depreciation and amortization. Most of the quarter's spending was Brazilian real estate, bought for cash once it was re-zoned. Net plant rose from {terms.balances_a_year_earlier.property_plant_and_equipment} to {terms.balances_now.property_plant_and_equipment}, much of it acquired with Comtrafo. Operating cash covers the spending, but it absorbs a large share of what the business generates.",
+   "evidence": [
+    "liquidity_and_capital_capital_expenditure_increase",
+    "liquidity_and_capital_property_plant_and_equipment_purchases",
+    "related_parties_contingencies_and_subsequent_events_comtrafo_real_estate_purchase_completed",
+    "related_parties_contingencies_and_subsequent_events_property_payment_brazil"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.capital_expenditure",
+    "terms.trailing_four_quarters_a_year_earlier.capital_expenditure",
+    "earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization",
+    "terms.balances_a_year_earlier.property_plant_and_equipment",
+    "terms.balances_now.property_plant_and_equipment"
+   ]
+  },
+  {
+   "id": "liquidity_and_capital_operating_cash_flow_leans_on_customer_deposits",
+   "name": "Quarter's operating cash flow leans on customer deposits and inventory release",
+   "name_ko": "분기 영업현금흐름이 고객 선수금과 재고 감소에 의존",
+   "area": "liquidity_and_capital",
+   "what": "The quarter's operating cash flow of {ratios.growth.operating_cash_flow.this_quarter}, up {ratios.growth.operating_cash_flow.year_over_year|pct} on the year, came largely from working capital. Customer deposits (deferred revenue) rose and inventory fell, while receivables absorbed cash. MD&A also lists the non-cash earnout remeasurement among the drivers. Current contract liabilities stand at {terms.balances_now.contract_liabilities}, against {terms.balances_a_year_earlier.contract_liabilities} a year earlier. Relative to quarterly revenue, though, they are the second lowest of six filled quarters ({trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue}), against {trend_table.quarters-back-7.ratios.contract_liabilities_over_revenue} in the quarter ended September 2024. Cash from deposits reverses as orders ship.",
+   "evidence": [
+    "liquidity_and_capital_operating_cash_flow_deferred_revenue",
+    "across_documents_operating_cash_flow_quadrupled_headline",
+    "earnings_quality_operating_cash_flow_drivers_cite_fair_value_change",
+    "revenue_recognition_contract_liabilities_over_revenue_quarterly"
+   ],
+   "fields": [
+    "ratios.growth.operating_cash_flow.this_quarter",
+    "ratios.growth.operating_cash_flow.year_over_year",
+    "terms.balances_now.contract_liabilities",
+    "terms.balances_a_year_earlier.contract_liabilities",
+    "trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue",
+    "trend_table.quarters-back-7.ratios.contract_liabilities_over_revenue"
+   ]
+  },
+  {
+   "id": "liquidity_and_capital_share_based_compensation_against_operating_cash_flow",
+   "name": "Share-based compensation large against operating cash flow",
+   "name_ko": "영업현금흐름 대비 큰 주식보상비용",
+   "area": "liquidity_and_capital",
+   "what": "Share-based compensation over the trailing four quarters is {terms.trailing_four_quarters.share_based_compensation}, equal to {earnings_versus_cash.share_based_compensation_over_operating_cash_flow|pct} of operating cash flow and {earnings_versus_cash.share_based_compensation_over_revenue|pct} of revenue. In the fiscal year ended March 2026 it was {earnings_versus_cash.history.years.0.share_based_compensation}, against {earnings_versus_cash.history.years.1.share_based_compensation} the year before. Counted as a cost together with the acquisition cash, it turns quality-adjusted free cash flow negative ({free_cash_flow.free_cash_flow_quality_adjusted}).",
+   "evidence": [
+    "earnings_quality_non_gaap_net_income_below_gaap",
+    "earnings_quality_selling_general_and_administrative_increase"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.share_based_compensation",
+    "earnings_versus_cash.share_based_compensation_over_operating_cash_flow",
+    "earnings_versus_cash.share_based_compensation_over_revenue",
+    "earnings_versus_cash.history.years.0.share_based_compensation",
+    "earnings_versus_cash.history.years.1.share_based_compensation",
+    "free_cash_flow.free_cash_flow_quality_adjusted"
+   ]
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_non_gaap_net_income_decline_on_lower_gross_margins",
+   "name": "MD&A says non-GAAP net income fell on lower gross margins",
+   "name_ko": "총이익률 하락으로 비GAAP 순이익 감소",
+   "area": "narrative_signs_of_operating_pressure",
+   "what": "MD&A states that non-GAAP net income fell against the year-earlier quarter because of lower gross margins, and non-GAAP earnings per share fell with it. The quarter's gross margin is {trend_table.quarters-back-0.ratios.gross_margin|pct}, against {trend_table.quarters-back-4.ratios.gross_margin|pct} a year earlier. The release headline leads with record revenue and orders and shows no non-GAAP figure.",
+   "evidence": [
+    "narrative_signs_of_operating_pressure_non_gaap_net_income_decrease_lower_gross_margins",
+    "earnings_quality_non_gaap_net_income_below_gaap"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.gross_margin",
+    "trend_table.quarters-back-4.ratios.gross_margin"
+   ]
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_selling_general_administrative_growth",
+   "name": "Overhead growing faster than gross profit",
+   "name_ko": "판매관리비 증가가 매출총이익 증가를 앞섬",
+   "area": "narrative_signs_of_operating_pressure",
+   "what": "SG&A rose against the year-earlier quarter. MD&A puts this down to Comtrafo expenses, higher overall compensation and more stock-based compensation; research and development fell. The release shows gross profit in dollars nearly unchanged against the year-earlier quarter, even as revenue rose {ratios.growth.revenue.year_over_year|pct}. Rising overhead therefore came out of a gross profit that did not grow, and trailing operating margin stays thin at {ratios.profitability.operating_margin|pct}.",
+   "evidence": [
+    "narrative_signs_of_operating_pressure_selling_general_administrative_increase",
+    "earnings_quality_selling_general_and_administrative_increase",
+    "earnings_quality_research_and_development_decrease",
+    "across_documents_gross_margin_improvement_claim"
+   ],
+   "fields": [
+    "ratios.growth.revenue.year_over_year",
+    "ratios.profitability.operating_margin"
+   ]
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_grid_growth_named_only_as_comtrafo",
+   "name": "Grid growth attributed only to Comtrafo; legacy Grid customers shrinking",
+   "name_ko": "Grid 성장은 Comtrafo 인수 효과뿐, 기존 고객 비중 축소",
+   "area": "narrative_signs_of_operating_pressure",
+   "what": "MD&A gives the addition of Comtrafo revenues as the only driver of Grid growth, while the release calls the increase organic plus acquired. Fuji Bridex, at {concentration.facts.12.value|pct} of revenue in the year-earlier quarter, is now below the disclosure threshold, and Innomotics is no longer listed. Inox Wind alone is {concentration.facts.22.value|pct} of revenue. The Grid segment, which holds Comtrafo and all the goodwill, is described as running at an operating loss.",
+   "evidence": [
+    "narrative_signs_of_operating_pressure_grid_revenue_growth_attributed_to_comtrafo",
+    "across_documents_revenue_growth_organic_versus_comtrafo",
+    "revenue_recognition_customer_concentration_fuji_bridex_below_threshold",
+    "across_documents_comtrafo_contribution_against_earnout_forecast_and_grid_loss",
+    "revenue_recognition_customer_concentration_grid"
+   ],
+   "fields": [
+    "concentration.facts.12.value",
+    "concentration.facts.22.value",
+    "ratios.growth.revenue.year_over_year"
+   ]
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_tariffs_trade_and_supply_chain_risks",
+   "name": "Stated exposure to tariffs, trade conflicts and supply-chain disruption",
+   "name_ko": "관세·무역분쟁·공급망 차질 위험 명시",
+   "area": "narrative_signs_of_operating_pressure",
+   "what": "MD&A names the wars in Ukraine and the Middle East, tariffs and trade conflicts, labor availability, sourcing, material delays and supply-chain disruption as possible material adverse effects. The prior wording is not in the input, so which risk is new cannot be read. This is a stated exposure, not a measured effect; it bears on the gross margin, which is already at the bottom of its quarterly history ({trend_table.quarters-back-0.ratios.gross_margin|pct}).",
+   "evidence": [
+    "narrative_signs_of_operating_pressure_macro_risks_tariffs_and_trade_conflicts"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.gross_margin"
+   ]
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_foreign_currency_swing_and_foreign_taxes",
+   "name": "Foreign-currency losses and foreign taxes now reach the income statement",
+   "name_ko": "환율 손실과 해외 세금이 손익에 영향",
+   "area": "narrative_signs_of_operating_pressure",
+   "what": "Other income turned to other expense on unfavorable foreign-currency moves. MD&A attributes the rise in income tax expense mainly to foreign jurisdictions, while the tax note credits share-based vesting for the low effective rate. With Brazilian operations, an earnout denominated in reais and cash held abroad, currency now flows through results. Trailing income tax is {terms.trailing_four_quarters.income_tax_expense}, a figure dominated by the prior year's benefit.",
+   "evidence": [
+    "earnings_quality_other_expense_from_foreign_currency_fluctuations",
+    "earnings_quality_other_nonoperating_swing",
+    "earnings_quality_income_tax_expense_attributed_to_foreign_jurisdictions",
+    "estimates_and_discretion_effective_tax_rate_share_based_vesting_benefit"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.income_tax_expense"
+   ]
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_material_weakness_over_acquisition_accounting",
+   "name": "Controls not effective over the accounting that produced the quarter's gain",
+   "name_ko": "분기 이익을 만든 인수 회계에 대한 내부통제 미비",
+   "area": "narrative_signs_of_operating_pressure",
+   "what": "Disclosure controls are reported not effective at quarter end because of a material weakness over Comtrafo purchase accounting and its continuing fair-value accounting. That is the same accounting that produced this quarter's earnout gain, which sits inside operating income of {ratios.growth.operating_income.this_quarter}. Remediation has started, with no completion date. The purchase price allocation is still preliminary, and the company says changes to it could be significant. For health, this means the quarter's profit and the goodwill behind equity rest on estimates the company says it does not yet control well.",
+   "evidence": [
+    "controls_audit_and_filings_disclosure_controls_not_effective",
+    "controls_audit_and_filings_material_weakness_comtrafo_purchase_and_fair_value_accounting",
+    "controls_audit_and_filings_material_weakness_remediation_in_progress",
+    "estimates_and_discretion_comtrafo_purchase_price_allocation_still_preliminary"
+   ],
+   "fields": [
+    "ratios.growth.operating_income.this_quarter"
+   ]
+  },
+  {
+   "id": "profitability_quarter_gross_margin_lowest_of_filled_quarters",
+   "name": "Quarter's gross margin at the bottom of its history",
+   "name_ko": "분기 매출총이익률이 기록상 최저",
+   "area": "profitability",
+   "what": "The quarter's gross margin of {trend_table.quarters-back-0.ratios.gross_margin|pct} is the lowest of six filled quarters, down from {trend_table.quarters-back-4.ratios.gross_margin|pct} a year earlier. The fiscal year ended March 2026, by contrast, had the highest annual margin of five filled years ({trend_table.years-back-0.ratios.gross_margin|pct}). MD&A attributes the drop to product mix and Comtrafo purchase accounting. The inventory step-up is now fully recognized, but backlog amortization continues to be charged to cost of revenue. Management says it is positioned for margin improvement in the second half of the fiscal year; the filed quarter points the other way.",
+   "evidence": [
+    "earnings_quality_gross_margin_quarterly",
+    "earnings_quality_gross_margin_annual",
+    "narrative_signs_of_operating_pressure_gross_margin_decrease_product_mix_and_purchase_accounting",
+    "across_documents_gross_margin_improvement_claim",
+    "earnings_quality_inventory_step_up_fully_recognized",
+    "estimates_and_discretion_backlog_amortization_sixteen_month_economic_consumption"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.gross_margin",
+    "trend_table.quarters-back-4.ratios.gross_margin",
+    "trend_table.years-back-0.ratios.gross_margin",
+    "ratios.profitability.gross_margin"
+   ]
+  },
+  {
+   "id": "profitability_quarter_profit_carried_by_earnout_gain",
+   "name": "Quarter's profit carried by a non-cash earnout gain",
+   "name_ko": "분기 이익이 비현금성 earnout 평가이익에 의존",
+   "area": "profitability",
+   "what": "Operating income for the quarter of {ratios.growth.operating_income.this_quarter} includes a non-cash gain from lowering the fair value of the Comtrafo earnout after a change in its forecast. The gain is booked in unallocated corporate expenses, and MD&A says it drove the increase in net income ({ratios.growth.net_income.this_quarter}). The non-GAAP measure, which removes the gain, fell against the year-earlier quarter. The remeasurement falls inside the material weakness the company reports over Comtrafo fair-value accounting, and next-quarter guidance assumes no repeat. The calculator holds no operating income figure net of the gain.",
+   "evidence": [
+    "earnings_quality_contingent_consideration_gain_within_operating_expenses",
+    "earnings_quality_net_income_increase_driven_by_contingent_consideration_gain",
+    "earnings_quality_non_gaap_net_income_below_gaap",
+    "estimates_and_discretion_contingent_consideration_gain_attributed_to_forecast_change",
+    "structure_and_disclosure_changes_contingent_consideration_gain_held_in_unallocated",
+    "earnings_quality_segment_reconciling_item_contingent_consideration",
+    "controls_audit_and_filings_material_weakness_comtrafo_purchase_and_fair_value_accounting"
+   ],
+   "fields": [
+    "ratios.growth.operating_income.this_quarter",
+    "ratios.growth.net_income.this_quarter",
+    "ratios.growth.operating_income.year_over_year"
+   ]
+  },
+  {
+   "id": "profitability_headline_returns_rest_on_tax_benefit_while_invested_capital_returns_are_low",
+   "name": "Headline returns rest on a tax benefit; operating returns are low",
+   "name_ko": "높은 ROE·순이익률은 세금 혜택 때문, 영업 기준 수익률은 낮음",
+   "area": "profitability",
+   "what": "Net margin of {ratios.profitability.net_margin|pct}, return on assets of {ratios.profitability.return_on_assets|pct} and return on equity of {ratios.profitability.return_on_equity|pct} are lifted by the deferred tax benefit of the fiscal year ended March 2026. Trailing net income is {terms.trailing_four_quarters.net_income} on pretax income of {terms.trailing_four_quarters.pretax_income}, and the effective rate is {tax_rate.effective_rate|pct}. Return on invested capital, built on operating income, is {ratios.profitability.return_on_invested_capital|pct}, and even that is flattered because the calculator holds the tax rate at zero. Earnings ran ahead of cash. Operating cash flow is {earnings_versus_cash.operating_cash_flow_over_net_income|pct} of net income and accruals are {earnings_versus_cash.accruals_over_average_assets|pct} of average assets; the fiscal-year accruals ratio of {trend_table.years-back-0.ratios.accruals_over_total_assets|pct} is the highest of five filled years. Since the release, quarterly income tax expense has risen against the year-earlier quarter.",
+   "evidence": [
+    "earnings_quality_annual_tax_benefit_against_operating_income",
+    "earnings_quality_accruals_over_total_assets_annual",
+    "earnings_quality_quarterly_income_tax_expense",
+    "estimates_and_discretion_effective_tax_rate_share_based_vesting_benefit"
+   ],
+   "fields": [
+    "ratios.profitability.net_margin",
+    "ratios.profitability.return_on_assets",
+    "ratios.profitability.return_on_equity",
+    "ratios.profitability.return_on_invested_capital",
+    "terms.trailing_four_quarters.net_income",
+    "terms.trailing_four_quarters.pretax_income",
+    "tax_rate.effective_rate",
+    "earnings_versus_cash.operating_cash_flow_over_net_income",
+    "earnings_versus_cash.accruals_over_average_assets",
+    "trend_table.years-back-0.ratios.accruals_over_total_assets"
+   ]
+  },
+  {
+   "id": "efficiency_receivable_days_lengthening",
+   "name": "Receivables collected more slowly",
+   "name_ko": "매출채권 회수기간 증가",
+   "area": "efficiency",
+   "what": "Days sales outstanding for the quarter is {trend_table.quarters-back-0.ratios.days_sales_outstanding}, the second highest of six filled quarters, up from {trend_table.quarters-back-4.ratios.days_sales_outstanding} a year earlier. The fiscal-year figure rose to {trend_table.years-back-0.ratios.days_sales_outstanding} from {trend_table.years-back-1.ratios.days_sales_outstanding}. Receivables grew by {earnings_versus_cash.working_capital.receivables.balance_sheet_change} over the year and absorbed cash again this quarter. The record tags no allowance for credit losses in any period, and Comtrafo's acquired receivables carried an estimated uncollectible portion. Collection risk on the larger receivables balance therefore cannot be read from a reserve.",
+   "evidence": [
+    "revenue_recognition_days_sales_outstanding_quarterly",
+    "revenue_recognition_days_sales_outstanding_annual",
+    "revenue_recognition_receivables_over_revenue_quarterly",
+    "estimates_and_discretion_bad_debt_reserve_ratio_quarterly",
+    "estimates_and_discretion_comtrafo_acquired_receivables_uncollectible",
+    "liquidity_and_capital_operating_cash_flow_deferred_revenue"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.days_sales_outstanding",
+    "trend_table.quarters-back-4.ratios.days_sales_outstanding",
+    "trend_table.years-back-0.ratios.days_sales_outstanding",
+    "trend_table.years-back-1.ratios.days_sales_outstanding",
+    "earnings_versus_cash.working_capital.receivables.balance_sheet_change",
+    "ratios.efficiency.days_sales_outstanding"
+   ]
+  },
+  {
+   "id": "efficiency_long_cash_conversion_cycle_and_inventory_write_downs",
+   "name": "Long cash conversion cycle and rising inventory write-downs",
+   "name_ko": "긴 현금전환주기와 재고평가손실 증가",
+   "area": "efficiency",
+   "what": "On trailing figures the cash conversion cycle is {ratios.efficiency.cash_conversion_cycle} days, and payables ({ratios.efficiency.days_payables_outstanding} days) fund little of the receivable and inventory days. Fiscal-year days sales of inventory of {trend_table.years-back-0.ratios.days_sales_of_inventory} is the highest of five filled years. The quarter's {trend_table.quarters-back-0.ratios.days_sales_of_inventory} is the lowest of six filled quarters, so inventory is the one leg that improved. Inventory write-downs over the trailing four quarters total {terms.trailing_four_quarters.inventory_write_down}. The quarter's provision rose against the year-earlier quarter, on a generic excess-and-obsolescence review that names no product.",
+   "evidence": [
+    "estimates_and_discretion_days_sales_of_inventory_annual",
+    "estimates_and_discretion_days_sales_of_inventory_quarterly",
+    "estimates_and_discretion_excess_obsolete_inventory_provision",
+    "estimates_and_discretion_inventory_write_downs_excess_and_obsolescence"
+   ],
+   "fields": [
+    "ratios.efficiency.cash_conversion_cycle",
+    "ratios.efficiency.days_payables_outstanding",
+    "ratios.efficiency.days_sales_of_inventory",
+    "trend_table.years-back-0.ratios.days_sales_of_inventory",
+    "trend_table.quarters-back-0.ratios.days_sales_of_inventory",
+    "terms.trailing_four_quarters.inventory_write_down"
+   ]
+  },
+  {
+   "id": "efficiency_asset_base_swelled_by_goodwill_and_deferred_tax_assets",
+   "name": "Asset base swelled by goodwill and deferred tax assets",
+   "name_ko": "영업권·이연법인세자산으로 자산 비대화",
+   "area": "efficiency",
+   "what": "Total assets rose from {terms.balances_a_year_earlier.assets} to {terms.balances_now.assets}. The soft-asset share, meaning assets other than plant and cash, rose to {trend_table.quarters-back-0.ratios.soft_asset_share|pct} from {trend_table.quarters-back-4.ratios.soft_asset_share|pct} as Comtrafo goodwill and the deferred tax asset arrived. Asset turnover is {ratios.efficiency.asset_turnover}. These assets produce no cash on their own. Their value depends on Comtrafo's forecast, which the company lowered this quarter, and on future taxable profit.",
+   "evidence": [
+    "structure_and_disclosure_changes_soft_asset_share_quarterly",
+    "structure_and_disclosure_changes_goodwill_acquired_comtrafo",
+    "earnings_quality_annual_tax_benefit_against_operating_income"
+   ],
+   "fields": [
+    "terms.balances_a_year_earlier.assets",
+    "terms.balances_now.assets",
+    "trend_table.quarters-back-0.ratios.soft_asset_share",
+    "trend_table.quarters-back-4.ratios.soft_asset_share",
+    "ratios.efficiency.asset_turnover"
+   ]
+  },
+  {
+   "id": "solvency_earnout_and_goodwill_outside_the_debt_measures",
+   "name": "Earnout liability and Comtrafo goodwill sit outside the debt ratios",
+   "name_ko": "부채비율에 잡히지 않는 earnout 부채와 Comtrafo 영업권",
+   "area": "solvency",
+   "what": "Total debt is {ratios.solvency.total_debt} and net debt is {ratios.solvency.net_debt}, so the debt ratios show no strain. They leave out the Comtrafo earnout and Comtrafo goodwill. The earnout is a liability at fair value, its range is tagged in Brazilian reais, and payment depends on Comtrafo EBITDA over three years. On the goodwill, the company found no impairment trigger, even as it lowered the earnout forecast and described Grid as running at an operating loss. If the forecast keeps falling, the earnout shrinks but goodwill is exposed. If Comtrafo outperforms, the earnout becomes a larger cash call. Liabilities over assets is {ratios.solvency.liabilities_over_assets|pct}, and total liabilities are {terms.balances_now.total_liabilities}.",
+   "evidence": [
+    "estimates_and_discretion_contingent_consideration_earnout_range",
+    "liquidity_and_capital_contingent_consideration_liability",
+    "estimates_and_discretion_goodwill_no_impairment_trigger_identified",
+    "related_parties_contingencies_and_subsequent_events_contractual_obligations_carve_out_for_earnout",
+    "articulation_and_the_filed_history_goodwill_measurement_period_adjustment"
+   ],
+   "fields": [
+    "ratios.solvency.total_debt",
+    "ratios.solvency.net_debt",
+    "ratios.solvency.liabilities_over_assets",
+    "terms.balances_now.total_liabilities"
+   ]
+  },
+  {
+   "id": "solvency_equity_leans_on_deferred_tax_asset",
+   "name": "Equity leans on a deferred tax asset that needs future profit",
+   "name_ko": "자본이 미래 이익에 의존하는 이연법인세자산에 기댐",
+   "area": "solvency",
+   "what": "Stockholders' equity rose from {terms.balances_a_year_earlier.stockholders_equity} to {terms.balances_now.stockholders_equity}. Part of that is the deferred tax asset recognized when the valuation allowance was released in the fiscal year ended March 2026, and part is the shares issued for Comtrafo. A deferred tax asset keeps its value only while the company expects taxable profit. An allowance still sits against some US and Polish deferred tax assets and is reassessed each quarter. With trailing operating margin at {ratios.profitability.operating_margin|pct}, equity is more exposed to a reversal than the debt-free balance sheet suggests.",
+   "evidence": [
+    "earnings_quality_annual_tax_benefit_against_operating_income",
+    "estimates_and_discretion_valuation_allowance_united_states_and_poland",
+    "structure_and_disclosure_changes_goodwill_acquired_comtrafo"
+   ],
+   "fields": [
+    "terms.balances_a_year_earlier.stockholders_equity",
+    "terms.balances_now.stockholders_equity",
+    "ratios.profitability.operating_margin"
+   ]
+  },
+  {
+   "id": "growth_revenue_growth_partly_acquired",
+   "name": "Revenue growth partly bought through Comtrafo",
+   "name_ko": "매출 성장의 일부는 Comtrafo 인수 효과",
+   "area": "growth",
+   "what": "Revenue grew {ratios.growth.revenue.year_over_year|pct} against the year-earlier quarter. Comtrafo, bought in December 2025, contributed revenue this quarter that the year-earlier quarter did not have, and neither the release nor MD&A splits organic from acquired growth. South American Grid revenue is almost entirely new. Trailing growth of {ratios.growth.revenue.trailing_four_quarters|pct} also includes part of a year of Comtrafo. Underlying organic growth is lower than the headline by an amount the filings do not state.",
+   "evidence": [
+    "structure_and_disclosure_changes_comtrafo_quarter_contribution",
+    "structure_and_disclosure_changes_comtrafo_in_revenue_growth",
+    "across_documents_revenue_growth_organic_versus_comtrafo",
+    "narrative_signs_of_operating_pressure_grid_revenue_growth_attributed_to_comtrafo"
+   ],
+   "fields": [
+    "ratios.growth.revenue.year_over_year",
+    "ratios.growth.revenue.trailing_four_quarters"
+   ]
+  },
+  {
+   "id": "growth_operating_income_rebound_from_a_loss_quarter",
+   "name": "Operating income growth measured from a loss quarter and lifted by one-off items",
+   "name_ko": "영업이익 성장률은 적자 분기 기저와 일회성 이익 때문",
+   "area": "growth",
+   "what": "Operating income's quarter-over-quarter growth of {ratios.growth.operating_income.quarter_over_quarter|pct} is measured from the derived quarter ended March 2026, which had an operating loss of {ratios.growth.operating_income.quarter_over_quarter.inputs.before}, and the latest quarter includes the earnout gain. Net income's trailing growth of {ratios.growth.net_income.trailing_four_quarters|pct} is the tax benefit. Net income moves far more than operating cash: the calculator's smoothness ratio is {earnings_versus_cash.smoothness}, where a value below one means income moves less than cash. Underlying operating profit has not grown steadily across recent quarters.",
+   "evidence": [
+    "earnings_quality_net_income_increase_driven_by_contingent_consideration_gain",
+    "earnings_quality_annual_tax_benefit_against_operating_income",
+    "earnings_quality_contingent_consideration_gain_within_operating_expenses"
+   ],
+   "fields": [
+    "ratios.growth.operating_income.quarter_over_quarter",
+    "ratios.growth.operating_income.quarter_over_quarter.inputs.before",
+    "ratios.growth.net_income.trailing_four_quarters",
+    "earnings_versus_cash.smoothness"
+   ]
+  },
+  {
+   "id": "growth_fiscal_year_operating_cash_flow_fell_while_revenue_rose",
+   "name": "Fiscal-year operating cash flow fell while revenue rose",
+   "name_ko": "연간 매출은 늘었으나 영업현금흐름은 감소",
+   "area": "growth",
+   "what": "In the latest full fiscal year revenue grew {earnings_versus_cash.history.years.0.revenue_growth|pct}. Operating cash flow nonetheless fell to {earnings_versus_cash.history.years.0.operating_cash_flow} from {earnings_versus_cash.history.years.1.operating_cash_flow}, and simple free cash flow fell to {earnings_versus_cash.history.years.0.free_cash_flow_simple} from {earnings_versus_cash.history.years.1.free_cash_flow_simple}. The latest quarter's stronger cash brought trailing operating cash flow growth to {ratios.growth.operating_cash_flow.trailing_four_quarters|pct}, but that quarter leaned on customer deposits.",
+   "evidence": [
+    "earnings_quality_accruals_over_total_assets_annual",
+    "liquidity_and_capital_operating_cash_flow_deferred_revenue"
+   ],
+   "fields": [
+    "earnings_versus_cash.history.years.0.revenue_growth",
+    "earnings_versus_cash.history.years.0.operating_cash_flow",
+    "earnings_versus_cash.history.years.1.operating_cash_flow",
+    "earnings_versus_cash.history.years.0.free_cash_flow_simple",
+    "earnings_versus_cash.history.years.1.free_cash_flow_simple",
+    "ratios.growth.operating_cash_flow.trailing_four_quarters"
+   ]
+  }
+ ],
+ "path_to_distress": {
+  "reading": "On the filed numbers, distress is far off. There is no debt ({ratios.solvency.total_debt}), and debt due inside a year is {terms.debt_now.parts.debt_current}, so no maturity looms and interest coverage cannot bind. Net debt is {ratios.solvency.net_debt}, the current ratio is {ratios.liquidity.current_ratio}, and no runway is computed because free cash flow ({free_cash_flow.free_cash_flow_simple}) is positive. Several things would have to happen together for pressure to become distress. First, operating income would have to slide back into losses, taking operating margin ({ratios.profitability.operating_margin|pct}) back toward the losses of earlier years ({earnings_versus_cash.history.years.2.operating_margin|pct}). Signs pointing that way already exist: the derived March 2026 quarter had an operating loss ({ratios.growth.operating_income.quarter_over_quarter.inputs.before}), the latest quarter's profit leans on the earnout gain, and management guides next-quarter GAAP net income well below this quarter's. Second, operating cash flow would have to turn negative. That would follow if customer deposits ({terms.balances_now.contract_liabilities}) unwound and receivables kept lengthening ({trend_table.quarters-back-0.ratios.days_sales_outstanding} days) while capital spending stayed high ({terms.trailing_four_quarters.capital_expenditure}). Only then would a cash runway exist against cash of {terms.balances_now.cash}. Third, a cash call outside the debt measures: the Comtrafo earnout, payable if Comtrafo meets its EBITDA objectives. Losses that lasted long enough would also put the deferred tax asset and Comtrafo goodwill at risk of write-down; that would cut equity, not cash. The filings show none of these conditions in full today.",
+  "fields": [
+   "ratios.solvency.total_debt",
+   "terms.debt_now.parts.debt_current",
+   "ratios.solvency.net_debt",
+   "ratios.liquidity.current_ratio",
+   "ratios.liquidity.cash_runway_months",
+   "ratios.solvency.interest_coverage",
+   "free_cash_flow.free_cash_flow_simple",
+   "ratios.profitability.operating_margin",
+   "earnings_versus_cash.history.years.2.operating_margin",
+   "ratios.growth.operating_income.quarter_over_quarter.inputs.before",
+   "terms.balances_now.contract_liabilities",
+   "trend_table.quarters-back-0.ratios.days_sales_outstanding",
+   "terms.trailing_four_quarters.capital_expenditure",
+   "terms.balances_now.cash"
+  ]
+ },
+ "summary_ko": {
+  "profitability": "최근 네 분기 기준 영업이익률은 {ratios.profitability.operating_margin|pct}에 그치지만 순이익률은 {ratios.profitability.net_margin|pct}, 자기자본이익률은 {ratios.profitability.return_on_equity|pct}로 높게 나옵니다. 이는 직전 결산연도에 인식한 이연법인세 혜택 때문이며, 영업 기준 투하자본이익률은 {ratios.profitability.return_on_invested_capital|pct}로 낮습니다. 이번 분기 매출총이익률 {trend_table.quarters-back-0.ratios.gross_margin|pct}은 기록된 여섯 분기 중 가장 낮고, 분기 이익은 Comtrafo earnout 부채를 줄이면서 생긴 비현금 이익에 크게 기대고 있습니다.",
+  "efficiency": "최근 네 분기 기준 현금전환주기는 {ratios.efficiency.cash_conversion_cycle}일로 깁니다. 이번 분기 매출채권 회수일수는 {trend_table.quarters-back-0.ratios.days_sales_outstanding}일로 전년 동기 {trend_table.quarters-back-4.ratios.days_sales_outstanding}일보다 늘었습니다. 재고일수는 이번 분기가 기록상 가장 낮아 개선됐지만, 인수로 불어난 자산 때문에 총자산회전율은 {ratios.efficiency.asset_turnover}에 머뭅니다.",
+  "liquidity": "유동비율 {ratios.liquidity.current_ratio}, 당좌비율 {ratios.liquidity.quick_ratio}로 단기 지급능력은 넉넉하고, 잉여현금흐름이 플러스라서 현금 소진 기간은 계산되지 않습니다. 다만 Comtrafo 인수와 부채 상환으로 현금은 전년 동기 {terms.balances_a_year_earlier.cash}에서 {terms.balances_now.cash}로 줄었고, 설비투자도 크게 늘었습니다.",
+  "solvency": "차입금은 {ratios.solvency.total_debt}로 없고, 순부채가 {ratios.solvency.net_debt}인 순현금 상태입니다. 총부채/총자산은 {ratios.solvency.liabilities_over_assets|pct}로 낮아 지급불능 위험은 작습니다. 이자보상배율은 이자비용 자료가 없어 계산되지 않았습니다. 부채 지표에 잡히지 않는 Comtrafo earnout 부채, 영업권, 이연법인세자산이 자본의 질을 좌우합니다.",
+  "growth": "매출은 전년 동기 대비 {ratios.growth.revenue.year_over_year|pct}, 최근 네 분기 기준 {ratios.growth.revenue.trailing_four_quarters|pct} 늘었습니다. 그러나 일부는 Comtrafo 인수에서 왔고, 회사는 유기적 성장분을 따로 밝히지 않았습니다. 영업이익의 직전 분기 대비 급증은 영업손실 분기를 기준으로 한 것이며, 경영진은 다음 분기 매출과 순이익을 이번 분기보다 낮게 제시했습니다.",
+  "free_cash_flow": "네 가지 잉여현금흐름 지표는 모두 계산되었고 빠진 것은 없습니다. 단순 잉여현금흐름은 {free_cash_flow.free_cash_flow_simple}, 주주 잉여현금흐름은 {free_cash_flow.free_cash_flow_to_equity}로 플러스입니다. 반면 기업 잉여현금흐름은 인수로 늘어난 운전자본 때문에 {free_cash_flow.free_cash_flow_to_firm}이고, 주식보상과 인수 현금을 뺀 품질조정 잉여현금흐름은 {free_cash_flow.free_cash_flow_quality_adjusted}로 마이너스입니다.",
+  "dupont": "자기자본이익률 {ratios.profitability.dupont.product|pct}은 순이익률 {ratios.profitability.dupont.net_margin|pct}, 자산회전율 {ratios.profitability.dupont.asset_turnover}, 자기자본승수 {ratios.profitability.dupont.equity_multiplier}를 곱한 값입니다. 이 수치를 끌어올린 것은 거의 전적으로 일회성 세금 혜택으로 부풀려진 순이익률입니다. 부채가 없어 레버리지의 기여는 작고, 자산회전율은 인수로 불어난 자산 때문에 낮습니다.",
+  "path_to_distress": "부채가 없고 순현금이며 잉여현금흐름이 플러스라서 현재는 부실과 거리가 멉니다. 부실로 가려면 여러 조건이 겹쳐야 합니다. 먼저 영업이익이 다시 적자로 돌아서야 합니다(직전 분기 영업손실 {ratios.growth.operating_income.quarter_over_quarter.inputs.before}). 또 고객 선수금이 줄고 매출채권 회수가 늦어지면서 영업현금흐름이 마이너스가 되어 현금 {terms.balances_now.cash}을 쓰기 시작해야 합니다. 여기에 earnout 현금 지급 부담이나 영업권·이연법인세자산 상각까지 더해져야 합니다."
+ },
+ "limits": "This analysis reads the company's health from its own filed numbers against its own past. It forecasts nothing, and it cannot see what is not in the filings.",
+ "normalized_quotes": 0,
+ "dropped_items": [],
+ "dropped_count": 0
+}

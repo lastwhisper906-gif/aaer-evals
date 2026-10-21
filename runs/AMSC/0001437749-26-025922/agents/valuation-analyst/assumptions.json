@@ -1,0 +1,241 @@
+{
+  "scenarios": {
+    "bear": {
+      "revenue_growth_year_one": 0.04,
+      "terminal_growth": 0.02,
+      "operating_margin_year_one": 0.015,
+      "operating_margin_year_ten": 0.05,
+      "reinvestment_rate_year_one": 0.90,
+      "reinvestment_rate_year_ten": 0.40,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "MD&A credits the quarter's Grid growth to Comtrafo alone, the older Grid customers are shrinking, and management guides next-quarter revenue below the quarter just reported. In the bear case a falling legacy business and Wind shipments resting on one concentrated customer cancel out most of the part-year of Comtrafo that year one still adds.",
+          "quote": "The increase in the Grid business segment revenues in the three months ended June 30, 2026, compared to the three months ended June 30, 2025, was driven by the addition of Comtrafo revenues.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.growth.revenue.trailing_four_quarters",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "concentration.facts.22.value",
+            "concentration.facts.12.value",
+            "concentration.facts.23.value",
+            "earnings_versus_cash.history.years.3.revenue_growth"
+          ],
+          "history": "Far below the trailing four-quarter growth and the three-year and five-year compound growth. It sits closer to the fiscal year ended March 2023, when revenue fell, than to any year since."
+        },
+        "terminal_growth": {
+          "reason": "If the company stays a small supplier with concentrated customers, its long-run growth is no better than inflation. The rate is set below the risk-free rate, as the calculator requires.",
+          "quote": "Concentration is easing as Comtrafo adds South American utility revenue, but Inox Wind remains the largest named customer.",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "cost_of_capital.risk_free_rate",
+            "concentration.facts.22.value"
+          ],
+          "history": "Below every year of positive growth in the record and below the risk-free rate."
+        },
+        "operating_margin_year_one": {
+          "reason": "Take the non-cash earnout gain out of trailing operating income and the margin is thin. The latest quarter's gross margin is the lowest of six filled quarters, and GAAP net income guidance for the next quarter is far below the quarter just reported. The bear case assumes the promised second-half margin improvement does not come.",
+          "quote": "net income for the second quarter of fiscal 2026 is expected to exceed $1.0 million, or $0.02 per share",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.profitability.operating_margin",
+            "trend_table.quarters-back-0.ratios.gross_margin",
+            "trend_table.quarters-back-4.ratios.gross_margin",
+            "ratios.growth.operating_income.quarter_over_quarter.inputs.before",
+            "earnings_versus_cash.history.years.0.operating_margin"
+          ],
+          "history": "Below the trailing margin and the fiscal year ended March 2026, but above the fiscal year ended March 2025 and every year before it, all of which were operating losses. The derived quarter ended March 2026 was itself an operating loss."
+        },
+        "operating_margin_year_ten": {
+          "reason": "The bear case holds the long-run margin near the best the company has reported. Tariff, supply-chain and mix pressure keep gross margin near today's level, and overhead, including share-based compensation, grows in step with revenue.",
+          "quote": "Changes in macroeconomic conditions arising from various reasons, such as the ongoing wars between Russia and Ukraine, and in the Middle East, tariffs, trade restrictions and resulting trade conflicts, labor force availability, sourcing, material delays and global supply chain disruptions, could have a material adverse effect on our business, financial condition and results of operations.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.profitability.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "earnings_versus_cash.share_based_compensation_over_revenue"
+          ],
+          "history": "About the level of the trailing operating margin, which includes a one-time earnout gain, and above every full fiscal year in the record. The three-year average margin is negative."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Receivables keep stretching, deposits run off as orders ship, and capital spending stays above depreciation. Almost all of a small operating profit goes back into the business.",
+          "quote": "Deposits run off as revenue is recognized, so this part of the quarter's cash is timing rather than a lasting change.",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "trend_table.quarters-back-0.ratios.days_sales_outstanding",
+            "trend_table.quarters-back-4.ratios.days_sales_outstanding",
+            "earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization",
+            "free_cash_flow.free_cash_flow_to_firm"
+          ],
+          "history": "Below the trailing year, when free cash flow to the firm was negative and reinvestment exceeded operating income, and above the base case. The positive simple free cash flow in the record leaned on adding back share-based compensation, a cost the model keeps inside operating income."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "In the bear case new capital keeps earning a low return, as invested capital does today. A larger share of profit is needed to fund even slow terminal growth.",
+          "quote": "Return on invested capital, built on operating income, is the reading of operating returns, and it is low.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital"
+          ],
+          "history": "Consistent with new capital earning only modestly more than today's low trailing return on invested capital."
+        }
+      }
+    },
+    "base": {
+      "revenue_growth_year_one": 0.13,
+      "terminal_growth": 0.03,
+      "operating_margin_year_one": 0.035,
+      "operating_margin_year_ten": 0.09,
+      "reinvestment_rate_year_one": 0.70,
+      "reinvestment_rate_year_ten": 0.27,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "Year one includes several more months of Comtrafo than the trailing four quarters. The release also reports record orders and a twelve-month backlog close to trailing revenue. On the other side, management guides next-quarter revenue below the quarter just reported, and MD&A credits Grid growth to Comtrafo alone, so organic growth is smaller than the headline. The base sits near the current quarterly run rate, not near trailing growth.",
+          "quote": "For the second quarter ending September 30, 2026, AMSC expects that its revenues will exceed $85.0 million.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.growth.revenue.trailing_four_quarters",
+            "ratios.growth.revenue.year_over_year",
+            "ratios.growth.revenue.this_quarter",
+            "terms.trailing_four_quarters.revenue",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "Below the trailing four-quarter growth, the three-year and five-year compound growth, and each of the last three fiscal years. Those rates include acquired revenue and a rebound from a small base, and the company does not split organic from acquired growth."
+        },
+        "terminal_growth": {
+          "reason": "A mature supplier of grid, power-electronics and naval systems should grow roughly with nominal spending on power networks. The rate is set below the risk-free rate, as the calculator requires.",
+          "quote": "we integrate future-facing technologies to balance the growing global demand for power with the need for reliable, and efficient power delivery",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate"
+          ],
+          "history": "The record has no stable mature period to compare against: revenue swung from a decline in the fiscal year ended March 2023 to rapid growth since. The terminal rate is far below every recent year's growth and below the risk-free rate."
+        },
+        "operating_margin_year_one": {
+          "reason": "The trailing operating margin includes the non-cash earnout gain, which guidance assumes will not recur. The latest quarter's gross margin is the lowest of six filled quarters. The inventory step-up charge has ended and management expects gross margin to improve in the second half. Year one is therefore set slightly below the fiscal year ended March 2026 and well below the trailing figure.",
+          "quote": "The change in fair value of our contingent consideration for the earnout payment on the acquisition of Comtrafo resulted in a gain of $8.1 million from a decrease in fair value of the contingent consideration driven by changes in the forecast in the three months ended June 30, 2026.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.profitability.operating_margin",
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "trend_table.quarters-back-0.ratios.gross_margin",
+            "ratios.growth.operating_income.this_quarter"
+          ],
+          "history": "Below the trailing operating margin, which the earnout gain lifts, and slightly below the fiscal year ended March 2026, the only positive full year in the six-year record. Above the three-year average, which is negative."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Gross margin in the fiscal year ended March 2026 was the highest of five filled years, and over the record operating expense has grown more slowly than revenue, so scale should keep lifting the operating line. The base still stops short of larger grid-equipment makers. Share-based compensation is a large recurring cost inside operating expense, overhead outgrew gross profit in the latest quarter, and the company has never held a margin like this.",
+          "quote": "Rising overhead therefore came out of a gross profit that did not grow",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "trend_table.years-back-0.ratios.gross_margin",
+            "ratios.profitability.gross_margin",
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "earnings_versus_cash.history.years.3.operating_margin",
+            "earnings_versus_cash.share_based_compensation_over_revenue"
+          ],
+          "history": "Well above any year in the record. The best full year, the fiscal year ended March 2026, is a small fraction of it. The base extends the climb from deep losses in the fiscal year ended March 2023 to a positive margin three years later, at a slower pace."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Growth needs working capital. The cash conversion cycle is long, receivables are growing faster than revenue, and capital spending has risen above depreciation. Customer deposits on record orders fund part of the need, which keeps the share below all of after-tax operating income.",
+          "quote": "The cycle is long, and suppliers fund only a small part of it.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "ratios.efficiency.cash_conversion_cycle",
+            "trend_table.quarters-back-0.ratios.days_sales_outstanding",
+            "earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization",
+            "terms.balances_now.contract_liabilities",
+            "free_cash_flow.free_cash_flow_to_firm"
+          ],
+          "history": "Lower than the trailing year, when reinvestment exceeded operating income because of acquired working capital and the Brazilian real-estate purchase. Higher than a year without growth would need."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "By year ten growth has faded to the terminal rate, so reinvestment only has to fund modest growth. The share is set so new capital earns a return above what a business of this kind costs to finance. That is well above today's low return on invested capital but consistent with the year-ten margin and the company's current revenue per unit of operating capital.",
+          "quote": "Return on invested capital, built on operating income, is the reading of operating returns, and it is low.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital",
+            "free_cash_flow.free_cash_flow_simple"
+          ],
+          "history": "Today's return on invested capital is low, and goodwill and the deferred tax asset swell the capital base. The year-ten share assumes new capital earns well above that trailing return."
+        }
+      }
+    },
+    "bull": {
+      "revenue_growth_year_one": 0.24,
+      "terminal_growth": 0.035,
+      "operating_margin_year_one": 0.06,
+      "operating_margin_year_ten": 0.14,
+      "reinvestment_rate_year_one": 0.55,
+      "reinvestment_rate_year_ten": 0.20,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "Record orders led by utility-sector mining, a twelve-month backlog close to trailing revenue, Wind revenue up strongly on control-system shipments, and a full year of Comtrafo. In the bull case next-quarter guidance proves conservative and the quarterly run rate keeps rising.",
+          "quote": "we saw accelerated market demand with orders over $130 million led by utility-sector mining developments and traditional energy markets",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.growth.revenue.trailing_four_quarters",
+            "ratios.growth.revenue.year_over_year",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound"
+          ],
+          "history": "Close to the trailing four-quarter growth and the five-year compound growth. Below the three-year compound growth and each of the last three fiscal years, which acquisitions lifted."
+        },
+        "terminal_growth": {
+          "reason": "Grid modernisation, mining electrification and naval demand support long-run growth a little above inflation. The rate stays below the risk-free rate.",
+          "quote": "we integrate future-facing technologies to balance the growing global demand for power with the need for reliable, and efficient power delivery",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate"
+          ],
+          "history": "Below the risk-free rate and far below the record's recent growth."
+        },
+        "operating_margin_year_one": {
+          "reason": "The inventory step-up charge is finished, management expects gross margin to improve in the second half, and Wind operating income more than doubled on higher ECS volumes. In the bull case these lift the margin above the trailing figure with no earnout gain.",
+          "quote": "believe we are well positioned for gross margin improvement in the second half of the fiscal year",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.profitability.operating_margin",
+            "trend_table.years-back-0.ratios.gross_margin",
+            "earnings_versus_cash.history.years.0.operating_margin"
+          ],
+          "history": "Above the trailing operating margin and the fiscal year ended March 2026. It would be the best year in the record."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Revenue is now several times what it was a few years ago and gross margin is at the top of its range. The bull case lets operating expense keep growing much more slowly than revenue, as it has over the record, which brings the margin toward that of established grid-equipment makers.",
+          "quote": "The increase in the Wind business segment operating income in the three months ended June 30, 2026 was due to higher revenues and gross margins from increased sales of ECS units.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "trend_table.years-back-0.ratios.gross_margin",
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "earnings_versus_cash.history.years.3.operating_margin",
+            "terms.trailing_four_quarters.research_and_development_expense"
+          ],
+          "history": "Far above any year in the record. It extends the climb from deep losses in the fiscal year ended March 2023 to a positive margin in the fiscal year ended March 2026."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Customer deposits on record orders fund much of the working capital that growth needs, and inventory released cash in the latest quarter. The Brazilian real-estate purchase that inflated capital spending is done.",
+          "quote": "The increase in cash flows provided by operating activities in the three months ended June 30, 2026 was due primarily to changes in deferred revenue, inventory, prepaid expenses and other current assets, and changes in fair value consideration.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "terms.balances_now.contract_liabilities",
+            "trend_table.quarters-back-0.ratios.days_sales_of_inventory",
+            "terms.trailing_four_quarters.capital_expenditure",
+            "earnings_versus_cash.history.years.0.free_cash_flow_simple"
+          ],
+          "history": "Well below the trailing year, when reinvestment, including acquired working capital and real estate, exceeded operating income. Consistent with the positive simple free cash flow of the last three fiscal years."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "In the bull case the business earns a high return on new capital. Deposits keep funding working capital, and the capacity that came with Comtrafo serves more revenue, so little profit is needed to fund terminal growth.",
+          "quote": "Equity is debt-free, but much of it rests on goodwill and the newly recognized deferred tax asset.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital",
+            "terms.balances_now.contract_liabilities"
+          ],
+          "history": "Implies a return on new capital far above today's low return on invested capital, which goodwill and the deferred tax asset in the capital base hold down."
+        }
+      }
+    }
+  },
+  "wacc_overrides": {}
+}

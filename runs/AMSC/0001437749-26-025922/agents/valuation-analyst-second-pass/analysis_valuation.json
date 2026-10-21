@@ -1,0 +1,81 @@
+{
+ "question": "what is this company worth, and what does the price already assume?",
+ "value_range": {
+  "reading": "Python did not compute a value range, so this file states none. Under valuation.missing the calculator prints: \"WACC is not computed: the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". Under cost_of_capital.missing it prints: \"the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". There is therefore no enterprise value, equity value or value per share for the bear, base or bull drivers in assumptions.json. The other inputs of the cost of capital are on record: the risk-free rate {cost_of_capital.risk_free_rate|pct}, the equity risk premium {cost_of_capital.equity_risk_premium|pct}, a pre-tax cost of debt of {cost_of_capital.pre_tax_cost_of_debt} that carries no weight because total debt is {ratios.solvency.total_debt}, and a tax rate held at {cost_of_capital.tax_rate|pct} because the trailing effective rate is negative ({tax_rate.effective_rate|pct}). The missing pieces are the beta, the cost of equity and the market value of equity, all three for want of a price series. No cost-of-capital override was given, and none could fill the gap, because the missing component is the cost of equity, not the cost of debt. What can still be read is the drivers against the company's own record, set out under market-implied growth and the two drivers below.",
+  "fields": [
+   "cost_of_capital.risk_free_rate",
+   "cost_of_capital.equity_risk_premium",
+   "cost_of_capital.pre_tax_cost_of_debt",
+   "ratios.solvency.total_debt",
+   "cost_of_capital.tax_rate",
+   "tax_rate.effective_rate"
+  ]
+ },
+ "price_position": {
+  "reading": "Where the price sits in the range cannot be read. There is no range, and the calculator holds no price at the cutoff: under market.missing it prints \"no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\", and the free-cash-flow yield cross-check is missing for the same reason. The figures that would carry an enterprise value to a value per share are on record. Net debt is {ratios.solvency.net_debt}, which is net cash, since cash is {terms.balances_now.cash} and there is no debt. The operating lease liability is {terms.balances_now.operating_lease_liability}, and shares outstanding are {terms.shares_outstanding}. One claim sits outside those figures: the Comtrafo earnout, a liability carried at fair value that the debt measures leave out, as the financial analysis notes. Nothing here says whether the price sits above, inside or below any value.",
+  "fields": [
+   "ratios.solvency.net_debt",
+   "terms.balances_now.cash",
+   "terms.balances_now.operating_lease_liability",
+   "terms.shares_outstanding"
+  ]
+ },
+ "market_implied_growth": {
+  "reading": "No market-implied growth was computed. Under implied_growth_beside_history the calculator prints that there is no reverse DCF because WACC is not computed. The constant ten-year revenue growth the price assumes is therefore unknown, and it is not estimated here. What can be read is the record such a figure would be set against, and the drivers set against that record. Revenue grew {ratios.growth.revenue.trailing_four_quarters|pct} over the trailing four quarters and {ratios.growth.revenue.year_over_year|pct} on the year-earlier quarter. Compound growth was {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} over three years and {earnings_versus_cash.history.revenue_growth_five_year_compound|pct} over five, after revenue changed by {earnings_versus_cash.history.years.3.revenue_growth|pct} in the fiscal year ended March 2023. Part of the recent growth was bought. MD&A credits the Grid increase to the addition of Comtrafo, and the filings do not split organic from acquired growth. The guidance, quoted, sets a floor for next-quarter revenue below the quarter just reported ({ratios.growth.revenue.this_quarter}), while the release cites record orders and a twelve-month backlog. Against that record, the base case starts growth below the trailing four-quarter rate and below both compound rates, then fades it to a terminal rate below the risk-free rate {cost_of_capital.risk_free_rate|pct}. The bull case starts close to the trailing and five-year rates, and the bear case starts far below all of them. Once a price series is supplied, the reverse DCF will show which of these the price sits nearest. This file does not guess.",
+  "fields": [
+   "ratios.growth.revenue.trailing_four_quarters",
+   "ratios.growth.revenue.year_over_year",
+   "earnings_versus_cash.history.revenue_growth_three_year_compound",
+   "earnings_versus_cash.history.revenue_growth_five_year_compound",
+   "earnings_versus_cash.history.years.3.revenue_growth",
+   "ratios.growth.revenue.this_quarter",
+   "cost_of_capital.risk_free_rate"
+  ],
+  "quote": "For the second quarter ending September 30, 2026, AMSC expects that its revenues will exceed $85.0 million.",
+  "quote_from": "input_8k.md"
+ },
+ "most_sensitive": [
+  {
+   "assumption": "operating_margin_year_ten",
+   "reading": "The sensitivity grid and the scenario values were not computed, so no reading shows which driver moves value most, and none is estimated. Read against the record instead, the year-ten operating margin is the driver that stands farthest from what the company has filed. The best full year is the fiscal year ended March 2026, at {earnings_versus_cash.history.years.0.operating_margin|pct}. The three-year average is {earnings_versus_cash.history.operating_margin_three_year_average|pct}, and the trailing figure {ratios.profitability.operating_margin|pct} includes a non-cash earnout gain. The base and bull year-ten margins sit well above every year in the record; only the bear case stays near it. Gross margin supports part of the climb: the fiscal-year figure {trend_table.years-back-0.ratios.gross_margin|pct} is the highest of five years. The latest quarter runs the other way, with {trend_table.quarters-back-0.ratios.gross_margin|pct}, the lowest of six. Share-based compensation, at {earnings_versus_cash.share_based_compensation_over_revenue|pct} of revenue, sits inside operating expense.",
+   "fields": [
+    "earnings_versus_cash.history.years.0.operating_margin",
+    "earnings_versus_cash.history.operating_margin_three_year_average",
+    "ratios.profitability.operating_margin",
+    "trend_table.years-back-0.ratios.gross_margin",
+    "trend_table.quarters-back-0.ratios.gross_margin",
+    "earnings_versus_cash.share_based_compensation_over_revenue"
+   ]
+  },
+  {
+   "assumption": "reinvestment_rate_year_ten",
+   "reading": "This is also not read from a grid. Together with the year-ten margin, the year-ten reinvestment rate sets the cash flow the terminal value rests on, and it too sits far from the record. The trailing return on invested capital is {ratios.profitability.return_on_invested_capital|pct}, computed with a tax rate held at {tax_rate|pct}. Trailing free cash flow to the firm is {free_cash_flow.free_cash_flow_to_firm}, because capital spending and a rise in trade working capital, partly acquired with Comtrafo, exceeded operating profit. The base and bull year-ten rates imply that new capital earns far more than the business earns on its capital today. The bear rate keeps returns near today's level. In each scenario the terminal growth rate sits below the risk-free rate {cost_of_capital.risk_free_rate|pct}, as the calculator requires. How close it sits to the discount rate cannot be read while the WACC is missing.",
+   "fields": [
+    "ratios.profitability.return_on_invested_capital",
+    "tax_rate",
+    "free_cash_flow.free_cash_flow_to_firm",
+    "cost_of_capital.risk_free_rate"
+   ]
+  }
+ ],
+ "accounting_adjustments": {
+  "reading": "No accounting adjustment moved a value, because no value was computed, and the calculator holds no valuation.accounting_adjustments. The accounting analysis wrote two adjustments, and the calculator applied both to quality-adjusted free cash flow only. The first removes the trailing net tax benefit, an amount of {free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.0.amount}. The second counts Comtrafo's repaid debt, {free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.1.amount}, as acquisition cost. Together they take that measure from {free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.0.before} to {free_cash_flow.free_cash_flow_quality_adjusted}. A caution on the first: the benefit was almost all deferred and never entered operating cash flow ({terms.trailing_four_quarters.operating_cash_flow}). Subtracting it from a cash measure removes cash that was never counted, so the adjusted figure overstates the drag. Neither adjustment would touch the DCF drivers, which start from operating margin. The tax benefit sits below the operating line, and the debt repayment is a past financing flow. One item does sit inside operating income: the non-cash earnout gain that MD&A reports for the quarter. It carries no adjustment because its amount is not in the calculator. The drivers handle it instead: the base year-one margin is set below the trailing {ratios.profitability.operating_margin|pct} and slightly below the fiscal year ended March 2026 ({earnings_versus_cash.history.years.0.operating_margin|pct}).",
+  "fields": [
+   "free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.0.amount",
+   "free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.1.amount",
+   "free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.0.before",
+   "free_cash_flow.free_cash_flow_quality_adjusted",
+   "terms.trailing_four_quarters.operating_cash_flow",
+   "ratios.profitability.operating_margin",
+   "earnings_versus_cash.history.years.0.operating_margin"
+  ]
+ },
+ "summary_ko": {
+  "value_range": "주가 자료가 없어 베타, 자기자본비용, 가중평균자본비용(WACC)을 계산하지 못했습니다. 그래서 약세·기준·강세 시나리오의 가치 범위도 나오지 않았습니다. 무위험이자율 {cost_of_capital.risk_free_rate|pct}과 주식위험프리미엄 {cost_of_capital.equity_risk_premium|pct}은 기록되어 있지만, 주가에서 나오는 자기자본비용이 빠져 있습니다.",
+  "price_position": "기준일 주가가 계산기에 없어 주가가 가치 범위의 어디쯤인지 읽을 수 없습니다. 주당 가치를 계산할 때 쓰일 순부채 {ratios.solvency.net_debt}(순현금)와 발행주식수 {terms.shares_outstanding}는 기록되어 있습니다.",
+  "market_implied_growth": "역DCF가 계산되지 않아 주가에 담긴 장기 매출 성장률은 알 수 없습니다. 매출은 최근 네 분기 기준 {ratios.growth.revenue.trailing_four_quarters|pct}, 삼 년 복리 {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} 늘었지만 일부는 Comtrafo 인수 효과입니다. 경영진이 제시한 다음 분기 매출 하한도 이번 분기 매출 {ratios.growth.revenue.this_quarter}보다 낮습니다.",
+  "most_sensitive": "민감도 표가 계산되지 않아 가치에 가장 큰 영향을 주는 가정을 표에서 읽을 수는 없습니다. 다만 회사 기록과 가장 동떨어진 가정은 두 가지입니다. 예측 마지막 해의 영업이익률은 최고 연도 {earnings_versus_cash.history.years.0.operating_margin|pct}보다 높고, 마지막 해의 재투자율은 현재 투하자본이익률 {ratios.profitability.return_on_invested_capital|pct}보다 훨씬 높은 수익을 전제합니다.",
+  "accounting_adjustments": "가치가 계산되지 않았으므로 회계 조정이 가치를 얼마나 움직였는지는 알 수 없습니다. 세금 혜택 제거와 Comtrafo 부채 상환이라는 두 조정은 품질조정 잉여현금흐름 {free_cash_flow.free_cash_flow_quality_adjusted}에만 반영되어, 영업이익률에서 출발하는 DCF 가정에는 영향이 없습니다. 영업이익에 들어 있는 언아웃 평가이익은 기준 시나리오의 첫해 영업이익률을 최근 네 분기 {ratios.profitability.operating_margin|pct}보다 낮게 잡는 방식으로 반영했습니다."
+ },
+ "limits": "This valuation is a set of stated assumptions run through a stated formula. It states no recommendation to trade, and a different reader choosing different drivers would reach a different value."
+}

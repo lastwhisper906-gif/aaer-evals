@@ -1,0 +1,453 @@
+{
+ "run": "AMSC/0001437749-26-025922",
+ "rubric": "evals/capability/rubric.md",
+ "dealbreakers": [
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "cross_document_reconciliation_grid_growth_organic_versus_comtrafo",
+   "where": "analysis_accounting.json anomalies[30].numbers_vs_prose",
+   "why": "The inputs settle the release-versus-MD&A question. notes:24 'Comtrafo contributed $19.4 million of revenue' is more than the whole Grid increase stated in mdna:21, and notes:35 shows Asia Pacific Grid falling. So legacy Grid shrank and the release's 'organic growth' (8k_2_02:8) is Wind's (mdna:22). The analyst cited both figures and still left it unresolved."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "cross_document_reconciliation_acquisition_amortization_two_figures",
+   "where": "analysis_accounting.json anomalies[32].numbers_vs_prose",
+   "why": "The operating-expense line (8k_2_02:25) and the larger add-back (8k_2_02:37) are bridged by the inputs. notes:62 gives customer-relationship and core-technology amortization plus 'intangible amortization expense related to backlog of $0.5 million', and mdna:24 says 'Cost of revenues includes total amortization expense of $0.5 million'. The notes:61 accumulated amortization moves by about the add-back. The analyst named this bridge but left it unresolved."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "solvency_earnout_and_goodwill_outside_the_debt_measures",
+   "where": "analysis_financial.json anomalies[17].what",
+   "why": "'payment depends on Comtrafo EBITDA over three years' puts the earnout term from notes:7 in the analyst's own words, outside any quote. No calculator path supplies it."
+  }
+ ],
+ "items": [
+  {
+   "id": "earnings_versus_cash_trailing_net_income_far_above_operating_cash_flow",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "earnings_versus_cash.operating_cash_flow_over_net_income, history.years.1 and trend_table.years-back-0.ratios.accruals_over_total_assets ('highest of the 5 filled years') match. The tax rows in earnings_quality_annual_tax_benefit_against_operating_income show the benefit is almost all deferred. terms.trailing_four_quarters.pretax_income is below operating_cash_flow, as stated."
+  },
+  {
+   "id": "earnings_versus_cash_quarter_income_rests_on_noncash_earnout_gain",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "8k_2_02:25 books the gain in operating expenses and 8k_2_02:33 removes it as non-cash. mdna:46 names it the main driver, and 8k_2_02:14 guidance 'assumes no changes in fair value of contingent consideration'. The negative quarterly accruals rest on the deposit and inventory lines."
+  },
+  {
+   "id": "earnings_versus_cash_operating_cash_flow_lifted_by_deposits_and_inventory",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "In 8k_2_02:33 the deferred revenue and inventory lines supply cash and receivables absorb it. ratios.growth.operating_cash_flow.year_over_year fits the 8k_2_02:5 headline."
+  },
+  {
+   "id": "earnings_versus_cash_inventory_articulation_gap",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.working_capital.inventory.articulation_gap is as written. The notes:13 acquired inventory is of the same order, but the bridge also needs write-downs and FX, so 'unresolved' is fair."
+  },
+  {
+   "id": "earnings_versus_cash_receivables_articulation_gap",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.working_capital.receivables.articulation_gap is as written. Acquired receivables in notes:13 and notes:14 are of the same order, and no paragraph closes the gap exactly."
+  },
+  {
+   "id": "earnings_versus_cash_income_more_volatile_than_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.smoothness is above the threshold its formula names. smoothness.net_income.2 is the December 2025 quarter in which the deferred tax asset appears (earnings_quality_annual_tax_benefit_against_operating_income)."
+  },
+  {
+   "id": "revenue_recognition_days_sales_outstanding_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The trend_table days_sales_outstanding and receivables_over_revenue cells (quarters-back-0/-4, years-back-0/-1) are as written. bad_debt_reserve_ratio is missing in every period, and notes:14 describes the aged acquired receivables."
+  },
+  {
+   "id": "revenue_recognition_bill_and_hold_disclosure_removed",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "note_history:23 ('included $7.9 million from such held transactions') is removed, and no current paragraph says whether the practice continues."
+  },
+  {
+   "id": "revenue_recognition_product_line_disaggregation_removed",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "note_history:15 cuts 'by product line and by shipment destination' to destination only, and note_history:9/:10/:24/:25 are removed. The mix cause in mdna:24 can no longer be tested."
+  },
+  {
+   "id": "revenue_recognition_contract_liabilities_near_low_against_record_orders",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue is 'second lowest of the 6 filled quarters' and years-back-0 is 'second lowest of the 5 filled years'. These sit beside the 8k_2_02:5 record orders and notes:39 backlog. note_history:18 shows acquired deferred revenue, so 'unresolved' is fair."
+  },
+  {
+   "id": "estimates_and_reserves_valuation_allowance_release_lifts_income",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "The 10-K tax rows show a deferred benefit and notes:110 says 'a majority of which was subsequently released in fiscal 2025'. notes:111 keeps an allowance in 'the U.S. and Poland'. terms.trailing_four_quarters.income_tax_expense matches."
+  },
+  {
+   "id": "estimates_and_reserves_earnout_remeasurement_gain_raises_income",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "mdna:33 'driven by changes in the forecast', notes:78 (Monte Carlo, Level 3) and the notes:83 roll-forward support it: last year's change added to the liability. In 8k_2_02:29 the current portion fell, and item_4_controls:5 covers the 'continuing fair value accounting'."
+  },
+  {
+   "id": "estimates_and_reserves_goodwill_no_trigger_despite_forecast_cut",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "notes:58 finds no trigger while mdna:33 cuts the forecast and mdna:37 reports Grid at an operating loss. notes:55 places all goodwill in Grid."
+  },
+  {
+   "id": "estimates_and_reserves_effective_tax_rate_discrete_item_two_explanations",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "notes:110 explains why the rate is below statutory, while mdna:44 explains why expense rose year over year. They answer different questions, so the evidence does not show two rival explanations."
+  },
+  {
+   "id": "estimates_and_reserves_acquired_receivables_two_figures",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:14 gives 'receivables with a fair value of $6.9 million' while the notes:13 allocation table carries a different 'Accounts receivable' line. No paragraph explains the difference."
+  },
+  {
+   "id": "estimates_and_reserves_purchase_price_allocation_moving",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "Each part is shown: notes:8 'Changes to the purchase price allocation could be significant' and the notes:57 'Measurement period adjustment'. The goodwill rows in articulation_and_the_filed_history_comtrafo_goodwill_two_figures differ, and so do notes:19 against the notes:13 deferred-tax line and note_history:7 debt against the notes:13 debt."
+  },
+  {
+   "id": "estimates_and_reserves_backlog_amortization_period_differs",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "notes:17 says 'economic consumption estimated over a sixteen-month period'. The notes:61 Backlog line covers a gross amount larger than the notes:13 Comtrafo backlog, so its useful life is not Comtrafo-specific and the conflict is not established."
+  },
+  {
+   "id": "estimates_and_reserves_inventory_reserve_low_against_history",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.years-back-0.ratios.inventory_reserve_ratio is 'second lowest of the 5 filled years' against years-back-4 'highest of the 5 filled years', and there is no quarterly reserve. The 8k_2_02:33 provision rose, and the notes:90 cause is generic."
+  },
+  {
+   "id": "estimates_and_reserves_credit_loss_allowance_not_visible",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "bad_debt_reserve_ratio is missing in every trend_table cell and terms.balances_now.bad_debt_allowance is missing. notes:86 shows no allowance line, while notes:14 gives an uncollectible portion."
+  },
+  {
+   "id": "cost_deferral_soft_asset_share_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table soft_asset_share is as written for quarters-back-0 against -4 and years-back-0 against -1. In 8k_2_02:29 goodwill and deferred tax assets carry the rise."
+  },
+  {
+   "id": "cost_deferral_non_gaap_excludes_recurring_items_and_omits_tax_effect",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:42 promises 'the tax effect of adjustments' but 8k_2_02:37 and mdna:50 show no tax row. notes:83 shows the remeasurement adding to the liability last year and reducing it now."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_assumed_debt_repaid_outside_acquisition_line",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.cash_flow_families.borrowing_repaid is RepaymentsOfLongTermDebt (financing), outside terms.cash_flow_families.acquisitions. notes:16 says 'The debt agreements totaling $8.8 million were subsequently paid off'."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_brazil_real_estate_in_capital_expenditure",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:135 and note_history:1 show the acquisition-linked purchase with no seller named. The 10-K subsequent-event tag (related_parties_contingencies_and_subsequent_events_property_payment_brazil) and terms.trailing_four_quarters.capital_expenditure match."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_earnout_future_cash_and_range",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:7 'up to 382.5 million Brazilian Real', the mdna:60 carve-out and the notes:80 Level 3 balances support it. Future payment is genuinely open."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_share_based_compensation_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.share_based_compensation against earnings_versus_cash.history.years.1.share_based_compensation, and share_based_compensation_over_operating_cash_flow, are as written. mdna:29 cites additional stock-based compensation."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_material_weakness_over_comtrafo_accounting",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "item_4_controls:3 'not effective', item_4_controls:5 scope with 'errors went undetected', and item_4_controls:6 remediation with no date. The input_8k.md index lists the Item 5.02 filing inside the quarter."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_note_disclosures_removed",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "note_history:6/:7 (Debt), :23 (bill-and-hold) and :9/:10/:24/:25 (product-line tables) are removed. mdna:4 and mdna:5 carry the rewritten description."
+  },
+  {
+   "id": "cross_document_reconciliation_interest_income_cause_against_lower_cash",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "low",
+   "why": "mdna:40 speaks of balances over the period. 8k_2_02:33 shows the year-earlier quarter began with far less cash, and mdna:58 dates the raise 'in June 2025'. So the evidence does not show the claimed contradiction and leans towards MD&A."
+  },
+  {
+   "id": "cross_document_reconciliation_non_gaap_decline_attributed_to_gross_margin",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The 8k_2_02:25 'Gross margin' row is higher than a year earlier while SG&A, tax and other expense rose, against mdna:51 'lower gross margins'. The item rightly limits MD&A's cause to the rate."
+  },
+  {
+   "id": "cross_document_reconciliation_operating_cash_flow_driver_cites_noncash_gain",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:56 lists 'changes in fair value consideration' as a driver, while 8k_2_02:33 deducts that change as a non-cash adjustment."
+  },
+  {
+   "id": "cross_document_reconciliation_grid_growth_organic_versus_comtrafo",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "medium",
+   "why": "Dealbreaker. notes:24 against the mdna:21 Grid increase, together with notes:35 by region, settles that legacy Grid fell and the organic growth is Wind's. The 'unresolved' does not hold."
+  },
+  {
+   "id": "cross_document_reconciliation_comtrafo_profit_against_lowered_earnout_forecast",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The notes:24 net-income contribution sits beside the notes:148 unallocated gain and the mdna:33 forecast cut. No paragraph says whether the contribution includes the gain, so 'unresolved' is fair."
+  },
+  {
+   "id": "cross_document_reconciliation_acquisition_amortization_two_figures",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "low",
+   "why": "Dealbreaker. notes:62 and mdna:24 bridge the 8k_2_02:25 line to the 8k_2_02:37 add-back (backlog amortization in cost of revenues), so the 'unresolved' does not hold."
+  },
+  {
+   "id": "cross_document_reconciliation_gross_margin_improvement_claim_against_lowest_quarter",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The 8k_2_02:11 claim sits beside trend_table.quarters-back-0.ratios.gross_margin 'lowest of the 6 filled quarters'. notes:15 says the step-up is 'fully recognized' and notes:17 backlog amortization continues."
+  },
+  {
+   "id": "industry_lens_customer_concentration_shift",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:41 and concentration.facts.22/.11/.23/.12 match, and note_history:26 drops Innomotics. One slip: note_history:26 prints Innomotics at '<10%' for the December 2025 quarter, while concentration.facts.15.value renders as a point share."
+  },
+  {
+   "id": "industry_lens_inventory_days_at_annual_high",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.years-back-0.ratios.days_sales_of_inventory is 'highest of the 5 filled years' and quarters-back-0 is 'lowest of the 6 filled quarters'. The notes:13 acquired inventory explains part of it."
+  },
+  {
+   "id": "results_against_expectations_next_quarter_guidance_below_reported_quarter",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:14 says revenue 'will exceed $85.0 million' and net income is 'expected to exceed $1.0 million', assuming 'no changes in fair value of contingent consideration'. Both are below ratios.growth.revenue.this_quarter and net_income.this_quarter."
+  },
+  {
+   "id": "liquidity_and_capital_cash_lower_after_acquisition_with_no_new_financing",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.balances_now.cash against balances_a_year_earlier.cash, cash_flow_families.acquisitions and .borrowing_repaid, the 8k_2_02:33 financing rows and mdna:54 foreign cash are all as written. ratios.liquidity.current_ratio backs 'no shortage'."
+  },
+  {
+   "id": "liquidity_and_capital_capital_spending_step_up",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.capital_expenditure against a year earlier, and capital_expenditure_over_depreciation_and_amortization, are as written. The notes:94 land and buildings lines and notes:135 back the real-estate share, and notes:13 PP&E explains the plant jump."
+  },
+  {
+   "id": "liquidity_and_capital_operating_cash_flow_leans_on_customer_deposits",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The 8k_2_02:33 deferred revenue and inventory lines carry the year-over-year swing, and mdna:56 cites the fair-value change. trend_table quarters-back-0 and -7 contract_liabilities_over_revenue are as written."
+  },
+  {
+   "id": "liquidity_and_capital_share_based_compensation_against_operating_cash_flow",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "In calculator_filings_only.json, free_cash_flow.free_cash_flow_quality_adjusted applies no adjustments: simple free cash flow less share-based compensation and acquisitions only, so the sentence holds. In calculator.json the same path also carries the accounting adjustments. history.years.0/.1.share_based_compensation are as written."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_non_gaap_net_income_decline_on_lower_gross_margins",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The item reports mdna:51 'the decrease in non-GAAP net income was a result of lower gross margins' and the 8k_2_02:5 headline accurately. It does not test the cause; the accounting frame does."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_selling_general_administrative_growth",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:25 shows SG&A up, the gross margin row nearly flat and R&D down, with the mdna:29 causes. ratios.profitability.operating_margin is as written."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_grid_growth_named_only_as_comtrafo",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "Supported by mdna:21's single driver against 8k_2_02:8, notes:41 Fuji Bridex '<10%', Innomotics dropped in note_history:26 and the mdna:37 Grid loss. The notes:35 Asia Pacific Grid decline backs 'legacy shrinking'."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_tariffs_trade_and_supply_chain_risks",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:11 is as described and its prior wording is absent. trend_table.quarters-back-0.ratios.gross_margin is at the bottom of its history."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_foreign_currency_swing_and_foreign_taxes",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "Supported by the mdna:42 currency cause, mdna:44 foreign taxes, the notes:110 vesting benefit, the notes:7 earnout in Brazilian Real and the mdna:54 foreign cash."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_material_weakness_over_acquisition_accounting",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "item_4_controls:3/:5/:6 and notes:8 are as stated. ratios.growth.operating_income.this_quarter includes the gain, per notes:148."
+  },
+  {
+   "id": "profitability_quarter_gross_margin_lowest_of_filled_quarters",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table gross_margin positions for quarters-back-0/-4 and years-back-0 are as written. The mdna:24 causes, notes:15, notes:17 and the 8k_2_02:11 claim all match."
+  },
+  {
+   "id": "profitability_quarter_profit_carried_by_earnout_gain",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "8k_2_02:25 puts the gain in operating expenses and notes:148 in unallocated. mdna:46 names it the main driver, the 8k_2_02:37 non-GAAP figure fell, 8k_2_02:14 assumes no repeat, and item_4_controls:5 covers the remeasurement."
+  },
+  {
+   "id": "profitability_headline_returns_rest_on_tax_benefit_while_invested_capital_returns_are_low",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "ratios.profitability net_margin, return_on_assets, return_on_equity and return_on_invested_capital are as written, and tax_rate is held at zero with effective_rate negative. The quarterly tax rise appears in 8k_2_02:25."
+  },
+  {
+   "id": "efficiency_receivable_days_lengthening",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The trend_table days_sales_outstanding cells, earnings_versus_cash.working_capital.receivables.balance_sheet_change, the 8k_2_02:33 receivables line, the missing bad_debt_reserve_ratio and notes:14 are as written."
+  },
+  {
+   "id": "efficiency_long_cash_conversion_cycle_and_inventory_write_downs",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.efficiency.cash_conversion_cycle and days_payables_outstanding, the trend_table DSI positions, terms.trailing_four_quarters.inventory_write_down and the notes:90 generic cause are as written."
+  },
+  {
+   "id": "efficiency_asset_base_swelled_by_goodwill_and_deferred_tax_assets",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.balances_a_year_earlier.assets to balances_now.assets, trend_table soft_asset_share and ratios.efficiency.asset_turnover are as written. 8k_2_02:29 shows goodwill and deferred tax assets, and mdna:33 the forecast cut."
+  },
+  {
+   "id": "solvency_earnout_and_goodwill_outside_the_debt_measures",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The content matches notes:7, notes:58 and the ratios.solvency paths, but a dealbreaker strikes it: 'over three years' is a filing figure written outside a quote."
+  },
+  {
+   "id": "solvency_equity_leans_on_deferred_tax_asset",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.balances_a_year_earlier.stockholders_equity to balances_now.stockholders_equity, the notes:110 release, the notes:111 remaining allowance, the notes:10 shares for Comtrafo and ratios.profitability.operating_margin are as written."
+  },
+  {
+   "id": "growth_revenue_growth_partly_acquired",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.growth.revenue.year_over_year and the notes:35 South America Grid line support it. The closing line is wrong, though: notes:24 'Comtrafo contributed $19.4 million of revenue' states the acquired amount, and it covers most of the increase, so 'partly' understates."
+  },
+  {
+   "id": "growth_operating_income_rebound_from_a_loss_quarter",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.growth.operating_income.quarter_over_quarter.inputs.before is negative, ratios.growth.net_income.trailing_four_quarters carries the tax benefit, and earnings_versus_cash.smoothness is as written."
+  },
+  {
+   "id": "growth_fiscal_year_operating_cash_flow_fell_while_revenue_rose",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.history.years.0/.1 operating_cash_flow and free_cash_flow_simple fell while years.0.revenue_growth was positive. ratios.growth.operating_cash_flow.trailing_four_quarters and the 8k_2_02:33 deposits are as written."
+  }
+ ],
+ "coverage": {
+  "answer": "yes",
+  "why": "Every accounting area from earnings_versus_cash to cross_document_reconciliation, plus industry_lens, has a finding and a verdict. Every financial section plus dupont and path_to_distress has a reading, and input_manifest.json analysis_stages shows nothing dropped from analysis_accounting or analysis_financial."
+ },
+ "calibration": {
+  "answer": "yes",
+  "why": "Area verdicts track their anomalies: estimates_and_reserves 'Low.' over the tax-release and earnout items, controls 'Adverse.' over the material weakness, and cost_deferral 'Clean on capitalization.' beside the non-GAAP item. The cross-document claim that 'each contradiction makes the quarter look better than its figures support' overreaches for the interest-income item."
+ },
+ "valuation_reading": {
+  "answer": "no",
+  "why": "calculator.json market.missing and implied_growth_beside_history.implied_ten_year_revenue_growth.missing leave no price and no implied growth, and the reading says so ('Nothing here says whether the price sits above, inside or below any value'). It picks operating_margin_year_ten and reinvestment_rate_year_ten by distance from the record, not from a computed sensitivity."
+ },
+ "score": 0.938,
+ "grader": {
+  "model_requested": "opus",
+  "model_served": "claude-opus-5-5",
+  "input_tokens": 44,
+  "output_tokens": 83613,
+  "cost_usd": 6.5149768,
+  "seconds": 716.4
+ }
+}

@@ -1,0 +1,1203 @@
+{
+ "question": "do reported earnings and cash reflect economic reality?",
+ "areas": {
+  "earnings_versus_cash": {
+   "finding": "Over the trailing four quarters operating cash flow covers only {earnings_versus_cash.operating_cash_flow_over_net_income} of net income, against {earnings_versus_cash.history.years.1.operating_cash_flow_over_net_income} in the fiscal year ended March 2025 and {earnings_versus_cash.history.years.0.operating_cash_flow_over_net_income} in the fiscal year ended March 2026. Accruals over average assets are {earnings_versus_cash.accruals_over_average_assets}; the fiscal-year accruals ratio {trend_table.years-back-0.ratios.accruals_over_total_assets} is the highest of the five filled years, a swing from {trend_table.years-back-1.ratios.accruals_over_total_assets}, the lowest. The source is one item: the trailing income-tax line is a net benefit of {terms.trailing_four_quarters.income_tax_expense}, almost all of it deferred, from releasing the U.S. valuation allowance; net income in the single quarter that ended in December 2025 was {earnings_versus_cash.smoothness.net_income.2}. No cash came with it. Before tax, cash backs earnings: trailing operating cash flow {terms.trailing_four_quarters.operating_cash_flow} is larger than trailing pretax income {terms.trailing_four_quarters.pretax_income}. Free cash flow is {free_cash_flow.free_cash_flow_simple}, or {free_cash_flow.free_cash_flow_over_net_income} of net income, and after share-based compensation and the Comtrafo acquisition the quality-adjusted figure is {free_cash_flow.free_cash_flow_quality_adjusted}. In the latest quarter operating cash flow {ratios.growth.operating_cash_flow.this_quarter} exceeds net income {ratios.growth.net_income.this_quarter}, so quarterly accruals {trend_table.quarters-back-0.ratios.accruals_over_total_assets} are the lower of the only two filled quarters (against {trend_table.quarters-back-4.ratios.accruals_over_total_assets}). But net income includes a non-cash gain from remeasuring the Comtrafo earnout, which MD&A names as the main driver of the net-income increase. The quarter's cash came from customer deposits and an inventory release, while receivables absorbed cash. Working capital over the year: receivables rose {earnings_versus_cash.working_capital.receivables.balance_sheet_change} ({earnings_versus_cash.working_capital.receivables.share_of_net_income} of trailing net income), inventory {earnings_versus_cash.working_capital.inventory.balance_sheet_change} ({earnings_versus_cash.working_capital.inventory.share_of_net_income}) and payables {earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change} ({earnings_versus_cash.working_capital.accounts_payable.share_of_net_income}). The tax release inflates the net income in those denominators, so the shares understate the drag. Articulation: the cash-flow statement's receivables change {earnings_versus_cash.working_capital.receivables.cash_flow_statement_change} falls short of the balance-sheet change by {earnings_versus_cash.working_capital.receivables.articulation_gap}, and its inventory change {earnings_versus_cash.working_capital.inventory.cash_flow_statement_change} falls short by {earnings_versus_cash.working_capital.inventory.articulation_gap}. Both gaps are of the same order as the receivables and inventory that the Comtrafo allocation brought in through the acquisition line. That is the benign reading, but no item reconciles them. The payables articulation cannot be tested because no cash-flow payables line is tagged. Smoothness is {earnings_versus_cash.smoothness}. That is above one, so income moves more than cash, not less: the tax-release quarter dominates the series, and there is no sign that income is being smoothed. The earnout gain's amount is not in calculator_filings_only.json, so no adjustment is written for it.",
+   "verdict": "Low for the trailing year: reported net income is mostly a non-cash deferred tax benefit, though before tax operating cash flow exceeds earnings. In the latest quarter net income leans on a non-cash earnout gain. The quarter's strong operating cash flow is real cash, but part of it is timing.",
+   "evidence": [
+    "earnings_quality_accruals_over_total_assets_annual",
+    "earnings_quality_accruals_over_total_assets_quarterly",
+    "earnings_quality_annual_tax_benefit_against_operating_income",
+    "earnings_quality_accruals_discrete_quarter_cash_flow_absent",
+    "earnings_quality_contingent_consideration_gain_within_operating_expenses",
+    "liquidity_and_capital_operating_cash_flow_deferred_revenue",
+    "earnings_quality_net_income_increase_driven_by_contingent_consideration_gain",
+    "estimates_and_discretion_effective_tax_rate_share_based_vesting_benefit",
+    "articulation_and_the_filed_history_comtrafo_goodwill_two_figures",
+    "estimates_and_discretion_comtrafo_acquired_receivables_uncollectible"
+   ],
+   "fields": [
+    "earnings_versus_cash.operating_cash_flow_over_net_income",
+    "earnings_versus_cash.history.years.0.operating_cash_flow_over_net_income",
+    "earnings_versus_cash.history.years.1.operating_cash_flow_over_net_income",
+    "earnings_versus_cash.accruals_over_average_assets",
+    "trend_table.years-back-0.ratios.accruals_over_total_assets",
+    "trend_table.years-back-1.ratios.accruals_over_total_assets",
+    "trend_table.quarters-back-0.ratios.accruals_over_total_assets",
+    "trend_table.quarters-back-4.ratios.accruals_over_total_assets",
+    "terms.trailing_four_quarters.income_tax_expense",
+    "terms.trailing_four_quarters.operating_cash_flow",
+    "terms.trailing_four_quarters.pretax_income",
+    "earnings_versus_cash.working_capital.receivables.balance_sheet_change",
+    "earnings_versus_cash.working_capital.receivables.cash_flow_statement_change",
+    "earnings_versus_cash.working_capital.receivables.articulation_gap",
+    "earnings_versus_cash.working_capital.receivables.share_of_net_income",
+    "earnings_versus_cash.working_capital.inventory.balance_sheet_change",
+    "earnings_versus_cash.working_capital.inventory.cash_flow_statement_change",
+    "earnings_versus_cash.working_capital.inventory.articulation_gap",
+    "earnings_versus_cash.working_capital.inventory.share_of_net_income",
+    "earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change",
+    "earnings_versus_cash.working_capital.accounts_payable.share_of_net_income",
+    "earnings_versus_cash.smoothness",
+    "free_cash_flow.free_cash_flow_simple",
+    "free_cash_flow.free_cash_flow_over_net_income",
+    "free_cash_flow.free_cash_flow_quality_adjusted"
+   ]
+  },
+  "revenue_recognition": {
+   "finding": "Measured against the company's own past, receivables are outrunning revenue. Quarterly days sales outstanding are {trend_table.quarters-back-0.ratios.days_sales_outstanding}, against {trend_table.quarters-back-4.ratios.days_sales_outstanding} a year earlier, the second highest of the six filled quarters. The fiscal-year figure {trend_table.years-back-0.ratios.days_sales_outstanding} rose from {trend_table.years-back-1.ratios.days_sales_outstanding} and is the second highest of five years, and the trailing average-based figure is {ratios.efficiency.days_sales_outstanding}. Receivables over quarterly revenue rose to {trend_table.quarters-back-0.ratios.receivables_over_revenue} from {trend_table.quarters-back-4.ratios.receivables_over_revenue}, while revenue grew {ratios.growth.revenue.year_over_year|pct}. Part of the rise was acquired: Comtrafo's receivables, some more than a year old and partly expected to be uncollectible, came in with the acquisition. No allowance for credit losses is tagged in any period, so the reserve behind receivables cannot be followed. Contract liabilities are not moving against revenue. Current contract liabilities over quarterly revenue are {trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue} against {trend_table.quarters-back-4.ratios.contract_liabilities_over_revenue}, and deferred revenue rose in the quarter. Part of the year-over-year rise in the balance ({terms.balances_now.contract_liabilities} against {terms.balances_a_year_earlier.contract_liabilities}) arrived with Comtrafo's acquired deferred revenue, and the legacy split is not in calculator_filings_only.json. The fiscal-year ratio {trend_table.years-back-0.ratios.contract_liabilities_over_revenue} is second lowest of five years, while the release reports record orders. Disclosure changes bear on judgment. The bill-and-hold paragraph, which last year put held transactions inside nine-month revenue, has been removed without saying whether the practice continues. Revenue is now disaggregated by destination only, with the product-line tables gone. The release calls growth organic plus Comtrafo, while MD&A attributes Grid's growth to Comtrafo alone. No new judgment area (variable consideration, principal versus agent, standalone selling price) appears in the items. The record has no fourth-quarter trend cell. The derived fourth fiscal quarter's revenue {ratios.growth.revenue.quarter_over_quarter.inputs.before} is below the latest quarter's {ratios.growth.revenue.this_quarter}, so no fourth-quarter spike shows.",
+   "verdict": "Watch. Receivables are building faster than revenue against history, no allowance is visible, and the bill-and-hold disclosure has gone. Contract liabilities and backlog do not point the other way.",
+   "evidence": [
+    "revenue_recognition_days_sales_outstanding_quarterly",
+    "revenue_recognition_days_sales_outstanding_annual",
+    "revenue_recognition_receivables_over_revenue_quarterly",
+    "revenue_recognition_receivables_over_revenue_annual",
+    "revenue_recognition_contract_liabilities_over_revenue_quarterly",
+    "revenue_recognition_contract_liabilities_over_revenue_annual",
+    "liquidity_and_capital_operating_cash_flow_deferred_revenue",
+    "estimates_and_discretion_acquired_receivables_uncollectible_portion",
+    "estimates_and_discretion_bad_debt_reserve_ratio_quarterly",
+    "revenue_recognition_bill_and_hold_disclosure_removed",
+    "structure_and_disclosure_changes_product_line_disaggregation_removed",
+    "across_documents_revenue_growth_organic_versus_comtrafo",
+    "results_against_expectations_record_orders_utility_mining",
+    "results_against_expectations_remaining_performance_obligations_restated"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.days_sales_outstanding",
+    "trend_table.quarters-back-4.ratios.days_sales_outstanding",
+    "trend_table.years-back-0.ratios.days_sales_outstanding",
+    "trend_table.years-back-1.ratios.days_sales_outstanding",
+    "ratios.efficiency.days_sales_outstanding",
+    "trend_table.quarters-back-0.ratios.receivables_over_revenue",
+    "trend_table.quarters-back-4.ratios.receivables_over_revenue",
+    "ratios.growth.revenue.year_over_year",
+    "trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue",
+    "trend_table.quarters-back-4.ratios.contract_liabilities_over_revenue",
+    "trend_table.years-back-0.ratios.contract_liabilities_over_revenue",
+    "terms.balances_now.contract_liabilities",
+    "terms.balances_a_year_earlier.contract_liabilities",
+    "ratios.growth.revenue.quarter_over_quarter.inputs.before",
+    "ratios.growth.revenue.this_quarter"
+   ]
+  },
+  "estimates_and_reserves": {
+   "finding": "Two estimate changes raised income, and neither brought cash. The first is the valuation-allowance release. The fiscal year ended March 2026 carried an income-tax benefit that was almost entirely deferred. The deferred tax asset rose from a small balance at March 2025 to a large one by December 2025, and the notes say most of the U.S. allowance was released in fiscal 2025. An allowance remains against U.S. and Polish assets. Trailing net income is {terms.trailing_four_quarters.net_income} against pretax income of {terms.trailing_four_quarters.pretax_income}, and the calculator's trailing effective rate is negative ({tax_rate.effective_rate}). In the latest quarter a discrete item, excess tax benefits on vesting share awards, held the effective rate below statutory. MD&A instead names foreign taxes as the main driver of the higher expense, so the two documents give different main causes. The second is the Comtrafo earnout. It was remeasured down on 'changes in the forecast', a level-three Monte Carlo estimate, producing the gain that MD&A says drove the quarter's net-income increase. The prior fiscal year's remeasurement went the other way and added to the liability, so the item recurs in both directions. It also falls inside the open material weakness. The same filing finds no goodwill impairment trigger. Yet it cut the forecast for the business behind most of the goodwill and describes the Grid segment, which carries all goodwill, at an operating loss. Purchase accounting is still preliminary. A goodwill measurement-period adjustment is booked and an inventory measurement-period adjustment is tagged. Comtrafo goodwill carries different figures in the prior 10-Q and the current 10-Q. The note's fair value for acquired receivables differs from the allocation row. The prose amortizes backlog over a shorter period than the useful life in the intangibles table. Reserves: no credit-loss allowance is tagged in any period, so it cannot be tested against rising receivables. The fiscal year-end inventory reserve ratio {trend_table.years-back-0.ratios.inventory_reserve_ratio} is second lowest of five years, up from {trend_table.years-back-1.ratios.inventory_reserve_ratio} but far below {trend_table.years-back-4.ratios.inventory_reserve_ratio}, and no quarterly reserve is tagged. Write-downs over the trailing year were {terms.trailing_four_quarters.inventory_write_down} and rose in the quarter. The warranty accrual is not thinning: it is {trend_table.quarters-back-0.ratios.warranty_reserve_ratio} of quarterly revenue against {trend_table.quarters-back-4.ratios.warranty_reserve_ratio} a year earlier, and {trend_table.years-back-0.ratios.warranty_reserve_ratio} of fiscal-year revenue against {trend_table.years-back-1.ratios.warranty_reserve_ratio}.",
+   "verdict": "Low. The year's income rests on a tax-allowance release, and the quarter's on a level-three earnout remeasurement inside an open material weakness. The credit-loss allowance cannot be seen, and the inventory reserve sits near the low end of its history.",
+   "evidence": [
+    "earnings_quality_annual_tax_benefit_against_operating_income",
+    "estimates_and_discretion_effective_tax_rate_share_based_vesting_benefit",
+    "estimates_and_discretion_valuation_allowance_united_states_and_poland",
+    "earnings_quality_income_tax_expense_attributed_to_foreign_jurisdictions",
+    "earnings_quality_quarterly_income_tax_expense",
+    "estimates_and_discretion_contingent_consideration_gain_attributed_to_forecast_change",
+    "estimates_and_discretion_contingent_consideration_earnout_range",
+    "liquidity_and_capital_contingent_consideration_liability",
+    "estimates_and_discretion_goodwill_no_impairment_trigger_identified",
+    "estimates_and_discretion_comtrafo_purchase_price_allocation_still_preliminary",
+    "articulation_and_the_filed_history_goodwill_measurement_period_adjustment",
+    "articulation_and_the_filed_history_comtrafo_goodwill_two_figures",
+    "estimates_and_discretion_backlog_amortization_sixteen_month_economic_consumption",
+    "estimates_and_discretion_comtrafo_acquired_receivables_uncollectible",
+    "estimates_and_discretion_bad_debt_reserve_ratio_annual",
+    "estimates_and_discretion_inventory_reserve_ratio_annual",
+    "estimates_and_discretion_inventory_reserve_ratio_quarterly",
+    "estimates_and_discretion_excess_obsolete_inventory_provision",
+    "estimates_and_discretion_warranty_reserve_ratio_quarterly",
+    "estimates_and_discretion_warranty_reserve_ratio_annual"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.net_income",
+    "terms.trailing_four_quarters.pretax_income",
+    "terms.trailing_four_quarters.income_tax_expense",
+    "tax_rate.effective_rate",
+    "trend_table.years-back-0.ratios.inventory_reserve_ratio",
+    "trend_table.years-back-1.ratios.inventory_reserve_ratio",
+    "trend_table.years-back-4.ratios.inventory_reserve_ratio",
+    "terms.trailing_four_quarters.inventory_write_down",
+    "trend_table.quarters-back-0.ratios.warranty_reserve_ratio",
+    "trend_table.quarters-back-4.ratios.warranty_reserve_ratio",
+    "trend_table.years-back-0.ratios.warranty_reserve_ratio",
+    "trend_table.years-back-1.ratios.warranty_reserve_ratio"
+   ]
+  },
+  "cost_deferral": {
+   "finding": "Nothing found on capitalization. No capitalized development cost is tagged (the record has no capitalized software additions). Research and development is expensed and fell, to {terms.trailing_four_quarters.research_and_development_expense} over the trailing year, with the quarter below a year earlier on lower stock-based compensation and outside services. Nothing shows costs moving from the income statement to the balance sheet. Soft assets did rise: assets other than plant and cash are {trend_table.quarters-back-0.ratios.soft_asset_share} of total assets, against {trend_table.quarters-back-4.ratios.soft_asset_share} a year earlier, and at the fiscal year-end {trend_table.years-back-0.ratios.soft_asset_share} against {trend_table.years-back-1.ratios.soft_asset_share}. The rise comes from Comtrafo goodwill and intangibles and from the deferred tax asset created by the allowance release, not from capitalized operating cost, but all of it rests on estimates. Non-GAAP: this quarter non-GAAP net income is below GAAP because the earnout gain is excluded, which is conservative for this quarter. Even so, the measure is loose in several ways. Excluding contingent-consideration remeasurement is new to the definition, and the remeasurement recurs, as a loss last fiscal year and a gain now. Stock-based compensation, a recurring cost, is excluded. The release's definition promises a tax effect that neither reconciliation table shows. The acquisition-amortization add-back differs from the income-statement line under the same label. 'Other non-cash or unusual charges' leaves room for future exclusions. The calculator holds no non-GAAP gap, so its trend cannot be measured.",
+   "verdict": "Clean on capitalization. The non-GAAP measure drops recurring items and omits its stated tax effect, so it overstates recurring profit in quarters without a remeasurement gain.",
+   "evidence": [
+    "earnings_quality_research_and_development_decrease",
+    "structure_and_disclosure_changes_soft_asset_share_quarterly",
+    "structure_and_disclosure_changes_soft_asset_share_annual",
+    "structure_and_disclosure_changes_goodwill_acquired_comtrafo",
+    "earnings_quality_non_gaap_definition_excludes_contingent_consideration",
+    "earnings_quality_non_gaap_net_income_below_gaap",
+    "across_documents_non_gaap_tax_effect_not_shown",
+    "across_documents_acquisition_amortization_two_figures",
+    "earnings_quality_non_gaap_gap_quarterly",
+    "earnings_quality_non_gaap_gap_annual"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.research_and_development_expense",
+    "trend_table.quarters-back-0.ratios.soft_asset_share",
+    "trend_table.quarters-back-4.ratios.soft_asset_share",
+    "trend_table.years-back-0.ratios.soft_asset_share",
+    "trend_table.years-back-1.ratios.soft_asset_share"
+   ]
+  },
+  "cash_flow_engineering_and_off_balance_sheet": {
+   "finding": "No receivables sale, factoring or supplier-finance programme is tagged in any period: the calculator has no value for proceeds from sale of receivables or for a supplier finance obligation. No unconditional purchase obligation or guarantee exposure is tagged either, and the notes reader carries the commitments paragraph as boilerplate on performance bonds and minimum purchases, so commitments cannot be sized. The quarter's operating cash flow rose {ratios.growth.operating_cash_flow.year_over_year|pct} year over year. Customer deposits and an inventory release drove it, while receivables absorbed cash. That is real cash, but deposits run off as revenue is recognized. One classification matters. Comtrafo's pre-acquisition debt was repaid through financing ({terms.cash_flow_families.borrowing_repaid}). That repayment sits outside the acquisitions line ({terms.cash_flow_families.acquisitions}) that the quality-adjusted measure subtracts, so part of the deal's cash cost escapes it; an adjustment below brings it in. The Brazilian real-estate purchase sits in capital expenditure. It was made under agreements entered alongside the acquisition, with the counterparty unnamed, and the 10-K tagged it as a subsequent event. It lifted trailing capital expenditure to {terms.trailing_four_quarters.capital_expenditure} from {terms.trailing_four_quarters_a_year_earlier.capital_expenditure}, and capital expenditure over depreciation to {earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization}. It already reduces free cash flow. The earnout is a future cash claim. Its recorded fair value is on the balance sheet and its stated range runs much higher. Any payment above the acquisition-date value would pass through operating cash flow when made. Leases are small (operating lease liability {terms.balances_now.operating_lease_liability}), and no variable-interest entity is described in the items. Share-based compensation is a real cost even though no cash leaves: {terms.trailing_four_quarters.share_based_compensation} over the trailing year, against {earnings_versus_cash.history.years.1.share_based_compensation} in the fiscal year ended March 2025. That is {earnings_versus_cash.share_based_compensation_over_operating_cash_flow|pct} of operating cash flow and {earnings_versus_cash.share_based_compensation_over_revenue|pct} of revenue. It is already subtracted in the quality-adjusted free cash flow and is not listed again.",
+   "verdict": "No sign of factoring or supplier finance. Operating cash flow is genuine but helped by deposits. Part of the acquisition's cash cost sits in financing. Share-based pay is a large real cost.",
+   "evidence": [
+    "liquidity_and_capital_operating_cash_flow_deferred_revenue",
+    "liquidity_and_capital_comtrafo_debt_repaid_and_debt_note_removed",
+    "related_parties_contingencies_and_subsequent_events_property_payment_brazil",
+    "related_parties_contingencies_and_subsequent_events_comtrafo_real_estate_purchase_completed",
+    "liquidity_and_capital_capital_expenditure_increase",
+    "liquidity_and_capital_property_plant_and_equipment_purchases",
+    "estimates_and_discretion_contingent_consideration_earnout_range",
+    "related_parties_contingencies_and_subsequent_events_contractual_obligations_carve_out_for_earnout",
+    "liquidity_and_capital_contingent_consideration_liability",
+    "earnings_quality_selling_general_and_administrative_increase"
+   ],
+   "fields": [
+    "ratios.growth.operating_cash_flow.year_over_year",
+    "terms.cash_flow_families.borrowing_repaid",
+    "terms.cash_flow_families.acquisitions",
+    "terms.trailing_four_quarters.capital_expenditure",
+    "terms.trailing_four_quarters_a_year_earlier.capital_expenditure",
+    "earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization",
+    "terms.balances_now.operating_lease_liability",
+    "terms.trailing_four_quarters.share_based_compensation",
+    "earnings_versus_cash.history.years.1.share_based_compensation",
+    "earnings_versus_cash.share_based_compensation_over_operating_cash_flow",
+    "earnings_versus_cash.share_based_compensation_over_revenue"
+   ]
+  },
+  "controls_audit_and_filing_signals": {
+   "finding": "Material weakness: disclosure controls were not effective at the quarter-end. Controls over Comtrafo's initial purchase accounting and its continuing fair-value accounting did not operate precisely enough, and errors went undetected in opening-balance-sheet amounts. The weakness was identified while the 10-K was being prepared, after the prior 10-Q. Remediation is under way with no completion date. It covers exactly the estimates that drive this quarter's income (the earnout remeasurement) and the still-preliminary allocation. The numbers show the opening balances moving: a goodwill measurement-period adjustment, a tagged inventory measurement-period adjustment, different Comtrafo goodwill figures in the prior 10-Q and the current 10-Q (different concepts and dates, so not a traced restatement) and different figures for acquired receivables. No quiet restatement of prior-period values is traced, and the overlapping 10-K and 10-Q rows match. Disclosures were removed this period: the separate Debt note, the bill-and-hold paragraph and the product-line revenue tables. The business description was rewritten to add mining and industrial capabilities, but the subsidiary-list diff is not in the input. The 8-K index shows an officer-or-director change filed during the quarter and a shareholder-vote item filed with the release; neither body is in the input, so neither can be read. History: a non-reliance item in 2011, an auditor change in 2013 and late-filing notices in 2011, with nothing comparable since. No auditor change, late filing or amendment of a periodic report appears now. The only amendment is an exhibit-only amendment of the acquisition 8-K. A 10-Q has no auditor's report, so critical audit matters cannot be read, and no SEC comment letter is in the input. Related parties: the former Comtrafo owners hold company shares and the earnout, and the counterparty to the real-estate purchases is not named.",
+   "verdict": "Adverse. An open material weakness covers the very estimates that produce this quarter's income and the acquisition balances.",
+   "evidence": [
+    "controls_audit_and_filings_disclosure_controls_not_effective",
+    "controls_audit_and_filings_material_weakness_comtrafo_purchase_and_fair_value_accounting",
+    "controls_audit_and_filings_material_weakness_remediation_in_progress",
+    "articulation_and_the_filed_history_comtrafo_goodwill_two_figures",
+    "articulation_and_the_filed_history_goodwill_measurement_period_adjustment",
+    "estimates_and_discretion_comtrafo_purchase_price_allocation_still_preliminary",
+    "liquidity_and_capital_comtrafo_debt_repaid_and_debt_note_removed",
+    "revenue_recognition_bill_and_hold_disclosure_removed",
+    "structure_and_disclosure_changes_product_line_disaggregation_removed",
+    "structure_and_disclosure_changes_business_description_adds_industrial_and_emission_control",
+    "structure_and_disclosure_changes_business_description_adds_mining_sector",
+    "related_parties_contingencies_and_subsequent_events_comtrafo_real_estate_purchase_completed"
+   ],
+   "fields": []
+  },
+  "cross_document_reconciliation": {
+   "finding": "The 8-K release and the 10-Q agree on the figures. Revenue {ratios.growth.revenue.this_quarter}, operating income {ratios.growth.operating_income.this_quarter}, net income {ratios.growth.net_income.this_quarter}, operating cash flow {ratios.growth.operating_cash_flow.this_quarter}, capital expenditure, tax expense, share-based compensation and the contingent-consideration and deferred-revenue balances print the same in both. The release's 'nearly quadrupled' operating cash flow is consistent with year-over-year growth of {ratios.growth.operating_cash_flow.year_over_year|pct}. They differ in explanation. The release calls revenue growth organic plus Comtrafo, MD&A attributes Grid's growth to Comtrafo alone, and the legacy-versus-acquired split is not in calculator_filings_only.json. The release headline omits the non-GAAP decline. The release's income statement and its non-GAAP add-back print different amortization amounts under the same label. The numbers confirm most directional notes items: the R&D decrease, the SG&A increase, the Wind revenue rise, the gross-margin decrease, the earnout decrease and the gain's role in net income, the other-expense swing, the tax-expense rise, capital expenditure and the Brazilian real-estate payment, the Fuji Bridex decline and the Comtrafo debt repayment. The numbers contradict the stated cause in the following cases. Interest income is said to have risen on higher cash balances, but quarter-end cash {terms.balances_now.cash} is below the year-earlier {terms.balances_a_year_earlier.cash}. The non-GAAP decline is put on lower gross margins, but the release's gross profit is slightly higher than a year earlier, while SG&A, tax and other expense rose. MD&A lists the contingent-consideration fair-value change among the drivers of higher operating cash flow, but the cash-flow statement deducts it as non-cash. The note's fair value for acquired receivables also differs from the allocation row in the same 10-Q. The forward claims remain unresolved: record orders, second-half margin improvement, the end of the step-up charge, a higher tax rate next quarter, and Wind segment operating income, which is not in the numbers report.",
+   "verdict": "The figures reconcile between the 8-K and the 10-Q. Several stated causes are contradicted by the numbers, and each contradiction makes the quarter look better than its figures support.",
+   "evidence": [
+    "across_documents_operating_cash_flow_quadrupled_headline",
+    "across_documents_revenue_growth_organic_versus_comtrafo",
+    "across_documents_acquisition_amortization_two_figures",
+    "across_documents_acquisition_intangible_amortization_figures",
+    "liquidity_and_capital_interest_income_attributed_to_higher_cash_balances",
+    "narrative_signs_of_operating_pressure_non_gaap_net_income_decrease_lower_gross_margins",
+    "across_documents_gross_margin_improvement_claim",
+    "earnings_quality_operating_cash_flow_drivers_cite_fair_value_change",
+    "earnings_quality_contingent_consideration_gain_within_operating_expenses",
+    "estimates_and_discretion_acquired_receivables_uncollectible_portion",
+    "estimates_and_discretion_comtrafo_acquired_receivables_uncollectible",
+    "structure_and_disclosure_changes_comtrafo_in_revenue_growth",
+    "earnings_quality_other_nonoperating_swing"
+   ],
+   "fields": [
+    "ratios.growth.revenue.this_quarter",
+    "ratios.growth.operating_income.this_quarter",
+    "ratios.growth.net_income.this_quarter",
+    "ratios.growth.operating_cash_flow.this_quarter",
+    "ratios.growth.operating_cash_flow.year_over_year",
+    "terms.balances_now.cash",
+    "terms.balances_a_year_earlier.cash"
+   ]
+  },
+  "industry_lens": {
+   "finding": "Inventory obsolescence: inventory days at the fiscal year-end were {trend_table.years-back-0.ratios.days_sales_of_inventory}, the highest of five years, against {trend_table.years-back-1.ratios.days_sales_of_inventory}. That is partly because year-end inventory includes Comtrafo's while the cost base carries only part of a year of it. The latest quarter's {trend_table.quarters-back-0.ratios.days_sales_of_inventory} is the lowest of six quarters, inventory fell in the quarter, and the trailing average-based figure is {ratios.efficiency.days_sales_of_inventory}. Write-downs rose and the year-end reserve ratio is near the low end of its history (see estimates), so obsolescence is a watch item rather than a finding. Purchase commitments in excess of need: nothing found, because no purchase obligation is tagged and the commitments paragraph is boilerplate, so excess cannot be measured. Customer concentration: Inox Wind, a Wind-segment customer, is {concentration.facts.22.value|pct} of revenue in the quarter against {concentration.facts.11.value|pct} a year earlier. Fuji Bridex fell to at most {concentration.facts.23.value|pct} from {concentration.facts.12.value|pct}. Innomotics was at {concentration.facts.15.value|pct} of revenue in the quarter ended December 2025 and is no longer listed. Concentration is easing as Comtrafo adds South American utility revenue, but Inox Wind remains the largest named customer. The year-earlier Fuji Bridex share is tagged with a maximum range member although the text states it as a point figure. Channel stuffing: nothing found beyond the receivables watch. The items describe sales to utilities, mining and industrial customers, the Navy and wind-turbine makers, with no distributor channel. Rising days sales outstanding and the removed bill-and-hold disclosure are the only signals, and the fourth fiscal quarter shows no revenue spike. Circular or vendor-financed deals: nothing found. The items describe no investment in a customer, and the notes reader carries an equity-method investee as not material with no sign that it buys from the company. The former Comtrafo owners received shares and hold the earnout, and real estate was bought under agreements made alongside the acquisition from an unnamed counterparty. Whether that counterparty is tied to the former owners cannot be read.",
+   "verdict": "Watch on customer concentration and inventory reserves. There is no evidence of channel stuffing or vendor-financed sales, though the counterparty to the acquisition-linked real-estate purchase is unnamed.",
+   "evidence": [
+    "estimates_and_discretion_days_sales_of_inventory_annual",
+    "estimates_and_discretion_days_sales_of_inventory_quarterly",
+    "estimates_and_discretion_excess_obsolete_inventory_provision",
+    "estimates_and_discretion_inventory_write_downs_excess_and_obsolescence",
+    "revenue_recognition_customer_concentration_grid",
+    "revenue_recognition_customer_concentration_fuji_bridex_below_threshold",
+    "revenue_recognition_bill_and_hold_disclosure_removed",
+    "related_parties_contingencies_and_subsequent_events_comtrafo_real_estate_purchase_completed"
+   ],
+   "fields": [
+    "trend_table.years-back-0.ratios.days_sales_of_inventory",
+    "trend_table.years-back-1.ratios.days_sales_of_inventory",
+    "trend_table.quarters-back-0.ratios.days_sales_of_inventory",
+    "ratios.efficiency.days_sales_of_inventory",
+    "concentration.facts.22.value",
+    "concentration.facts.11.value",
+    "concentration.facts.23.value",
+    "concentration.facts.12.value",
+    "concentration.facts.15.value"
+   ]
+  }
+ },
+ "reconciliation": [
+  {
+   "notes_item": "results_against_expectations_record_orders_utility_mining",
+   "numbers_items": [
+    "revenue_recognition_contract_liabilities_over_revenue_quarterly",
+    "liquidity_and_capital_operating_cash_flow_deferred_revenue",
+    "results_against_expectations_revenue_guidance_below_reported"
+   ],
+   "outcome": "unresolved",
+   "why": "The numbers carry no orders figure. Deferred revenue rose in the quarter, which fits higher bookings. But current contract liabilities over revenue ({trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue}) are second lowest of six quarters, and next-quarter revenue guidance is below the reported quarter. A twelve-month claim cannot be tested yet."
+  },
+  {
+   "notes_item": "results_against_expectations_second_half_gross_margin_improvement",
+   "numbers_items": [
+    "earnings_quality_gross_margin_quarterly",
+    "across_documents_gross_margin_improvement_claim",
+    "earnings_quality_gross_margin_annual"
+   ],
+   "outcome": "unresolved",
+   "why": "The horizon has not arrived. The quarter's margin {trend_table.quarters-back-0.ratios.gross_margin} is the lowest of six quarters, against {trend_table.quarters-back-4.ratios.gross_margin} a year earlier, and the numbers reader expects a further fall next quarter. The current numbers run against the claim but cannot yet test it."
+  },
+  {
+   "notes_item": "results_against_expectations_wind_revenue_from_ecs_shipments",
+   "numbers_items": [
+    "structure_and_disclosure_changes_comtrafo_in_revenue_growth"
+   ],
+   "outcome": "confirms",
+   "why": "The release prints Wind revenue above the year-earlier quarter. The ECS-shipment cause is not in the numbers."
+  },
+  {
+   "notes_item": "narrative_signs_of_operating_pressure_gross_margin_decrease_product_mix_and_purchase_accounting",
+   "numbers_items": [
+    "earnings_quality_gross_margin_quarterly",
+    "structure_and_disclosure_changes_comtrafo_quarter_contribution"
+   ],
+   "outcome": "confirms",
+   "why": "Gross margin {trend_table.quarters-back-0.ratios.gross_margin} is the lowest of six quarters, and Comtrafo-tagged cost of revenue for the step-up is present. The product-mix part cannot be tested because the product-line tables were removed."
+  },
+  {
+   "notes_item": "earnings_quality_research_and_development_decrease",
+   "numbers_items": [
+    "narrative_signs_of_operating_pressure_selling_general_administrative_increase"
+   ],
+   "outcome": "confirms",
+   "why": "The release prints R&D below the year-earlier quarter, and trailing R&D is {terms.trailing_four_quarters.research_and_development_expense}. The stock-based-compensation cause is not separately in the numbers."
+  },
+  {
+   "notes_item": "earnings_quality_selling_general_and_administrative_increase",
+   "numbers_items": [
+    "narrative_signs_of_operating_pressure_selling_general_administrative_increase"
+   ],
+   "outcome": "confirms",
+   "why": "The release prints SG&A above the year-earlier quarter. Trailing share-based compensation {terms.trailing_four_quarters.share_based_compensation} also rose, as the stated causes say."
+  },
+  {
+   "notes_item": "estimates_and_discretion_contingent_consideration_gain_attributed_to_forecast_change",
+   "numbers_items": [
+    "liquidity_and_capital_contingent_consideration_liability",
+    "earnings_quality_segment_reconciling_item_contingent_consideration",
+    "earnings_quality_contingent_consideration_gain_within_operating_expenses"
+   ],
+   "outcome": "confirms",
+   "why": "The liability fell, mainly in its current portion, and the gain is booked in operating expenses and in the segment reconciling item. The forecast change behind it cannot be tested from the numbers."
+  },
+  {
+   "notes_item": "results_against_expectations_wind_operating_income_from_ecs_sales",
+   "numbers_items": [
+    "structure_and_disclosure_changes_comtrafo_in_revenue_growth",
+    "earnings_quality_gross_margin_quarterly"
+   ],
+   "outcome": "unresolved",
+   "why": "No Wind segment operating income item survives in the numbers report. Wind revenue rose, but consolidated margin fell to its lowest, so a Wind margin rise would have to sit beside a Grid margin decline. That fits the Grid loss described in prose but is not tested."
+  },
+  {
+   "notes_item": "liquidity_and_capital_interest_income_attributed_to_higher_cash_balances",
+   "numbers_items": [
+    "earnings_quality_other_nonoperating_swing",
+    "liquidity_and_capital_capital_expenditure_increase"
+   ],
+   "outcome": "contradicts",
+   "why": "Interest income rose, but quarter-end cash {terms.balances_now.cash} is below the year-earlier {terms.balances_a_year_earlier.cash}, the opposite of the stated cause. Average balances are not in the record. The year-earlier quarter included an equity offering whose timing could lower that quarter's average, and part of the cash now sits in foreign accounts, so a benign reading exists, but the numbers available run against the explanation."
+  },
+  {
+   "notes_item": "earnings_quality_other_expense_from_foreign_currency_fluctuations",
+   "numbers_items": [
+    "earnings_quality_other_nonoperating_swing"
+   ],
+   "outcome": "confirms",
+   "why": "Other income turned to other expense against the year-earlier quarter. The currency cause cannot be tested from the numbers."
+  },
+  {
+   "notes_item": "earnings_quality_income_tax_expense_attributed_to_foreign_jurisdictions",
+   "numbers_items": [
+    "earnings_quality_quarterly_income_tax_expense"
+   ],
+   "outcome": "confirms",
+   "why": "Tax expense rose against the year-earlier quarter, as stated. The foreign-tax cause cannot be tested, cash taxes paid barely moved, and the tax note names a different main factor."
+  },
+  {
+   "notes_item": "earnings_quality_net_income_increase_driven_by_contingent_consideration_gain",
+   "numbers_items": [
+    "earnings_quality_contingent_consideration_gain_within_operating_expenses",
+    "earnings_quality_non_gaap_net_income_below_gaap",
+    "results_against_expectations_net_income_guidance"
+   ],
+   "outcome": "confirms",
+   "why": "Net income rose {ratios.growth.net_income.year_over_year|pct} year over year, with the gain inside operating expenses. Non-GAAP net income, which excludes the gain, fell. Next-quarter GAAP guidance, which assumes no remeasurement, is far lower."
+  },
+  {
+   "notes_item": "narrative_signs_of_operating_pressure_non_gaap_net_income_decrease_lower_gross_margins",
+   "numbers_items": [
+    "earnings_quality_non_gaap_net_income_below_gaap",
+    "across_documents_gross_margin_improvement_claim",
+    "narrative_signs_of_operating_pressure_selling_general_administrative_increase",
+    "earnings_quality_quarterly_income_tax_expense",
+    "earnings_quality_other_nonoperating_swing"
+   ],
+   "outcome": "contradicts",
+   "why": "Non-GAAP net income did fall, but the release prints gross profit slightly higher than a year earlier, so lower margins did not reduce profit dollars. SG&A, tax expense and other expense rose. The explanation holds only for the margin rate ({trend_table.quarters-back-0.ratios.gross_margin}), not as the source of the decline."
+  },
+  {
+   "notes_item": "earnings_quality_operating_cash_flow_drivers_cite_fair_value_change",
+   "numbers_items": [
+    "liquidity_and_capital_operating_cash_flow_deferred_revenue",
+    "earnings_quality_contingent_consideration_gain_within_operating_expenses"
+   ],
+   "outcome": "contradicts",
+   "why": "The rise in operating cash flow ({ratios.growth.operating_cash_flow.year_over_year|pct}) and the deferred-revenue and inventory drivers are confirmed. The cash-flow statement, however, deducts the contingent-consideration fair-value change as a non-cash item, so it cannot have driven operating cash flow higher."
+  },
+  {
+   "notes_item": "liquidity_and_capital_property_plant_and_equipment_purchases",
+   "numbers_items": [
+    "liquidity_and_capital_capital_expenditure_increase",
+    "related_parties_contingencies_and_subsequent_events_property_payment_brazil"
+   ],
+   "outcome": "confirms",
+   "why": "Purchases of plant and equipment and net investing outflow rose sharply against the year-earlier quarter, alongside the tagged Brazilian real-estate payment. Trailing capital expenditure is {terms.trailing_four_quarters.capital_expenditure}."
+  },
+  {
+   "notes_item": "earnings_quality_inventory_step_up_fully_recognized",
+   "numbers_items": [
+    "structure_and_disclosure_changes_comtrafo_quarter_contribution",
+    "articulation_and_the_filed_history_comtrafo_goodwill_two_figures"
+   ],
+   "outcome": "unresolved",
+   "why": "The tagged inventory measurement-period adjustment and the quarter's Comtrafo-tagged cost of revenue match the prose figures. Whether the charge stops next quarter cannot be seen yet."
+  },
+  {
+   "notes_item": "liquidity_and_capital_comtrafo_debt_repaid_and_debt_note_removed",
+   "numbers_items": [],
+   "outcome": "confirms",
+   "why": "The calculator shows debt now at {terms.debt_now}, and a repayment of {terms.cash_flow_families.borrowing_repaid} in the last fiscal year, matching the note's stated total. No numbers item covers it."
+  },
+  {
+   "notes_item": "revenue_recognition_customer_concentration_fuji_bridex_below_threshold",
+   "numbers_items": [
+    "revenue_recognition_customer_concentration_grid"
+   ],
+   "outcome": "confirms",
+   "why": "Fuji Bridex is tagged at most {concentration.facts.23.value|pct} this quarter, against {concentration.facts.12.value|pct} a year earlier. Inox Wind is {concentration.facts.22.value|pct} against {concentration.facts.11.value|pct}."
+  },
+  {
+   "notes_item": "estimates_and_discretion_effective_tax_rate_share_based_vesting_benefit",
+   "numbers_items": [
+    "earnings_quality_quarterly_income_tax_expense",
+    "earnings_quality_annual_tax_benefit_against_operating_income"
+   ],
+   "outcome": "unresolved",
+   "why": "The claim concerns next quarter. The calculator's trailing effective rate ({tax_rate.effective_rate}) is distorted by the allowance release, and no quarterly rate field exists."
+  },
+  {
+   "notes_item": "related_parties_contingencies_and_subsequent_events_comtrafo_real_estate_purchase_completed",
+   "numbers_items": [
+    "related_parties_contingencies_and_subsequent_events_property_payment_brazil",
+    "liquidity_and_capital_capital_expenditure_increase"
+   ],
+   "outcome": "confirms",
+   "why": "The tagged reais payment matches the note, and the tags supply the date in the quarter that the note omits. The 10-K carried the same payment as a subsequent event."
+  },
+  {
+   "notes_item": "across_documents_operating_cash_flow_quadrupled_headline",
+   "numbers_items": [
+    "liquidity_and_capital_operating_cash_flow_deferred_revenue"
+   ],
+   "outcome": "confirms",
+   "why": "Operating cash flow {ratios.growth.operating_cash_flow.this_quarter} grew {ratios.growth.operating_cash_flow.year_over_year|pct} year over year, consistent with the headline. Deposits and an inventory release carried much of it."
+  },
+  {
+   "notes_item": "across_documents_revenue_growth_organic_versus_comtrafo",
+   "numbers_items": [
+    "structure_and_disclosure_changes_comtrafo_in_revenue_growth",
+    "structure_and_disclosure_changes_comtrafo_quarter_contribution"
+   ],
+   "outcome": "unresolved",
+   "why": "Wind and North America Grid revenue rose and Comtrafo's quarter revenue is tagged, but the legacy-versus-acquired Grid split is not in calculator_filings_only.json."
+  },
+  {
+   "notes_item": "narrative_signs_of_operating_pressure_grid_revenue_growth_attributed_to_comtrafo",
+   "numbers_items": [
+    "structure_and_disclosure_changes_comtrafo_in_revenue_growth",
+    "structure_and_disclosure_changes_comtrafo_quarter_contribution",
+    "revenue_recognition_customer_concentration_grid"
+   ],
+   "outcome": "unresolved",
+   "why": "Grid revenue rose and South America Grid revenue appears with Comtrafo, while the Fuji Bridex share fell. Whether legacy Grid grew is not in calculator_filings_only.json."
+  },
+  {
+   "notes_item": "across_documents_comtrafo_contribution_against_earnout_forecast_and_grid_loss",
+   "numbers_items": [
+    "structure_and_disclosure_changes_comtrafo_quarter_contribution",
+    "earnings_quality_segment_reconciling_item_contingent_consideration"
+   ],
+   "outcome": "unresolved",
+   "why": "Comtrafo's tagged net income is close to consolidated net income {ratios.growth.net_income.this_quarter}, while the earnout forecast was cut and the gain sits in the unallocated reconciling item. Neither document says whether Comtrafo's figure includes the gain."
+  },
+  {
+   "notes_item": "across_documents_acquisition_intangible_amortization_figures",
+   "numbers_items": [
+    "across_documents_acquisition_amortization_two_figures"
+   ],
+   "outcome": "unresolved",
+   "why": "The release's income-statement line and its add-back differ under the same label. Backlog amortization charged to cost of revenues is the likely bridge, but no document states it."
+  },
+  {
+   "notes_item": "earnings_quality_non_gaap_definition_excludes_contingent_consideration",
+   "numbers_items": [
+    "across_documents_non_gaap_tax_effect_not_shown",
+    "earnings_quality_non_gaap_net_income_below_gaap"
+   ],
+   "outcome": "confirms",
+   "why": "The reconciliation deducts the gain and shows no tax-effect row, as the item says. The release's own definition promises one."
+  },
+  {
+   "notes_item": "results_against_expectations_second_quarter_guidance_assumes_no_contingent_consideration_change",
+   "numbers_items": [
+    "results_against_expectations_net_income_guidance",
+    "results_against_expectations_revenue_guidance_below_reported"
+   ],
+   "outcome": "confirms",
+   "why": "Next-quarter GAAP guidance assumes no remeasurement and sits far below the reported quarter's net income {ratios.growth.net_income.this_quarter}, which carried the gain."
+  },
+  {
+   "notes_item": "estimates_and_discretion_acquired_receivables_uncollectible_portion",
+   "numbers_items": [
+    "estimates_and_discretion_comtrafo_acquired_receivables_uncollectible",
+    "articulation_and_the_filed_history_comtrafo_goodwill_two_figures"
+   ],
+   "outcome": "contradicts",
+   "why": "The tagged gross, fair-value and uncollectible amounts match the prose. However, the allocation rows in the same 10-Q carry a different receivables figure. A measurement-period revision or a split across allocation lines could explain it, but the input states neither, and the material weakness covers acquired receivables."
+  },
+  {
+   "notes_item": "articulation_and_the_filed_history_goodwill_measurement_period_adjustment",
+   "numbers_items": [
+    "articulation_and_the_filed_history_comtrafo_goodwill_two_figures",
+    "structure_and_disclosure_changes_goodwill_acquired_comtrafo"
+   ],
+   "outcome": "unresolved",
+   "why": "Comtrafo goodwill carries different figures in the prior 10-Q and the current 10-Q, under different concepts and dates, and no restatement trace exists, so the adjustment cannot be tied to them."
+  },
+  {
+   "notes_item": "estimates_and_discretion_goodwill_no_impairment_trigger_identified",
+   "numbers_items": [
+    "structure_and_disclosure_changes_goodwill_acquired_comtrafo",
+    "earnings_quality_segment_reconciling_item_contingent_consideration"
+   ],
+   "outcome": "unresolved",
+   "why": "Goodwill impairment prints nil, consistent with no trigger. In the same quarter, however, the earnout liability was cut on a lowered forecast. Whether that should have been a trigger cannot be tested from the numbers."
+  },
+  {
+   "notes_item": "estimates_and_discretion_inventory_write_downs_excess_and_obsolescence",
+   "numbers_items": [
+    "estimates_and_discretion_excess_obsolete_inventory_provision"
+   ],
+   "outcome": "confirms",
+   "why": "The release's provision matches the note's write-downs and is above the year-earlier quarter. Trailing write-downs are {terms.trailing_four_quarters.inventory_write_down}."
+  },
+  {
+   "notes_item": "structure_and_disclosure_changes_contingent_consideration_gain_held_in_unallocated",
+   "numbers_items": [
+    "earnings_quality_segment_reconciling_item_contingent_consideration"
+   ],
+   "outcome": "confirms",
+   "why": "The segment reconciling item carries the gain, outside Grid results."
+  },
+  {
+   "notes_item": "controls_audit_and_filings_material_weakness_comtrafo_purchase_and_fair_value_accounting",
+   "numbers_items": [
+    "articulation_and_the_filed_history_comtrafo_goodwill_two_figures",
+    "earnings_quality_segment_reconciling_item_contingent_consideration",
+    "estimates_and_discretion_comtrafo_acquired_receivables_uncollectible"
+   ],
+   "outcome": "confirms",
+   "why": "The numbers show the areas the weakness names in motion: a provisional inventory adjustment, differing goodwill and receivables figures, and a fair-value remeasurement that moved income."
+  },
+  {
+   "notes_item": "revenue_recognition_bill_and_hold_disclosure_removed",
+   "numbers_items": [
+    "revenue_recognition_days_sales_outstanding_quarterly"
+   ],
+   "outcome": "unresolved",
+   "why": "No numbers item measures held revenue. Days sales outstanding rose, which leaves the question of continued bill-and-hold open."
+  },
+  {
+   "notes_item": "results_against_expectations_remaining_performance_obligations_restated",
+   "numbers_items": [
+    "revenue_recognition_contract_liabilities_over_revenue_quarterly",
+    "liquidity_and_capital_operating_cash_flow_deferred_revenue"
+   ],
+   "outcome": "unresolved",
+   "why": "Remaining performance obligations are not in the calculator. Deferred revenue rose, but the contract-liability ratio is near its low."
+  },
+  {
+   "notes_item": "articulation_and_the_filed_history_comtrafo_deferred_tax_asset_figure",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "No numbers item prints the allocation table's deferred tax asset line, so the prose figure cannot be checked against it."
+  }
+ ],
+ "anomalies": [
+  {
+   "id": "earnings_versus_cash_trailing_net_income_far_above_operating_cash_flow",
+   "name": "Trailing net income far above operating cash flow, driven by a non-cash tax benefit",
+   "name_ko": "비현금 세금 혜택으로 영업현금흐름을 크게 웃도는 최근 네 분기 순이익",
+   "area": "earnings_versus_cash",
+   "what": "Trailing operating cash flow over net income is {earnings_versus_cash.operating_cash_flow_over_net_income}, against {earnings_versus_cash.history.years.1.operating_cash_flow_over_net_income} the fiscal year before. Accruals over average assets are {earnings_versus_cash.accruals_over_average_assets}, and the annual accruals ratio {trend_table.years-back-0.ratios.accruals_over_total_assets} is the highest of five filled years. The cause is the trailing net tax benefit {terms.trailing_four_quarters.income_tax_expense}, almost all deferred. Trailing pretax income {terms.trailing_four_quarters.pretax_income} is below operating cash flow {terms.trailing_four_quarters.operating_cash_flow}.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "earnings_quality_accruals_over_total_assets_annual",
+    "earnings_quality_annual_tax_benefit_against_operating_income",
+    "estimates_and_discretion_effective_tax_rate_share_based_vesting_benefit"
+   ],
+   "fields": [
+    "earnings_versus_cash.operating_cash_flow_over_net_income",
+    "earnings_versus_cash.history.years.1.operating_cash_flow_over_net_income",
+    "earnings_versus_cash.accruals_over_average_assets",
+    "trend_table.years-back-0.ratios.accruals_over_total_assets",
+    "terms.trailing_four_quarters.income_tax_expense",
+    "terms.trailing_four_quarters.pretax_income",
+    "terms.trailing_four_quarters.operating_cash_flow"
+   ]
+  },
+  {
+   "id": "earnings_versus_cash_quarter_income_rests_on_noncash_earnout_gain",
+   "name": "Quarter's net income rests on a non-cash earnout remeasurement gain",
+   "name_ko": "비현금성 언아웃 재측정 이익에 기댄 이번 분기 순이익",
+   "area": "earnings_versus_cash",
+   "what": "The quarter's net income {ratios.growth.net_income.this_quarter} includes the earnout remeasurement gain, which the release books inside operating expenses and the cash-flow statement removes as non-cash. MD&A calls it the main driver of the net-income increase. Next-quarter GAAP guidance, which assumes no further remeasurement, is far lower. Quarterly accruals {trend_table.quarters-back-0.ratios.accruals_over_total_assets} look favourable only because deposits and inventory lifted operating cash flow.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "earnings_quality_contingent_consideration_gain_within_operating_expenses",
+    "results_against_expectations_net_income_guidance",
+    "earnings_quality_net_income_increase_driven_by_contingent_consideration_gain",
+    "earnings_quality_accruals_over_total_assets_quarterly"
+   ],
+   "fields": [
+    "ratios.growth.net_income.this_quarter",
+    "trend_table.quarters-back-0.ratios.accruals_over_total_assets"
+   ]
+  },
+  {
+   "id": "earnings_versus_cash_operating_cash_flow_lifted_by_deposits_and_inventory",
+   "name": "Quarter's operating cash flow lifted by customer deposits and an inventory release",
+   "name_ko": "고객 선수금과 재고 감소로 늘어난 이번 분기 영업현금흐름",
+   "area": "earnings_versus_cash",
+   "what": "Quarterly operating cash flow rose {ratios.growth.operating_cash_flow.year_over_year|pct} year over year. The cash-flow statement credits a rise in deferred revenue and a fall in inventory, while receivables absorbed cash. Deposits run off as revenue is recognized, so this part of the quarter's cash is timing rather than a lasting change.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "liquidity_and_capital_operating_cash_flow_deferred_revenue",
+    "across_documents_operating_cash_flow_quadrupled_headline"
+   ],
+   "fields": [
+    "ratios.growth.operating_cash_flow.year_over_year",
+    "ratios.growth.operating_cash_flow.this_quarter"
+   ]
+  },
+  {
+   "id": "earnings_versus_cash_inventory_articulation_gap",
+   "name": "Inventory change on the balance sheet far exceeds the cash-flow statement's",
+   "name_ko": "재무상태표 재고 증가와 현금흐름표 재고 변동의 큰 차이",
+   "area": "earnings_versus_cash",
+   "what": "The year-over-year balance-sheet rise in inventory {earnings_versus_cash.working_capital.inventory.balance_sheet_change} exceeds the cash-flow statement's inventory change {earnings_versus_cash.working_capital.inventory.cash_flow_statement_change} by {earnings_versus_cash.working_capital.inventory.articulation_gap}. The benign reading is the inventory acquired with Comtrafo, which enters through the acquisition line. The allocation rows carry an inventory figure of the same order, but no item reconciles the two.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "articulation_and_the_filed_history_comtrafo_goodwill_two_figures",
+    "estimates_and_discretion_days_sales_of_inventory_quarterly"
+   ],
+   "fields": [
+    "earnings_versus_cash.working_capital.inventory.balance_sheet_change",
+    "earnings_versus_cash.working_capital.inventory.cash_flow_statement_change",
+    "earnings_versus_cash.working_capital.inventory.articulation_gap"
+   ]
+  },
+  {
+   "id": "earnings_versus_cash_receivables_articulation_gap",
+   "name": "Receivables change on the balance sheet exceeds the cash-flow statement's",
+   "name_ko": "재무상태표 매출채권 증가와 현금흐름표 변동의 차이",
+   "area": "earnings_versus_cash",
+   "what": "The balance-sheet rise in receivables {earnings_versus_cash.working_capital.receivables.balance_sheet_change} exceeds the cash-flow statement's change {earnings_versus_cash.working_capital.receivables.cash_flow_statement_change} by {earnings_versus_cash.working_capital.receivables.articulation_gap}. Acquired Comtrafo receivables are the benign reading and are of the same order, but no item reconciles them.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "estimates_and_discretion_comtrafo_acquired_receivables_uncollectible",
+    "articulation_and_the_filed_history_comtrafo_goodwill_two_figures"
+   ],
+   "fields": [
+    "earnings_versus_cash.working_capital.receivables.balance_sheet_change",
+    "earnings_versus_cash.working_capital.receivables.cash_flow_statement_change",
+    "earnings_versus_cash.working_capital.receivables.articulation_gap"
+   ]
+  },
+  {
+   "id": "earnings_versus_cash_income_more_volatile_than_cash",
+   "name": "Income far more volatile than cash because of one tax-release quarter",
+   "name_ko": "세금 환입 분기 하나로 현금보다 훨씬 크게 출렁이는 이익",
+   "area": "earnings_versus_cash",
+   "what": "Smoothness is {earnings_versus_cash.smoothness}, well above one, so quarterly income moves far more than cash. One quarter, with net income of {earnings_versus_cash.smoothness.net_income.2} from the allowance release, dominates the series. This is not a smoothing pattern but an income spike with no cash behind it.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "earnings_quality_annual_tax_benefit_against_operating_income"
+   ],
+   "fields": [
+    "earnings_versus_cash.smoothness",
+    "earnings_versus_cash.smoothness.net_income.2"
+   ]
+  },
+  {
+   "id": "revenue_recognition_days_sales_outstanding_rising",
+   "name": "Days sales outstanding and receivables over revenue rising against history",
+   "name_ko": "과거 대비 늘어나는 매출채권 회수일수와 매출 대비 채권",
+   "area": "revenue_recognition",
+   "what": "Quarterly days sales outstanding are {trend_table.quarters-back-0.ratios.days_sales_outstanding}, against {trend_table.quarters-back-4.ratios.days_sales_outstanding}. The annual figure is {trend_table.years-back-0.ratios.days_sales_outstanding}, against {trend_table.years-back-1.ratios.days_sales_outstanding}. Receivables over revenue are {trend_table.quarters-back-0.ratios.receivables_over_revenue}, against {trend_table.quarters-back-4.ratios.receivables_over_revenue}. No allowance is tagged. The prose explains no receivables build beyond the acquired Comtrafo receivables, some of them over a year old.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "revenue_recognition_days_sales_outstanding_quarterly",
+    "revenue_recognition_days_sales_outstanding_annual",
+    "revenue_recognition_receivables_over_revenue_quarterly",
+    "revenue_recognition_receivables_over_revenue_annual",
+    "estimates_and_discretion_acquired_receivables_uncollectible_portion"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.days_sales_outstanding",
+    "trend_table.quarters-back-4.ratios.days_sales_outstanding",
+    "trend_table.years-back-0.ratios.days_sales_outstanding",
+    "trend_table.years-back-1.ratios.days_sales_outstanding",
+    "trend_table.quarters-back-0.ratios.receivables_over_revenue",
+    "trend_table.quarters-back-4.ratios.receivables_over_revenue"
+   ]
+  },
+  {
+   "id": "revenue_recognition_bill_and_hold_disclosure_removed",
+   "name": "Bill-and-hold disclosure removed",
+   "name_ko": "빌앤홀드 매출 공시 삭제",
+   "area": "revenue_recognition",
+   "what": "The prior 10-Q's bill-and-hold paragraph, which put held transactions inside nine-month revenue, has been removed. The current filing does not say whether held revenue was recognized in the quarter. Read beside rising days sales outstanding, the removal lowers visibility into a judgment-heavy practice.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "revenue_recognition_bill_and_hold_disclosure_removed",
+    "revenue_recognition_days_sales_outstanding_quarterly"
+   ],
+   "fields": []
+  },
+  {
+   "id": "revenue_recognition_product_line_disaggregation_removed",
+   "name": "Product-line revenue disaggregation removed",
+   "name_ko": "제품별 매출 구분 공시 삭제",
+   "area": "revenue_recognition",
+   "what": "Revenue is now disaggregated by destination only, and the product-line tables are gone. The product mix that the company cites for the margin decrease can no longer be tested.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "structure_and_disclosure_changes_product_line_disaggregation_removed",
+    "narrative_signs_of_operating_pressure_gross_margin_decrease_product_mix_and_purchase_accounting"
+   ],
+   "fields": []
+  },
+  {
+   "id": "revenue_recognition_contract_liabilities_near_low_against_record_orders",
+   "name": "Contract liabilities near their low against revenue while record orders are claimed",
+   "name_ko": "사상 최대 수주 주장과 달리 낮은 수준의 계약부채 비율",
+   "area": "revenue_recognition",
+   "what": "Current contract liabilities over revenue are {trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue}, second lowest of six quarters, and the annual ratio {trend_table.years-back-0.ratios.contract_liabilities_over_revenue} is second lowest of five years. Meanwhile the release reports record orders and the notes report higher remaining performance obligations. Part of the balance came with Comtrafo, and the numbers carry no orders figure.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "revenue_recognition_contract_liabilities_over_revenue_quarterly",
+    "revenue_recognition_contract_liabilities_over_revenue_annual",
+    "results_against_expectations_record_orders_utility_mining",
+    "results_against_expectations_remaining_performance_obligations_restated"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue",
+    "trend_table.years-back-0.ratios.contract_liabilities_over_revenue"
+   ]
+  },
+  {
+   "id": "estimates_and_reserves_valuation_allowance_release_lifts_income",
+   "name": "Valuation-allowance release lifts the year's income without cash",
+   "name_ko": "현금 없이 올해 이익을 끌어올린 평가충당금 환입",
+   "area": "estimates_and_reserves",
+   "what": "The fiscal year's tax line is a large benefit, almost all deferred. The deferred tax asset rose from a small balance at March 2025 to a large one by December 2025. The notes say most of the U.S. allowance was released in fiscal 2025, and an allowance remains against U.S. and Polish assets. The trailing net tax benefit is {terms.trailing_four_quarters.income_tax_expense}. The income is valid under GAAP, but it carries no cash and will not recur.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "earnings_quality_annual_tax_benefit_against_operating_income",
+    "estimates_and_discretion_valuation_allowance_united_states_and_poland",
+    "estimates_and_discretion_effective_tax_rate_share_based_vesting_benefit"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.income_tax_expense",
+    "tax_rate.effective_rate"
+   ]
+  },
+  {
+   "id": "estimates_and_reserves_earnout_remeasurement_gain_raises_income",
+   "name": "Level-three earnout remeasurement raises income inside an open material weakness",
+   "name_ko": "중대한 취약점 범위 안에서 이익을 늘린 언아웃 재측정",
+   "area": "estimates_and_reserves",
+   "what": "A Monte Carlo remeasurement of the Comtrafo earnout cut the liability on 'changes in the forecast' and booked a gain in operating expenses. The prior fiscal year's remeasurement added to the liability, so the item recurs in both directions. The current portion fell sharply. The estimate sits inside the open material weakness, and the prose does not say which forecast changed or by how much.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "estimates_and_discretion_contingent_consideration_gain_attributed_to_forecast_change",
+    "liquidity_and_capital_contingent_consideration_liability",
+    "earnings_quality_segment_reconciling_item_contingent_consideration",
+    "estimates_and_discretion_contingent_consideration_earnout_range",
+    "controls_audit_and_filings_material_weakness_comtrafo_purchase_and_fair_value_accounting"
+   ],
+   "fields": []
+  },
+  {
+   "id": "estimates_and_reserves_goodwill_no_trigger_despite_forecast_cut",
+   "name": "No goodwill impairment trigger despite a lowered Comtrafo forecast",
+   "name_ko": "Comtrafo 전망 하향에도 영업권 손상 징후 없음",
+   "area": "estimates_and_reserves",
+   "what": "No impairment trigger was identified. Yet the same filing lowers the Comtrafo forecast behind the earnout and describes the Grid segment, which carries all goodwill, at an operating loss. Goodwill impairment prints nil for the quarter, and the text does not say whether the forecast change was weighed as a trigger.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "estimates_and_discretion_goodwill_no_impairment_trigger_identified",
+    "structure_and_disclosure_changes_goodwill_acquired_comtrafo",
+    "estimates_and_discretion_contingent_consideration_gain_attributed_to_forecast_change"
+   ],
+   "fields": []
+  },
+  {
+   "id": "estimates_and_reserves_effective_tax_rate_discrete_item_two_explanations",
+   "name": "Quarter's tax rate held down by a discrete item, with two different explanations",
+   "name_ko": "일회성 항목으로 낮아진 분기 실효세율과 서로 다른 두 설명",
+   "area": "estimates_and_reserves",
+   "what": "The tax note says excess tax benefits on vesting awards, a discrete item, held the quarter's effective rate below statutory. MD&A attributes the higher tax expense mainly to foreign taxes. The two documents name different main factors, and cash taxes paid barely moved.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "estimates_and_discretion_effective_tax_rate_share_based_vesting_benefit",
+    "earnings_quality_income_tax_expense_attributed_to_foreign_jurisdictions",
+    "earnings_quality_quarterly_income_tax_expense"
+   ],
+   "fields": []
+  },
+  {
+   "id": "estimates_and_reserves_acquired_receivables_two_figures",
+   "name": "Acquired receivables carry different fair values in prose and allocation",
+   "name_ko": "인수 매출채권 공정가치가 본문과 배분표에서 서로 다름",
+   "area": "estimates_and_reserves",
+   "what": "The note states acquired Comtrafo receivables at one fair value, and the allocation rows in the same 10-Q carry a different receivables figure. The material weakness covers acquired receivables. The input does not say whether a measurement-period revision or a split across lines explains the difference.",
+   "numbers_vs_prose": "contradicts",
+   "evidence": [
+    "estimates_and_discretion_acquired_receivables_uncollectible_portion",
+    "estimates_and_discretion_comtrafo_acquired_receivables_uncollectible",
+    "articulation_and_the_filed_history_comtrafo_goodwill_two_figures"
+   ],
+   "fields": []
+  },
+  {
+   "id": "estimates_and_reserves_purchase_price_allocation_moving",
+   "name": "Comtrafo purchase-price allocation still moving",
+   "name_ko": "아직 바뀌고 있는 Comtrafo 취득원가 배분",
+   "area": "estimates_and_reserves",
+   "what": "The allocation is still preliminary. A goodwill measurement-period adjustment is booked and an inventory measurement-period adjustment is tagged. Comtrafo goodwill carries different figures in the prior 10-Q and the current 10-Q. The deferred tax asset is stated in prose beside a table line that no reader reconciled, and the prior 10-Q's recorded debt figures differ from the allocation table's debt.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "estimates_and_discretion_comtrafo_purchase_price_allocation_still_preliminary",
+    "articulation_and_the_filed_history_goodwill_measurement_period_adjustment",
+    "articulation_and_the_filed_history_comtrafo_goodwill_two_figures",
+    "articulation_and_the_filed_history_comtrafo_deferred_tax_asset_figure",
+    "liquidity_and_capital_comtrafo_debt_repaid_and_debt_note_removed"
+   ],
+   "fields": []
+  },
+  {
+   "id": "estimates_and_reserves_backlog_amortization_period_differs",
+   "name": "Backlog amortization period in prose differs from the intangibles table",
+   "name_ko": "본문과 무형자산 표에서 서로 다른 수주잔고 상각 기간",
+   "area": "estimates_and_reserves",
+   "what": "The prose amortizes the Comtrafo backlog, charged to cost of revenues, over a period shorter than the useful life listed in the intangibles table. Which period governs determines how long the charge weighs on gross margin.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "estimates_and_discretion_backlog_amortization_sixteen_month_economic_consumption",
+    "results_against_expectations_second_half_gross_margin_improvement"
+   ],
+   "fields": []
+  },
+  {
+   "id": "estimates_and_reserves_inventory_reserve_low_against_history",
+   "name": "Inventory reserve near the low end of its history while write-downs rise",
+   "name_ko": "평가손실은 늘지만 과거 대비 낮은 재고충당금 비율",
+   "area": "estimates_and_reserves",
+   "what": "The year-end inventory reserve ratio is {trend_table.years-back-0.ratios.inventory_reserve_ratio}, second lowest of five years, against {trend_table.years-back-4.ratios.inventory_reserve_ratio} at the high, and no quarterly reserve is tagged. Write-downs rose, to {terms.trailing_four_quarters.inventory_write_down} over the trailing year, and the stated cause is generic.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "estimates_and_discretion_inventory_reserve_ratio_annual",
+    "estimates_and_discretion_inventory_reserve_ratio_quarterly",
+    "estimates_and_discretion_excess_obsolete_inventory_provision",
+    "estimates_and_discretion_inventory_write_downs_excess_and_obsolescence"
+   ],
+   "fields": [
+    "trend_table.years-back-0.ratios.inventory_reserve_ratio",
+    "trend_table.years-back-4.ratios.inventory_reserve_ratio",
+    "terms.trailing_four_quarters.inventory_write_down"
+   ]
+  },
+  {
+   "id": "estimates_and_reserves_credit_loss_allowance_not_visible",
+   "name": "No credit-loss allowance tagged in any period",
+   "name_ko": "어느 기간에도 보이지 않는 대손충당금",
+   "area": "estimates_and_reserves",
+   "what": "No allowance for credit losses is tagged in any period, so its ratio to receivables cannot be followed. Meanwhile receivables are rising and the acquired receivables carry an estimated uncollectible portion.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "estimates_and_discretion_bad_debt_reserve_ratio_quarterly",
+    "estimates_and_discretion_bad_debt_reserve_ratio_annual",
+    "estimates_and_discretion_comtrafo_acquired_receivables_uncollectible"
+   ],
+   "fields": [
+    "terms.balances_now.receivables",
+    "terms.balances_a_year_earlier.receivables"
+   ]
+  },
+  {
+   "id": "cost_deferral_soft_asset_share_rising",
+   "name": "Soft-asset share rising on goodwill, intangibles and the deferred tax asset",
+   "name_ko": "영업권·무형자산·이연법인세자산으로 높아진 연성자산 비중",
+   "area": "cost_deferral",
+   "what": "Soft assets are {trend_table.quarters-back-0.ratios.soft_asset_share} of total assets, against {trend_table.quarters-back-4.ratios.soft_asset_share}; the annual figure is {trend_table.years-back-0.ratios.soft_asset_share}, against {trend_table.years-back-1.ratios.soft_asset_share}. The rise comes from Comtrafo goodwill and intangibles and the deferred tax asset, all estimate-based, not from capitalized operating cost.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "structure_and_disclosure_changes_soft_asset_share_quarterly",
+    "structure_and_disclosure_changes_soft_asset_share_annual",
+    "structure_and_disclosure_changes_goodwill_acquired_comtrafo",
+    "earnings_quality_annual_tax_benefit_against_operating_income"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.soft_asset_share",
+    "trend_table.quarters-back-4.ratios.soft_asset_share",
+    "trend_table.years-back-0.ratios.soft_asset_share",
+    "trend_table.years-back-1.ratios.soft_asset_share"
+   ]
+  },
+  {
+   "id": "cost_deferral_non_gaap_excludes_recurring_items_and_omits_tax_effect",
+   "name": "Non-GAAP measure excludes recurring items and omits its stated tax effect",
+   "name_ko": "반복 항목을 빼고 정의상 세금효과를 표시하지 않는 비GAAP 지표",
+   "area": "cost_deferral",
+   "what": "The non-GAAP definition newly excludes contingent-consideration remeasurement, which has recurred in both directions, and it excludes stock-based compensation. The release's definition promises a tax effect that neither reconciliation table shows. This quarter the exclusion puts non-GAAP below GAAP, but in a quarter with a remeasurement loss it would put non-GAAP above GAAP.",
+   "numbers_vs_prose": "contradicts",
+   "evidence": [
+    "earnings_quality_non_gaap_definition_excludes_contingent_consideration",
+    "across_documents_non_gaap_tax_effect_not_shown",
+    "earnings_quality_non_gaap_net_income_below_gaap",
+    "earnings_quality_non_gaap_gap_quarterly"
+   ],
+   "fields": []
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_assumed_debt_repaid_outside_acquisition_line",
+   "name": "Acquired company's debt repaid through financing, outside the acquisitions line",
+   "name_ko": "인수 지출이 아닌 재무활동으로 분류된 피인수회사 부채 상환",
+   "area": "cash_flow_engineering_and_off_balance_sheet",
+   "what": "Comtrafo's pre-acquisition debt was repaid through financing ({terms.cash_flow_families.borrowing_repaid}). The acquisitions line ({terms.cash_flow_families.acquisitions}) does not include it, so measures that subtract acquisitions understate the deal's cash cost.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "liquidity_and_capital_comtrafo_debt_repaid_and_debt_note_removed"
+   ],
+   "fields": [
+    "terms.cash_flow_families.borrowing_repaid",
+    "terms.cash_flow_families.acquisitions"
+   ]
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_brazil_real_estate_in_capital_expenditure",
+   "name": "Acquisition-linked Brazilian real estate bought from an unnamed counterparty and classified as capital expenditure",
+   "name_ko": "인수와 연계되어 이름 없는 상대방에게서 산 브라질 부동산을 자본지출로 분류",
+   "area": "cash_flow_engineering_and_off_balance_sheet",
+   "what": "Real estate in Brazil was bought under agreements made alongside the acquisition, with the counterparty unnamed. It is classified as capital expenditure. The 10-K tagged the payment as a subsequent event, and the note omits the date that the tags give. Trailing capital expenditure is {terms.trailing_four_quarters.capital_expenditure}, against {terms.trailing_four_quarters_a_year_earlier.capital_expenditure} a year earlier. The payment already reduces free cash flow.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "related_parties_contingencies_and_subsequent_events_property_payment_brazil",
+    "related_parties_contingencies_and_subsequent_events_comtrafo_real_estate_purchase_completed",
+    "liquidity_and_capital_capital_expenditure_increase",
+    "liquidity_and_capital_property_plant_and_equipment_purchases"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.capital_expenditure",
+    "terms.trailing_four_quarters_a_year_earlier.capital_expenditure"
+   ]
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_earnout_future_cash_and_range",
+   "name": "Earnout is a future cash obligation with a wide stated range",
+   "name_ko": "범위가 넓은 미래 현금 의무인 언아웃",
+   "area": "cash_flow_engineering_and_off_balance_sheet",
+   "what": "The earnout is a future cash obligation. The high end of its range, in reais, is quoted at the acquisition date, and MD&A's contractual-obligations paragraph names it as the only material change. Any payment above the acquisition-date fair value would pass through operating cash flow when made.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "estimates_and_discretion_contingent_consideration_earnout_range",
+    "related_parties_contingencies_and_subsequent_events_contractual_obligations_carve_out_for_earnout",
+    "liquidity_and_capital_contingent_consideration_liability"
+   ],
+   "fields": []
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_share_based_compensation_rising",
+   "name": "Share-based compensation large and rising against cash flow",
+   "name_ko": "현금흐름 대비 크고 늘어나는 주식보상비용",
+   "area": "cash_flow_engineering_and_off_balance_sheet",
+   "what": "Trailing share-based compensation is {terms.trailing_four_quarters.share_based_compensation}, against {earnings_versus_cash.history.years.1.share_based_compensation} in the fiscal year ended March 2025. That is {earnings_versus_cash.share_based_compensation_over_operating_cash_flow|pct} of operating cash flow. No cash leaves, but it is a real cost. It is already subtracted in the quality-adjusted free cash flow and is not adjusted again.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "earnings_quality_selling_general_and_administrative_increase",
+    "earnings_quality_non_gaap_net_income_below_gaap"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.share_based_compensation",
+    "earnings_versus_cash.history.years.1.share_based_compensation",
+    "earnings_versus_cash.share_based_compensation_over_operating_cash_flow"
+   ]
+  },
+  {
+   "id": "controls_audit_and_filing_signals_material_weakness_over_comtrafo_accounting",
+   "name": "Material weakness over Comtrafo purchase and fair-value accounting",
+   "name_ko": "Comtrafo 인수 및 공정가치 회계에 대한 중대한 내부통제 취약점",
+   "area": "controls_audit_and_filing_signals",
+   "what": "Disclosure controls are not effective. The material weakness covers Comtrafo's purchase accounting and its continuing fair-value accounting, and errors went undetected in opening balances. Remediation has no completion date, and the weakness was identified after the prior 10-Q. The 8-K index also lists an officer-or-director change filed during the quarter whose body is not in the input.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "controls_audit_and_filings_disclosure_controls_not_effective",
+    "controls_audit_and_filings_material_weakness_comtrafo_purchase_and_fair_value_accounting",
+    "controls_audit_and_filings_material_weakness_remediation_in_progress",
+    "articulation_and_the_filed_history_comtrafo_goodwill_two_figures"
+   ],
+   "fields": []
+  },
+  {
+   "id": "controls_audit_and_filing_signals_note_disclosures_removed",
+   "name": "Debt note, bill-and-hold paragraph and product-line tables removed",
+   "name_ko": "부채 주석, 빌앤홀드 문단, 제품별 매출 표 삭제",
+   "area": "controls_audit_and_filing_signals",
+   "what": "The separate Debt note, the bill-and-hold paragraph and the product-line revenue tables were removed this period. The business description was rewritten to add mining and industrial capabilities, and there is no subsidiary-list diff to read beside it.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "liquidity_and_capital_comtrafo_debt_repaid_and_debt_note_removed",
+    "revenue_recognition_bill_and_hold_disclosure_removed",
+    "structure_and_disclosure_changes_product_line_disaggregation_removed",
+    "structure_and_disclosure_changes_business_description_adds_industrial_and_emission_control"
+   ],
+   "fields": []
+  },
+  {
+   "id": "cross_document_reconciliation_interest_income_cause_against_lower_cash",
+   "name": "Interest income attributed to higher cash while quarter-end cash is lower",
+   "name_ko": "분기말 현금이 줄었는데도 현금 증가로 설명한 이자수익",
+   "area": "cross_document_reconciliation",
+   "what": "MD&A attributes higher interest income to higher cash balances, but quarter-end cash {terms.balances_now.cash} is below the year-earlier {terms.balances_a_year_earlier.cash}. Average balances are not in the record. The year-earlier quarter included an equity offering whose timing could lower its average, and part of the cash now sits in foreign accounts.",
+   "numbers_vs_prose": "contradicts",
+   "evidence": [
+    "liquidity_and_capital_interest_income_attributed_to_higher_cash_balances",
+    "earnings_quality_other_nonoperating_swing",
+    "liquidity_and_capital_capital_expenditure_increase",
+    "liquidity_and_capital_foreign_bank_account_cash_and_liquidity_sources"
+   ],
+   "fields": [
+    "terms.balances_now.cash",
+    "terms.balances_a_year_earlier.cash"
+   ]
+  },
+  {
+   "id": "cross_document_reconciliation_non_gaap_decline_attributed_to_gross_margin",
+   "name": "Non-GAAP decline attributed to gross margin while gross profit rose",
+   "name_ko": "매출총이익은 늘었는데 매출총이익률 탓으로 돌린 비GAAP 이익 감소",
+   "area": "cross_document_reconciliation",
+   "what": "MD&A attributes the non-GAAP net-income decline to lower gross margins. The release prints gross profit slightly higher than a year earlier, while SG&A, tax expense and other expense rose. The margin rate did fall to {trend_table.quarters-back-0.ratios.gross_margin}, the lowest of six quarters, so the explanation holds as a rate but not as the source of lower profit.",
+   "numbers_vs_prose": "contradicts",
+   "evidence": [
+    "narrative_signs_of_operating_pressure_non_gaap_net_income_decrease_lower_gross_margins",
+    "across_documents_gross_margin_improvement_claim",
+    "narrative_signs_of_operating_pressure_selling_general_administrative_increase",
+    "earnings_quality_non_gaap_net_income_below_gaap",
+    "earnings_quality_quarterly_income_tax_expense"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.gross_margin"
+   ]
+  },
+  {
+   "id": "cross_document_reconciliation_operating_cash_flow_driver_cites_noncash_gain",
+   "name": "MD&A cites a non-cash fair-value change as a driver of operating cash flow",
+   "name_ko": "비현금 공정가치 변동을 영업현금흐름 증가 요인으로 든 경영진 설명",
+   "area": "cross_document_reconciliation",
+   "what": "MD&A lists the change in fair value of contingent consideration among the drivers of the operating-cash-flow increase. The cash-flow statement deducts that gain as a non-cash item, so it cannot have raised operating cash flow.",
+   "numbers_vs_prose": "contradicts",
+   "evidence": [
+    "earnings_quality_operating_cash_flow_drivers_cite_fair_value_change",
+    "earnings_quality_contingent_consideration_gain_within_operating_expenses"
+   ],
+   "fields": [
+    "ratios.growth.operating_cash_flow.this_quarter"
+   ]
+  },
+  {
+   "id": "cross_document_reconciliation_grid_growth_organic_versus_comtrafo",
+   "name": "Release says organic growth; MD&A gives Grid growth to Comtrafo alone",
+   "name_ko": "발표문은 자체 성장, 경영진 설명은 Comtrafo 덕분이라는 그리드 매출 증가",
+   "area": "cross_document_reconciliation",
+   "what": "The release calls the revenue increase organic growth plus Comtrafo, while MD&A gives Grid's increase to Comtrafo alone. Wind and North America Grid revenue rose, while the Fuji Bridex share fell. The legacy-versus-acquired Grid split is not in calculator_filings_only.json.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "across_documents_revenue_growth_organic_versus_comtrafo",
+    "narrative_signs_of_operating_pressure_grid_revenue_growth_attributed_to_comtrafo",
+    "structure_and_disclosure_changes_comtrafo_in_revenue_growth",
+    "structure_and_disclosure_changes_comtrafo_quarter_contribution"
+   ],
+   "fields": [
+    "ratios.growth.revenue.year_over_year"
+   ]
+  },
+  {
+   "id": "cross_document_reconciliation_comtrafo_profit_against_lowered_earnout_forecast",
+   "name": "Comtrafo's stated profit beside a lowered earnout forecast",
+   "name_ko": "언아웃 전망 하향과 나란히 제시된 Comtrafo 이익 기여",
+   "area": "cross_document_reconciliation",
+   "what": "Comtrafo is stated to have contributed net income close to the consolidated total for the quarter. In the same quarter the earnout forecast for that business was cut, and the gain sits in the unallocated item. The text does not say whether Comtrafo's figure includes the gain.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "across_documents_comtrafo_contribution_against_earnout_forecast_and_grid_loss",
+    "structure_and_disclosure_changes_comtrafo_quarter_contribution",
+    "structure_and_disclosure_changes_contingent_consideration_gain_held_in_unallocated"
+   ],
+   "fields": [
+    "ratios.growth.net_income.this_quarter"
+   ]
+  },
+  {
+   "id": "cross_document_reconciliation_acquisition_amortization_two_figures",
+   "name": "Different acquisition-amortization amounts under one label in the release",
+   "name_ko": "발표문 안에서 같은 항목명에 서로 다른 인수 무형자산 상각액",
+   "area": "cross_document_reconciliation",
+   "what": "The release's income statement and its non-GAAP add-back print different amortization amounts under the same label. The notes give separate backlog amortization charged to cost of revenues, which is the likely bridge, but no document states it.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "across_documents_acquisition_amortization_two_figures",
+    "across_documents_acquisition_intangible_amortization_figures"
+   ],
+   "fields": []
+  },
+  {
+   "id": "cross_document_reconciliation_gross_margin_improvement_claim_against_lowest_quarter",
+   "name": "Second-half margin improvement claimed while the quarter is the lowest on record",
+   "name_ko": "분기 매출총이익률이 최저인데 하반기 개선을 주장",
+   "area": "cross_document_reconciliation",
+   "what": "Management expects gross margin to improve in the second half, while the quarter's margin {trend_table.quarters-back-0.ratios.gross_margin} is the lowest of six quarters, against {trend_table.quarters-back-4.ratios.gross_margin}. The step-up charge has ended, but backlog amortization continues.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "results_against_expectations_second_half_gross_margin_improvement",
+    "across_documents_gross_margin_improvement_claim",
+    "earnings_quality_gross_margin_quarterly",
+    "earnings_quality_inventory_step_up_fully_recognized"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.gross_margin",
+    "trend_table.quarters-back-4.ratios.gross_margin"
+   ]
+  },
+  {
+   "id": "industry_lens_customer_concentration_shift",
+   "name": "Customer concentration shifting: Fuji Bridex down, Innomotics gone, Inox Wind still high",
+   "name_ko": "고객 집중도 변화: Fuji Bridex 감소, Innomotics 제외, Inox Wind는 여전히 높음",
+   "area": "industry_lens",
+   "what": "Inox Wind is {concentration.facts.22.value|pct} of revenue, against {concentration.facts.11.value|pct}. Fuji Bridex is at most {concentration.facts.23.value|pct}, against {concentration.facts.12.value|pct}. Innomotics, at {concentration.facts.15.value|pct} in the quarter ended December 2025, is no longer listed. The year-earlier Fuji Bridex point figure is tagged with a maximum range member.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "revenue_recognition_customer_concentration_fuji_bridex_below_threshold",
+    "revenue_recognition_customer_concentration_grid"
+   ],
+   "fields": [
+    "concentration.facts.22.value",
+    "concentration.facts.11.value",
+    "concentration.facts.23.value",
+    "concentration.facts.12.value",
+    "concentration.facts.15.value"
+   ]
+  },
+  {
+   "id": "industry_lens_inventory_days_at_annual_high",
+   "name": "Inventory days at a five-year high at fiscal year-end",
+   "name_ko": "회계연도 말 다섯 해 중 최고인 재고일수",
+   "area": "industry_lens",
+   "what": "Fiscal-year inventory days are {trend_table.years-back-0.ratios.days_sales_of_inventory}, the highest of five years, against {trend_table.years-back-1.ratios.days_sales_of_inventory}. The quarter's {trend_table.quarters-back-0.ratios.days_sales_of_inventory} is the lowest of six quarters. The year-end figure includes acquired Comtrafo inventory measured against only part of a year of its cost.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "estimates_and_discretion_days_sales_of_inventory_annual",
+    "estimates_and_discretion_days_sales_of_inventory_quarterly",
+    "estimates_and_discretion_excess_obsolete_inventory_provision"
+   ],
+   "fields": [
+    "trend_table.years-back-0.ratios.days_sales_of_inventory",
+    "trend_table.years-back-1.ratios.days_sales_of_inventory",
+    "trend_table.quarters-back-0.ratios.days_sales_of_inventory"
+   ]
+  }
+ ],
+ "adjustments": [
+  {
+   "name": "Remove the trailing net income-tax benefit, mostly the U.S. valuation-allowance release, from earnings; it brought no cash and does not recur",
+   "direction": "reduce",
+   "applies_to": "earnings",
+   "recurs": false,
+   "calculator_field": "terms.trailing_four_quarters.income_tax_expense",
+   "quote": "a majority of which was subsequently released in fiscal 2025",
+   "quote_from": "report_notes_text.md",
+   "evidence": [
+    "estimates_and_discretion_effective_tax_rate_share_based_vesting_benefit",
+    "earnings_quality_annual_tax_benefit_against_operating_income"
+   ]
+  },
+  {
+   "name": "Count Comtrafo's pre-acquisition debt, repaid through financing, as part of the acquisition's cash cost",
+   "direction": "reduce",
+   "applies_to": "cash_flow",
+   "recurs": false,
+   "calculator_field": "terms.cash_flow_families.borrowing_repaid",
+   "quote": "The debt agreements totaling $8.8 million were subsequently paid off during the fiscal year ended",
+   "quote_from": "report_notes_text.md",
+   "evidence": [
+    "liquidity_and_capital_comtrafo_debt_repaid_and_debt_note_removed"
+   ]
+  }
+ ],
+ "summary_ko": {
+  "earnings_versus_cash": "최근 네 분기 영업현금흐름은 순이익의 {earnings_versus_cash.operating_cash_flow_over_net_income}배에 불과합니다. 순이익 대부분이 현금 유입이 없는 이연법인세 혜택(미국 평가충당금 환입)에서 나왔기 때문입니다. 세전 기준으로는 영업현금흐름 {terms.trailing_four_quarters.operating_cash_flow}이 세전이익 {terms.trailing_four_quarters.pretax_income}보다 커서 현금이 이익을 뒷받침하지만, 이번 분기 순이익은 비현금성 언아웃 재측정 이익에 크게 기대고 있습니다.",
+  "revenue_recognition": "매출채권 회수일수가 {trend_table.quarters-back-0.ratios.days_sales_outstanding}일로 한 해 전 {trend_table.quarters-back-4.ratios.days_sales_outstanding}일보다 늘어 채권이 매출보다 빠르게 쌓이고 있고, 대손충당금은 어느 기간에도 보이지 않습니다. 이전 분기에 있던 빌앤홀드(bill-and-hold) 매출 문단과 제품별 매출 표가 사라져 매출 인식 판단을 들여다보기 어려워졌습니다.",
+  "estimates_and_reserves": "올해 이익은 현금이 없는 두 가지 추정치 변경에 크게 의존합니다. 하나는 미국 평가충당금 환입(최근 네 분기 법인세 순혜택 {terms.trailing_four_quarters.income_tax_expense})이고, 다른 하나는 이번 분기 Comtrafo 언아웃(조건부 대가)의 공정가치 하향 재측정 이익이며, 후자는 중대한 내부통제 취약점 범위 안에 있습니다. 연말 재고충당금 비율 {trend_table.years-back-0.ratios.inventory_reserve_ratio}는 과거 다섯 해 중 두 번째로 낮고, 대손충당금은 확인할 수 없습니다.",
+  "cost_deferral": "개발비 자본화는 보이지 않고, 연구개발비는 비용으로 처리되며 오히려 줄었습니다. 다만 연성자산 비중이 {trend_table.quarters-back-0.ratios.soft_asset_share}로 한 해 전 {trend_table.quarters-back-4.ratios.soft_asset_share}보다 높아졌고(인수 영업권·무형자산과 이연법인세자산), 비GAAP 이익은 반복되는 재측정 손익과 주식보상비용을 빼면서 정의에 적힌 세금효과를 표에 보여주지 않습니다.",
+  "cash_flow_engineering_and_off_balance_sheet": "매출채권 매각(팩토링)이나 공급망 금융은 태그되어 있지 않고, 이번 분기 영업현금흐름 증가는 고객 선수금과 재고 감소에서 나왔습니다. 인수한 회사의 기존 부채 상환({terms.cash_flow_families.borrowing_repaid})은 재무활동으로 분류되어 인수 지출에서 빠져 있어 조정으로 반영했고, 주식보상비용 {terms.trailing_four_quarters.share_based_compensation}은 현금이 나가지 않아도 실제 비용입니다.",
+  "controls_audit_and_filing_signals": "회사는 Comtrafo 인수회계와 이후 공정가치 회계에 대한 내부통제에 중대한 취약점이 있어 공시통제가 효과적이지 않다고 밝혔습니다. 이 취약점은 이번 분기 이익을 만든 언아웃 재측정과 아직 잠정적인 취득원가 배분을 그대로 포괄합니다. 부채 주석, 빌앤홀드 문단, 제품별 매출 표가 삭제되었고, 임원 또는 이사 변경 공시의 본문은 입력에 없습니다.",
+  "cross_document_reconciliation": "8-K 실적 발표의 숫자는 10-Q와 일치합니다(매출 {ratios.growth.revenue.this_quarter}, 순이익 {ratios.growth.net_income.this_quarter}). 그러나 세 가지 설명은 숫자와 어긋납니다. 이자수익 증가를 현금 잔액 증가로 설명했지만 분기말 현금 {terms.balances_now.cash}은 한 해 전 {terms.balances_a_year_earlier.cash}보다 적고, 비GAAP 이익 감소를 매출총이익률 하락 탓으로 돌렸지만 매출총이익 금액은 오히려 늘었으며, 비현금 공정가치 변동을 영업현금흐름 증가 요인으로 들었습니다.",
+  "industry_lens": "Inox Wind의 매출 비중은 {concentration.facts.22.value|pct}로 여전히 높지만, Fuji Bridex는 {concentration.facts.12.value|pct}에서 최대 {concentration.facts.23.value|pct}로 낮아져 고객 집중도는 완화되고 있습니다. 연말 재고일수 {trend_table.years-back-0.ratios.days_sales_of_inventory}는 다섯 해 중 가장 높았지만 이번 분기 {trend_table.quarters-back-0.ratios.days_sales_of_inventory}는 여섯 분기 중 가장 낮고, 고객에 투자해 매출을 일으키는 순환 거래의 증거는 찾지 못했습니다."
+ },
+ "limits": "This analysis finds where the numbers and the explanations disagree, and where the company differs from its own past. It does not judge intent, and it cannot see evidence outside the filings, such as invoices or contracts.",
+ "normalized_quotes": 0,
+ "dropped_items": [],
+ "dropped_count": 0
+}
