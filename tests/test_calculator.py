@@ -1361,3 +1361,29 @@ def test_the_cash_flow_and_capital_structure_pair_of_the_rating_agencies(nvda):
     assert solvency["total_debt"]["value"] == 33_366 * MILLION
     assert solvency["operating_cash_flow_over_total_debt"]["value"] == pytest.approx(134_360 / 33_366)
     assert solvency["debt_over_debt_plus_equity"]["value"] == pytest.approx(33_366 / (33_366 + 228_984))
+
+
+def test_a_ratio_over_a_loss_or_negative_equity_is_written_missing_with_the_sign():
+    """Planted on purpose: cells with the sign flipped, the case the NVIDIA figures
+    never reach (the second lens, 2026-10-21). A zero denominator was already
+    missing; a negative one under `positive=True` is missing with its sign named,
+    and the same cells without the flag still divide, which is how the older
+    ratios behave."""
+    def cell(value):
+        return {"value": value, "unit": "USD"}
+    over = lambda v: v["a"] / v["b"]  # noqa: E731
+    negative = calculator.measure("a / b", {"a": cell(-5.0), "b": cell(-10.0)}, over,
+                                  denominator="b", positive=True)
+    assert "value" not in negative and negative["missing"] == "b is negative, so the ratio has no reading"
+    zero = calculator.measure("a / b", {"a": cell(1.0), "b": cell(0.0)}, over,
+                              denominator="b", positive=True)
+    assert zero["missing"] == "b is zero"
+    unguarded = calculator.measure("a / b", {"a": cell(-5.0), "b": cell(-10.0)}, over, denominator="b")
+    assert unguarded["value"] == 0.5
+    share = calculator.measure("d / (d + e)", {"d": cell(4.0), "e": cell(-6.0)},
+                               lambda v: v["d"] / (v["d"] + v["e"]), denominator="e", positive=True)
+    assert share["missing"].startswith("e is negative")
+    # a missing input still wins over the sign check
+    absent = calculator.measure("a / b", {"a": cell(1.0), "b": {"missing": "not tagged"}}, over,
+                                denominator="b", positive=True)
+    assert absent["missing"] == "b: not tagged"

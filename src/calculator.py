@@ -696,8 +696,13 @@ def _v(cell: dict) -> float:
 
 
 def measure(formula: str, inputs: dict, compute, *, unit: str = "ratio",
-            denominator: str | None = None) -> dict:
-    """A number with its formula and every input, or the first missing input's reason."""
+            denominator: str | None = None, positive: bool = False) -> dict:
+    """A number with its formula and every input, or the first missing input's reason.
+
+    `positive` says the denominator has a reading only above zero: a share of
+    capital over negative equity, or cash conversion over a loss, is a number
+    with no meaning, so it is written missing with the sign as the reason
+    rather than printed for an analyst to cite (the second lens, 2026-10-21)."""
     for name, cell in inputs.items():
         if cell is None or "missing" in cell:
             reason = cell["missing"] if cell else "not computed"
@@ -705,6 +710,9 @@ def measure(formula: str, inputs: dict, compute, *, unit: str = "ratio",
     values = {name: _v(cell) for name, cell in inputs.items()}
     if denominator is not None and values.get(denominator) == 0:
         return {"missing": f"{denominator} is zero", "formula": formula}
+    if positive and denominator is not None and values.get(denominator) < 0:
+        return {"missing": f"{denominator} is negative, so the ratio has no reading",
+                "formula": formula}
     try:
         value = compute(values)
     except ZeroDivisionError:
@@ -1035,7 +1043,7 @@ def ratios(record: Record, terms: dict, periods: dict) -> dict:
         "operating_cash_flow_over_ebitda": measure(
             "operating_cash_flow / ebitda",
             {"operating_cash_flow": ttm["operating_cash_flow"], "ebitda": ebitda},
-            lambda v: v["operating_cash_flow"] / v["ebitda"], denominator="ebitda"),
+            lambda v: v["operating_cash_flow"] / v["ebitda"], denominator="ebitda", positive=True),
         "operating_cash_flow_over_total_debt": measure(
             "operating_cash_flow / total_debt",
             {"operating_cash_flow": ttm["operating_cash_flow"], "total_debt": debt},
@@ -1043,7 +1051,8 @@ def ratios(record: Record, terms: dict, periods: dict) -> dict:
         "debt_over_debt_plus_equity": measure(
             "total_debt / (total_debt + stockholders_equity)",
             {"total_debt": debt, "stockholders_equity": now["stockholders_equity"]},
-            lambda v: v["total_debt"] / (v["total_debt"] + v["stockholders_equity"])),
+            lambda v: v["total_debt"] / (v["total_debt"] + v["stockholders_equity"]),
+            denominator="stockholders_equity", positive=True),
         "operating_lease_liability": record.latest_balance("operating_lease_liability",
                                                            periods["balance_now"]),
     }
@@ -1165,7 +1174,7 @@ def earnings_versus_cash(record: Record, terms: dict, periods: dict) -> dict:
         {"share_based_compensation": ttm["share_based_compensation"],
          "operating_cash_flow": ttm["operating_cash_flow"]},
         lambda v: v["share_based_compensation"] / v["operating_cash_flow"],
-        denominator="operating_cash_flow")
+        denominator="operating_cash_flow", positive=True)
     out["smoothness"] = smoothness(record, periods)
     out["history"] = annual_history(record, periods)
     return out
@@ -1374,7 +1383,8 @@ def free_cash_flows(terms: dict, sections: dict, adjustments: list | None,
     over_net_income = measure(
         "free_cash_flow_simple / net_income",
         {"free_cash_flow_simple": simple, "net_income": terms["trailing_four_quarters"]["net_income"]},
-        lambda v: v["free_cash_flow_simple"] / v["net_income"], denominator="net_income")
+        lambda v: v["free_cash_flow_simple"] / v["net_income"], denominator="net_income",
+        positive=True)
     return {"free_cash_flow_simple": simple, "free_cash_flow_over_net_income": over_net_income,
             "free_cash_flow_to_firm": to_firm,
             "free_cash_flow_to_equity": to_equity, "free_cash_flow_quality_adjusted": quality}
