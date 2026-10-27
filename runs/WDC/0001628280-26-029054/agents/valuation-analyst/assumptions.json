@@ -1,0 +1,257 @@
+{
+  "scenarios": {
+    "bear": {
+      "revenue_growth_year_one": 0.08,
+      "terminal_growth": 0.015,
+      "operating_margin_year_one": 0.27,
+      "operating_margin_year_ten": 0.10,
+      "reinvestment_rate_year_one": 0.22,
+      "reinvestment_rate_year_ten": 0.28,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "The bear reading is that the hyperscale build-out pauses. Cloud is the bulk of revenue, ten customers take {concentration.facts.27.value|pct} of it, and the largest customer's share of receivables has climbed to {concentration.facts.35.value|pct}, so an order pause at one or two customers moves the whole company; pricing gains reverse as supply catches up with demand. Year one still shows growth over the trailing base only because the latest quarter's revenue of {ratios.growth.revenue.this_quarter.value} already sits above one quarter of the trailing total of {terms.trailing_four_quarters.revenue.value}; the driver implies revenue slipping from the current quarterly run rate through the year.",
+          "quote": "Our top 10 customers accounted for 71% and 74%, respectively, of our net revenue for the three and nine months ended April 3, 2026, compared to 73% and 68%, respectively, of our net revenue for the three and nine months ended March 28, 2025.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "concentration.facts.27.value",
+            "concentration.facts.35.value",
+            "ratios.growth.revenue.this_quarter.value",
+            "terms.trailing_four_quarters.revenue.value",
+            "ratios.growth.revenue.trailing_four_quarters.value"
+          ],
+          "history": "Bear year-one growth is a fraction of the trailing-four-quarter growth of {ratios.growth.revenue.trailing_four_quarters.value|pct} and the latest quarter's {ratios.growth.revenue.year_over_year.value|pct}, and it echoes the company's own record of sharp turns: fiscal 2023 revenue growth was {earnings_versus_cash.history.years.2.revenue_growth|pct} and fiscal 2024's only {earnings_versus_cash.history.years.1.revenue_growth|pct} before fiscal 2025's {earnings_versus_cash.history.years.0.revenue_growth|pct}. The bear does not repeat the fiscal 2023 collapse, which included the flash business, but it ends the up-cycle within the year."
+        },
+        "terminal_growth": {
+          "reason": "In the bear case hard drives lose share of data-center storage to flash over the decade and price per exabyte falls faster than exabytes grow, so long-run revenue barely grows in nominal terms. The rate is well under the risk-free rate of {cost_of_capital.risk_free_rate.value|pct}.",
+          "quote": "the history spans the Separation of the former flash business, which the filing now carries as discontinued operations, and a down-cycle in which the two fiscal years before the last carried operating losses",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "cost_of_capital.risk_free_rate.value",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound",
+            "earnings_versus_cash.history.years.4.revenue_growth",
+            "earnings_versus_cash.history.years.1.revenue_growth"
+          ],
+          "history": "The bear terminal rate sits near fiscal 2021's growth of {earnings_versus_cash.history.years.4.revenue_growth|pct} and fiscal 2024's {earnings_versus_cash.history.years.1.revenue_growth|pct}, the two flat years in the record, and above the negative five-year compound rate of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct} that the Separation produced."
+        },
+        "operating_margin_year_one": {
+          "reason": "Margin compression begins in year one: hedge losses parked in other comprehensive income reclassify into cost of revenue within twelve months, warranty provisions are rising faster than revenue with the accrual at {terms.balances_now.warranty_accrual.value} against {terms.balances_a_year_earlier.warranty_accrual.value} a year earlier, research and administrative compensation has been reset higher on this year's results, and pricing softens as the up-cycle ends. Year one sits below the trailing margin but above fiscal 2025's, because the lower cost structure of newer-generation products is a real gain that a pricing reversal does not fully undo in one year.",
+          "quote": "The notes say all existing net losses on cash flow hedges in accumulated other comprehensive income are expected to be reclassified to earnings within twelve months, charged substantially to cost of revenue, and MD&A says derivative hedging activity has been reduced significantly since the Separation without saying how much foreign-currency exposure is now unhedged.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "ratios.profitability.operating_margin.value",
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "terms.balances_now.warranty_accrual.value",
+            "terms.balances_a_year_earlier.warranty_accrual.value"
+          ],
+          "history": "Bear year one is below the trailing {ratios.profitability.operating_margin.value|pct} and above fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}; it is the margin of a company a few quarters past its peak, still far above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}."
+        },
+        "operating_margin_year_ten": {
+          "reason": "The bear fade takes the margin through a down-cycle like the one the record shows and leaves it at a level the pre-Separation company reached in its better years, on the view that the consolidated industry still prices to the cycle and flash takes the high-value end of data-center storage. It is not the loss-making trough of fiscal 2023 and fiscal 2024, which included the flash business, but it is a margin at which the present returns on capital are not available.",
+          "quote": "Against the company's own history the operating result is at the top of its range",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "earnings_versus_cash.history.years.3.operating_margin",
+            "earnings_versus_cash.history.years.4.operating_margin",
+            "earnings_versus_cash.history.years.1.operating_margin"
+          ],
+          "history": "Bear year ten sits between fiscal 2021's {earnings_versus_cash.history.years.4.operating_margin|pct} and fiscal 2022's {earnings_versus_cash.history.years.3.operating_margin|pct}, the two best pre-Separation years in the record, and above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct} that the losses of fiscal 2023 and fiscal 2024 pulled down."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "In the bear case capital expenditure runs at the top of the guided range to carry the product roadmap while revenue stalls, inventory builds as shipments slow, and a smaller after-tax operating income makes the same spending a larger share of it. The latest inventory days are the lowest in the record, which leaves room only for deterioration.",
+          "quote": "Days sales of inventory is {trend_table.quarters-back-0.ratios.days_sales_of_inventory.value}, lowest of six quarters, and the annual {trend_table.years-back-0.ratios.days_sales_of_inventory.value} is lowest of five years against {trend_table.years-back-1.ratios.days_sales_of_inventory.value} a year earlier; consistent with the shipments explanation, though the reserve itself is untagged.",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "terms.trailing_four_quarters.capital_expenditure.value",
+            "terms.trailing_four_quarters.depreciation_and_amortization.value",
+            "trend_table.quarters-back-0.ratios.days_sales_of_inventory.value",
+            "ratios.efficiency.days_sales_of_inventory.value"
+          ],
+          "history": "Bear year one reinvests more of after-tax operating income than the base, against a trailing record in which capital expenditure of {terms.trailing_four_quarters.capital_expenditure.value} barely exceeds depreciation of {terms.trailing_four_quarters.depreciation_and_amortization.value}; the record's own down-cycle, fiscal 2023, carried capital expenditure of {earnings_versus_cash.history.years.2.capital_expenditure} against negative operating cash flow, so spending that does not fall with revenue is the pattern the history shows."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "At the bear terminal the return on new capital is low, so even a small terminal growth rate takes a sizeable share of after-tax operating income to sustain; the bear assumes the business must keep spending on the technology transition to hold share against flash whether or not revenue grows.",
+          "quote": "Capital expenditure is low against the company's own history, and MD&A states an expected capital expenditure range as a small share of net revenue.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital.value",
+            "earnings_versus_cash.history.years.2.capital_expenditure",
+            "earnings_versus_cash.history.years.2.revenue",
+            "terms.trailing_four_quarters.capital_expenditure.value",
+            "terms.trailing_four_quarters.revenue.value"
+          ],
+          "history": "Bear year ten is the highest reinvestment rate of the three scenarios, consistent with a capital intensity closer to fiscal 2023's capital expenditure of {earnings_versus_cash.history.years.2.capital_expenditure} on revenue of {earnings_versus_cash.history.years.2.revenue} than to the trailing {terms.trailing_four_quarters.capital_expenditure.value} on {terms.trailing_four_quarters.revenue.value}."
+        }
+      }
+    },
+    "base": {
+      "revenue_growth_year_one": 0.24,
+      "terminal_growth": 0.03,
+      "operating_margin_year_one": 0.31,
+      "operating_margin_year_ten": 0.21,
+      "reinvestment_rate_year_one": 0.18,
+      "reinvestment_rate_year_ten": 0.25,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "The latest quarter grew {ratios.growth.revenue.year_over_year.value|pct} year over year and {ratios.growth.revenue.quarter_over_quarter.value|pct} over the prior quarter, on more exabytes shipped and a higher price per exabyte, with cloud customers ramping data-center capacity in every region. The quarter's revenue of {ratios.growth.revenue.this_quarter.value} already runs well above one quarter of the trailing total of {terms.trailing_four_quarters.revenue.value}, so even modest sequential growth from here produces a year-one rate far above the terminal rate. I set year one below the trailing-four-quarter rate because the year-ago comparison gets harder each quarter, ten customers take {concentration.facts.27.value|pct} of revenue and their orders are lumpy, and an exabyte surge of this size is unlikely to repeat; I do not set it lower because nothing in the filing signals a demand pause and the bundle holds no guidance to read against.",
+          "quote": "Net revenue increased by 45% for the three months ended April 3, 2026 from the comparable period in the prior year, driven by a 34% increase in exabytes sold",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.growth.revenue.year_over_year.value",
+            "ratios.growth.revenue.quarter_over_quarter.value",
+            "ratios.growth.revenue.trailing_four_quarters.value",
+            "ratios.growth.revenue.this_quarter.value",
+            "terms.trailing_four_quarters.revenue.value",
+            "concentration.facts.27.value"
+          ],
+          "history": "Base year-one growth sits below the trailing-four-quarter growth of {ratios.growth.revenue.trailing_four_quarters.value|pct}, below the latest quarter's {ratios.growth.revenue.year_over_year.value|pct} and below fiscal 2025's {earnings_versus_cash.history.years.0.revenue_growth|pct}, and far above the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and the five-year {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}. The compound rates are negative because they span the Separation of the flash business and a down-cycle in which fiscal 2023 revenue growth was {earnings_versus_cash.history.years.2.revenue_growth|pct}, so they describe a different company; the recent rates describe an up-cycle at full stretch, so I sit under them."
+        },
+        "terminal_growth": {
+          "reason": "Beyond year ten the business is a hard-drive supplier whose exabyte demand grows with data-center storage but whose price per exabyte falls over time, so revenue grows slower than the volume it ships. I set the terminal rate below the risk-free rate of {cost_of_capital.risk_free_rate.value|pct}, at roughly the pace of nominal output, which is my reading of the mid-cycle path once the current pricing tailwind is gone.",
+          "quote": "The longer history has a different shape: three-year compound revenue growth is {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and five-year {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, because the history spans the Separation of the former flash business, which the filing now carries as discontinued operations, and a down-cycle in which the two fiscal years before the last carried operating losses.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "cost_of_capital.risk_free_rate.value",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound",
+            "earnings_versus_cash.history.years.3.revenue_growth",
+            "earnings_versus_cash.history.years.4.revenue_growth"
+          ],
+          "history": "The company's own long record gives no positive compound rate to anchor on: three-year compound growth is {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and five-year {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, both distorted by the flash Separation, while the single fiscal years before the Separation grew {earnings_versus_cash.history.years.4.revenue_growth|pct} and {earnings_versus_cash.history.years.3.revenue_growth|pct}. A terminal rate between those two pre-Separation years, nearer the lower, and under the risk-free rate, is the steady state I read."
+        },
+        "operating_margin_year_one": {
+          "reason": "The trailing operating margin is {ratios.profitability.operating_margin.value|pct} and the latest quarter's gross margin of {trend_table.quarters-back-0.ratios.gross_margin.value|pct} is the highest in the record, which MD&A attributes to a lower cost structure on newer-generation products and improved pricing. I hold year one near the trailing margin rather than at the latest quarter's run rate because three known costs lean the other way: hedge losses to be reclassified into cost of revenue within twelve months, research and administrative compensation rising with results, and warranty provisions rising faster than revenue. One caveat the reader should carry: Python turns these margins into after-tax operating income with the calculator's effective tax rate of {tax_rate.value|pct}, which the accounting reader finds depressed by a tax-free gain and discrete benefits that will not persist; that rate is not mine to choose, so the margins are set on their own terms and the after-tax figure will run high by that gap.",
+          "quote": "Gross margin increased by 10 percentage points year over year, primarily due to a lower cost structure on our newer generation products and improved pricing.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.profitability.operating_margin.value",
+            "ratios.profitability.gross_margin.value",
+            "trend_table.quarters-back-0.ratios.gross_margin.value",
+            "ratios.growth.operating_income.year_over_year.value",
+            "tax_rate.value"
+          ],
+          "history": "Year one sits a touch above the trailing {ratios.profitability.operating_margin.value|pct} and well above fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}, which was itself the best fiscal year in the record; the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct} and the margins of fiscal 2024 at {earnings_versus_cash.history.years.1.operating_margin|pct} and fiscal 2023 at {earnings_versus_cash.history.years.2.operating_margin|pct} are the trough of the same cycle. The latest quarter's operating income of {ratios.growth.operating_income.this_quarter.value} on revenue of {ratios.growth.revenue.this_quarter.value} runs above the trailing margin, so year one is a mild give-back from the current run rate, not a continuation of it."
+        },
+        "operating_margin_year_ten": {
+          "reason": "A hard-drive maker's margin is cyclical: the record swings from operating losses to the present peak within four fiscal years. The industry now has fewer suppliers and a cloud-heavy mix, which I read as lifting the mid-cycle margin above anything before fiscal 2025, but the pricing tailwind that MD&A credits for the step-up is not a steady state. Year ten sits below fiscal 2025's margin and well below the trailing margin, because the straight line to year ten has to average through at least one down-cycle.",
+          "quote": "The three-year average operating margin is only {earnings_versus_cash.history.operating_margin_three_year_average|pct}, because the two fiscal years before the last carried operating losses in the history in earnings_versus_cash.history.years, so the current margin is a cyclical high rather than the company's steady state.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "earnings_versus_cash.history.years.3.operating_margin",
+            "ratios.profitability.operating_margin.value"
+          ],
+          "history": "Year ten is below fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct} and the trailing {ratios.profitability.operating_margin.value|pct}, above fiscal 2022's {earnings_versus_cash.history.years.3.operating_margin|pct} when flash was still inside the company, and far above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}. It assumes the post-Separation structure holds a higher floor than the old record but not the present peak."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "MD&A guides capital expenditure to a share of net revenue that is above the trailing capital expenditure of {terms.trailing_four_quarters.capital_expenditure.value} on revenue of {terms.trailing_four_quarters.revenue.value}, and depreciation of {terms.trailing_four_quarters.depreciation_and_amortization.value} offsets most of it, so net fixed-capital reinvestment is small. Working capital is the larger claim at this growth rate: receivables rose {earnings_versus_cash.working_capital.receivables.balance_sheet_change.value} over the year with volume while inventory rose only {earnings_versus_cash.working_capital.inventory.balance_sheet_change.value}. Year one reinvestment is the guided capital expenditure range at its middle, net of depreciation, plus working capital growing in step with revenue, as a share of after-tax operating income.",
+          "quote": "We expect our capital expenditures generally to be approximately 4% to 6% of our net revenue.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "terms.trailing_four_quarters.capital_expenditure.value",
+            "terms.trailing_four_quarters.depreciation_and_amortization.value",
+            "terms.trailing_four_quarters.revenue.value",
+            "earnings_versus_cash.working_capital.receivables.balance_sheet_change.value",
+            "earnings_versus_cash.working_capital.inventory.balance_sheet_change.value",
+            "ratios.profitability.return_on_invested_capital.value"
+          ],
+          "history": "Trailing capital expenditure of {terms.trailing_four_quarters.capital_expenditure.value} is the lowest in the record against fiscal 2025's {earnings_versus_cash.history.years.0.capital_expenditure} and the pre-Separation years' {earnings_versus_cash.history.years.3.capital_expenditure} and {earnings_versus_cash.history.years.4.capital_expenditure}, which carried the flash fabs. Year one reinvestment above the trailing pace reflects the guided capital expenditure range and the working capital that revenue growth of this size absorbs, while staying far below the capital intensity of the flash years."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "At the terminal growth rate, reinvestment must fund that growth at the return the business earns on new capital. Trailing return on invested capital is {ratios.profitability.return_on_invested_capital.value|pct}, a cyclical-peak figure computed on a low effective tax rate; I expect the mid-cycle return on new capital to be a fraction of that, so year ten reinvests a larger share of after-tax operating income than year one, consistent with the terminal growth rate at a mid-cycle return on capital.",
+          "quote": "Capital expenditure is low against the company's own history, and MD&A states an expected capital expenditure range as a small share of net revenue.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital.value",
+            "ratios.profitability.return_on_invested_capital.invested_capital.value",
+            "terms.trailing_four_quarters.capital_expenditure.value",
+            "terms.trailing_four_quarters.depreciation_and_amortization.value"
+          ],
+          "history": "The record's capital intensity ranges from fiscal 2023's capital expenditure of {earnings_versus_cash.history.years.2.capital_expenditure} on revenue of {earnings_versus_cash.history.years.2.revenue} down to the trailing {terms.trailing_four_quarters.capital_expenditure.value} on {terms.trailing_four_quarters.revenue.value}; the year-ten rate assumes capital intensity settles somewhat above today's unusually low pace as returns on capital fall back from the current {ratios.profitability.return_on_invested_capital.value|pct}."
+        }
+      }
+    },
+    "bull": {
+      "revenue_growth_year_one": 0.32,
+      "terminal_growth": 0.04,
+      "operating_margin_year_one": 0.34,
+      "operating_margin_year_ten": 0.28,
+      "reinvestment_rate_year_one": 0.15,
+      "reinvestment_rate_year_ten": 0.20,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "The bull reading is that the data-center build-out in every region keeps exabyte demand ahead of supply for another year, so the price per exabyte keeps rising alongside volume and the trailing growth rate repeats. MD&A describes customers ramping data-center capacity in Asia and in Europe, the Middle East and Africa on top of the existing base, and the latest quarter's sequential growth of {ratios.growth.revenue.quarter_over_quarter.value|pct}, if sustained, delivers this.",
+          "quote": "The change in mix of net revenue by geography for the three and nine months ended April 3, 2026 from the comparable periods in the prior year reflects larger percentage increases in the Asia and Europe, Middle East and Africa regions as customers are ramping up data center capacity in these regions.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.growth.revenue.trailing_four_quarters.value",
+            "ratios.growth.revenue.quarter_over_quarter.value",
+            "ratios.growth.revenue.year_over_year.value"
+          ],
+          "history": "Bull year one equals the trailing-four-quarter growth of {ratios.growth.revenue.trailing_four_quarters.value|pct}, below the latest quarter's {ratios.growth.revenue.year_over_year.value|pct} and fiscal 2025's {earnings_versus_cash.history.years.0.revenue_growth|pct}; even the bull does not assume the latest quarter's pace continues for a full year, because that pace stands on a year-ago quarter at the bottom of the cycle."
+        },
+        "terminal_growth": {
+          "reason": "In the bull case hard drives hold their share of data-center storage as the cheapest medium for bulk data, exabyte demand compounds with data-center capacity and the consolidated industry holds price per exabyte firmer than in past cycles, so long-run revenue grows near the pace of the economy. The rate stays under the risk-free rate of {cost_of_capital.risk_free_rate.value|pct}, which is the ceiling for any scenario.",
+          "quote": "The increase in exabytes sold was driven by strong demand for our high-capacity enterprise products.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate.value",
+            "earnings_versus_cash.history.years.3.revenue_growth"
+          ],
+          "history": "Bull terminal growth sits under fiscal 2022's {earnings_versus_cash.history.years.3.revenue_growth|pct}, the best pre-Separation year, and under the risk-free rate; it is a mature-industry rate, not a continuation of the present up-cycle."
+        },
+        "operating_margin_year_one": {
+          "reason": "The bull holds the latest quarter's run rate: operating income of {ratios.growth.operating_income.this_quarter.value} on revenue of {ratios.growth.revenue.this_quarter.value}, with the record gross margin of {trend_table.quarters-back-0.ratios.gross_margin.value|pct}, continues as newer-generation products lower unit cost further and pricing stays firm; the hedge reclassification and the compensation step-up are absorbed by operating leverage on higher volume.",
+          "quote": "Gross profit increased by $764 million for the three months ended April 3, 2026 from the comparable period in the prior year, due to an increased volume of shipments, a lower cost structure on our newer generation products and improved pricing.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.growth.operating_income.this_quarter.value",
+            "ratios.growth.revenue.this_quarter.value",
+            "trend_table.quarters-back-0.ratios.gross_margin.value",
+            "ratios.profitability.operating_margin.value"
+          ],
+          "history": "Bull year one sits above the trailing {ratios.profitability.operating_margin.value|pct} and at about the latest quarter's run rate, the highest operating result in the record, against fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct} and a three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}."
+        },
+        "operating_margin_year_ten": {
+          "reason": "The bull terminal margin assumes the industry structure has changed for good: fewer suppliers, cloud customers who value capacity over price, and a product roadmap that keeps lowering cost per exabyte, so the mid-cycle margin settles only modestly below today's. It is the scenario in which the present margin is close to a steady state rather than a peak.",
+          "quote": "Return on invested capital {ratios.profitability.return_on_invested_capital|pct}, built from operating income after tax, is the cleaner operating return and is itself high.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "ratios.profitability.operating_margin.value",
+            "ratios.profitability.return_on_invested_capital.value",
+            "earnings_versus_cash.history.years.0.operating_margin"
+          ],
+          "history": "Bull year ten sits a little under the trailing {ratios.profitability.operating_margin.value|pct} and above fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}; no fiscal year before fiscal 2025 in the record came near it, so the bull rests on the post-Separation structure rather than on the company's own history."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Capital expenditure at the low end of the guided range, depreciation offsetting most of it, and working capital held efficient as inventory days sit at a record low and receivable days near the low end of the record: the bull reinvests a smaller share of a larger after-tax operating income.",
+          "quote": "We expect our capital expenditures generally to be approximately 4% to 6% of our net revenue.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "terms.trailing_four_quarters.capital_expenditure.value",
+            "terms.trailing_four_quarters.depreciation_and_amortization.value",
+            "trend_table.quarters-back-0.ratios.days_sales_of_inventory.value",
+            "trend_table.quarters-back-0.ratios.days_sales_outstanding.value",
+            "free_cash_flow.free_cash_flow_simple.value"
+          ],
+          "history": "Bull year one is the closest of the three scenarios to the trailing record, in which capital expenditure of {terms.trailing_four_quarters.capital_expenditure.value} barely exceeds depreciation of {terms.trailing_four_quarters.depreciation_and_amortization.value} and free cash flow of {free_cash_flow.free_cash_flow_simple.value} is the highest in the record; it still reinvests more than the trailing year because the guided range is above the trailing spend."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "At the bull terminal a return on new capital well above the cost of capital means the terminal growth rate is sustained with a modest share of after-tax operating income; the rate rises from year one as returns on capital settle below the present peak of {ratios.profitability.return_on_invested_capital.value|pct}.",
+          "quote": "Capital expenditure is low against the company's own history, and MD&A states an expected capital expenditure range as a small share of net revenue.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital.value",
+            "terms.trailing_four_quarters.capital_expenditure.value",
+            "terms.trailing_four_quarters.revenue.value",
+            "earnings_versus_cash.history.years.3.capital_expenditure",
+            "earnings_versus_cash.history.years.3.revenue"
+          ],
+          "history": "Bull year ten assumes capital intensity stays near the post-Separation pace, trailing capital expenditure of {terms.trailing_four_quarters.capital_expenditure.value} on revenue of {terms.trailing_four_quarters.revenue.value}, rather than returning toward the flash-era intensity of {earnings_versus_cash.history.years.3.capital_expenditure} on {earnings_versus_cash.history.years.3.revenue}."
+        }
+      }
+    }
+  },
+  "wacc_overrides": {}
+}

@@ -1,0 +1,870 @@
+{
+ "question": "do reported earnings and cash reflect economic reality?",
+ "areas": {
+  "earnings_versus_cash": {
+   "dropped": "finding: {growth.operating_cash_flow.year_over_year} names nothing in the calculator this analyst saw"
+  },
+  "revenue_recognition": {
+   "dropped": "finding: {growth.revenue.year_over_year} names nothing in the calculator this analyst saw"
+  },
+  "estimates_and_reserves": {
+   "finding": "The inventory reserve is thinning against its own history. Reserve over net inventory is {trend_table.quarters-back-0.ratios.inventory_reserve_ratio}, lowest of six filled quarters, down from {trend_table.quarters-back-1.ratios.inventory_reserve_ratio} a quarter earlier, {trend_table.quarters-back-4.ratios.inventory_reserve_ratio} a year earlier and a peak of {trend_table.quarters-back-5.ratios.inventory_reserve_ratio}; annually it was {trend_table.years-back-0.ratios.inventory_reserve_ratio} at the end of 2025 against {trend_table.years-back-1.ratios.inventory_reserve_ratio} at the end of 2024. The reserve balance fell from {terms.balances_a_year_earlier.inventory_reserve} to {terms.balances_now.inventory_reserve} while net inventory rose from {terms.balances_a_year_earlier.inventory} to {terms.balances_now.inventory}, and inventory write-downs are tagged at {terms.trailing_four_quarters.inventory_write_down} over the trailing four quarters. The note states the balances and says write-downs were not material but gives no cause; a reserve that falls while the balance rises, with no write-down tagged, reflects either scrapping of fully reserved stock or a lower provision rate, and the filing does not say which. The liability for excess purchase commitments also fell while the commitments themselves roughly doubled, and the sentence that had stated a prior-year benefit was dropped from the note, again without a cause. The amount of the reserve change is not a calculator field, so no adjustment is written. Elsewhere the picture is clean: the credit-loss allowance has no quarter-end row (annual ratio {trend_table.years-back-0.ratios.bad_debt_reserve_ratio} for 2025 against {trend_table.years-back-1.ratios.bad_debt_reserve_ratio} for 2024, and MD&A cites a higher six-month provision); no warranty accrual is tagged in any period, which for a hardware company is itself a gap in the record; goodwill is unchanged with no impairment; the quarterly effective tax rate is slightly higher than a year ago and the trailing rate is {tax_rate|pct}, with no valuation-allowance release and no discrete benefit, the growing FDII deduction moving with income; unrecognized tax benefits rose slightly with audits focused on intercompany profit allocation.",
+   "verdict": "one adverse estimate signal, the inventory reserve ratio at a six-quarter low with no stated cause; tax, goodwill and the credit-loss provision raise nothing",
+   "evidence": [
+    "estimates_and_discretion_inventory_reserve_ratio_trend_quarterly",
+    "estimates_and_discretion_inventory_reserve_ratio_trend_annual",
+    "estimates_and_discretion_inventory_valuation_reserve_note",
+    "estimates_and_discretion_inventory_write_down_note",
+    "estimates_and_discretion_excess_and_obsolete_inventory_reserve_without_stated_cause",
+    "estimates_and_discretion_purchase_commitment_liability_prior_year_benefit_dropped",
+    "estimates_and_discretion_bad_debt_reserve_ratio_trend_annual",
+    "estimates_and_discretion_bad_debt_reserve_ratio_trend_quarterly_insufficient",
+    "estimates_and_discretion_provision_for_expected_credit_losses_increase",
+    "estimates_and_discretion_warranty_reserve_ratio_trend_quarterly_insufficient",
+    "estimates_and_discretion_goodwill_note",
+    "earnings_quality_effective_tax_rate_note",
+    "earnings_quality_foreign_derived_income_deduction_note",
+    "estimates_and_discretion_unrecognized_tax_benefits_note",
+    "estimates_and_discretion_unrecognized_tax_benefits_without_stated_cause"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.inventory_reserve_ratio",
+    "trend_table.quarters-back-1.ratios.inventory_reserve_ratio",
+    "trend_table.quarters-back-4.ratios.inventory_reserve_ratio",
+    "trend_table.quarters-back-5.ratios.inventory_reserve_ratio",
+    "trend_table.years-back-0.ratios.inventory_reserve_ratio",
+    "trend_table.years-back-1.ratios.inventory_reserve_ratio",
+    "terms.balances_a_year_earlier.inventory_reserve",
+    "terms.balances_now.inventory_reserve",
+    "terms.balances_a_year_earlier.inventory",
+    "terms.balances_now.inventory",
+    "terms.trailing_four_quarters.inventory_write_down",
+    "trend_table.years-back-0.ratios.bad_debt_reserve_ratio",
+    "trend_table.years-back-1.ratios.bad_debt_reserve_ratio",
+    "tax_rate"
+   ]
+  },
+  "cost_deferral": {
+   "dropped": "finding: a number written in the analyst's own words: 's, though above the year-ago level; the 2025 annual figure was  . On non-recurri'"
+  },
+  "cash_flow_engineering_and_off_balance_sheet": {
+   "finding": "No receivables factoring and no supplier-finance programme is tagged in any period (the calculator's proceeds-from-sale-of-receivables and supplier-finance-obligation fields are both missing), and MD&A states there are no off-balance-sheet arrangements. Operating cash flow is lifted by customer prepayment, the six-month deferred-revenue line having more than doubled; that is cash from customers, not engineering. Two presentation points stand out. First, the release defines an 'adjusted free cash flow' that adds real-estate purchases back on top of free cash flow, while the 10-Q MD&A defines only free cash flow; the add-back is small this quarter and large a year ago, and it treats land bought for data centres and offices as outside the business. Second, the 10-K and the 10-Q use different capital-expenditure tags, and in the 10-Q the real-estate purchase sits under the productive-assets tag separately from purchases of property and equipment, so trailing capital expenditure of {terms.trailing_four_quarters.capital_expenditure} mixes two tags, as the calculator flags; whether the six-month property-and-equipment line includes the real-estate outlay cannot be told from the record. Cash taxes paid for the six months are below the prior year while the tax provision is higher, a cash-versus-book gap that helps operating cash flow and is not explained in the prose. Off balance sheet, non-cancelable inventory purchase commitments roughly doubled from year end per MD&A, with a multi-year component supply and pricing arrangement disclosed; the calculator has no purchase-obligation field, so the amount cannot be cited here. Operating lease liability is {terms.balances_now.operating_lease_liability} against {terms.balances_a_year_earlier.operating_lease_liability} a year earlier; no guarantee exposure is tagged and no variable-interest entity is mentioned. Share-based compensation of {terms.trailing_four_quarters.share_based_compensation} is already subtracted in quality-adjusted free cash flow of {free_cash_flow.free_cash_flow_quality_adjusted} against simple free cash flow of {free_cash_flow.free_cash_flow_simple}. Trailing repurchases of {terms.trailing_four_quarters.share_repurchases} exceed trailing net income; equity fell to {terms.balances_now.stockholders_equity} from {terms.balances_a_year_earlier.stockholders_equity}, and debt fell to {terms.debt_now} from {terms.debt_a_year_earlier} after the senior-note repayment.",
+   "verdict": "no financing dressed as operations; the off-balance-sheet item is a doubling of purchase commitments the record cannot quantify, and the release's adjusted free cash flow flatters capital spending",
+   "evidence": [
+    "revenue_recognition_deferred_revenue_cash_flow_release",
+    "liquidity_and_capital_real_estate_purchases_release",
+    "liquidity_and_capital_free_cash_flow_release",
+    "across_documents_adjusted_free_cash_flow_adds_back_real_estate_purchases",
+    "liquidity_and_capital_land_holdings_note",
+    "liquidity_and_capital_capital_expenditure_release",
+    "liquidity_and_capital_capital_expenditure_not_yet_paid_filed_fact",
+    "liquidity_and_capital_income_taxes_paid_filed_fact",
+    "earnings_quality_provision_for_income_taxes_release",
+    "earnings_quality_deferred_tax_assets_cash_flow_release",
+    "estimates_and_discretion_inventory_purchase_commitments_demand_lead_times_component_costs",
+    "estimates_and_discretion_multi_year_component_supply_and_pricing_arrangements",
+    "related_parties_contingencies_and_subsequent_events_other_commitments_note",
+    "earnings_quality_stock_based_compensation_cash_flow_release",
+    "liquidity_and_capital_share_repurchases_release",
+    "liquidity_and_capital_senior_notes_repaid_release",
+    "liquidity_and_capital_stockholders_equity_release"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.capital_expenditure",
+    "terms.balances_now.operating_lease_liability",
+    "terms.balances_a_year_earlier.operating_lease_liability",
+    "terms.trailing_four_quarters.share_based_compensation",
+    "free_cash_flow.free_cash_flow_quality_adjusted",
+    "free_cash_flow.free_cash_flow_simple",
+    "terms.trailing_four_quarters.share_repurchases",
+    "terms.balances_now.stockholders_equity",
+    "terms.balances_a_year_earlier.stockholders_equity",
+    "terms.debt_now",
+    "terms.debt_a_year_earlier"
+   ]
+  },
+  "controls_audit_and_filing_signals": {
+   "dropped": "finding: a number written in the analyst's own words: \"rrency sentences, including the January 2026 change of one subsidiary's function\""
+  },
+  "cross_document_reconciliation": {
+   "dropped": "finding: {growth.operating_cash_flow.this_quarter} names nothing in the calculator this analyst saw"
+  },
+  "industry_lens": {
+   "dropped": "finding: a number written in the analyst's own words: ' are  , second lowest of six, against a 2025 annual figure of  , second highest '"
+  }
+ },
+ "reconciliation": [
+  {
+   "notes_item": "structure_and_disclosure_changes_functional_currency_sentences_removed",
+   "numbers_items": [
+    "earnings_quality_other_income_release"
+   ],
+   "outcome": "unresolved",
+   "why": "No field isolates foreign-exchange remeasurement; other income—net fell in the quarter, consistent with the MD&A cause, but that does not test the removed disclosure."
+  },
+  {
+   "notes_item": "related_parties_contingencies_and_subsequent_events_securities_class_action_motion_to_dismiss",
+   "numbers_items": [
+    "related_parties_contingencies_and_subsequent_events_securities_litigation_accrual_note"
+   ],
+   "outcome": "confirms",
+   "why": "The filed facts tag a zero loss-contingency accrual for the securities case, matching the prose that no accrual was recorded."
+  },
+  {
+   "notes_item": "estimates_and_discretion_purchase_commitment_liability_prior_year_benefit_dropped",
+   "numbers_items": [
+    "estimates_and_discretion_inventory_write_down_note"
+   ],
+   "outcome": "confirms",
+   "why": "The firm purchase commitment loss is tagged zero for the quarter and six months, matching 'not material'; no filed fact carries the liability itself, so its decline is not checkable."
+  },
+  {
+   "notes_item": "estimates_and_discretion_inventory_purchase_commitments_demand_lead_times_component_costs",
+   "numbers_items": [
+    "earnings_quality_inventory_balance_release",
+    "earnings_quality_finished_goods_inventory_note"
+   ],
+   "outcome": "unresolved",
+   "why": "The calculator's unconditional purchase obligations field is missing in every period, so the increase cannot be confirmed from a filed fact; inventory itself rose from year end, which is consistent."
+  },
+  {
+   "notes_item": "estimates_and_discretion_multi_year_component_supply_and_pricing_arrangements",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "No number exists for the arrangement and the notes reader could not tell whether the sentence is new."
+  },
+  {
+   "notes_item": "estimates_and_discretion_excess_and_obsolete_inventory_reserve_without_stated_cause",
+   "numbers_items": [
+    "estimates_and_discretion_inventory_valuation_reserve_note",
+    "estimates_and_discretion_inventory_reserve_ratio_trend_quarterly",
+    "estimates_and_discretion_inventory_write_down_note"
+   ],
+   "outcome": "confirms",
+   "why": "The filed reserve fell at each filing this year while net inventory rose, the ratio is the lowest of six filled quarters and write-downs are tagged zero; the numbers confirm the movement the note states and sharpen the missing cause."
+  },
+  {
+   "notes_item": "estimates_and_discretion_unrecognized_tax_benefits_without_stated_cause",
+   "numbers_items": [
+    "estimates_and_discretion_unrecognized_tax_benefits_note"
+   ],
+   "outcome": "confirms",
+   "why": "The filed unrecognized-tax-benefit balance rose slightly, as the note states."
+  },
+  {
+   "notes_item": "related_parties_contingencies_and_subsequent_events_tax_audits_intercompany_profit_allocation",
+   "numbers_items": [
+    "estimates_and_discretion_unrecognized_tax_benefits_note"
+   ],
+   "outcome": "unresolved",
+   "why": "No number bears on the audit jurisdictions; the small rise in unrecognized benefits is consistent with ongoing audits but does not test the paragraph."
+  },
+  {
+   "notes_item": "related_parties_contingencies_and_subsequent_events_pending_indemnification_claims",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "No accrual or exposure number exists for indemnification."
+  },
+  {
+   "notes_item": "articulation_and_the_filed_history_subsequent_event_repurchases_rolled_into_quarter",
+   "numbers_items": [
+    "liquidity_and_capital_remaining_repurchase_authorization_note",
+    "liquidity_and_capital_repurchase_program_note"
+   ],
+   "outcome": "confirms",
+   "why": "The remaining authorization at quarter end reads the same as the value the prior 10-Q gave as of early May, consistent with the removed note's repurchases having been completed within the quarter and none after."
+  },
+  {
+   "notes_item": "liquidity_and_capital_share_repurchase_activity_and_remaining_authorization",
+   "numbers_items": [
+    "liquidity_and_capital_share_repurchases_release",
+    "liquidity_and_capital_cash_balance_release",
+    "liquidity_and_capital_stockholders_equity_release",
+    "liquidity_and_capital_diluted_share_count_release"
+   ],
+   "outcome": "confirms",
+   "why": "Six-month repurchases more than doubled year over year and diluted shares fell; cash and equity are both lower than a year earlier ({terms.balances_now.cash} against {terms.balances_a_year_earlier.cash}), though cash is above year end because operating cash flow outran the buyback."
+  },
+  {
+   "notes_item": "earnings_quality_marketable_equity_security_gains_first_quarter_sales_only",
+   "numbers_items": [
+    "earnings_quality_other_income_release",
+    "liquidity_and_capital_equity_securities_fair_value_note",
+    "liquidity_and_capital_sales_of_investments_release"
+   ],
+   "outcome": "confirms",
+   "why": "Other income—net fell sharply in the quarter while rising for six months, the equity-securities balance fell after first-quarter sales, and six-month sales of investments rose."
+  },
+  {
+   "notes_item": "earnings_quality_other_income_foreign_exchange_losses",
+   "numbers_items": [
+    "earnings_quality_other_income_release"
+   ],
+   "outcome": "confirms",
+   "why": "Other income—net fell in the quarter as MD&A says; the foreign-exchange component is not separately tagged."
+  },
+  {
+   "notes_item": "liquidity_and_capital_interest_income_and_expense_after_repurchases_and_note_repayment",
+   "numbers_items": [
+    "earnings_quality_interest_income_release",
+    "earnings_quality_interest_expense_release",
+    "liquidity_and_capital_senior_notes_repaid_release",
+    "liquidity_and_capital_current_debt_cleared_release"
+   ],
+   "outcome": "confirms",
+   "why": "Interest income and interest expense both fell in the quarter; the senior notes were repaid and current debt is cleared, trailing interest expense being {terms.trailing_four_quarters.interest_expense}."
+  },
+  {
+   "notes_item": "revenue_recognition_product_revenue_pricing_actions_and_average_selling_prices",
+   "numbers_items": [
+    "revenue_recognition_product_revenue_growth_release",
+    "revenue_recognition_product_revenue_note"
+   ],
+   "outcome": "confirms",
+   "why": "Product revenue rose by about half year over year in both the release and the disaggregation note, faster than service."
+  },
+  {
+   "notes_item": "results_against_expectations_product_revenue_growth_outlook_remainder_of_year",
+   "numbers_items": [
+    "revenue_recognition_product_revenue_growth_release"
+   ],
+   "outcome": "confirms",
+   "why": "Quarter and six-month product revenue are up; the forward claim itself is untestable, so this confirms direction as of the quarter only."
+  },
+  {
+   "notes_item": "results_against_expectations_service_revenue_growth_outlook_remainder_of_year",
+   "numbers_items": [
+    "revenue_recognition_service_revenue_release",
+    "revenue_recognition_security_subscription_revenue_note",
+    "revenue_recognition_technical_support_revenue_note",
+    "revenue_recognition_remaining_performance_obligation_note"
+   ],
+   "outcome": "confirms",
+   "why": "Service revenue, security subscriptions and technical support all rose and remaining performance obligations are higher at each filing; the forward claim is untestable."
+  },
+  {
+   "notes_item": "narrative_signs_of_operating_pressure_hardware_component_costs_product_margin",
+   "numbers_items": [
+    "earnings_quality_product_cost_of_revenue_release",
+    "earnings_quality_gross_margin_trend_quarterly"
+   ],
+   "outcome": "unresolved",
+   "why": "No product-level margin field exists; MD&A says product margin rose this quarter while total gross margin is the lowest of six filled quarters, so the full-year decline cannot be tested yet."
+  },
+  {
+   "notes_item": "narrative_signs_of_operating_pressure_service_margin_data_center_expansion",
+   "numbers_items": [
+    "earnings_quality_gaap_gross_margin_release",
+    "earnings_quality_gross_margin_trend_quarterly",
+    "earnings_quality_service_cost_of_revenue_release"
+   ],
+   "outcome": "confirms",
+   "why": "GAAP gross margin fell year over year and quarterly gross margin ({trend_table.quarters-back-0.ratios.gross_margin}) is the lowest of six filled quarters, consistent with a slight service-margin decline as service cost of revenue rose."
+  },
+  {
+   "notes_item": "narrative_signs_of_operating_pressure_tariff_exposure_on_hardware_sales",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "No number isolates tariff cost."
+  },
+  {
+   "notes_item": "earnings_quality_product_gross_margin_pricing_offsets_memory_chip_costs",
+   "numbers_items": [
+    "earnings_quality_product_cost_of_revenue_release"
+   ],
+   "outcome": "unresolved",
+   "why": "Product gross profit and product cost of revenue both rose; the calculator computes no product-margin ratio, so the stated margin gain is neither confirmed nor contradicted."
+  },
+  {
+   "notes_item": "results_against_expectations_research_and_development_expense_outlook",
+   "numbers_items": [
+    "earnings_quality_research_and_development_expense_release"
+   ],
+   "outcome": "confirms",
+   "why": "R&D rose in the quarter and the six months."
+  },
+  {
+   "notes_item": "results_against_expectations_sales_and_marketing_expense_outlook",
+   "numbers_items": [
+    "earnings_quality_sales_and_marketing_expense_release",
+    "earnings_quality_segment_sales_commissions_note"
+   ],
+   "outcome": "confirms",
+   "why": "Sales and marketing and segment sales commissions rose in the quarter and the six months."
+  },
+  {
+   "notes_item": "related_parties_contingencies_and_subsequent_events_legal_fees_in_general_and_administrative",
+   "numbers_items": [
+    "earnings_quality_general_and_administrative_expense_release",
+    "related_parties_contingencies_and_subsequent_events_securities_litigation_accrual_note"
+   ],
+   "outcome": "confirms",
+   "why": "G&A rose in the quarter; the legal matters carry zero accruals."
+  },
+  {
+   "notes_item": "liquidity_and_capital_moodys_upgrade_to_single_a",
+   "numbers_items": [
+    "liquidity_and_capital_credit_rating_upgrade_release"
+   ],
+   "outcome": "confirms",
+   "why": "The release reports the same upgrade."
+  },
+  {
+   "notes_item": "liquidity_and_capital_capital_expenditure_range",
+   "numbers_items": [
+    "liquidity_and_capital_capital_expenditure_release"
+   ],
+   "outcome": "unresolved",
+   "why": "Six-month purchases of property and equipment fell year over year; whether the range changed cannot be told."
+  },
+  {
+   "notes_item": "liquidity_and_capital_operating_cash_flow_non_current_deferred_revenue",
+   "numbers_items": [
+    "liquidity_and_capital_six_month_operating_cash_flow_release",
+    "revenue_recognition_noncurrent_deferred_revenue_balance_release",
+    "revenue_recognition_deferred_revenue_cash_flow_release",
+    "earnings_quality_deferred_contract_costs_capitalized_release"
+   ],
+   "outcome": "confirms",
+   "why": "Six-month operating cash flow rose strongly, and non-current deferred revenue, the deferred-revenue cash-flow line and deferred contract costs all rose as MD&A states."
+  },
+  {
+   "notes_item": "liquidity_and_capital_real_estate_purchase_for_data_center_and_office",
+   "numbers_items": [
+    "liquidity_and_capital_land_holdings_note",
+    "liquidity_and_capital_real_estate_purchases_release"
+   ],
+   "outcome": "confirms",
+   "why": "Land rose and the real-estate asset acquisition is tagged for the six months; the release adds the purchase back in adjusted free cash flow."
+  },
+  {
+   "notes_item": "related_parties_contingencies_and_subsequent_events_chief_operating_officer_trading_plan",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "No number bears on the plan."
+  },
+  {
+   "notes_item": "related_parties_contingencies_and_subsequent_events_chief_financial_officer_trading_plan",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "No number bears on the plan."
+  },
+  {
+   "notes_item": "results_against_expectations_exceeds_high_end_of_quarter_guidance",
+   "numbers_items": [
+    "results_against_expectations_quarter_above_high_end_of_guidance_release",
+    "revenue_recognition_total_revenue_growth_release",
+    "earnings_quality_operating_income_release"
+   ],
+   "outcome": "confirms",
+   "why": "Revenue, operating income and net income all rose year over year; the prior guidance is not in the inputs, so the beat itself is untested."
+  },
+  {
+   "notes_item": "results_against_expectations_third_quarter_guidance_ranges",
+   "numbers_items": [
+    "results_against_expectations_third_quarter_billings_guidance_release",
+    "results_against_expectations_third_quarter_operating_margin_guidance_release",
+    "results_against_expectations_third_quarter_earnings_per_share_guidance_release",
+    "results_against_expectations_third_quarter_revenue_guidance_release"
+   ],
+   "outcome": "unresolved",
+   "why": "The ranges are forward; the numbers reader notes the billings, operating-margin and EPS ranges sit below the quarter just reported while the revenue range brackets it."
+  },
+  {
+   "notes_item": "across_documents_intel_processor_collaboration_and_supply_commitments",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "No filed fact names the collaboration or a related commitment."
+  },
+  {
+   "notes_item": "across_documents_adjusted_free_cash_flow_adds_back_real_estate_purchases",
+   "numbers_items": [
+    "liquidity_and_capital_real_estate_purchases_release",
+    "liquidity_and_capital_free_cash_flow_release"
+   ],
+   "outcome": "confirms",
+   "why": "The release's reconciliation prints the real-estate add-back in both periods; whether the measure is new remains unresolved."
+  },
+  {
+   "notes_item": "related_parties_contingencies_and_subsequent_events_litigation_forward_looking_bullet",
+   "numbers_items": [
+    "related_parties_contingencies_and_subsequent_events_securities_litigation_accrual_note"
+   ],
+   "outcome": "unresolved",
+   "why": "Accruals are tagged zero; the bullet's novelty cannot be told."
+  },
+  {
+   "notes_item": "narrative_signs_of_operating_pressure_macroeconomic_tariff_forward_looking_bullet",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "No number bears on the bullet."
+  },
+  {
+   "notes_item": "revenue_recognition_cloud_marketplace_sales_channel",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "No revenue is disaggregated by channel."
+  }
+ ],
+ "anomalies": [
+  {
+   "id": "earnings_versus_cash_operating_cash_flow_over_net_income_above_recent_years",
+   "name": "Operating cash flow over net income above the last two fiscal years",
+   "name_ko": "영업현금흐름 대 순이익 비율이 최근 두 회계연도보다 높음",
+   "area": "earnings_versus_cash",
+   "what": "Trailing conversion of {earnings_versus_cash.operating_cash_flow_over_net_income} against {earnings_versus_cash.history.years.0.operating_cash_flow_over_net_income} for 2025 and {earnings_versus_cash.history.years.1.operating_cash_flow_over_net_income} for 2024, with accruals of {earnings_versus_cash.accruals_over_average_assets}; the prose attributes it to deferred revenue and profitability, and the deferred-revenue cash-flow line more than doubled. Benign reading: customer prepayment, not accrual slack.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "earnings_quality_accruals_over_total_assets_trend_annual",
+    "revenue_recognition_deferred_revenue_cash_flow_release",
+    "liquidity_and_capital_operating_cash_flow_non_current_deferred_revenue"
+   ],
+   "fields": [
+    "earnings_versus_cash.operating_cash_flow_over_net_income",
+    "earnings_versus_cash.history.years.0.operating_cash_flow_over_net_income",
+    "earnings_versus_cash.history.years.1.operating_cash_flow_over_net_income",
+    "earnings_versus_cash.accruals_over_average_assets"
+   ]
+  },
+  {
+   "id": "earnings_versus_cash_inventory_articulation_gap",
+   "name": "Inventory cash-flow line does not articulate with the balance-sheet change",
+   "name_ko": "재고 현금흐름 항목과 재무상태표 변동의 불일치",
+   "area": "earnings_versus_cash",
+   "what": "Balance-sheet change {earnings_versus_cash.working_capital.inventory.balance_sheet_change} against cash-flow statement change {earnings_versus_cash.working_capital.inventory.cash_flow_statement_change}, a gap of {earnings_versus_cash.working_capital.inventory.articulation_gap}; the reserve fell from {terms.balances_a_year_earlier.inventory_reserve} to {terms.balances_now.inventory_reserve} with write-downs tagged {terms.trailing_four_quarters.inventory_write_down}. The prose gives no bridge.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "earnings_quality_inventory_cash_flow_release",
+    "earnings_quality_inventory_balance_release",
+    "estimates_and_discretion_inventory_write_down_note",
+    "estimates_and_discretion_excess_and_obsolete_inventory_reserve_without_stated_cause"
+   ],
+   "fields": [
+    "earnings_versus_cash.working_capital.inventory.balance_sheet_change",
+    "earnings_versus_cash.working_capital.inventory.cash_flow_statement_change",
+    "earnings_versus_cash.working_capital.inventory.articulation_gap",
+    "terms.balances_a_year_earlier.inventory_reserve",
+    "terms.balances_now.inventory_reserve",
+    "terms.trailing_four_quarters.inventory_write_down"
+   ]
+  },
+  {
+   "id": "revenue_recognition_contract_liabilities_over_revenue_lowest_of_six_quarters",
+   "name": "Contract liabilities over quarterly revenue at a six-quarter low",
+   "name_ko": "분기 매출 대비 계약부채 비율이 여섯 분기 중 최저",
+   "area": "revenue_recognition",
+   "what": "{trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue} against {trend_table.quarters-back-1.ratios.contract_liabilities_over_revenue} and {trend_table.quarters-back-4.ratios.contract_liabilities_over_revenue} a year ago, while the deferred-revenue balance itself rose. Product revenue, recognized on shipment, is growing fastest; the prose explains the mix.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "revenue_recognition_contract_liabilities_over_revenue_trend_quarterly",
+    "revenue_recognition_current_deferred_revenue_balance_release",
+    "revenue_recognition_product_revenue_growth_release",
+    "revenue_recognition_product_revenue_pricing_actions_and_average_selling_prices"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue",
+    "trend_table.quarters-back-1.ratios.contract_liabilities_over_revenue",
+    "trend_table.quarters-back-4.ratios.contract_liabilities_over_revenue"
+   ]
+  },
+  {
+   "id": "revenue_recognition_first_quarter_days_sales_outstanding_peak_reversed",
+   "name": "First-quarter DSO peak reversed in the second quarter",
+   "name_ko": "첫째 분기 매출채권 회전일수 고점이 둘째 분기에 반전",
+   "area": "revenue_recognition",
+   "what": "DSO was {trend_table.quarters-back-1.ratios.days_sales_outstanding} in the first quarter, highest of six filled quarters, and is {trend_table.quarters-back-0.ratios.days_sales_outstanding} now; the receivables collection appears in the six-month cash-flow line. MD&A offers no explanation specific to receivables.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "revenue_recognition_days_sales_outstanding_trend_quarterly",
+    "revenue_recognition_receivables_cash_flow_release",
+    "liquidity_and_capital_operating_cash_flow_non_current_deferred_revenue"
+   ],
+   "fields": [
+    "trend_table.quarters-back-1.ratios.days_sales_outstanding",
+    "trend_table.quarters-back-0.ratios.days_sales_outstanding"
+   ]
+  },
+  {
+   "id": "estimates_and_reserves_inventory_reserve_ratio_at_six_quarter_low_without_stated_cause",
+   "name": "Inventory reserve ratio at a six-quarter low with no stated cause",
+   "name_ko": "재고 평가충당금 비율이 여섯 분기 중 최저이나 사유 미기재",
+   "area": "estimates_and_reserves",
+   "what": "{trend_table.quarters-back-0.ratios.inventory_reserve_ratio} against {trend_table.quarters-back-1.ratios.inventory_reserve_ratio}, {trend_table.quarters-back-4.ratios.inventory_reserve_ratio} and a peak of {trend_table.quarters-back-5.ratios.inventory_reserve_ratio}; the balance fell at every filing this year, write-downs are tagged {terms.trailing_four_quarters.inventory_write_down}, and the note gives no cause. A lower provision rate raises reported gross profit; the change amount is not a calculator field, so no adjustment is written.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "estimates_and_discretion_inventory_reserve_ratio_trend_quarterly",
+    "estimates_and_discretion_inventory_valuation_reserve_note",
+    "estimates_and_discretion_inventory_write_down_note",
+    "estimates_and_discretion_excess_and_obsolete_inventory_reserve_without_stated_cause"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.inventory_reserve_ratio",
+    "trend_table.quarters-back-1.ratios.inventory_reserve_ratio",
+    "trend_table.quarters-back-4.ratios.inventory_reserve_ratio",
+    "trend_table.quarters-back-5.ratios.inventory_reserve_ratio",
+    "terms.trailing_four_quarters.inventory_write_down"
+   ]
+  },
+  {
+   "id": "estimates_and_reserves_excess_purchase_commitment_liability_falls_while_commitments_double",
+   "name": "Liability for excess purchase commitments falls as commitments double",
+   "name_ko": "구매약정이 두 배로 늘었는데 초과약정 부채는 감소",
+   "area": "estimates_and_reserves",
+   "what": "MD&A says commitments roughly doubled from year end while the excess-commitment liability fell from the first quarter and from year end; the sentence stating a prior-year benefit was dropped. No cause is given and the calculator has no purchase-obligation field.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "estimates_and_discretion_purchase_commitment_liability_prior_year_benefit_dropped",
+    "estimates_and_discretion_inventory_purchase_commitments_demand_lead_times_component_costs",
+    "estimates_and_discretion_inventory_write_down_note"
+   ],
+   "fields": [
+    "terms.balances_now.inventory"
+   ]
+  },
+  {
+   "id": "estimates_and_reserves_credit_loss_allowance_not_tagged_at_quarter_end",
+   "name": "Credit-loss allowance not tagged at quarter end while the provision rose",
+   "name_ko": "대손 충당금이 분기말에 태그되지 않은 채 대손비용은 증가",
+   "area": "estimates_and_reserves",
+   "what": "MD&A cites a higher six-month credit-loss provision but no allowance row exists for the quarter; the last annual ratio was {trend_table.years-back-0.ratios.bad_debt_reserve_ratio} against {trend_table.years-back-1.ratios.bad_debt_reserve_ratio}.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "estimates_and_discretion_provision_for_expected_credit_losses_increase",
+    "estimates_and_discretion_bad_debt_reserve_ratio_trend_quarterly_insufficient",
+    "estimates_and_discretion_bad_debt_reserve_ratio_trend_annual"
+   ],
+   "fields": [
+    "trend_table.years-back-0.ratios.bad_debt_reserve_ratio",
+    "trend_table.years-back-1.ratios.bad_debt_reserve_ratio"
+   ]
+  },
+  {
+   "id": "estimates_and_reserves_no_warranty_accrual_tagged_for_a_hardware_seller",
+   "name": "No warranty accrual tagged in any period",
+   "name_ko": "하드웨어 판매사임에도 보증충당부채가 어느 기간에도 태그되지 않음",
+   "area": "estimates_and_reserves",
+   "what": "The warranty reserve ratio is unfilled in all thirteen periods of the trend table; product revenue is more than a third of the quarter's revenue.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "estimates_and_discretion_warranty_reserve_ratio_trend_quarterly_insufficient",
+    "estimates_and_discretion_warranty_reserve_ratio_trend_annual_insufficient",
+    "revenue_recognition_product_revenue_note"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.gross_margin"
+   ]
+  },
+  {
+   "id": "cost_deferral_deferred_contract_costs_capitalized_exceed_amortization",
+   "name": "Capitalized contract costs outrun amortization",
+   "name_ko": "이연계약원가 자본화가 상각을 상회",
+   "area": "cost_deferral",
+   "what": "Six-month deferred contract costs capitalized exceed amortization by a widening margin and the balance rose; commissions grow with revenue, so the deferral grows with bookings. MD&A names the increase.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "earnings_quality_deferred_contract_costs_capitalized_release",
+    "earnings_quality_deferred_contract_costs_amortized_release",
+    "earnings_quality_deferred_contract_costs_balance_release",
+    "earnings_quality_segment_sales_commissions_note",
+    "liquidity_and_capital_operating_cash_flow_non_current_deferred_revenue"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.revenue"
+   ]
+  },
+  {
+   "id": "cost_deferral_stock_based_compensation_add_back_rising",
+   "name": "Stock-based compensation add-back rising",
+   "name_ko": "주식보상비용 가산 항목 증가",
+   "area": "cost_deferral",
+   "what": "Trailing share-based compensation of {terms.trailing_four_quarters.share_based_compensation} against {earnings_versus_cash.history.years.0.share_based_compensation} for 2025; it is the main non-GAAP add-back and is already subtracted in quality-adjusted free cash flow.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "earnings_quality_stock_based_compensation_note",
+    "earnings_quality_stock_based_compensation_cash_flow_release",
+    "earnings_quality_non_gaap_net_income_release"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.share_based_compensation",
+    "earnings_versus_cash.history.years.0.share_based_compensation"
+   ]
+  },
+  {
+   "id": "cost_deferral_recurring_gain_excluded_from_non_gaap",
+   "name": "A recurring gain is excluded from non-GAAP results",
+   "name_ko": "반복되는 이익이 비GAAP 실적에서 제외됨",
+   "area": "cost_deferral",
+   "what": "The gain on intellectual property matters recurs each quarter yet is treated as non-recurring; because it is a gain, the exclusion lowers non-GAAP income, so the effect is conservative.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "earnings_quality_gain_on_intellectual_property_matters_release",
+    "earnings_quality_non_gaap_net_income_release"
+   ],
+   "fields": [
+    "ratios.profitability.operating_margin"
+   ]
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_adjusted_free_cash_flow_adds_back_real_estate",
+   "name": "Release's adjusted free cash flow adds back real-estate purchases",
+   "name_ko": "실적 발표의 조정 잉여현금흐름이 부동산 매입을 가산",
+   "area": "cash_flow_engineering_and_off_balance_sheet",
+   "what": "The release defines a measure the 10-Q does not, adding back land and building purchases made for data centres and offices; the add-back was large a year ago. Simple free cash flow of {free_cash_flow.free_cash_flow_simple} here does not add it back.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "across_documents_adjusted_free_cash_flow_adds_back_real_estate_purchases",
+    "liquidity_and_capital_real_estate_purchases_release",
+    "liquidity_and_capital_real_estate_purchase_for_data_center_and_office"
+   ],
+   "fields": [
+    "free_cash_flow.free_cash_flow_simple"
+   ]
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_capital_expenditure_tags_differ_between_filings",
+   "name": "Capital-expenditure tag differs between the 10-K and the 10-Q",
+   "name_ko": "연차보고서와 분기보고서의 자본적지출 태그가 다름",
+   "area": "cash_flow_engineering_and_off_balance_sheet",
+   "what": "The 10-K tags productive assets, the 10-Q tags property and equipment, and the 10-Q's productive-assets row equals the real-estate purchase; trailing capital expenditure of {terms.trailing_four_quarters.capital_expenditure} therefore mixes definitions and may understate the real-estate outlay.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "liquidity_and_capital_land_holdings_note",
+    "liquidity_and_capital_capital_expenditure_release",
+    "liquidity_and_capital_real_estate_purchases_release"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.capital_expenditure"
+   ]
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_purchase_commitments_doubled_without_filed_fact",
+   "name": "Purchase commitments doubled with no filed fact in the record",
+   "name_ko": "구매약정이 두 배로 늘었으나 기록에 태그된 사실 없음",
+   "area": "cash_flow_engineering_and_off_balance_sheet",
+   "what": "MD&A states non-cancelable commitments roughly doubled from year end, with a multi-year supply and pricing arrangement; the calculator's unconditional purchase obligations field is missing, so the obligation is off the balance sheet and outside the numbers.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "estimates_and_discretion_inventory_purchase_commitments_demand_lead_times_component_costs",
+    "estimates_and_discretion_multi_year_component_supply_and_pricing_arrangements",
+    "across_documents_intel_processor_collaboration_and_supply_commitments"
+   ],
+   "fields": [
+    "terms.balances_now.inventory"
+   ]
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_cash_taxes_paid_below_provision",
+   "name": "Cash taxes paid fell while the tax provision rose",
+   "name_ko": "법인세 납부액은 줄고 법인세비용은 증가",
+   "area": "cash_flow_engineering_and_off_balance_sheet",
+   "what": "Six-month income taxes paid are below the prior year while the provision is higher and the deferred-tax-asset line is near flat; the gap lifts operating cash flow and the prose does not explain it. The trailing effective rate is {tax_rate|pct}.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "liquidity_and_capital_income_taxes_paid_filed_fact",
+    "earnings_quality_provision_for_income_taxes_release",
+    "earnings_quality_deferred_tax_assets_cash_flow_release"
+   ],
+   "fields": [
+    "tax_rate"
+   ]
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_repurchases_exceed_net_income_and_equity_falls",
+   "name": "Repurchases exceed net income and equity falls",
+   "name_ko": "자사주 매입이 순이익을 초과하고 자본이 감소",
+   "area": "cash_flow_engineering_and_off_balance_sheet",
+   "what": "Trailing repurchases of {terms.trailing_four_quarters.share_repurchases} against trailing net income of {terms.trailing_four_quarters.net_income}; equity {terms.balances_now.stockholders_equity} against {terms.balances_a_year_earlier.stockholders_equity}. Disclosed and funded from cash and the note repayment, not from borrowing.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "liquidity_and_capital_share_repurchases_release",
+    "liquidity_and_capital_stockholders_equity_release",
+    "liquidity_and_capital_share_repurchase_activity_and_remaining_authorization"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.share_repurchases",
+    "terms.trailing_four_quarters.net_income",
+    "terms.balances_now.stockholders_equity",
+    "terms.balances_a_year_earlier.stockholders_equity"
+   ]
+  },
+  {
+   "id": "controls_audit_and_filing_signals_officer_trading_plans_adopted_before_release",
+   "name": "CFO and COO adopted trading plans in June before the release",
+   "name_ko": "최고재무책임자와 최고운영책임자가 발표 전 사전 매매계획 채택",
+   "area": "controls_audit_and_filing_signals",
+   "what": "Both plans are disclosed in the 10-Q and run from September 2026; the CFO's covers a trivial share count plus net vested shares. Listed as a signal, not a finding of substance.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "related_parties_contingencies_and_subsequent_events_chief_financial_officer_trading_plan",
+    "related_parties_contingencies_and_subsequent_events_chief_operating_officer_trading_plan"
+   ],
+   "fields": [
+    "terms.shares_outstanding"
+   ]
+  },
+  {
+   "id": "controls_audit_and_filing_signals_subsequent_events_note_removed_and_authorization_unchanged_since_may",
+   "name": "Subsequent-events note removed; authorization unchanged since early May",
+   "name_ko": "후속사건 주석 삭제, 잔여 매입한도는 오월 초 이후 변동 없음",
+   "area": "controls_audit_and_filing_signals",
+   "what": "The current 10-Q has no subsequent-events note, and the remaining authorization at quarter end equals the prior 10-Q's early-May value, implying no repurchases in the back half of the quarter after heavy first-half buying.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "articulation_and_the_filed_history_subsequent_event_repurchases_rolled_into_quarter",
+    "liquidity_and_capital_remaining_repurchase_authorization_note"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.share_repurchases"
+   ]
+  },
+  {
+   "id": "controls_audit_and_filing_signals_distributor_c_receivables_concentration_row_absent",
+   "name": "Distributor C receivables-concentration row absent",
+   "name_ko": "유통사 C의 매출채권 집중도 행이 누락",
+   "area": "controls_audit_and_filing_signals",
+   "what": "The second-quarter 10-Q tags receivables concentration for A and B only; C was {concentration.facts.29.value} in the first-quarter 10-Q and {concentration.facts.21.value} at year end. Dropping below a disclosure threshold is the benign reading.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "revenue_recognition_distributor_b_receivables_share_note",
+    "revenue_recognition_distributor_c_revenue_share_note"
+   ],
+   "fields": [
+    "concentration.facts.29.value",
+    "concentration.facts.21.value"
+   ]
+  },
+  {
+   "id": "cross_document_reconciliation_intel_collaboration_only_in_release",
+   "name": "Intel collaboration appears only in the release",
+   "name_ko": "인텔 협업은 실적 발표에만 등장",
+   "area": "cross_document_reconciliation",
+   "what": "The release announces a processor collaboration; the 10-Q discloses multi-year supply and pricing arrangements and doubled purchase commitments without naming it. No filed fact ties them.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "across_documents_intel_processor_collaboration_and_supply_commitments",
+    "estimates_and_discretion_multi_year_component_supply_and_pricing_arrangements"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.research_and_development_expense"
+   ]
+  },
+  {
+   "id": "industry_lens_purchase_commitments_far_exceed_inventory",
+   "name": "Purchase commitments far exceed inventory on hand",
+   "name_ko": "구매약정이 보유 재고를 크게 초과",
+   "area": "industry_lens",
+   "what": "Commitments that MD&A says roughly doubled stand against net inventory of {terms.balances_now.inventory} and quarterly days of inventory of {trend_table.quarters-back-0.ratios.days_sales_of_inventory}; the company cites demand, lead times and component costs. Exposure if hardware demand turns.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "estimates_and_discretion_inventory_purchase_commitments_demand_lead_times_component_costs",
+    "earnings_quality_days_sales_of_inventory_trend_quarterly",
+    "earnings_quality_inventory_balance_release"
+   ],
+   "fields": [
+    "terms.balances_now.inventory",
+    "trend_table.quarters-back-0.ratios.days_sales_of_inventory"
+   ]
+  },
+  {
+   "id": "industry_lens_distributor_a_receivables_share_fell_from_year_end",
+   "name": "Distributor A's share of receivables fell from year end",
+   "name_ko": "유통사 A의 매출채권 비중이 연말 대비 하락",
+   "area": "industry_lens",
+   "what": "{concentration.facts.36.value} now against {concentration.facts.22.value} at year end, while its revenue share is {concentration.facts.30.value}; the largest distributor is carrying less of the receivable, the opposite of a channel-loading pattern.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "revenue_recognition_distributor_a_receivables_share_note",
+    "revenue_recognition_distributor_a_revenue_share_note"
+   ],
+   "fields": [
+    "concentration.facts.36.value",
+    "concentration.facts.22.value",
+    "concentration.facts.30.value"
+   ]
+  }
+ ],
+ "adjustments": [],
+ "summary_ko": {
+  "earnings_versus_cash": "최근 네 분기 영업현금흐름은 순이익의 {earnings_versus_cash.operating_cash_flow_over_net_income}배로 2025년의 {earnings_versus_cash.history.years.0.operating_cash_flow_over_net_income}배보다 높고, 발생액 비율은 {earnings_versus_cash.accruals_over_average_assets}로 현금이 이익을 앞서고 있습니다. 운전자본이 이익을 흡수하는 정도는 작으나 재고의 대조 차이 {earnings_versus_cash.working_capital.inventory.articulation_gap}는 재고충당금 감소와 맞물려 있고, 이익의 변동성은 현금흐름의 {earnings_versus_cash.smoothness}배에 그칩니다.",
+  "revenue_recognition": "매출채권 회전일수는 {trend_table.quarters-back-0.ratios.days_sales_outstanding}일로 직전 분기 {trend_table.quarters-back-1.ratios.days_sales_outstanding}일보다 낮아졌고, 분기 매출 대비 계약부채 비율은 {trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue}로 여섯 분기 중 최저이지만 이는 가격 인상에 힘입은 제품 매출 급증 때문입니다. 다음 분기 빌링 가이던스가 이번 분기 실적보다 낮아 선매수 가능성은 열려 있으나 채권 수치에는 그 징후가 없습니다.",
+  "estimates_and_reserves": "재고 평가충당금 비율이 {trend_table.quarters-back-0.ratios.inventory_reserve_ratio}로 여섯 분기 중 최저이며, 충당금 잔액은 {terms.balances_a_year_earlier.inventory_reserve}에서 {terms.balances_now.inventory_reserve}로 줄었는데 재고 평가손실은 {terms.trailing_four_quarters.inventory_write_down}로 태그되어 있고 회사는 그 이유를 밝히지 않았습니다. 세율은 {tax_rate|pct}로 하락 요인이 없고 영업권 손상도 없습니다.",
+  "cost_deferral": "소프트웨어 개발비 자본화는 없고 연구개발비 {terms.trailing_four_quarters.research_and_development_expense}는 전액 비용 처리됩니다. 이연계약원가(판매수수료)의 자본화가 상각을 웃돌며 늘고 있고, 비GAAP 조정의 핵심은 주식보상 {terms.trailing_four_quarters.share_based_compensation}로 전년도 {earnings_versus_cash.history.years.0.share_based_compensation}보다 커졌습니다.",
+  "cash_flow_engineering_and_off_balance_sheet": "매출채권 매각이나 공급망 금융은 기록에 없고 영업현금흐름 증가는 고객 선수금에서 나옵니다. 다만 실적 발표의 조정 잉여현금흐름은 부동산 매입을 다시 더하고, 비취소 구매약정은 연말 대비 약 두 배로 늘었으나 계산기에 해당 필드가 없으며, 주식보상을 차감한 품질조정 잉여현금흐름은 {free_cash_flow.free_cash_flow_quality_adjusted}로 단순 잉여현금흐름 {free_cash_flow.free_cash_flow_simple}보다 작습니다.",
+  "controls_audit_and_filing_signals": "감사인 변경, 중요한 취약점, 지연 공시, 정정 공시는 없고 내부통제는 유효하다고 결론지었습니다. 다만 최고재무책임자와 최고운영책임자가 발표 직전 사전 매매계획을 채택했고, 후속사건 주석과 기능통화 문장, 유통사 C의 채권 집중도 행이 삭제되었습니다.",
+  "cross_document_reconciliation": null,
+  "industry_lens": "재고충당금 비율 {trend_table.quarters-back-0.ratios.inventory_reserve_ratio}가 최저인 가운데 분기 재고일수는 {trend_table.quarters-back-0.ratios.days_sales_of_inventory}일로 빨라졌고, 구매약정은 재고 {terms.balances_now.inventory}를 크게 웃돕니다. 상위 유통사 비중은 A {concentration.facts.30.value}, B {concentration.facts.32.value}, C {concentration.facts.34.value}로 안정적이고, 채널 밀어내기나 순환거래의 징후는 숫자에 없습니다."
+ },
+ "limits": "This analysis finds where the numbers and the explanations disagree, and where the company differs from its own past. It does not judge intent, and it cannot see evidence outside the filings, such as invoices or contracts.",
+ "normalized_quotes": 0,
+ "dropped_items": [
+  {
+   "where": "areas.earnings_versus_cash",
+   "reason": "finding: {growth.operating_cash_flow.year_over_year} names nothing in the calculator this analyst saw"
+  },
+  {
+   "where": "areas.revenue_recognition",
+   "reason": "finding: {growth.revenue.year_over_year} names nothing in the calculator this analyst saw"
+  },
+  {
+   "where": "areas.cost_deferral",
+   "reason": "finding: a number written in the analyst's own words: 's, though above the year-ago level; the 2025 annual figure was  . On non-recurri'"
+  },
+  {
+   "where": "areas.controls_audit_and_filing_signals",
+   "reason": "finding: a number written in the analyst's own words: \"rrency sentences, including the January 2026 change of one subsidiary's function\""
+  },
+  {
+   "where": "areas.cross_document_reconciliation",
+   "reason": "finding: {growth.operating_cash_flow.this_quarter} names nothing in the calculator this analyst saw"
+  },
+  {
+   "where": "areas.industry_lens",
+   "reason": "finding: a number written in the analyst's own words: ' are  , second lowest of six, against a 2025 annual figure of  , second highest '"
+  },
+  {
+   "where": "reconciliation[21]",
+   "id": null,
+   "reason": "why: a number written in the analyst's own words: 'ling operating margin of   is above the 2025 fiscal-year  .'"
+  },
+  {
+   "where": "reconciliation[25]",
+   "id": null,
+   "reason": "why: a number written in the analyst's own words: '; the annual ratio   was slightly above 2024.'"
+  },
+  {
+   "where": "reconciliation[33]",
+   "id": null,
+   "reason": "why: {growth.revenue.trailing_four_quarters} names nothing in the calculator this analyst saw"
+  },
+  {
+   "where": "anomalies[2]",
+   "id": "earnings_versus_cash_net_income_smoother_than_operating_cash_flow",
+   "reason": "what: {growth.operating_cash_flow.quarter_over_quarter} names nothing in the calculator this analyst saw"
+  },
+  {
+   "where": "anomalies[4]",
+   "id": "revenue_recognition_product_surge_on_pricing_actions_with_lower_next_quarter_billings_guidance",
+   "reason": "what: {growth.revenue.year_over_year} names nothing in the calculator this analyst saw"
+  },
+  {
+   "where": "anomalies[20]",
+   "id": "controls_audit_and_filing_signals_functional_currency_sentences_removed_as_fx_losses_rise",
+   "reason": "what: a number written in the analyst's own words: 'rency disclosure, including the January 2026 change for one subsidiary, in the q'"
+  },
+  {
+   "where": "anomalies[22]",
+   "id": "controls_audit_and_filing_signals_deferred_revenue_tag_differs_between_annual_and_quarterly_filings",
+   "reason": "name: a number written in the analyst's own words: 'nue tagged differently in the   and the 10-Qs'"
+  },
+  {
+   "where": "anomalies[24]",
+   "id": "cross_document_reconciliation_quarterly_operating_cash_flow_only_in_release",
+   "reason": "what: {growth.operating_cash_flow.this_quarter} names nothing in the calculator this analyst saw"
+  },
+  {
+   "where": "summary_ko.cross_document_reconciliation",
+   "reason": "{growth.operating_cash_flow.this_quarter} names nothing in the calculator this analyst saw"
+  }
+ ],
+ "dropped_count": 15
+}
