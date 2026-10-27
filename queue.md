@@ -58,6 +58,24 @@ branch changed. A run item is done when its run directory is published and
 
 [ ] LOGI's 10-Q filed 2026-07-29 on Fable · `.venv/bin/python -m evals --runs runs/LOGI` · none
 
+[ ] LII's 10-Q filed 2026-07-29 on Fable · `.venv/bin/python -m evals --runs runs/LII` · none
+
+[ ] AMSC's 10-Q filed 2026-08-05 on Fable · `.venv/bin/python -m evals --runs runs/AMSC` · none
+
+[ ] UI's 10-Q filed 2026-05-08 on Fable · `.venv/bin/python -m evals --runs runs/UI` · none
+
+[ ] NSSC's 10-Q filed 2026-05-05 on Fable · `.venv/bin/python -m evals --runs runs/NSSC` · none
+
+[ ] CLS's 10-Q filed 2026-07-27 on Fable · `.venv/bin/python -m evals --runs runs/CLS` · none
+
+[ ] AMD's 10-Q filed 2026-08-05 on Fable · `.venv/bin/python -m evals --runs runs/AMD` · none
+
+[ ] OMCL's 10-Q filed 2026-08-05 on Fable · `.venv/bin/python -m evals --runs runs/OMCL` · none
+
+[ ] ADTN's 10-Q filed 2026-08-04 on Fable · `.venv/bin/python -m evals --runs runs/ADTN` · none
+
+[ ] `src/assemble_bundle.py` keeps an 8-K filed on the cutoff day after the triggering report out of `input_8k.md`'s index (Ubiquiti's 0001511737-26-000035 follows its 10-Q 0001511737-26-000034 in the agent's sequence), and the two strict marks under `INDEX_ROW_AFTER_THE_TRIGGER` in `tests/test_extraction_checks.py` come off · `.venv/bin/python -m pytest tests/test_extraction_checks.py -k UI` with `INDEX_ROW_AFTER_THE_TRIGGER` empty · none
+
 ## Done
 
 [x] NVDA's 10-Q filed 2026-08-26 on Fable · `.venv/bin/python -m evals --runs runs/NVDA` · item one · 2026-10-08: regression 18 pass, 0 fail; the analysts served by claude-fable-5-1, no fallback; the readers on Opus, as their definitions say; analysis-grader 0.69 with 20 dealbreakers; the run the graders refused on 2026-10-07 is not published, and this one ran after the gates were held to the graders (#125) · PR: this one

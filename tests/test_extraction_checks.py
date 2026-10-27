@@ -40,9 +40,28 @@ def gate_lines(lines: list[str], gate: str) -> list[str]:
     return [line for line in lines if line.startswith(f"{gate}: ")]
 
 
+# A defect of `src/assemble_bundle.py`, not of the gate: the 8-K index in a bundle's
+# `input_8k.md` lists every 8-K filed on or before the cutoff by its date alone, so it
+# keeps a row filed on the cutoff day after the triggering report, which the gate and
+# the owner's `nothing_after_cutoff` both refuse. Each entry quotes the row and the
+# two accessions from the company's committed submissions index.
+INDEX_ROW_AFTER_THE_TRIGGER = {
+    "UI": ("input_8k.md's index lists '- 2026-05-08 0001511737-26-000035 — 2.02, 9.01', "
+           "Ubiquiti's earnings release, filed on 2026-05-08 as its 10-Q "
+           "0001511737-26-000034 was and after it in the agent's sequence; neither "
+           "has an acceptance stamp on record"),
+}
+
+CUTOFF_CASES = [
+    pytest.param(ticker, marks=pytest.mark.xfail(
+        strict=True, reason=f"{ticker}: {INDEX_ROW_AFTER_THE_TRIGGER[ticker]}"))
+    if ticker in INDEX_ROW_AFTER_THE_TRIGGER else ticker
+    for ticker in TICKERS
+]
+
 # --- (e) every real bundle passes -------------------------------------------
 
-@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("ticker", CUTOFF_CASES)
 def test_a_real_bundle_passes_every_gate(ticker, tmp_path):
     code, lines = extraction_checks.run(good_bundle(tmp_path, ticker))
     assert code == 0, "\n".join(lines)
@@ -56,7 +75,7 @@ def test_a_ten_k_bundle_passes_too(tmp_path):
     assert code == 0, "\n".join(lines)
 
 
-@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("ticker", CUTOFF_CASES)
 def test_the_cutoff_gate_reads_every_real_bundle_as_the_owner_does(ticker, tmp_path):
     """The cutoff gate holds a bundle's documents, the cutoff day's order, and
     every dated row and id-less line of its inputs, as the owner's
@@ -73,6 +92,29 @@ def test_the_cutoff_gate_reads_every_real_bundle_as_the_owner_does(ticker, tmp_p
     assert "every dated row and id-less line of the inputs" in cutoff[0]
     owner = mechanical.check_nothing_after_cutoff(bundle)
     assert owner.status == PASS, owner.failures
+
+
+@pytest.mark.parametrize("ticker", sorted(INDEX_ROW_AFTER_THE_TRIGGER))
+def test_an_index_row_after_the_trigger_fails_the_cutoff_alone_as_the_owner_does(ticker, tmp_path):
+    """What the two marks above hide, asserted unmarked: the bundle's other three
+    gates pass, the cutoff gate refuses the one index row its entry quotes and
+    nothing else, and the owner's `nothing_after_cutoff` refuses the same line."""
+    from evals.common import PASS
+    from evals.regression import mechanical
+    bundle = good_bundle(tmp_path, ticker)
+    code, lines = extraction_checks.run(bundle)
+    assert code != 0
+    assert [line.split(":")[0] for line in lines] == \
+        ["schema", "paragraph counts", "cutoff", "notes"]
+    assert all(": pass — " in line for line in lines if not line.startswith("cutoff: "))
+    late = "0001511737-26-000035"   # the row the entry quotes, from UI's submissions index
+    cutoff = gate_lines(lines, "cutoff")
+    assert len(cutoff) == 1 and cutoff[0].startswith("cutoff: FAIL — ")
+    assert cutoff[0].count("line ") == 1 and late in cutoff[0]
+    owner = mechanical.check_nothing_after_cutoff(bundle)
+    assert owner.status != PASS
+    assert len(owner.failures) == 1 and late in owner.failures[0]
+    assert owner.failures[0] in cutoff[0]
 
 
 # --- (b) the command ---------------------------------------------------------

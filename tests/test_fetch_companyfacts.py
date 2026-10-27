@@ -86,6 +86,13 @@ NOT_YET_IN_COMPANYFACTS = {
     # filed 2026-07-29, were in no row either: the same gap, ten weeks later.
     ("JCI", "10-Q", "0000833444-26-000087"),    # filed 2026-07-29
     ("FELE", "10-Q", "0000038725-26-000055"),   # filed 2026-07-29
+    # The third eight's records were fetched the same day, and one of their
+    # 10-Qs, Lennox's, filed 2026-07-29 as well, is in no row of its record:
+    # the record's manifest row dates it 2026-04-29, the prior 10-Q
+    # 0001069202-26-000054, and no row of any namespace names
+    # 0001069202-26-000087. The other twenty-three instances of the eight, three
+    # per company, are each in their records.
+    ("LII", "10-Q", "0001069202-26-000087"),    # filed 2026-07-29
 }
 
 
@@ -494,9 +501,9 @@ def test_the_filings_companyfacts_has_not_loaded_are_the_two_on_record():
              for form, accession, _ in comparison(ticker)["unloaded"]}
     assert found == NOT_YET_IN_COMPANYFACTS
     # Three instances per company -- the 10-K's, the 10-Q's and the prior
-    # 10-Q's, each a manifest row -- over the twelve, the eight and the next
-    # eight: 28 × 3.
-    assert sum(comparison(ticker)["instances"] for ticker in TICKERS) == 84
+    # 10-Q's, each a manifest row -- over the twelve, the eight, the next eight
+    # and the third eight: 36 × 3.
+    assert sum(comparison(ticker)["instances"] for ticker in TICKERS) == 108
 
 
 @pytest.mark.parametrize("ticker", TICKERS)
