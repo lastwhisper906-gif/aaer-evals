@@ -1,0 +1,107 @@
+{
+ "question": "what is this company worth, and what does the price already assume?",
+ "value_range": {
+  "reading": "Python did not compute a value range. calculator.json prints under valuation.missing: \"WACC is not computed: the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\", and under cost_of_capital.missing: \"the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". The chain is short: no price series, so no beta, no market value of equity and no cost of equity; no cost of equity, so no WACC; no WACC, so none of the three scenarios was discounted and there is no enterprise value, no equity value and no value per share for bear, base or bull. The components that were computed are the risk-free rate of {cost_of_capital.risk_free_rate.value|pct}, the equity risk premium of {cost_of_capital.equity_risk_premium.value|pct}, a pre-tax cost of debt of {cost_of_capital.pre_tax_cost_of_debt.value|pct} from interest expense over average debt, and an effective tax rate of {cost_of_capital.tax_rate.value|pct}; total debt of {terms.debt_now.value} and shares outstanding of {terms.shares_outstanding.value} are on record, so the bridge from enterprise value to a per-share figure was ready and only the discount rate is absent. What can be read is the drivers against the company's own record. My base case starts year-one revenue growth below the trailing-four-quarter growth of {ratios.growth.revenue.trailing_four_quarters.value|pct} and well below the latest quarter's {ratios.growth.revenue.year_over_year.value|pct}, on the view that an exabyte-and-pricing surge of this size does not repeat, and fades it to a terminal rate under the risk-free rate; the bear ends the up-cycle within the year, the bull repeats the trailing rate. The base holds the year-one operating margin near the trailing {ratios.profitability.operating_margin.value|pct} and fades it by year ten to a level below fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct} yet far above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}, which the operating losses of fiscal 2023 and fiscal 2024 pulled down; the bear takes the terminal margin toward the pre-Separation years' {earnings_versus_cash.history.years.3.operating_margin|pct}, the bull keeps it a little under today's. Reinvestment in every scenario runs above the trailing pace, in which capital expenditure of {terms.trailing_four_quarters.capital_expenditure.value} barely exceeds depreciation of {terms.trailing_four_quarters.depreciation_and_amortization.value}, because MD&A guides capital expenditure to a share of net revenue above that pace. None of this has been turned into a value, and I do not estimate one.",
+  "fields": [
+   "valuation.missing",
+   "cost_of_capital.missing",
+   "cost_of_capital.beta.missing",
+   "cost_of_capital.cost_of_equity.missing",
+   "cost_of_capital.market_value_of_equity.missing",
+   "cost_of_capital.risk_free_rate.value",
+   "cost_of_capital.equity_risk_premium.value",
+   "cost_of_capital.pre_tax_cost_of_debt.value",
+   "cost_of_capital.tax_rate.value",
+   "terms.debt_now.value",
+   "terms.shares_outstanding.value",
+   "ratios.growth.revenue.trailing_four_quarters.value",
+   "ratios.growth.revenue.year_over_year.value",
+   "ratios.profitability.operating_margin.value",
+   "earnings_versus_cash.history.years.0.operating_margin",
+   "earnings_versus_cash.history.operating_margin_three_year_average",
+   "earnings_versus_cash.history.years.3.operating_margin",
+   "terms.trailing_four_quarters.capital_expenditure.value",
+   "terms.trailing_four_quarters.depreciation_and_amortization.value"
+  ]
+ },
+ "price_position": {
+  "reading": "The price at the cutoff is not in the calculator. The market section prints only \"no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\"; there is no market.price and no cost_of_capital.price_at_cutoff, and free_cash_flow_yield.price_at_cutoff prints the same reason. With no price and no value range there is no position to read. The free-cash-flow-yield cross-check is empty for the same cause, and doubly so: enterprise value needs a market value of equity, and free cash flow to the firm is separately missing because the record holds no accounts-payable balance at the year-earlier date. What the record does show about the claims a price would be set against: shares outstanding of {terms.shares_outstanding.value} against diluted shares of {terms.diluted_shares.value}, a gap the financial reader attributes to the convertible notes and share awards without being able to split it; total debt of {terms.debt_now.value}, all of it classified current, against cash of {terms.balances_now.cash.value}, which is a net cash position of {ratios.solvency.net_debt.value} on carrying amounts; and trailing simple free cash flow of {free_cash_flow.free_cash_flow_simple.value}, which the financial reader cautions carries tax, hedging and compensation timing that does not recur by itself. I do not place the price.",
+  "fields": [
+   "market.missing",
+   "free_cash_flow_yield.price_at_cutoff.missing",
+   "free_cash_flow_yield.enterprise_value.missing",
+   "free_cash_flow.free_cash_flow_to_firm.missing",
+   "terms.shares_outstanding.value",
+   "terms.diluted_shares.value",
+   "terms.debt_now.value",
+   "terms.balances_now.cash.value",
+   "ratios.solvency.net_debt.value",
+   "free_cash_flow.free_cash_flow_simple.value"
+  ]
+ },
+ "market_implied_growth": {
+  "reading": "The reverse DCF was not run. implied_growth_beside_history.implied_ten_year_revenue_growth prints \"no reverse DCF: WACC is not computed: the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\", so the constant ten-year revenue growth at which the base case is worth the price is unknown. The history it would have been read against is on record: three-year compound revenue growth of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and five-year of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, both negative because the span includes the Separation of the flash business and a down-cycle in which fiscal 2023 revenue growth was {earnings_versus_cash.history.years.2.revenue_growth|pct}; against that, fiscal 2025 grew {earnings_versus_cash.history.years.0.revenue_growth|pct}, the trailing four quarters {ratios.growth.revenue.trailing_four_quarters.value|pct}, and the latest quarter {ratios.growth.revenue.year_over_year.value|pct} year over year and {ratios.growth.revenue.quarter_over_quarter.value|pct} over the prior quarter. The company gives no revenue guidance in the flagged MD&A paragraphs and the earnings-release body is not in the bundle; the one forward statement MD&A makes is about capital expenditure, and its account of the quarter, quoted here, attributes growth to volume and price together, with cloud customers ramping data-center capacity in every region. Whatever growth a price would have implied, the record offers two anchors to set it beside: a post-Separation up-cycle running far above any rate that can persist for ten years, and a longer record in which the company's own revenue has not compounded at all. My base year-one growth sits between them, under the trailing rate and far above the compound rates, and fades to a terminal rate under the risk-free rate of {cost_of_capital.risk_free_rate.value|pct}; what the market assumes relative to that path is not computed.",
+  "fields": [
+   "implied_growth_beside_history.implied_ten_year_revenue_growth.missing",
+   "earnings_versus_cash.history.revenue_growth_three_year_compound",
+   "earnings_versus_cash.history.revenue_growth_five_year_compound",
+   "earnings_versus_cash.history.years.2.revenue_growth",
+   "earnings_versus_cash.history.years.0.revenue_growth",
+   "ratios.growth.revenue.trailing_four_quarters.value",
+   "ratios.growth.revenue.year_over_year.value",
+   "ratios.growth.revenue.quarter_over_quarter.value",
+   "cost_of_capital.risk_free_rate.value"
+  ],
+  "quote": "Net revenue increased by 45% for the three months ended April 3, 2026 from the comparable period in the prior year, driven by a 34% increase in exabytes sold and a 9% increase in average selling price per exabyte, both of which were driven by strong demand across all of our end markets.",
+  "quote_from": "input_mdna.md"
+ },
+ "most_sensitive": [
+  {
+   "assumption": "operating_margin_year_ten",
+   "reading": "The sensitivity grid was not computed and no scenario values exist, so which assumption the value is most sensitive to cannot be read off either. What the drivers themselves show is where the three scenarios disagree most: the year-ten operating margin, which spans from a bear level near the pre-Separation years' {earnings_versus_cash.history.years.3.operating_margin|pct} to a bull level a little under the trailing {ratios.profitability.operating_margin.value|pct}. The record justifies that width: the three-year average operating margin is {earnings_versus_cash.history.operating_margin_three_year_average|pct} because fiscal 2024 ran at {earnings_versus_cash.history.years.1.operating_margin|pct} and fiscal 2023 at {earnings_versus_cash.history.years.2.operating_margin|pct}, while the latest quarter's gross margin of {trend_table.quarters-back-0.ratios.gross_margin.value|pct} is the highest in the record and return on invested capital of {ratios.profitability.return_on_invested_capital.value|pct} is a cyclical-peak figure on a low tax rate. In a ten-year DCF the terminal year sets the terminal value, so the margin assumed there would weigh on the result more than any single near year; that is a property of the formula, not a computed figure.",
+   "fields": [
+    "earnings_versus_cash.history.years.3.operating_margin",
+    "ratios.profitability.operating_margin.value",
+    "earnings_versus_cash.history.operating_margin_three_year_average",
+    "earnings_versus_cash.history.years.1.operating_margin",
+    "earnings_versus_cash.history.years.2.operating_margin",
+    "trend_table.quarters-back-0.ratios.gross_margin.value",
+    "ratios.profitability.return_on_invested_capital.value"
+   ]
+  },
+  {
+   "assumption": "revenue_growth_year_one",
+   "reading": "The second-widest spread among my scenarios is year-one revenue growth, from a bear in which the hyperscale build-out pauses within the year to a bull that repeats the trailing-four-quarter growth of {ratios.growth.revenue.trailing_four_quarters.value|pct}; Python fades each in a straight line to the terminal rate, so the year-one choice sets the whole ten-year revenue path. The record supports both ends: fiscal 2025 grew {earnings_versus_cash.history.years.0.revenue_growth|pct} and the latest quarter {ratios.growth.revenue.year_over_year.value|pct}, while fiscal 2024 grew only {earnings_versus_cash.history.years.1.revenue_growth|pct} and fiscal 2021 {earnings_versus_cash.history.years.4.revenue_growth|pct}, and ten customers take {concentration.facts.27.value|pct} of quarterly revenue, so an order pause at a few of them moves the whole line. Above both drivers sits the input that is absent rather than uncertain: with no beta there is no cost of equity and no WACC, and the discount rate is the one term every cash flow in the grid would have been divided by. None of these weights has been measured, and I do not rank them beyond what the scenario drivers themselves show.",
+   "fields": [
+    "ratios.growth.revenue.trailing_four_quarters.value",
+    "earnings_versus_cash.history.years.0.revenue_growth",
+    "ratios.growth.revenue.year_over_year.value",
+    "earnings_versus_cash.history.years.1.revenue_growth",
+    "earnings_versus_cash.history.years.4.revenue_growth",
+    "concentration.facts.27.value",
+    "cost_of_capital.beta.missing",
+    "cost_of_capital.missing"
+   ]
+  }
+ ],
+ "accounting_adjustments": {
+  "reading": "There were none. The accounting reader lists no adjustments, and the calculator's quality-adjusted free cash flow applies none and refuses none: free cash flow quality-adjusted of {free_cash_flow.free_cash_flow_quality_adjusted.value} is simple free cash flow of {free_cash_flow.free_cash_flow_simple.value} less share-based compensation of {terms.trailing_four_quarters.share_based_compensation.value} and nothing else. With no valuation computed there is no valuation.accounting_adjustments to read and no movement in value to report. Two items the accounting and financial readers flagged would have reached a DCF had one run, neither as a listed adjustment. First, the effective tax rate of {tax_rate.value|pct}, which Python applies to operating income and which the accounting reader finds depressed by the tax-free Sandisk gain and discrete windfall benefits that do not recur with operations, so after-tax operating income on that rate would run high and the margins in my scenarios were set knowing it. Second, the convertible notes carried at {terms.debt_now.value}, whose fair value the readers record as many times the carrying amount and whose excess over principal the company has elected to settle in cash on the tendered portion, so the debt subtracted in the equity bridge would understate the claim on equity, as would net debt of {ratios.solvency.net_debt.value}. Free cash flow to the firm is itself missing for a record reason, the absent year-earlier accounts-payable balance, which is a gap in the data and not an adjustment.",
+  "fields": [
+   "free_cash_flow.free_cash_flow_quality_adjusted.value",
+   "free_cash_flow.free_cash_flow_simple.value",
+   "terms.trailing_four_quarters.share_based_compensation.value",
+   "tax_rate.value",
+   "terms.debt_now.value",
+   "ratios.solvency.net_debt.value",
+   "free_cash_flow.free_cash_flow_to_firm.missing"
+  ]
+ },
+ "summary_ko": {
+  "value_range": "파이썬은 가치 범위를 계산하지 못했다. 기준일 주가 시계열이 없어 베타와 자기자본비용, 가중평균자본비용이 산출되지 않았고, 그래서 세 시나리오 어느 것도 할인되지 않았다. 계산기에 남은 것은 무위험이자율 {cost_of_capital.risk_free_rate.value|pct}, 주식위험프리미엄 {cost_of_capital.equity_risk_premium.value|pct}, 세전 부채비용 {cost_of_capital.pre_tax_cost_of_debt.value|pct}뿐이며, 나는 값을 추정하지 않는다.",
+  "price_position": "기준일 주가가 계산기에 없어 가격이 가치 범위의 어디에 있는지 읽을 수 없다. 기록에 있는 것은 발행주식수 {terms.shares_outstanding.value}, 장부상 부채 {terms.debt_now.value}, 현금 {terms.balances_now.cash.value}, 단순 잉여현금흐름 {free_cash_flow.free_cash_flow_simple.value}이며, 가격은 두지 않는다.",
+  "market_implied_growth": "역산 DCF가 실행되지 않아 가격이 전제하는 십 년 매출성장률은 알 수 없다. 회사 기록은 분리와 하강 사이클을 거친 삼 년 복리 매출성장률 {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}와 직전 네 분기 성장률 {ratios.growth.revenue.trailing_four_quarters.value|pct} 사이에서 크게 갈리고, 회사는 매출 가이던스를 제시하지 않으며 실적 발표 본문도 번들에 없다.",
+  "most_sensitive": "민감도 표가 계산되지 않아 어느 가정이 가치를 가장 크게 움직이는지는 읽을 수 없다. 시나리오 간 차이가 가장 큰 가정은 십 년차 영업이익률과 일 년차 매출성장률이며, 기록상 영업이익률은 삼 년 평균 {earnings_versus_cash.history.operating_margin_three_year_average|pct}에서 직전 네 분기 {ratios.profitability.operating_margin.value|pct}까지 오갔고, 그 위에는 산출되지 않은 할인율이 있다.",
+  "accounting_adjustments": "회계 조정은 없었다. 품질조정 잉여현금흐름 {free_cash_flow.free_cash_flow_quality_adjusted.value}는 단순 잉여현금흐름 {free_cash_flow.free_cash_flow_simple.value}에서 주식보상비용만 뺀 것이고, 가치평가가 계산되지 않아 조정이 가치를 움직인 금액도 없다. 다만 유효세율 {tax_rate.value|pct}은 비과세 이익으로 낮아져 있어 DCF가 실행됐다면 세후 영업이익을 높게 잡았을 것이고, 장부가 {terms.debt_now.value}의 전환사채는 실제 청구권이 장부보다 크다."
+ },
+ "limits": "This valuation is a set of stated assumptions run through a stated formula. It states no recommendation to trade, and a different reader choosing different drivers would reach a different value."
+}

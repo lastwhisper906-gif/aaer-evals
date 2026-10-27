@@ -28,14 +28,6 @@ branch changed. A run item is done when its run directory is published and
 
 [ ] DELL's 10-Q filed 2026-09-08 on Fable · `.venv/bin/python -m evals --runs runs/DELL` · item one
 
-[ ] WDC's 10-Q filed 2026-05-01 on Fable · `.venv/bin/python -m evals --runs runs/WDC` · item one
-
-[ ] ANET's 10-Q filed 2026-08-05 on Fable · `.venv/bin/python -m evals --runs runs/ANET` · item one
-
-[ ] FTNT's 10-Q filed 2026-07-30 on Fable · `.venv/bin/python -m evals --runs runs/FTNT` · item one
-
-[ ] JCI's 10-Q filed 2026-07-29 on Fable · `.venv/bin/python -m evals --runs runs/JCI` · item one
-
 [ ] POWL's 10-Q filed 2026-08-04 on Fable · `.venv/bin/python -m evals --runs runs/POWL` · item one
 
 [ ] FELE's 10-Q filed 2026-07-29 on Fable · `.venv/bin/python -m evals --runs runs/FELE` · item one
@@ -58,6 +50,8 @@ branch changed. A run item is done when its run directory is published and
 
 [ ] LOGI's 10-Q filed 2026-07-29 on Fable · `.venv/bin/python -m evals --runs runs/LOGI` · none
 
+[ ] a reader report is held to the plain-name rule before an analyst reads it: `src/run_analysis.py` runs the rule of `src/plain_name_check.py` over each reader report against the run's own prose inputs, as the quote gate holds it to its quotes, and asks the reader once more with the flagged tokens named (DELL's notes-text-reader of 2026-10-08 wrote five fiscal years as a two-letter tag on two digits where the filing writes "Fiscal 2026" in words, and FN's numbers-reader of 2026-10-27 wrote one quarter the same way; the check refuses both records, and neither run can be published) · `.venv/bin/python -m pytest tests/test_run_analysis.py -q -k plain_name` · none
+
 ## Done
 
 [x] NVDA's 10-Q filed 2026-08-26 on Fable · `.venv/bin/python -m evals --runs runs/NVDA` · item one · 2026-10-08: regression 18 pass, 0 fail; the analysts served by claude-fable-5-1, no fallback; the readers on Opus, as their definitions say; analysis-grader 0.69 with 20 dealbreakers; the run the graders refused on 2026-10-07 is not published, and this one ran after the gates were held to the graders (#125) · PR: this one
@@ -67,6 +61,14 @@ branch changed. A run item is done when its run directory is published and
 [x] ESE's 10-Q filed 2026-08-10 on Fable · `.venv/bin/python -m evals --runs runs/ESE` · item one · 2026-10-08: regression 18 pass, 0 fail; the analysts served by claude-fable-5-1, no fallback; the readers on Opus, as their definitions say; analysis-grader 0.93125 with 4 dealbreakers; the run the graders refused on 2026-10-07 is not published, and this one ran after the gates were held to the graders (#125) · PR: this one
 
 [x] TTMI's 10-Q filed 2026-08-05 on Fable · `.venv/bin/python -m evals --runs runs/TTMI` · item one · 2026-10-08: regression 18 pass, 0 fail; the analysts served by claude-fable-5-1, no fallback; the readers on Opus, as their definitions say; analysis-grader 0.851 with 7 dealbreakers; the run the graders refused on 2026-10-07 is not published, and this one ran after the gates were held to the graders (#125) · PR: this one
+
+[x] WDC's 10-Q filed 2026-05-01 on Fable · `.venv/bin/python -m evals --runs runs/WDC` · item one · 2026-10-27: regression 18 pass, 0 fail; the analysts served by claude-fable-5-1, no fallback; the readers on Opus, as their definitions say; analysis-grader 0.985 with 1 dealbreaker; the run and its grade are of 2026-10-08, the second start of that day — the first ended at the account's session limit before an analyst wrote, and is not published · PR: this one
+
+[x] ANET's 10-Q filed 2026-08-05 on Fable · `.venv/bin/python -m evals --runs runs/ANET` · item one · 2026-10-27: regression 18 pass, 0 fail; the analysts served by claude-fable-5-1, no fallback; the readers on Opus, as their definitions say; analysis-grader 0.9286 with 1 dealbreaker; the run and its grade are of 2026-10-08, the second start of that day — the first ended at the account's session limit before an analyst wrote, and is not published · PR: this one
+
+[x] FTNT's 10-Q filed 2026-07-30 on Fable · `.venv/bin/python -m evals --runs runs/FTNT` · item one · 2026-10-27: regression 18 pass, 0 fail; the analysts served by claude-fable-5-1, no fallback; the readers on Opus, as their definitions say; analysis-grader 0.778 with 7 dealbreakers; the run and its grade are of 2026-10-08, the second start of that day — the first ended at the account's session limit before an analyst wrote, and is not published · PR: this one
+
+[x] JCI's 10-Q filed 2026-07-29 on Fable · `.venv/bin/python -m evals --runs runs/JCI` · item one · 2026-10-27: regression 18 pass, 0 fail; the analysts served by claude-fable-5-1, no fallback; the readers on Opus, as their definitions say; analysis-grader 0.898 with 4 dealbreakers, graded 2026-10-27 after the first grading of 2026-10-08 came back failed (53,127 output tokens, no model served, minutes before the account's session limit); the run is of 2026-10-08, the second start of that day — the first ended at the account's session limit before an analyst wrote, and is not published · PR: this one
 
 [x] `data/notes-and-calendar`: merge the code (`src/event_calendar.py`, `src/fsn.py` and their tests), download nothing; the bulk-data location is a row in `docs/needs_judgment.md` · `.venv/bin/python -m pytest tests/test_event_calendar.py tests/test_fsn.py -q` · none · 2026-10-07: 67 passed, also with every proxy variable at a closed port and every socket connection refused; nothing was downloaded and no `make fetch` ran; the five needs-judgment rows are in the Open list; one test had started failing by the calendar date (a daily index not read stood for the week before it was written) and `read_through` now skips such a line; `src/fsn_index/`, which the rows and `make fetch` name, was never committed on the branch, so `make fetch` has nothing to fetch until the index is built again · 2026-10-08, after main's #123 was merged in and the three lenses read the merge: 79 passed, also with every proxy variable at a closed port and every socket connection refused (no connection attempted); with no index line `make fetch` now stops at once and says so (run once, with a scratch home and the proxy at a closed port: the first step exited 1 and nothing was written or downloaded), and the storage row says the index was never committed and what comes before `make fetch`; `load` and the calendar's bulk read write nothing before their floor checks; a zip whose size is not stated is not downloaded; the counts key is `the_universe`; each of these changes and the read-through fix has a test the branch's code fails, and the download path, which had none, has tests; the loader's tests fail rather than skip without duckdb · PR: this one
 

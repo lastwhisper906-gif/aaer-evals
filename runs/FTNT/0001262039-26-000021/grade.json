@@ -1,0 +1,295 @@
+{
+ "run": "FTNT/0001262039-26-000021",
+ "rubric": "evals/capability/rubric.md",
+ "dealbreakers": [
+  {
+   "kind": "number_not_from_calculator",
+   "id": "earnings_versus_cash_operating_cash_flow_over_net_income_above_recent_years",
+   "where": "anomalies[0].what",
+   "why": "'the deferred-revenue cash-flow line more than doubled' sizes a line that no calculator path carries; the multiple is the analyst's own, not a path and not a filer quote."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "estimates_and_reserves_excess_purchase_commitment_liability_falls_while_commitments_double",
+   "where": "anomalies[5].name, anomalies[5].what",
+   "why": "'commitments double' / 'roughly doubled' is a magnitude in the analyst's words; the calculator prints terms.balances_now.unconditional_purchase_obligations as missing, and the analyst says so in the same sentence."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "estimates_and_reserves_no_warranty_accrual_tagged_for_a_hardware_seller",
+   "where": "anomalies[7].what",
+   "why": "'product revenue is more than a third of the quarter's revenue' states a share that no calculator path supplies; the only field cited is trend_table.quarters-back-0.ratios.gross_margin, and the share is not quoted from a filer paragraph."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "cash_flow_engineering_and_off_balance_sheet_capital_expenditure_tags_differ_between_filings",
+   "where": "anomalies[12].what, anomalies[12].numbers_vs_prose",
+   "why": "The analyst saw both the release's real-estate add-back (8k_2_02:79) and the separate productive-assets tag, yet says inclusion 'cannot be told'. The inputs settle it: 8k_2_02:79/8k_2_02:88 subtract purchases of property and equipment and then add real-estate purchases back. The 10-Q investing facts (0001262039-26-000021:f-378 to f-390), 8k_2_02:72 and mdna:182 carry no separate real-estate outflow. The productive-assets fact (f-755) is the PP&E-note real-estate acquisition (f-756/f-757). So the outlay sits inside the property-and-equipment line."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "cash_flow_engineering_and_off_balance_sheet_purchase_commitments_doubled_without_filed_fact",
+   "where": "anomalies[13].name, anomalies[13].what",
+   "why": "'doubled' / 'roughly doubled' sizes a commitment that, as the analyst concedes, no calculator field carries (terms.balances_now.unconditional_purchase_obligations missing)."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "cross_document_reconciliation_intel_collaboration_only_in_release",
+   "where": "anomalies[19].what",
+   "why": "'doubled purchase commitments' is a magnitude that no calculator path supplies."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "industry_lens_purchase_commitments_far_exceed_inventory",
+   "where": "anomalies[20].what",
+   "why": "'Commitments that MD&A says roughly doubled': MD&A (mdna:168) prints the two amounts, not a multiple. The multiple is the analyst's, and no calculator path carries the commitments."
+  }
+ ],
+ "items": [
+  {
+   "id": "earnings_versus_cash_operating_cash_flow_over_net_income_above_recent_years",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.operating_cash_flow_over_net_income exceeds the history.years.0 and years.1 values, and accruals_over_average_assets is negative; mdna:179 names deferred revenue and profitability; scored zero by the dealbreaker."
+  },
+  {
+   "id": "earnings_versus_cash_inventory_articulation_gap",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.working_capital.inventory.articulation_gap and its two inputs check; the reserve paths fall and inventory_write_down is zero (10-Q facts f-727 to f-732 agree); no input paragraph bridges the gap."
+  },
+  {
+   "id": "revenue_recognition_contract_liabilities_over_revenue_lowest_of_six_quarters",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue is 'lowest of the 6 filled quarters' and sits below q1 and q4; 8k_2_02:64 shows the deferred-revenue balance rising; mdna:100 credits unit shipments, selling prices and pricing actions."
+  },
+  {
+   "id": "revenue_recognition_first_quarter_days_sales_outstanding_peak_reversed",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-1.ratios.days_sales_outstanding is 'highest of the 6 filled quarters' and q0 is lower; 8k_2_02:72 shows the receivables collection; mdna:179 gives no receivable-specific cause."
+  },
+  {
+   "id": "estimates_and_reserves_inventory_reserve_ratio_at_six_quarter_low_without_stated_cause",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "q0 inventory_reserve_ratio is 'lowest of the 6 filled quarters' and q5 is 'highest'. The reserve falls from terms.balances_a_year_earlier.inventory_reserve to balances_now, with the Q1 input in between. inventory_write_down is zero, and notes:40 states the balances with no cause."
+  },
+  {
+   "id": "estimates_and_reserves_excess_purchase_commitment_liability_falls_while_commitments_double",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:79 and note_history:2 show the liability below both the Q1 and year-end figures, with the prior-year benefit sentence gone and no cause given; mdna:168 shows commitments rising; scored zero by the dealbreaker."
+  },
+  {
+   "id": "estimates_and_reserves_credit_loss_allowance_not_tagged_at_quarter_end",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:148 cites a higher credit-loss provision; terms.balances_now.bad_debt_allowance is missing; the years-back-0 and years-back-1 bad_debt_reserve_ratio paths check."
+  },
+  {
+   "id": "estimates_and_reserves_no_warranty_accrual_tagged_for_a_hardware_seller",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "warranty_reserve_ratio is missing in every trend_table period (report_numbers warranty items, 'filled 0'); scored zero by the dealbreaker."
+  },
+  {
+   "id": "cost_deferral_deferred_contract_costs_capitalized_exceed_amortization",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:72 prints 'Deferred contract costs | (240.5)' against amortization of '190.9' (prior periods '(202.5)' and '160.0'); 8k_2_02:64 shows the balance rising, notes:130 shows commissions up, and mdna:179 names the increase."
+  },
+  {
+   "id": "cost_deferral_stock_based_compensation_add_back_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "terms.trailing_four_quarters.share_based_compensation exceeds earnings_versus_cash.history.years.0.share_based_compensation; 8k_2_02:76 shows it as the largest add-back; free_cash_flow.free_cash_flow_quality_adjusted subtracts it."
+  },
+  {
+   "id": "cost_deferral_recurring_gain_excluded_from_non_gaap",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:68 shows the gain on intellectual property matters in the quarter, the six months and both prior periods. 8k_2_02:90 removes it alongside 'other significant non-recurring items', and 8k_2_02:76 subtracts it, so non-GAAP income comes out lower."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_adjusted_free_cash_flow_adds_back_real_estate",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:88 defines adjusted free cash flow with the real-estate add-back, mdna:88 defines only free cash flow, and 8k_2_02:79 prints a larger add-back a year earlier; free_cash_flow.free_cash_flow_simple uses the property-and-equipment line, which includes the outlay."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_capital_expenditure_tags_differ_between_filings",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.capital_expenditure.tags_differ is real, but the claimed understatement is contradicted. 8k_2_02:79 adds real-estate purchases back to a free cash flow struck after purchases of property and equipment. The 10-Q investing facts f-378 to f-390 reconcile with no separate real-estate outflow, and f-755 matches the PP&E-note acquisition in f-756/f-757."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_purchase_commitments_doubled_without_filed_fact",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:168 and notes:77/notes:78 show higher non-cancelable commitments and multi-year arrangements. terms.balances_now.unconditional_purchase_obligations is missing, and the 10-Q tags no purchase-obligation total, only OtherCommitment (f-934) and InventoryFirmPurchaseCommitmentLoss (f-932/f-933). Scored zero by the dealbreaker."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_cash_taxes_paid_below_provision",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "IncomeTaxesPaid (10-Q facts f-412/f-413; report_numbers liquidity_and_capital_income_taxes_paid_filed_fact) is lower year on year, while IncomeTaxExpenseBenefit (f-179/f-180, 8k_2_02:68) is higher and 8k_2_02:72 shows a small deferred-tax line. No notes or MD&A paragraph explains the gap, and the tax_rate path checks."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_repurchases_exceed_net_income_and_equity_falls",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.share_repurchases exceeds terms.trailing_four_quarters.net_income; the stockholders_equity paths fall year on year; cash_flow_families.borrowing_issued is zero."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_officer_trading_plans_adopted_before_release",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:141 and notes:142 disclose both plans, adopted in June with sale windows starting in September; the CFO plan covers 'up to 115 shares' plus net vested shares."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_subsequent_events_note_removed_and_authorization_unchanged_since_may",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "note_history:26/27 are removed and no current note replaces them; the remaining authorization in notes:120 at quarter end reads the same as in the removed note_history:27 as of the prior filing."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_distributor_c_receivables_concentration_row_absent",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "concentration.facts.29 and .21 check; the 10-Q tags receivables concentration only for Distributors A and B (f-1229 to f-1232), with no current Distributor C fact; notes:139 prints '*' for C, consistent with the below-threshold reading."
+  },
+  {
+   "id": "cross_document_reconciliation_intel_collaboration_only_in_release",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:20 names the Intel collaboration and no carried 10-Q paragraph does; notes:78 holds the multi-year arrangements; scored zero by the dealbreaker."
+  },
+  {
+   "id": "industry_lens_purchase_commitments_far_exceed_inventory",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.balances_now.inventory and trend_table.quarters-back-0.ratios.days_sales_of_inventory check; the notes:77 total stands far above inventory; mdna:168 cites demand, lead times and component costs; scored zero by the dealbreaker."
+  },
+  {
+   "id": "industry_lens_distributor_a_receivables_share_fell_from_year_end",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "concentration.facts.36 sits below concentration.facts.22 (10-Q f-1229 against f-1230), while the revenue share concentration.facts.30 holds (f-1217 equals f-1218); notes:139 and notes:137 match."
+  },
+  {
+   "id": "results_against_expectations_third_quarter_guidance_steps_down_from_second_quarter",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:29, :31 and :32 sit below the Q2 billings, non-GAAP margin and EPS printed in 8k_2_02:81 and :76. 8k_2_02:28 brackets ratios.growth.revenue.this_quarter, and the quarter-over-quarter growth paths check. 8k_2_02:40 confirms the guidance is unreconciled."
+  },
+  {
+   "id": "liquidity_and_capital_quick_ratio_below_one_on_cash_only_basis",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.liquidity.quick_ratio uses cash only ('no short-term investments line on record for this date'), though 8k_2_02:64 prints short-term investments; current_liabilities includes balances_now.contract_liabilities; the cash paths and debt_current check."
+  },
+  {
+   "id": "liquidity_and_capital_buybacks_exceed_net_income_and_shrink_cash_and_equity",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "share_repurchases exceeds net_income but not free_cash_flow_simple; the cash and equity paths fall year on year; the borrowing_repaid path, notes:120 and mdna:121 check; 8k_2_02:68 shows lower diluted shares."
+  },
+  {
+   "id": "liquidity_and_capital_unaccrued_litigation_tax_and_indemnification_exposures",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:83/84 show no accrual and notes:85 a stay; notes:125/126 cover tax benefits and audits, notes:87 pending and uncapped indemnification, and mdna:116 legal fees. The net_debt, cash and equity paths check."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_service_margin_under_data_center_expansion",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The mdna:70 quote resolves verbatim and mdna:107 gives the quarter's slight decline; notes:42/43 show higher equipment, construction and land; the mdna:164 range sits against the 8k_2_02:72 outflow; the depreciation and PP&E paths check."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_foreign_exchange_losses_and_removed_functional_currency_disclosure",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:121 and mdna:153 cite larger FX losses; note_history:13 holds the removed sentences and notes:2 carries no replacement; the ratios.growth net_income and operating_income trailing paths check."
+  },
+  {
+   "id": "profitability_gross_margin_lowest_of_six_filled_quarters",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "q0 gross_margin is 'lowest of the 6 filled quarters' and q7 is 'highest'; years-back-0 sits below years-back-1; ratios.profitability.operating_margin is above every history.years value; mdna:70 warns that both margins may fall."
+  },
+  {
+   "id": "efficiency_inventory_days_rose_in_the_prior_fiscal_year_while_inventory_builds_and_reserve_ratio_falls",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The ratios.efficiency days and cycle paths, the q0/q1 and years-back-0/1 days_sales_of_inventory paths with their positions, and the inventory and reserve balance paths all check; notes:40 gives no cause."
+  },
+  {
+   "id": "solvency_thin_equity_cushion_behind_high_liabilities_over_assets",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The liabilities_over_assets, equity_multiplier, total_debt, net_debt, debt_over_ebitda and interest_coverage paths check; 8k_2_02:64 shows the accumulated deficit and both deferred-revenue lines."
+  },
+  {
+   "id": "growth_hardware_led_and_price_assisted_growth_thins_the_deferred_revenue_cushion",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:9 and :68 show product revenue outgrowing service, and mdna:100 and mdna:104 give the drivers and the lower product margin. q0 contract_liabilities_over_revenue is the lowest of six, the RPO note is higher at each filing, and the growth path sits above the three-year compound."
+  }
+ ],
+ "coverage": {
+  "answer": "no",
+  "why": "Gate drops left six of the eight accounting areas unanswered (earnings_versus_cash, revenue_recognition, cost_deferral, controls_audit_and_filing_signals, cross_document_reconciliation, industry_lens), and four of the six financial sections (liquidity, solvency, growth, free_cash_flow)."
+ },
+ "calibration": {
+  "answer": "no",
+  "why": "estimates_and_reserves says 'one adverse estimate signal', yet its own finding and anomaly list add the excess-purchase-commitment liability falling without cause. Six areas list anomalies under no verdict. The financial efficiency reading calls the articulation gaps 'small', while the accounting frame lists the inventory gap as an anomaly."
+ },
+ "valuation_reading": {
+  "answer": "no",
+  "why": "The calculator prints market, valuation and implied_growth_beside_history.implied_ten_year_revenue_growth as missing (no price series), so the reading gives no price position and no implied growth. It names year-one growth and year-ten margin from the scenario spread and says 'Without the grid none of this is a measured sensitivity'."
+ },
+ "score": 0.778,
+ "grader": {
+  "model_requested": "opus",
+  "model_served": "claude-opus-5-5",
+  "input_tokens": 116,
+  "output_tokens": 88122,
+  "cost_usd": 15.6757696,
+  "seconds": 864.1
+ }
+}
