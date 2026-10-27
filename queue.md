@@ -50,6 +50,24 @@ branch changed. A run item is done when its run directory is published and
 
 [ ] LOGI's 10-Q filed 2026-07-29 on Fable · `.venv/bin/python -m evals --runs runs/LOGI` · none
 
+[ ] LII's 10-Q filed 2026-07-29 on Fable · `.venv/bin/python -m evals --runs runs/LII` · none
+
+[ ] AMSC's 10-Q filed 2026-08-05 on Fable · `.venv/bin/python -m evals --runs runs/AMSC` · none
+
+[ ] UI's 10-Q filed 2026-05-08 on Fable · `.venv/bin/python -m evals --runs runs/UI` · none
+
+[ ] NSSC's 10-Q filed 2026-05-05 on Fable · `.venv/bin/python -m evals --runs runs/NSSC` · none
+
+[ ] CLS's 10-Q filed 2026-07-27 on Fable · `.venv/bin/python -m evals --runs runs/CLS` · none
+
+[ ] AMD's 10-Q filed 2026-08-05 on Fable · `.venv/bin/python -m evals --runs runs/AMD` · none
+
+[ ] OMCL's 10-Q filed 2026-08-05 on Fable · `.venv/bin/python -m evals --runs runs/OMCL` · none
+
+[ ] ADTN's 10-Q filed 2026-08-04 on Fable · `.venv/bin/python -m evals --runs runs/ADTN` · none
+
+[ ] `src/assemble_bundle.py` keeps an 8-K filed on the cutoff day after the triggering report out of `input_8k.md`'s index (Ubiquiti's 0001511737-26-000035 follows its 10-Q 0001511737-26-000034 in the agent's sequence), and the two strict marks under `INDEX_ROW_AFTER_THE_TRIGGER` in `tests/test_extraction_checks.py` come off · `.venv/bin/python -m pytest tests/test_extraction_checks.py -k UI` with `INDEX_ROW_AFTER_THE_TRIGGER` empty · none
+
 [ ] a reader report is held to the plain-name rule before an analyst reads it: `src/run_analysis.py` runs the rule of `src/plain_name_check.py` over each reader report against the run's own prose inputs, as the quote gate holds it to its quotes, and asks the reader once more with the flagged tokens named (DELL's notes-text-reader of 2026-10-08 wrote five fiscal years as a two-letter tag on two digits where the filing writes "Fiscal 2026" in words, and FN's numbers-reader of 2026-10-27 wrote one quarter the same way; the check refuses both records, and neither run can be published) · `.venv/bin/python -m pytest tests/test_run_analysis.py -q -k plain_name` · none
 
 ## Done

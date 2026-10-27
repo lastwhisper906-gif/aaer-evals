@@ -42,12 +42,14 @@ def document(ticker: str, form: str, role: str) -> str:
 
 def test_the_fixture_set_holds_six_documents_per_company():
     """The number the containment property is claimed over: the six dispatched
-    roles in every manifest, over the twelve, the eight added on 2026-10-07
-    and the next eight added the same day, 28 × 6."""
+    roles in every manifest, over the twelve, the eight added on 2026-10-07,
+    the next eight and the third eight added the same day, 36 × 6. Each of the
+    third eight's manifests holds the six once: the 10-K's and the 10-Q's
+    document and instance, the 8-K and its Exhibit 99.1."""
     documents = [row for ticker in TICKERS
                  for row in cutoff_guard.documents(ticker)
                  if (row["form"], row["role"]) in DISPATCHED_ROLES]
-    assert len(documents) == 168
+    assert len(documents) == 216
 
 
 def test_the_prior_period_documents_are_extra_and_are_covered_too():
@@ -55,8 +57,9 @@ def test_the_prior_period_documents_are_extra_and_are_covered_too():
     the property now holds over more than the seventy-two, never fewer."""
     extra = [row for ticker in TICKERS for row in cutoff_guard.documents(ticker)
              if row["role"].startswith("prior_period")]
-    # Two prior-period documents in every manifest, over twenty-eight companies.
-    assert len(extra) == 56
+    # Two prior-period documents in every manifest, the prior 10-Q and its
+    # instance, over thirty-six companies: 36 × 2.
+    assert len(extra) == 72
     covered = {role for _, role in HTML_DOCUMENTS + INSTANCES}
     assert {"prior_period", "prior_period_xbrl_instance"} <= covered
 
