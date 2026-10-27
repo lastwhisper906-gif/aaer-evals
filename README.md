@@ -1,5 +1,34 @@
 # aaer-evals
 
+> Authored by Claude Code, pending human audit.
+>
+> This is by design: the code is written with AI tools under my direction,
+> every result has to pass automated checks and stop rules I designed, and I
+> review and sign the published conclusions myself.
+
+## In plain words
+
+**Author: Chaeryeol Lee** · [한국어](README.ko.md)
+
+This project tests whether a company's SEC filings can flag the risk of
+accounting misstatement, using an AI model to read the filings.
+
+The first test, on past SEC enforcement cases, looked promising but raised too
+many false alarms, and the model was partly recognizing companies by name. I
+reported that as-is instead of claiming success.
+
+So I rebuilt it as forward prediction. Predictions use only information
+available at the time, are dated, and are published in a public record that
+can only be added to, never edited. Trial runs on twelve companies are testing
+the machinery now; they are not counted as results. The first scored cycle will
+use the first filings made after the rules are locked; the rules are not locked
+yet, so no date is set.
+
+Code was written with AI tools (Claude Code) under my direction. The research
+design, the checks, and the final conclusions are mine.
+
+## Technical detail
+
 Reads the filings of twelve companies, compares them with the market, predicts
 two questions about each, and leaves a verifiable record.
 
@@ -23,7 +52,7 @@ perturb. It is also an honest-negative test: accounting-reliability events will
 barely occur in twelve large filers in year one, and a pipeline that returns an
 empty anomaly register when nothing is wrong is the result being tested.
 
-## Where things are
+### Where things are
 
 | Path | What |
 |---|---|
@@ -39,7 +68,7 @@ empty anomaly register when nothing is wrong is the result being tested.
 | `tests/fixtures/` | the filings the parsers are judged against — one 10-K, 10-Q and 8-K 2.02 per company, with the sha256 of every file as EDGAR served it |
 | `archive/` | the earlier experiment, frozen at tag `archive-v1` |
 
-## Running the checks
+### Running the checks
 
 ```sh
 pip install -r requirements.txt
@@ -53,7 +82,7 @@ if the branch changes or deletes existing content under `runs/`, `rules/` or
 Both run on Python 3.12 and refuse to run on anything else — a gate result from
 another interpreter is not worth producing.
 
-## The earlier experiment
+### The earlier experiment
 
 `archive/` holds a ten-month experiment that asked whether an LLM could separate
 past SEC enforcement cases from matched controls using roughly sixty numeric
@@ -63,7 +92,7 @@ never read — zero bytes. Its own results documents are in
 `archive/RESULTS.md`, and its gates were green at tag `archive-v1` on Python
 3.12. It is kept as written and is not maintained.
 
-## Scope and disclaimer
+### Scope and disclaimer
 
 Educational and informational. No position is held in any company named here.
 Nothing in this repository is an allegation of wrongdoing against any current
