@@ -303,7 +303,8 @@ def submissions_record(ticker: str, cik: str, as_of: str,
         "cik": cik,
         "as_of": as_of,
         "url": SUBMISSIONS_URL.format(cik=cik),
-        "note": ("the recent-filings rows of the EDGAR submissions index, "
+        "note": ("the rows of the EDGAR submissions index read for this store (the "
+                 "recent list, and every older page for a store up to one filing), "
                  "projected to these fields and filtered to filing_date <= as_of"),
         "filings": rows,
     }
@@ -560,17 +561,16 @@ def fetch_company(fetcher: Fetcher, ticker: str, cik: str, as_of: str,
 
 
 ACCESSION = re.compile(r"(\d{10})-(\d{2})-(\d{6})$")
-# the one shape EDGAR's index writes an acceptance stamp in, read 2026-10-28;
-# any other is read as no stamp, as the owner's grader reads a stamp it cannot
-# parse
-INDEX_STAMP = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z")
-
-
 def accepted_at(stamp) -> dt.datetime | None:
-    """An index row's acceptance as an instant, or None when it carries none."""
-    if not isinstance(stamp, str) or not INDEX_STAMP.fullmatch(stamp):
-        return None
-    return dt.datetime.fromisoformat(stamp[:-1] + "+00:00")
+    """An index row's acceptance as an instant, or None when it carries none.
+
+    Read by `eastern_stamp`, the reading the store writes the stamp in and the
+    owner's grader compares, so the rule that picks the store and the grader
+    that checks it never read one stamp two ways; a stamp it cannot read, a
+    date that does not exist among them, is no stamp.
+    """
+    eastern = eastern_stamp(stamp) if isinstance(stamp, str) else None
+    return dt.datetime.fromisoformat(eastern) if eastern else None
 
 
 def stood_before(row: dict, filing: dict) -> bool:
@@ -665,6 +665,9 @@ def held_to_the_trigger(out: Path, ticker: str, filing: dict,
                 problems.append(f"{path} holds rows filed on {filing['filingDate']} by "
                                 f"filing(s) accepted after the trigger: "
                                 f"{', '.join(map(str, late[:3]))}")
+            if stored.get("facts") != fetch_companyfacts.as_of_the_filing(
+                    stored.get("facts", {})):
+                problems.append(f"{path} keeps a frame or a taxonomy label EDGAR writes today")
             if stored.get("entity_name") != name_as_filed(out, ticker, filing):
                 problems.append(f"{path} names the company {stored.get('entity_name')!r}, "
                                 "not the name the filing states")
@@ -703,9 +706,12 @@ def store_up_to(fetcher, ticker: str, cik: str, filing: dict, out: Path,
     if not problems:
         # Imported here: the companyfacts fetcher imports this module.
         from src import fetch_companyfacts
+        try:
+            name = name_as_filed(out, ticker, filing)
+        except cutoff_guard.CutoffGuardError as exc:
+            return [f"the filing's own name cannot be read through the gate: {exc}"]
         problems = fetch_companyfacts.fetch_company(
-            fetcher, ticker, filing["filingDate"], out, known=known,
-            entity_name=name_as_filed(out, ticker, filing))
+            fetcher, ticker, filing["filingDate"], out, known=known, entity_name=name)
     if not problems:
         held = {entry["accession"] for entry in load_manifest(ticker_dir).get("documents", [])
                 if entry.get("form") == filing["form"] and entry.get("role") == "primary_html"}

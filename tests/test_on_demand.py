@@ -574,3 +574,77 @@ def test_the_command_lines_store_up_to_a_filing_holds_the_same_rule(tmp_path, se
     rows = json.loads((out / TICKER / "submissions.json").read_text())["filings"]
     assert LATE not in {row["accession"] for row in rows}
     assert EARLY in {row["accession"] for row in rows}
+
+
+# --- round four: one stamp reading, every rule checked on reuse, every page read ----------
+
+
+def test_a_stamp_is_read_as_the_store_writes_it_and_the_grader_compares_it():
+    """`eastern_stamp` takes a fraction of one to six digits; a stamp the rule
+    read as none, while the store wrote it, let a later release through."""
+    trigger = {"accessionNumber": ACCESSION, "filingDate": "2026-08-26",
+               "acceptanceDateTime": STAMPS[ACCESSION]}
+    later = {"accessionNumber": "0001045810-26-000073", "filingDate": "2026-08-26",
+             "acceptanceDateTime": "2026-08-26T20:40:00.5Z"}
+    assert not on_demand.stood_before(later, trigger)
+    assert on_demand.known_at([later], trigger) == []
+    # a stamp of the right shape naming no real day is no stamp, and no crash
+    impossible = dict(later, accessionNumber="0001193125-26-000003",
+                      acceptanceDateTime="2026-02-30T20:00:00.000Z")
+    assert on_demand.known_at([impossible], trigger) == []
+
+
+def test_a_whole_store_keeping_todays_frames_is_refused(tmp_path, server, monkeypatch):
+    fetcher = client(tmp_path, server)
+    from src import fetch_companyfacts
+    with monkeypatch.context() as patch:
+        patch.setattr(fetch_companyfacts, "as_of_the_filing", lambda facts: facts)
+        on_demand.fetch_store(fetcher, TICKER, accession=ACCESSION)   # the earlier rule
+    with pytest.raises(on_demand.OnDemandError, match="keeps a frame"):
+        on_demand.fetch_store(fetcher, TICKER, accession=ACCESSION)
+
+
+def test_a_whole_store_whose_record_is_dated_after_the_filing_is_refused(tmp_path, server):
+    """The rule reads the store through the gate at the filing's date, so a
+    record the manifest dates later is refused even where its rows are not."""
+    fetcher = client(tmp_path, server)
+    held = on_demand.fetch_store(fetcher, TICKER, accession=ACCESSION)
+    path = held["store"] / TICKER / "manifest.json"
+    manifest = json.loads(path.read_text())
+    for entry in manifest["documents"]:
+        if entry["form"] == "companyfacts":
+            entry["filing_date"] = "2026-08-31"
+    path.write_text(json.dumps(manifest, indent=2) + "\n")
+    with pytest.raises(on_demand.OnDemandError, match="through the gate"):
+        on_demand.fetch_store(fetcher, TICKER, accession=ACCESSION)
+
+
+OLDER = {"accessionNumber": "0001045810-10-000001", "filingDate": "2010-03-01",
+         "reportDate": "2010-03-01", "form": "8-K", "items": "2.02",
+         "primaryDocument": "old.htm", "primaryDocDescription": "8-K", "isXBRL": 0,
+         "acceptanceDateTime": "2010-03-01T21:00:00.000Z"}
+
+
+def plant_an_older_page(server) -> None:
+    """A row EDGAR keeps on an older page of the index, past the recent list."""
+    index = json.loads(server.bodies[f"/submissions/CIK{CIK}.json"][0])
+    name = f"CIK{CIK}-submissions-001.json"
+    index["filings"]["files"] = [{"name": name}]
+    server.bodies[f"/submissions/CIK{CIK}.json"] = (json.dumps(index).encode(), "")
+    server.bodies[f"/submissions/{name}"] = (json.dumps(
+        {key: [value] for key, value in OLDER.items()}).encode(), "")
+
+
+@pytest.mark.parametrize("route", ["on demand", "the command line"])
+def test_the_store_reads_every_page_of_the_index(tmp_path, server, monkeypatch, route):
+    plant_an_older_page(server)
+    fetcher = client(tmp_path, server)
+    if route == "on demand":
+        store = on_demand.fetch_store(fetcher, TICKER, accession=ACCESSION)["store"]
+    else:
+        monkeypatch.setattr(fetch_fixtures, "Fetcher", lambda _agent: fetcher)
+        store = tmp_path / "store"
+        assert fetch_fixtures.main(["--ticker", TICKER, "--accession", ACCESSION,
+                                    "--out", str(store)]) == 0
+    rows = json.loads((store / TICKER / "submissions.json").read_text())["filings"]
+    assert OLDER["accessionNumber"] in {row["accession"] for row in rows}
