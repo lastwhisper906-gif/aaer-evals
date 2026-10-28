@@ -1080,10 +1080,10 @@ PUBLISHED_WINDOWS = (
 PUBLISHED_ITEMS = (
     # ticker · accession · file · item · the hand reading of its whole text · why the rule
     # disagrees, or None. "quoted": every digit the analyst wrote there sits inside a
-    # quotation that string-matches a report the analyst read -- a number in its own
-    # words to the rule before 2026-10-28, the filer's (or the reader report's, itself
-    # quote-gated) since. LFUS's anomalies[35] opened its quotation with a year and
-    # stood marked xfail until the quotation itself was read.
+    # quotation of a reader item's quote-gated `quote`, recorded by hand in
+    # QUOTED_BY_HAND with the report line that holds it -- a number in its own words
+    # to the rule before 2026-10-28, the filer's since. LFUS's anomalies[35] opened its
+    # quotation with a year and stood marked xfail until the quotation itself was read.
     ('AAPL',
      '0000320193-26-000020',
      'assumptions.json',
@@ -1442,13 +1442,13 @@ PUBLISHED_ITEMS = (
      '0001628280-26-050481',
      'analysis_accounting.json',
      'areas.revenue_recognition',
-     'quoted',
+     'number',
      None),
     ('LFUS',
      '0001628280-26-050481',
      'analysis_accounting.json',
      'areas.estimates_and_reserves',
-     'quoted',
+     'number',
      None),
     ('LFUS',
      '0001628280-26-050481',
@@ -1460,7 +1460,7 @@ PUBLISHED_ITEMS = (
      '0001628280-26-050481',
      'analysis_accounting.json',
      'areas.industry_lens',
-     'quoted',
+     'number',
      None),
     ('LFUS',
      '0001628280-26-050481',
@@ -1472,7 +1472,7 @@ PUBLISHED_ITEMS = (
      '0001628280-26-050481',
      'analysis_accounting.json',
      'anomalies[1]',
-     'quoted',
+     'number',
      None),
     ('LFUS',
      '0001628280-26-050481',
@@ -1490,7 +1490,7 @@ PUBLISHED_ITEMS = (
      '0001628280-26-050481',
      'analysis_accounting.json',
      'anomalies[13]',
-     'quoted',
+     'number',
      None),
     ('LFUS',
      '0001628280-26-050481',
@@ -1676,11 +1676,16 @@ def test_the_rule_reads_each_published_item_whole_as_the_hand_did(row):
     if reading == "number":
         assert where in dropped and "a number written in the analyst's own words" in dropped[where]
     elif reading == "quoted":
-        # it stands, and it stands for its quotation alone: read without the files the
+        # it stands, and it stands for its quotation alone: the quotation is the one
+        # read by hand off the reader report's line, and read without the files the
         # analyst saw, the same words carry a number of the analyst's own
         assert where not in dropped, dropped.get(where)
         item = written_item(ticker, accession, written, where)
-        fields, _ = written_inputs(ticker, accession, written)
+        fields, agent_dir = written_inputs(ticker, accession, written)
+        span, report, line = QUOTED_BY_HAND[(ticker, where)]
+        assert f'"{span}"' in json.dumps(item, ensure_ascii=False).replace('\\"', '"')
+        held = (agent_dir / report).read_text(encoding="utf-8").splitlines()[line - 1]
+        assert held.strip() == f'"quote": "{span}",', held
         assert any("a number written in the analyst's own words"
                    in (analysis_check.words_problem(item.get(key), fields,
                                                     forbidden=analysis_check.FORBIDDEN_EVERYWHERE)
@@ -1688,6 +1693,15 @@ def test_the_rule_reads_each_published_item_whole_as_the_hand_did(row):
                    for key in analysis_check.PROSE_KEYS), where
     else:
         assert where not in dropped, dropped.get(where)
+
+
+# (ticker, item) -> (the quotation, the reader report, the line of its `quote`),
+# read by hand on 2026-10-28
+QUOTED_BY_HAND = {
+    ("LFUS", "anomalies[12]"): ("settlement charge in the first quarter of 2027 estimated "
+                                "between $6 million and $8 million",
+                                "report_notes_text.md", 109),
+}
 
 
 def written_inputs(ticker: str, accession: str, written: str):
@@ -1944,14 +1958,49 @@ def test_an_anomaly_keeps_its_good_sentences():
     assert out["dropped_items"][0]["where"] == "anomalies[0]"
 
 
-def test_a_digit_inside_a_quotation_of_a_file_the_analyst_saw_is_the_filers():
-    quoted = next(line for text in SOURCES.values() for line in text.splitlines()
-                  if re.search(r"\d", line) and '"' not in line and len(line) > 12)
-    words = quoted.strip()[:60].rstrip()
+PLANTED_QUOTE = "the Company recognized impairment charges of $13.1 million at two sites"
+
+
+def planted_sources(**extra):
+    notes = SOURCES["report_notes_text.md"] + (
+        '\n{ "id": "planted_quote_item", "quote": "' + PLANTED_QUOTE + '" }\n')
+    return {**SOURCES, "report_notes_text.md": notes, **extra}
+
+
+def test_a_digit_inside_a_quotation_of_a_reader_items_quote_is_the_filers():
     payload = accounting()
-    payload["anomalies"][0]["what"] = f'The report states "{words}" and nothing else.'
-    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+    payload["anomalies"][0]["what"] = f'The note says "{PLANTED_QUOTE}" and no more.'
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=planted_sources())
     assert out["dropped_count"] == 0, out["dropped_items"]
+
+
+def test_a_quotation_that_is_not_the_filers_words_carries_the_analysts_numbers():
+    """The second lens's findings of 2026-10-28 on the first reading: a quotation of
+    a bare number, of part of a longer token, of a reader's own prose, or of another
+    analyst's analysis is not the filer's words."""
+    reader_prose = "Deferred revenue 4989000 at the quarter end against the year end"
+    sources = planted_sources(**{
+        "report_numbers.md": SOURCES["report_numbers.md"]
+        + f'\n{{ "id": "planted_prose", "what_changed": "{reader_prose}" }}\n 2061 0.612\n',
+        "analysis_accounting.json": '{"what": "margin of 12 percent rose on the quarter"}'})
+    for text in ('DSO rose to "61" days.', "margin of '12' percent.",
+                 # a number cut out of a longer one: "$13" out of "$13.1"
+                 'It said "Company recognized impairment charges of $13" then.',
+                 f'The table says "{reader_prose}" plainly.',
+                 'The analysis says "margin of 12 percent rose on the quarter" plainly.'):
+        payload = accounting()
+        payload["anomalies"][0]["what"] = text
+        out = analysis_check.check("accounting", payload, fields=FIELDS, sources=sources)
+        assert out["anomalies"] == [], text
+
+
+def test_an_area_whose_only_citation_names_nothing_falls_whole():
+    payload = accounting()
+    area = payload["areas"]["earnings_versus_cash"]
+    area["fields"] = ["growth.revenue.year_over_year"]
+    area["evidence"] = []
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+    assert "dropped" in out["areas"]["earnings_versus_cash"]
 
 
 def test_a_digit_inside_a_quotation_that_matches_nothing_is_the_analysts():

@@ -54,6 +54,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import functools
 from collections.abc import Mapping
 import json
 import math
@@ -401,15 +402,61 @@ def placeholder_problem(fields: dict, path: str) -> str | None:
 # A quotation in an analyst's own words: double quotes, curly quotes, or single
 # quotes that open after a space or a bracket and close before one (an
 # apostrophe inside a word is not a quote). It stands for the filer's words only
-# when it string-matches, folded, a file the analyst saw; then its digits are the
-# filer's, not the analyst's (148 of the 339 digits that dropped an area or a
-# section over the nineteen runs read on 2026-10-27 were inside such a quote).
+# when it is the filer's words: it matches, folded and on word boundaries, either
+# the `quote` of an item in a reader report (each one the quote gate held to the
+# filing) or a filing file the analyst read whole (`input_*`), and it carries at
+# least three words of letters, so a bare "61" or '4,989' is never the filer's by
+# accident. A reader's own prose (`what_changed`) and another analyst's analysis
+# are not the filer's words. Then its digits are the filer's, not the analyst's
+# (148 of the 339 digits that dropped an area or a section over the nineteen runs
+# read on 2026-10-27 sat inside a quotation).
 QUOTATION = re.compile(r'"([^"\n]{2,800})"|“([^”\n]{2,800})”|‘([^’\n]{2,800})’'
                        r"|(?<![A-Za-z0-9])'([^'\n]{2,800})'(?![A-Za-z0-9])")
 
 
+QUOTE_FIELD = re.compile(r'"quote":\s*("(?:[^"\\]|\\.)*")')
+WORDS_OF_LETTERS = re.compile(r"[A-Za-z]{2,}")
+
+
+@functools.lru_cache(maxsize=16)
+def _filer_texts(sources: tuple[tuple[str, str], ...]) -> tuple[str, ...]:
+    """The filer's words among the files an analyst saw, folded: each reader
+    report item's `quote`, and each filing file the analyst read whole."""
+    out = []
+    for name, text in sources:
+        if not isinstance(text, str):
+            continue
+        if name.startswith("input_"):
+            out.append(fold(text))
+        elif name.startswith("report_"):
+            for match in QUOTE_FIELD.finditer(text):
+                try:
+                    out.append(fold(json.loads(match.group(1))))
+                except ValueError:
+                    continue
+    return tuple(out)
+
+
 def _folded_sources(sources) -> tuple[str, ...]:
-    return tuple(fold(text) for text in (sources or {}).values() if isinstance(text, str))
+    return _filer_texts(tuple(sorted((name, text) for name, text in (sources or {}).items()
+                                     if isinstance(text, str))))
+
+
+def _on_word_boundaries(needle: str, haystack: str) -> bool:
+    start = haystack.find(needle)
+    while start != -1:
+        end = start + len(needle)
+        before = haystack[max(0, start - 2):start].rjust(2)
+        after = haystack[end:end + 2].ljust(2)
+        # a word, or a number, is never cut: "13" is not quoted out of "$13.1"
+        cut_before = (before[1].isalnum() and needle[0].isalnum()) or \
+            (needle[0].isdigit() and before[1] in ".," and before[0].isdigit())
+        cut_after = (after[0].isalnum() and needle[-1].isalnum()) or \
+            (needle[-1].isdigit() and after[0] in ".," and after[1].isdigit())
+        if not cut_before and not cut_after:
+            return True
+        start = haystack.find(needle, start + 1)
+    return False
 
 
 def without_verified_quotations(text: str, sources) -> str:
@@ -423,7 +470,8 @@ def without_verified_quotations(text: str, sources) -> str:
     def blank(match: re.Match) -> str:
         inner = next(group for group in match.groups() if group is not None)
         needle = fold(inner).strip()
-        if needle and any(needle in haystack for haystack in folded):
+        if len(WORDS_OF_LETTERS.findall(needle)) >= 3 and \
+                any(_on_word_boundaries(needle, haystack) for haystack in folded):
             return " " * len(match.group(0))
         return match.group(0)
 
@@ -478,7 +526,8 @@ def trim_sentences(item, fields: dict, sources, *, forbidden) -> list[str]:
     cited = item.get("fields")
     if isinstance(cited, list) and cited:
         kept = [path for path in cited if field_cited(fields, path)]
-        if len(kept) < len(cited):
+        # an item left citing nothing at all is not trimmed: it falls whole, as before
+        if len(kept) < len(cited) and (kept or item.get("evidence")):
             reasons += [f"fields: {path!r} is not a field of calculator.json; the citation "
                         "is dropped" for path in cited if not field_cited(fields, path)]
             item["fields"] = kept
