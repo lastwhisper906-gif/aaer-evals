@@ -38,7 +38,7 @@ import datetime as dt
 import os
 from typing import Any
 
-from src.prices import PriceError, Unconfigured, row
+from src.prices import PriceError, Unconfigured, route, row
 
 NAME = "tiingo"
 BASE = "https://api.tiingo.com/tiingo/daily"
@@ -109,12 +109,13 @@ def rows_from(payload: Any, *, ticker: str, security_id: str | None = None) -> l
     return sorted(out, key=lambda entry: entry["date"])
 
 
-def _get(path: str, params: dict[str, str], token: str) -> Any:
+def _get(path: str, params: dict[str, str], token: str, environ=None) -> Any:
     import requests
 
     session = requests.Session()
     # `requests` otherwise reads the process's `~/.netrc`, which replaces the
-    # token handed in, and its proxy variables, which route the request.
+    # token handed in. The proxy and the certificate bundle it would also have
+    # read are handed to the request below, out of the environment given.
     session.trust_env = False
     try:
         response = session.get(
@@ -123,6 +124,9 @@ def _get(path: str, params: dict[str, str], token: str) -> Any:
             headers={"Authorization": f"Token {token}",
                      "Content-Type": "application/json"},
             timeout=TIMEOUT_SECONDS,
+            # the proxy and the bundle the switch above dropped, from the
+            # environment handed in (`src/prices/__init__.py`, `route`)
+            **route(f"{BASE}{path}", environ),
         )
     except requests.RequestException as error:
         # The message of a failed request can carry what was sent; the name of
@@ -148,15 +152,17 @@ def history(
     """The daily history, from the wire.
 
     Judged by `tests/test_prices.py` against a stand-in `requests` module, which
-    checks the address, the parameters and where the token goes. Against the
-    real service it has never been run: nobody here has a token yet.
+    checks the address, the parameters, where the token goes and the route.
+    Against the real service, from the cloud session on 2026-10-28, it reached
+    Tiingo through the proxy and was answered 403 "Invalid token." for the
+    token the environment held; no row has yet come back from the wire.
     """
     token = credential(environ)
-    metadata = _get(f"/{ticker.lower()}", {}, token)
+    metadata = _get(f"/{ticker.lower()}", {}, token, environ)
     params = {}
     if start is not None:
         params["startDate"] = start.isoformat()
     if end is not None:
         params["endDate"] = end.isoformat()
-    payload = _get(f"/{ticker.lower()}/prices", params, token)
+    payload = _get(f"/{ticker.lower()}/prices", params, token, environ)
     return rows_from(payload, ticker=ticker.upper(), security_id=permaticker_from(metadata))
