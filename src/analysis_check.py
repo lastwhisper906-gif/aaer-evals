@@ -414,32 +414,39 @@ QUOTATION = re.compile(r'"([^"\n]{2,800})"|“([^”\n]{2,800})”|‘([^’\n]{
                        r"|(?<![A-Za-z0-9])'([^'\n]{2,800})'(?![A-Za-z0-9])")
 
 
-QUOTE_FIELD = re.compile(r'"quote":\s*("(?:[^"\\]|\\.)*")')
 WORDS_OF_LETTERS = re.compile(r"[A-Za-z]{2,}")
 
 
 @functools.lru_cache(maxsize=16)
-def _filer_texts(sources: tuple[tuple[str, str], ...]) -> tuple[str, ...]:
-    """The filer's words among the files an analyst saw, folded: each reader
-    report item's `quote`, and each filing file the analyst read whole."""
+def _filer_texts(sources: tuple[tuple[str, str], ...], filing: tuple[tuple[str, str], ...],
+                 fallen: frozenset) -> tuple[tuple[str, str | None], ...]:
+    """The filer's words among the files an analyst saw, folded, each with the
+    full filing text it must also match (or None): the `quote` of each fenced
+    item of a reader report that stood (one id, once, not dropped by the quote
+    gate), and each filing file the analyst read whole (`input_*`), held to the
+    run's full file too when the analyst's copy was trimmed, so a quotation across
+    the seam between two paragraphs that were not adjacent is not the filer's."""
+    full = dict(filing)
     out = []
     for name, text in sources:
-        if not isinstance(text, str):
-            continue
         if name.startswith("input_"):
-            out.append(fold(text))
+            out.append((fold(text), fold(full[name]) if name in full else None))
         elif name.startswith("report_"):
-            for match in QUOTE_FIELD.finditer(text):
-                try:
-                    out.append(fold(json.loads(match.group(1))))
-                except ValueError:
-                    continue
+            items = _items_of(text)
+            ids = [item.get("id") for item in items]
+            for item in items:
+                identifier, quote = item.get("id"), item.get("quote")
+                if isinstance(identifier, str) and ids.count(identifier) == 1 \
+                        and identifier not in fallen and isinstance(quote, str) and quote:
+                    out.append((fold(quote), None))
     return tuple(out)
 
 
-def _folded_sources(sources) -> tuple[str, ...]:
-    return _filer_texts(tuple(sorted((name, text) for name, text in (sources or {}).items()
-                                     if isinstance(text, str))))
+def _folded_sources(sources, filing=None, fallen=frozenset()):
+    def key(files):
+        return tuple(sorted((name, text) for name, text in (files or {}).items()
+                            if isinstance(text, str)))
+    return _filer_texts(key(sources), key(filing), frozenset(fallen or ()))
 
 
 def _on_word_boundaries(needle: str, haystack: str) -> bool:
@@ -459,19 +466,21 @@ def _on_word_boundaries(needle: str, haystack: str) -> bool:
     return False
 
 
-def without_verified_quotations(text: str, sources) -> str:
+def without_verified_quotations(text: str, sources, filing=None, fallen=frozenset()) -> str:
     """The text with every quotation that string-matches a file the analyst saw
     blanked out, so its digits are not read as the analyst's numbers. A quotation
     that matches nothing is left in place, and its digits are the analyst's."""
-    folded = _folded_sources(sources)
+    folded = _folded_sources(sources, filing, fallen)
     if not folded:
         return text
 
     def blank(match: re.Match) -> str:
         inner = next(group for group in match.groups() if group is not None)
         needle = fold(inner).strip()
-        if len(WORDS_OF_LETTERS.findall(needle)) >= 3 and \
-                any(_on_word_boundaries(needle, haystack) for haystack in folded):
+        if len(WORDS_OF_LETTERS.findall(needle)) >= 3 and any(
+                _on_word_boundaries(needle, seen)
+                and (full is None or _on_word_boundaries(needle, full))
+                for seen, full in folded):
             return " " * len(match.group(0))
         return match.group(0)
 
@@ -540,7 +549,8 @@ def kept_sentences(text: str, check, *, marker: str = LEFT_OUT) -> tuple[str, li
     return "".join(out).rstrip(), [problem for problem in problems if problem]
 
 
-def trimmed(item, fields: dict, sources, *, forbidden) -> tuple[dict, list[str]]:
+def trimmed(item, fields: dict, sources, *, forbidden, filing=None,
+            fallen=frozenset()) -> tuple[dict, list[str]]:
     """A copy of the item with each failing sentence of its running prose left
     out where it stood, and why each one went. The caller keeps the copy only when
     it then stands; an item that falls whole is recorded once, for its own reason."""
@@ -553,7 +563,7 @@ def trimmed(item, fields: dict, sources, *, forbidden) -> tuple[dict, list[str]]
         if not isinstance(text, str) or not text:
             continue
         result = kept_sentences(text, lambda part: words_problem(
-            part, fields, forbidden=forbidden, sources=sources))
+            part, fields, forbidden=forbidden, sources=sources, filing=filing, fallen=fallen))
         if result is None:
             continue
         item[key], problems = result
@@ -562,7 +572,7 @@ def trimmed(item, fields: dict, sources, *, forbidden) -> tuple[dict, list[str]]
 
 
 def words_problem(text, fields: dict, *, forbidden: tuple[str, ...],
-                  sources=None) -> str | None:
+                  sources=None, filing=None, fallen=frozenset()) -> str | None:
     """Why these words cannot stand, or None. `sources` is the files the analyst
     saw: a quotation that string-matches one of them is the filer's words, and its
     digits are not read as the analyst's (`without_verified_quotations`)."""
@@ -574,7 +584,7 @@ def words_problem(text, fields: dict, *, forbidden: tuple[str, ...],
         problem = placeholder_problem(fields, path)
         if problem:
             return problem
-    bare = PLACEHOLDER.sub(" ", without_verified_quotations(text, sources))
+    bare = PLACEHOLDER.sub(" ", without_verified_quotations(text, sources, filing, fallen))
     if BRACE.search(bare):
         return "a brace that is not a whole {path} placeholder"
     bare = ALLOWED_DIGITS.sub(" ", bare)
@@ -654,7 +664,8 @@ def item_problem(item, fields: dict, sources: dict[str, str], upstream: set[str]
     if not isinstance(item, dict):
         return "the item is not an object"
     for key in PROSE_KEYS:
-        problem = words_problem(item.get(key), fields, forbidden=forbidden, sources=sources)
+        problem = words_problem(item.get(key), fields, forbidden=forbidden, sources=sources,
+                                filing=filing, fallen=fallen)
         if problem:
             return f"{key}: {problem}"
     for path in item.get("fields") or []:
@@ -687,7 +698,8 @@ def _check_block(payload: dict, key: str, names, fields, sources, upstream, drop
                 block[name] = {"dropped": "the analyst wrote nothing for it"}
                 dropped.append({"where": f"{key}.{name}", "reason": "missing"})
             continue
-        cut, reasons = trimmed(entry, fields, sources, forbidden=forbidden)
+        cut, reasons = trimmed(entry, fields, sources, forbidden=forbidden, filing=filing,
+                               fallen=fallen)
         if reasons and item_problem(cut, fields, sources, upstream, forbidden=forbidden,
                                     filing=filing, fallen=fallen) is None:
             block[name] = entry = cut
@@ -704,7 +716,8 @@ def _check_list(payload: dict, key: str, fields, sources, upstream, dropped, *, 
                 extra=None, filing=None, fallen=frozenset()) -> None:
     kept = []
     for position, item in enumerate(payload.get(key) or []):
-        cut, reasons = trimmed(item, fields, sources, forbidden=forbidden)
+        cut, reasons = trimmed(item, fields, sources, forbidden=forbidden, filing=filing,
+                               fallen=fallen)
         if reasons and item_problem(cut, fields, sources, upstream, forbidden=forbidden,
                                     filing=filing, fallen=fallen) is None \
                 and (extra is None or extra(cut) is None):
@@ -1228,7 +1241,8 @@ def check(kind: str, payload: dict, *, fields: dict, sources: dict[str, str],
         for key in ("dupont", "path_to_distress"):
             entry = payload.get(key)
             if entry is not None:
-                cut, reasons = trimmed(entry, fields, sources, forbidden=forbidden)
+                cut, reasons = trimmed(entry, fields, sources, forbidden=forbidden,
+                                       filing=filing, fallen=fallen)
                 if reasons and item_problem(cut, fields, sources, upstream, forbidden=forbidden,
                                             fallen=fallen, filing=filing) is None:
                     payload[key] = entry = cut
@@ -1248,7 +1262,8 @@ def check(kind: str, payload: dict, *, fields: dict, sources: dict[str, str],
         for key in VALUATION_KEYS:
             entry = payload.get(key)
             if entry is not None:
-                cut, reasons = trimmed(entry, fields, sources, forbidden=forbidden)
+                cut, reasons = trimmed(entry, fields, sources, forbidden=forbidden,
+                                       filing=filing, fallen=fallen)
                 if reasons and item_problem(cut, fields, sources, upstream, forbidden=forbidden,
                                             fallen=fallen, filing=filing) is None:
                     payload[key] = entry = cut

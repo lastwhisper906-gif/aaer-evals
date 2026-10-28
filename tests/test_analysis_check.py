@@ -1999,9 +1999,37 @@ PLANTED_QUOTE = "the Company recognized impairment charges of $13.1 million at t
 
 
 def planted_sources(**extra):
+    """The notes report with one more fenced item, as a reader writes one."""
     notes = SOURCES["report_notes_text.md"] + (
-        '\n{ "id": "planted_quote_item", "quote": "' + PLANTED_QUOTE + '" }\n')
+        '\n```json\n{ "id": "planted_quote_item", "quote": "' + PLANTED_QUOTE + '" }\n```\n')
     return {**SOURCES, "report_notes_text.md": notes, **extra}
+
+
+def test_a_quote_outside_a_fenced_item_or_of_a_dropped_item_is_not_the_filers():
+    """The second lens's second reading: only the quote of a fenced item that stood
+    is the filer's words."""
+    loose = {**SOURCES, "report_notes_text.md": SOURCES["report_notes_text.md"]
+             + '\n{ "id": "loose", "quote": "' + PLANTED_QUOTE + '" }\n'}
+    payload = accounting()
+    payload["anomalies"][0]["what"] = f'The note says "{PLANTED_QUOTE}" and no more.'
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=loose)
+    assert out["anomalies"] == []
+    out = analysis_check.check("accounting", copy.deepcopy(payload), fields=FIELDS,
+                               sources=planted_sources(), excluded={"planted_quote_item"})
+    assert out["anomalies"] == []
+
+
+def test_a_quotation_across_a_seam_of_a_trimmed_filing_file_is_not_the_filers():
+    seen = "Revenue was $40.1 million in the quarter.\nWe expect margin of 12 percent next year."
+    full = ("Revenue was $40.1 million in the quarter.\nOther text sat here.\n"
+            "We expect margin of 12 percent next year.")
+    text = 'The release says "in the quarter. We expect margin of 12 percent" plainly.'
+    sources = {"input_mdna.md": seen}
+    assert "a number written" in analysis_check.words_problem(
+        text, FIELDS, forbidden=(), sources=sources, filing={"input_mdna.md": full})
+    assert analysis_check.words_problem(
+        'The release says "We expect margin of 12 percent next year" plainly.', FIELDS,
+        forbidden=(), sources=sources, filing={"input_mdna.md": full}) is None
 
 
 def test_a_digit_inside_a_quotation_of_a_reader_items_quote_is_the_filers():
