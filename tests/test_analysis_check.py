@@ -2200,3 +2200,17 @@ def test_only_the_filings_own_prose_files_hold_the_filers_words():
     for name in ("input_notes.md", "input_mdna.md", "input_8k.md", "input_controls.md"):
         assert analysis_check.words_problem(
             text, FIELDS, forbidden=(), sources={name: words}) is None, name
+
+
+def test_a_trimmed_korean_summary_the_owners_rules_empty_is_recorded_once():
+    """The second lens's sixth reading: a summary with one sentence carrying a digit and
+    another carrying a ruled-out word is emptied by the owner's rules, once."""
+    payload = accounting()
+    good = "영업현금흐름이 최근 네 분기 동안 순이익을 넘었고 발생액 비율도 회사의 과거보다 낮다."
+    payload["summary_ko"]["earnings_versus_cash"] = (
+        good + " 매출채권 회수일수는 61일이다. 매입채무 증가가 현금의 일부를 공급했으니 매수 추천이다.")
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+    rows = [d for d in out["dropped_items"] if d["where"] == "summary_ko.earnings_versus_cash"]
+    assert out["summary_ko"]["earnings_versus_cash"] is None
+    assert len(rows) == 1 and "one sentence left out" not in rows[0]["reason"], rows
+    assert all(analysis_check.HELD not in d for d in out["dropped_items"])

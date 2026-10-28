@@ -759,10 +759,13 @@ def _check_summary(payload: dict, fields, dropped, *, forbidden) -> None:
             result = kept_sentences(
                 text, lambda part: words_problem(part, fields, forbidden=forbidden),
                 marker=LEFT_OUT_KO)
-            if result is not None:
+            # kept only when the trimmed text then stands; the rows hold the text
+            # itself, so a summary the owner's rules empty afterwards is recorded once
+            if result is not None and words_problem(result[0], fields,
+                                                    forbidden=forbidden) is None:
                 summary[name] = text = result[0]
                 dropped += [{"where": f"summary_ko.{name}",
-                             "reason": f"one sentence left out: {problem}"}
+                             "reason": f"one sentence left out: {problem}", HELD: text}
                             for problem in result[1]]
         problem = words_problem(text, fields, forbidden=forbidden)
         if problem:
