@@ -1,0 +1,259 @@
+{
+ "run": "AAPL/0000320193-26-000020",
+ "rubric": "evals/capability/rubric.md",
+ "dealbreakers": [
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "cross_document_reconciliation_release_intangible_line_differs_from_quarterly_report_tag",
+   "where": "analysis_accounting.json anomalies[13].what and numbers_vs_prose (repeated in areas.cross_document_reconciliation.finding and verdict)",
+   "why": "input_notes.md 0000320193-26-000020:notes:38 runs from the 10-Q's 'Total intangible assets, net' through 'Less: Current portion of intangible assets, net' to the 'Non-current portion of intangible assets, net' that the release prints in 8k_2_02:33. The inputs settle the difference that the anomaly says 'nothing reconciles'."
+  }
+ ],
+ "items": [
+  {
+   "id": "earnings_versus_cash_payables_increase_carries_cash_conversion",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "Every path resolves: earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change exceeds the receivables and inventory builds, and free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital is negative. The 'what' says payables 'helped lift' conversion. The title's 'carries' overstates it, since 8k_2_02:37 also shows the other current and non-current liabilities line swinging sharply."
+  },
+  {
+   "id": "earnings_versus_cash_last_fiscal_year_accrual_peak_and_weakest_cash_conversion",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.years-back-0.ratios.accruals_over_total_assets is 'highest of the 5 filled years' and the only positive annual cell (trends:accruals_over_total_assets:2024-09-29..2025-09-27). earnings_versus_cash.history.years.0.operating_cash_flow_over_net_income is the lowest in the history."
+  },
+  {
+   "id": "earnings_versus_cash_income_smoother_than_cash",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "earnings_versus_cash.smoothness is below one, as stated. But the claim that 'The biggest divergence is the December quarter' fails: smoothness.operating_cash_flow.7 against smoothness.net_income.7 (quarter to 2024-09-28) is a wider gap than index 2. The cited quarterly-accruals item does not bear on smoothness."
+  },
+  {
+   "id": "revenue_recognition_receivables_rising_against_annual_revenue",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "receivables_over_revenue and days_sales_outstanding rise from years-back-3 to years-back-0, which is 'highest of the 5 filled years' (trends:receivables_over_revenue:2024-09-29..2025-09-27). quarters-back-0 DSO sits below quarters-back-4, as stated."
+  },
+  {
+   "id": "revenue_recognition_single_customer_share_of_trade_receivables_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "concentration.facts.3, .7 and .11 rise and concentration.facts.0 through .12 fall, as written. 0000320193-26-000020:notes:29 states the same current and year-end shares and names no customer."
+  },
+  {
+   "id": "revenue_recognition_contract_liabilities_over_revenue_at_top_of_range",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "trend_table.years-back-0.ratios.contract_liabilities_over_revenue is 'highest of the 5 filled years', and terms.balances_now.contract_liabilities exceeds terms.balances_a_year_earlier.contract_liabilities. notes:7 states a higher total deferred revenue."
+  },
+  {
+   "id": "estimates_and_reserves_tariff_refund_lifts_quarterly_margin_and_eps",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "Both quotes are verbatim in 0000320193-26-000018:8k_2_02:7. mdna:45 names the refunds without an amount, and trend_table.quarters-back-0.ratios.gross_margin is 'highest of the 6 filled quarters'. This bears on the earnings run rate."
+  },
+  {
+   "id": "estimates_and_reserves_warranty_accrual_no_longer_tagged",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "trend_table.years-back-4.ratios.warranty_reserve_ratio is 'the only filled year'. The calculator prints bad_debt_allowance as missing for every recent date and inventory_reserve as missing in any period."
+  },
+  {
+   "id": "estimates_and_reserves_unrecognized_tax_benefits_cited_in_both_directions",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:60 and mdna:61 cite changes in unrecognized tax benefits in three roles: an offset to the higher quarterly rate, a cause of the higher nine-month rate, and a reason the rate sits below statutory. They give no amount. tax_rate.effective_rate is the only rate the calculator holds."
+  },
+  {
+   "id": "estimates_and_reserves_legal_contingency_paragraph_reworded",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:58 is carried as text with no prior version in the inputs, and it names no matter and no accrual, exactly as stated. The calculator holds no contingency accrual."
+  },
+  {
+   "id": "cost_deferral_intangible_assets_rise_without_acquisition_line",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:33 and notes:38 both show intangible assets rising since 2025-09-27, and terms.cash_flow_families.acquisitions prints no acquisition line. No input paragraph says what was added. The soft_asset_share paths resolve with the positions quoted."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_capital_spending_falls_below_depreciation",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.capital_expenditure is below both terms.trailing_four_quarters_a_year_earlier.capital_expenditure and terms.trailing_four_quarters.depreciation_and_amortization. mdna:54 and mdna:68 carry the infrastructure and capital-asset wording, and the anomaly claims no shift."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_prior_year_end_other_assets_re_presented",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "0000320193-25-000079:facts:OtherAssetsNoncurrent:2025-09-27 prints a higher value than the release's 2025-09-27 other non-current assets in 8k_2_02:33, which adds an intangible line the 10-K lacked. No reclassification note exists, and the stated benign carve-out reading fits notes:38."
+  },
+  {
+   "id": "cross_document_reconciliation_release_intangible_line_differs_from_quarterly_report_tag",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "high",
+   "why": "notes:38 bridges the 10-Q's total intangible assets, net to the release's 'Non-current portion of intangible assets, net' through the current portion. The documents agree, so 'As filed, though, the two documents disagree on the same caption' is wrong. This is a dealbreaker."
+  },
+  {
+   "id": "cross_document_reconciliation_purchase_obligation_figures_differ",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "terms.balances_now.unconditional_purchase_obligations matches neither figure in mdna:66 or mdna:68, as stated. notes:55 limits the schedule to obligations 'with a remaining term in excess of one year', which fits the anomaly's scope reading."
+  },
+  {
+   "id": "cross_document_reconciliation_repurchase_amount_differs_by_measure",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The notes:45 quote is verbatim, and terms.trailing_four_quarters.share_repurchases.parts.this_year_to_date.value differs from it. The trade-date versus settlement account is not in the inputs, and the anomaly leaves the gap unreconciled."
+  },
+  {
+   "id": "industry_lens_component_inventory_build_without_reserve",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "Everything matches. terms.balances_now.inventory exceeds terms.balances_a_year_earlier.inventory, and quarters-back-0 days_sales_of_inventory is 'highest of the 6 filled quarters'. notes:34 shows components up and finished goods down. The calculator lists inventory_reserve and inventory_write_down as missing in any period."
+  },
+  {
+   "id": "results_against_expectations_record_eps_partly_from_tariff_refunds",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "The 8k_2_02:5 and 8k_2_02:7 quotes are verbatim, mdna:13 gives no refund amount, and ratios.growth.net_income.this_quarter and .year_over_year resolve. A record EPS that rests partly on refunds bears on the earnings run rate."
+  },
+  {
+   "id": "liquidity_and_capital_thin_current_cover_against_purchase_obligations",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.liquidity.current_ratio and quick_ratio resolve, and terms.balances_a_year_earlier.current_assets is below current_liabilities, as stated. The mdna:66 quote is verbatim."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_component_supply_constraints_intensifying",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The mdna:11 quote is verbatim, and trend_table.quarters-back-0.ratios.gross_margin is 'highest of the 6 filled quarters'."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_memory_costs_already_in_margin",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The mdna:45 quote is verbatim, and the same sentence names tariff refunds and memory costs together, so the cost offset is already in the quarter. ratios.profitability.gross_margin resolves."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_price_increases_may_reduce_demand",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The mdna:11 quote is verbatim and says price actions 'have been' taken. ratios.growth.revenue.year_over_year shows no demand effect yet, as stated."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_new_tariffs_imposed",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The quote is a verbatim substring of mdna:13, which names further possible tariff measures in the same paragraph as the refund recognition. The net-effect caveat is fair."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_currency_effects_on_segment_sales",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The mdna:24 quote is verbatim. mdna:22 and mdna:26 give favourable currency effects in the quarter; mdna:20 gives Europe's for the nine months only."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_ipad_sales_decline",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The mdna:35 quote is a verbatim prefix, and the same paragraph says iPad sales rose over the nine months, as stated."
+  },
+  {
+   "id": "profitability_gross_margin_peak_includes_tariff_refunds",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "quarters-back-0 and quarters-back-4 gross_margin read 'highest' and 'lowest of the 6 filled quarters'. The 8k_2_02:7 quote is verbatim, and mdna:45 names the refunds. A non-recurring lift in the peak margin changes how the company is valued."
+  },
+  {
+   "id": "profitability_research_and_development_rising_on_ai_infrastructure",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.research_and_development_expense exceeds its parts.prior_fiscal_year, and the mdna:54 quote is verbatim. ratios.profitability.operating_margin exceeds earnings_versus_cash.history.years.0.operating_margin."
+  },
+  {
+   "id": "profitability_effective_tax_rate_rising",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The mdna:61 quote is verbatim, and mdna:59 shows both the quarterly and the nine-month rates higher year over year. tax_rate and terms.trailing_four_quarters.income_tax_expense resolve."
+  },
+  {
+   "id": "efficiency_days_sales_of_inventory_at_quarterly_high",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0.ratios.days_sales_of_inventory is 'highest of the 6 filled quarters', and the inventory balances and terms.trailing_four_quarters.change_in_inventory resolve. notes:34 places the build in components."
+  },
+  {
+   "id": "efficiency_trade_receivables_concentrating_in_one_customer",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The notes:29 quote is verbatim. quarters-back-0 receivables_over_revenue is 'second highest of the 6 filled quarters', years-back-0 DSO is 'highest of the 5 filled years', and bad_debt_allowance is missing."
+  },
+  {
+   "id": "solvency_thin_book_equity_after_repurchases",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "ratios.solvency.liabilities_over_assets, ratios.profitability.dupont.equity_multiplier and the notes:45 quote resolve. terms.debt_now is below terms.debt_a_year_earlier, so 'falling' holds, and equity rose as stated."
+  },
+  {
+   "id": "growth_sequential_dip_in_revenue_and_operating_income",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "Revenue and operating income quarter_over_quarter are the only negative values in ratios.growth, and net income and operating cash flow are positive. 'the only negative growth readings in the file' overreaches, since earnings_versus_cash.history.years.2.revenue_growth is also negative."
+  }
+ ],
+ "coverage": {
+  "answer": "yes",
+  "why": "All seven accounting areas and industry_lens carry a finding and a verdict. The financial analysis answers profitability, efficiency, liquidity, solvency, growth and free_cash_flow, plus dupont and path_to_distress. input_manifest.json analysis_stages shows dropped 0 for both analyses."
+ },
+ "calibration": {
+  "answer": "yes",
+  "why": "Area verdicts follow their anomalies. For example, estimates_and_reserves names the tariff-refund benefit and the untagged reserves, and cost_deferral names the unexplained intangible rise. The cross_document_reconciliation verdict matches its anomalies but carries over the struck intangible-line claim."
+ },
+ "valuation_reading": {
+  "answer": "no",
+  "why": "price_position and market_implied_growth read 'Not computed', citing market.missing and implied_growth_beside_history.implied_ten_year_revenue_growth.missing. most_sensitive says which assumption moves value most 'cannot be read here' because of valuation.missing. The reading declines to estimate rather than inventing figures."
+ },
+ "score": 0.9375,
+ "grader": {
+  "model_requested": "opus",
+  "model_served": "claude-opus-5-5",
+  "input_tokens": 42,
+  "output_tokens": 54975,
+  "cost_usd": 4.933996199999999,
+  "seconds": 479.2
+ }
+}

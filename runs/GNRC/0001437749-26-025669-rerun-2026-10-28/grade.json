@@ -1,0 +1,525 @@
+{
+ "run": "GNRC/0001437749-26-025669",
+ "rubric": "evals/capability/rubric.md",
+ "dealbreakers": [],
+ "items": [
+  {
+   "id": "earnings_versus_cash_trailing_cash_conversion_below_recent_years",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.operating_cash_flow_over_net_income sits below history.years.0, .1 and .2; the LegalFees fact in 0001437749-26-004568 and notes:155 put the litigation charge and payment on both sides of the trailing window."
+  },
+  {
+   "id": "earnings_versus_cash_quarter_income_above_operating_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.smoothness.net_income.0 exceeds smoothness.operating_cash_flow.0 and index 1 runs the other way; notes:10 leaves part of the recovery as a receivable and notes:155 dates the Zawaski payment inside the quarter."
+  },
+  {
+   "id": "earnings_versus_cash_gross_margin_peak_rests_on_tariff_refund",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "trend_table.quarters-back-0.ratios.gross_margin is the highest filled quarter; notes:10 \"Approximately $71,100 of the tariff recovery was recorded as a reduction of cost of goods sold\"; mdna:61 names the mix and input-cost pressure beneath it."
+  },
+  {
+   "id": "earnings_versus_cash_inventory_articulation_gap",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "earnings_versus_cash.working_capital.inventory.articulation_gap is the widest of the three gaps; the anomaly names acquired inventory as the candidate reading, which the notes:26 allocation table bears out for most of it."
+  },
+  {
+   "id": "earnings_versus_cash_payables_articulation_gap",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "The gap at earnings_versus_cash.working_capital.accounts_payable.articulation_gap is real, but the notes:26 allocation table lists acquired accounts payable of nearly the same size, so \"no filing item reconciles it\" is not borne out by the inputs."
+  },
+  {
+   "id": "earnings_versus_cash_receivables_articulation_gap",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "earnings_versus_cash.working_capital.receivables.articulation_gap is the smallest of the three; the anomaly claims only a small gap with acquisitions as the plain reading."
+  },
+  {
+   "id": "earnings_versus_cash_earnings_smoother_than_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "earnings_versus_cash.smoothness resolves with the formula note \"below 1 means income moves less than cash\"; smoothness.operating_cash_flow.6 is the largest quarterly inflow read; a benign seasonal reading is offered."
+  },
+  {
+   "id": "earnings_versus_cash_settlement_payment_labelled_working_capital",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "mdna:109 names only \"a greater use of cash for working capital\" and the Zawaski payment and larger other-accrued-liabilities outflow are shown, but the run's own earnings_quality_other_operating_assets_cash_flow_change item shows an other-assets use of similar size, so \"the dominant offset\" is not established."
+  },
+  {
+   "id": "revenue_recognition_unbilled_contract_assets_outside_receivables",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:117 \"unbilled receivables associated with contracts accounted for under the cost-to-cost method of revenue recognition\" carried in prepaid and rising from year-end; trend_table.quarters-back-0.ratios.days_sales_outstanding reads receivables only."
+  },
+  {
+   "id": "revenue_recognition_remaining_performance_obligations_falling",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "notes:119 \"approximately $143,000, of which approximately 80%\" against note_history:41 \"approximately $272,000, of which approximately 90%\", with the 10-K value in the numbers reader item; neither note explains the fall."
+  },
+  {
+   "id": "revenue_recognition_contract_liabilities_falling_since_year_end",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:118 states the balance below year-end and note_history:41 gives the first-quarter balance; trend_table.quarters-back-0 contract_liabilities_over_revenue is below quarters-back-1 and far above quarters-back-4; the rewording is confirmed against note_history:41."
+  },
+  {
+   "id": "revenue_recognition_payment_terms_statement_removed",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "note_history:40 is marked removed in this filing and the quote is verbatim; trend_table.quarters-back-0 versus quarters-back-4 receivables_over_revenue shows no extension."
+  },
+  {
+   "id": "estimates_and_reserves_bad_debt_allowance_at_history_low",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio is the lowest filled quarter, below quarters-back-4 and quarters-back-5, while terms.balances_now.bad_debt_allowance fell and terms.balances_now.receivables rose."
+  },
+  {
+   "id": "estimates_and_reserves_warranty_provisioning_falling_against_sales",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:108 \"Provision for warranty issued\" is lower than the prior-year quarter on higher sales, with higher payments; trend_table.quarters-back-0 warranty_reserve_ratio is below quarters-back-1 and years-back-0 is the highest filled year."
+  },
+  {
+   "id": "estimates_and_reserves_clean_energy_warranty_provision_released",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:126 and mdna:156 show the \"Release of warranty provision recorded in 2022\" only in the six-month column, in the first quarter, inside the add-back schedule; the anomaly dates it correctly."
+  },
+  {
+   "id": "estimates_and_reserves_tariff_receivable_on_probability_judgment",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "notes:9 \"The Company elected to account for the refund of tariffs under a loss recovery model\" and notes:10 \"approximately $27,700 for which the Company has deemed receipt probable to occur\"; mdna:117 leaves it off the critical estimates."
+  },
+  {
+   "id": "estimates_and_reserves_ollnova_reserve_reduction_inside_lower_legal_expense",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:154 \"reduced the reserve established for the original verdict and interest to the amount of the settlement\"; 8k_2_02:126 shows the patent-lawsuit line as a credit; mdna:62 cites \"lower legal expenses in the current year\" without naming it."
+  },
+  {
+   "id": "estimates_and_reserves_inventory_reserve_rising_last_fiscal_year",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The Schedule II reader items (ValuationAllowancesAndReserves facts with InventoryValuationReserveMember in 0001437749-26-004568) show a higher reserve and higher charges; trend_table.years-back-0.ratios.days_sales_of_inventory is the highest filled year."
+  },
+  {
+   "id": "estimates_and_reserves_enercon_earnout_through_earnings",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:58 \"earned based on the achievement of specified target EBITDA levels during the earnout period\", notes:60 and notes:61 add the Enercon amount, and 8k_2_02:88 adds back contingent consideration adjustments."
+  },
+  {
+   "id": "estimates_and_reserves_preliminary_purchase_price_allocation_open",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:22 \"The Company recorded its preliminary purchase price allocation based on its estimates\" with finalization still ahead; notes:105 places the acquired goodwill in C&I."
+  },
+  {
+   "id": "estimates_and_reserves_residential_goodwill_impairment",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:103 records a Residential reporting-unit impairment in the first quarter, the numbers reader item shows none in the prior year, and notes:88 shows Residential assets lower."
+  },
+  {
+   "id": "estimates_and_reserves_effective_tax_rate_up_on_prior_year_discrete_item",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:146 \"a non-recurring favorable discrete item in the prior year period related to a business disposition\"; tax_rate.effective_rate resolves above the statutory tax_rate.value."
+  },
+  {
+   "id": "estimates_and_reserves_wallbox_fair_value_gain_in_gaap_income",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:63 attributes lower other expense to the Wallbox fair-value gain and 8k_2_02:127 shows it removed from the adjusted measures; the UnrealizedGainLossOnInvestments reader item confirms the sign change."
+  },
+  {
+   "id": "cost_deferral_disposition_losses_recur_as_add_backs",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:28 \"one immaterial business disposition within the Commercial & Industrial segment\", the notes:86 and 8k_2_02:129 footnotes cover both quarters and the prior-year quarter, and 8k_2_02:116 and 8k_2_02:119 add the losses back."
+  },
+  {
+   "id": "cost_deferral_tariff_refund_kept_in_adjusted_measures",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "8k_2_02:14 \"Net income, adjusted net income, and adjusted EBITDA all include a pre-tax impact of approximately $71 million related to tariff refunds\"; the 8k_2_02:116 and 8k_2_02:119 reconciliations carry no tariff line."
+  },
+  {
+   "id": "cost_deferral_tariff_remainder_carried_in_inventory",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:10 \"the remainder was recorded in inventories\" carries the later cost-of-sales benefit; the 8k_2_02:36 full-year figure it also cites describes the second-quarter refund, not later-quarter gains, but the core claim stands on notes:10."
+  },
+  {
+   "id": "cost_deferral_soft_asset_share_at_history_low",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "trend_table.quarters-back-0.ratios.soft_asset_share and years-back-0.ratios.soft_asset_share are each the lowest filled value."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_tariff_receipts_lift_operating_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "mdna:109 \"cash receipts from tariff refunds totaling $61 million\" and 8k_2_02:25 tie the cash rise to refunds; ratios.growth.operating_cash_flow.this_quarter and year_over_year resolve."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_cash_tax_timing_lifts_operating_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:109 \"lower cash tax payments in the current year period\", mdna:45 ties the savings to temporary differences, and the DeferredIncomeTaxAssetsNet reader item shows the net asset falling with deferred tax expense."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_contractual_obligations_statement_against_new_earnout",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:115 \"There have been no material changes to our contractual obligations\" against notes:58 and notes:99 showing accrued contingent consideration far above year-end and notes:21 signing New Way."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_acquisition_consideration_beyond_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:22 says part of the price was \"funded through the issuance of treasury stock\" and includes estimated contingent consideration; notes:62 Chilicon share payment; free_cash_flow.free_cash_flow_quality_adjusted subtracts only inputs.acquisitions.cash_spent."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_contract_liability_tagged_at_conflicting_values",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The reader items cite ContractWithCustomerLiability facts in 0001437749-26-004568 with and without PreviousYearMember; input_trends.json shows the years-back-1 input drawn from 0001437749-25-033048 at the lower value."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_allmand_payment_refiled",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The PaymentsToAcquireBusinessesGross Allmand facts in the 10-K and the first-quarter 10-Q carry different values for the same event date, and no note explains the difference."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_intersegment_elimination_sign_flip",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "IntersegmentEliminationMember revenue facts are positive in 0001437749-26-014882 and negative in 0001437749-26-025669, while both filings' tables (note_history:33) print eliminations in parentheses."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_short_term_rate_outlier",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The prior-year-end ShortTermDebtWeightedAverageInterestRate fact in 0001437749-26-014882 stands apart from note_history:16 \"was 6.19%\" and notes:121 \"was 6.15%\"; the input does not settle which is right."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_zawaski_paragraph_carried_unchanged",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:155 is unchanged from the first-quarter text and still states balances \"As of March 31, 2026 and December 31, 2025\", while notes:100 reports the payment and no quarter-end balance is tagged."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_no_control_change_amid_new_accounting",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "item_4_controls:5 \"There have been no changes during the three months ended June 30, 2026 in our internal control over financial reporting\" in the quarter notes:9, notes:117, notes:19 and notes:20 introduce new accounting and acquisitions."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_critical_estimates_omit_new_judgments",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:117 names only \"goodwill and other indefinite-lived intangible asset impairment assessment; and income taxes\" while notes:10, notes:117 and notes:58 add probability, cost-to-cost and earnout judgments."
+  },
+  {
+   "id": "cross_document_reconciliation_backlog_rising_against_falling_obligations",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "8k_2_02:20 \"has now increased to approximately $1.6 billion as of today\" against the notes:119 and note_history:41 declines; the anomaly acknowledges the notes:119 practical expedient and mdna:8 cancellation rights, and no document reconciles the two."
+  },
+  {
+   "id": "cross_document_reconciliation_hyperscale_commitment_outside_filed_numbers",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:16 and 8k_2_02:17 carry the commitments; the input_8k.md item-code list shows no material-agreement item in the quarter and no fact or 10-Q paragraph carries them."
+  },
+  {
+   "id": "cross_document_reconciliation_residential_projection_against_quarter_decline",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:35 \"Residential segment sales are now projected to increase in the high-single digit range\" against mdna:59 and mdna:80 reporting Residential declines for the quarter and the half."
+  },
+  {
+   "id": "cross_document_reconciliation_capacity_investment_against_flat_capital_expenditure",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.capital_expenditure is close to terms.trailing_four_quarters_a_year_earlier.capital_expenditure despite 8k_2_02:20 \"investing aggressively\"; notes:90 shows C&I up and Residential down."
+  },
+  {
+   "id": "cross_document_reconciliation_legal_add_back_wording_differs",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:121 \"not part of the ordinary routine litigation\" versus 8k_2_02:88 and mdna:135 \"significant and not part of the ordinary routine litigation\"."
+  },
+  {
+   "id": "cross_document_reconciliation_tax_item_cause_omitted_in_release",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:146 adds \"related to a business disposition\", which 8k_2_02:24 omits; the EffectiveIncomeTaxRateContinuingOperations first-half reader item matches both documents."
+  },
+  {
+   "id": "industry_lens_inventory_days_elevated_against_history",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.years-back-0.ratios.days_sales_of_inventory is the highest filled year and quarters-back-0 sits well above quarters-back-7; mdna:28 and mdna:59 tie storage weakness to the OBBBA."
+  },
+  {
+   "id": "industry_lens_hyperscale_customer_concentration_emerging",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "concentration.facts.9, .2 and .10 show no dominant customer so far; 8k_2_02:16 \"committed nearly $700 million of volume\" and mdna:8 \"including cancellation rights\" support concentration rising with contract risk."
+  },
+  {
+   "id": "industry_lens_distributor_acquired_while_channel_weakens",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:20 calls Wolter a \"generator distributor\" bought in the quarter while mdna:58 reports lower distributor-channel shipments; the notes are silent on prior sales to Wolter."
+  },
+  {
+   "id": "industry_lens_wallbox_relationship_unstated",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:43 and notes:55 describe only the investment and its fair value; nothing in the input describes trade with Wallbox."
+  },
+  {
+   "id": "industry_lens_united_states_revenue_share_lower",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "concentration.facts.15 is below concentration.facts.7, matching notes:91, and the notes give no explanation."
+  },
+  {
+   "id": "results_against_expectations_margin_guidance_raise_rests_on_tariff_refund",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:36 \"This increased outlook is primarily due to the tariff refund included in the second quarter\" while 8k_2_02:19 holds sales guidance; ratios.profitability.operating_margin already includes the quarter."
+  },
+  {
+   "id": "results_against_expectations_residential_outlook_needs_second_half_turn",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:35 projects Residential growth while mdna:59 and mdna:80 report declines in the quarter and the half; ratios.growth.revenue.year_over_year and trailing_four_quarters resolve."
+  },
+  {
+   "id": "liquidity_and_capital_cash_drawn_down_by_acquisitions_and_settlement",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.balances_now.cash sits above terms.balances_a_year_earlier.cash and below the year-end cash in the liquidity_and_capital_total_debt item; terms.cash_flow_families.acquisitions.parts.this_year_to_date and notes:100 \"a $206,500 payment made by the Company and its insurance carriers\"."
+  },
+  {
+   "id": "liquidity_and_capital_contingent_consideration_due_within_a_year",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:58 \"The current portion of contingent consideration totals $105,858\" and \"with 35% payable in restricted shares and the remainder in cash\"; notes:99 shows the year-end accrued amount far lower."
+  },
+  {
+   "id": "liquidity_and_capital_quick_ratio_leans_on_inventory",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.liquidity.quick_ratio inputs show cash plus receivables below current liabilities; ratios.efficiency.days_sales_of_inventory and the Schedule II reserve items support slow-turning inventory."
+  },
+  {
+   "id": "liquidity_and_capital_capacity_spending_and_pending_acquisition",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:20 \"investing aggressively\", 8k_2_02:18 Belvidere, notes:21 New Way with no price, notes:90 segment capex and mdna:115; all three cited paths resolve."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_residential_storage_and_portable_decline",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:59 \"lower energy storage system and portable generator shipments compared to the prior year\", mdna:28 OBBBA sentence, notes:88 Residential assets lower and notes:103 Residential impairment."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_domestic_industrial_distributor_channel",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:58 \"were more than offset by a decrease in shipments to the domestic industrial distributor channel\" and mdna:79 repeats the decline for the half."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_mix_and_input_costs_beneath_tariff_refund",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "mdna:61 \"unfavorable sales mix and higher input costs were partially offset by favorable price realization\", mdna:82 \"more than offset\"; trend_table.quarters-back-1.ratios.gross_margin, before the refund, is second lowest filled."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_data_center_contract_risk",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:8 bullet on \"cancellation rights, delivery requirements, and potential liability exposure\" and 8k_2_02:17 terms still under negotiation; terms.trailing_four_quarters.capital_expenditure resolves."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_open_legal_and_regulatory_matters",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "LegalFees fact in 0001437749-26-004568 for the portable-generator case, notes:155 payment, notes:153 EPA request with no accrual, notes:151 \"have appealed the judgment of dismissal\", notes:149 PHS claim."
+  },
+  {
+   "id": "profitability_quarter_margin_lifted_by_tariff_refund",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "trend_table.quarters-back-0.ratios.gross_margin is the highest filled quarter against quarters-back-1; notes:10 and mdna:67 \"impacted margins by approximately 9%\"; ratios.growth.operating_income.year_over_year.inputs.before resolves."
+  },
+  {
+   "id": "profitability_trailing_margins_below_stronger_years",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.profitability.operating_margin sits near earnings_versus_cash.history.operating_margin_three_year_average and below history.years.1, .4 and .5 operating_margin."
+  },
+  {
+   "id": "profitability_higher_effective_tax_rate",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "tax_rate.effective_rate resolves above the statutory tax_rate.value, and notes:146 explains the rise by the prior-year discrete item."
+  },
+  {
+   "id": "efficiency_inventory_days_elevated_against_history",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.efficiency.days_sales_of_inventory with trend cells years-back-0 highest, years-back-1 lowest, quarters-back-0 just below quarters-back-1 and far above quarters-back-7; notes:94 finished goods up and raw materials down."
+  },
+  {
+   "id": "efficiency_unbilled_contract_assets_outside_receivables",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:117 contract assets sit in prepaid and rose from year-end; ratios.efficiency.days_sales_outstanding reads receivables only; note_history:40 is removed."
+  },
+  {
+   "id": "efficiency_asset_base_growing_ahead_of_sales",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.balances_now.assets is above terms.balances_a_year_earlier.assets while ratios.growth.revenue.trailing_four_quarters is near flat; notes:105 acquired goodwill all in C&I and notes:22 allocation still preliminary."
+  },
+  {
+   "id": "solvency_coverage_rests_on_falling_trailing_operating_income",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.operating_income is below terms.trailing_four_quarters_a_year_earlier.operating_income and includes the 8k_2_02:14 refund; ratios.solvency.interest_coverage and debt_over_ebitda resolve."
+  },
+  {
+   "id": "growth_trailing_profit_and_cash_flow_below_a_year_earlier",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.growth.operating_income, net_income and operating_cash_flow .trailing_four_quarters are all negative against near-flat ratios.growth.revenue.trailing_four_quarters."
+  },
+  {
+   "id": "growth_quarter_jump_rests_on_refund_and_acquisitions",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:8 \"Acquisitions, divestitures and foreign currency had a net favorable impact of 2% to sales growth\", notes:23 gives no pro forma, and 8k_2_02:14 puts the refund in profit; growth paths resolve."
+  },
+  {
+   "id": "growth_operating_cash_flow_lagging_quarter_profit",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.growth.operating_cash_flow.quarter_over_quarter is small against ratios.growth.net_income.quarter_over_quarter; mdna:109 names only working capital and notes:155 places the payment in the quarter."
+  },
+  {
+   "id": "growth_remaining_performance_obligations_shrinking",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "notes:119 \"was approximately $143,000, of which approximately 80% is expected to be recognized as revenue over the next two years\" after note_history:41, against the 8k_2_02:20 backlog claim; notes:118 contract liabilities lower."
+  }
+ ],
+ "coverage": {
+  "answer": "no",
+  "why": "analysis_accounting.json dropped_items records the gate removing the areas.cross_document_reconciliation sentence that answered its own opening question \"Does the 8-K earnings release match the 10-Q?\", which the rubric counts as unanswered; every other accounting area, the industry lens and every financial section is answered."
+ },
+ "calibration": {
+  "answer": "yes",
+  "why": "Each area verdict tracks the anomalies filed under it (revenue_recognition names contract assets, contract liabilities and remaining performance obligations; controls names the tagging and paragraph slips); one slip: the estimates_and_reserves verdict puts the clean-energy warranty release in \"the quarter's income\" while its own anomaly and 8k_2_02:126 place it in the first quarter."
+ },
+ "valuation_reading": {
+  "answer": "no",
+  "why": "valuation.missing, market.missing and implied_growth_beside_history.implied_ten_year_revenue_growth.missing leave no value range, price position, implied growth or sensitivity grid; analysis_valuation.json reports each as not computed and invents none, ranking driver spreads against the record instead."
+ },
+ "score": 0.988,
+ "grader": {
+  "model_requested": "opus",
+  "model_served": "claude-opus-5-5",
+  "input_tokens": 62,
+  "output_tokens": 87858,
+  "cost_usd": 9.799168000000002,
+  "seconds": 745.5
+ }
+}

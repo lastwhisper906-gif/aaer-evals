@@ -1,0 +1,243 @@
+{
+ "scenarios": {
+  "bear": {
+   "revenue_growth_year_one": 0.01,
+   "terminal_growth": 0.02,
+   "operating_margin_year_one": 0.29,
+   "operating_margin_year_ten": 0.27,
+   "reinvestment_rate_year_one": 0.08,
+   "reinvestment_rate_year_ten": 0.12,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "Growth stalls in the next twelve months. The iPhone-led quarters that lifted the trailing year are lapped. The component shortage the MD&A expects to intensify caps units, and the price increases already taken may cut demand, as the MD&A itself warns.",
+     "quote": "Actions, such as price increases, that have been and may in the future be taken by the Company may not effectively mitigate these negative impacts, and may also reduce demand for the Company’s products and materially adversely affect the Company’s revenue, costs, gross margin, results of operations and financial condition.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.growth.revenue.trailing_four_quarters",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.years.2.revenue_growth"
+     ],
+     "history": "Bear growth sits far below the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct} and below the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}. It is a stall of the kind the record shows in fiscal 2023, when revenue moved {earnings_versus_cash.history.years.2.revenue_growth|pct} after a strong fiscal 2022."
+    },
+    "terminal_growth": {
+     "reason": "A mature hardware franchise exposed to tariffs, trade disputes and weaker consumer sentiment grows in perpetuity with inflation and little more.",
+     "quote": "Trade and other international disputes can have an adverse impact on the overall macroeconomic environment and result in shifts and reductions in consumer spending and negative consumer sentiment for the Company’s products and services, all of which can further adversely affect the Company’s business and results of operations.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound"
+     ],
+     "history": "Bear terminal growth is close to the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, the weak stretch of the record. It is well below the risk-free rate of {cost_of_capital.risk_free_rate|pct}, which is the ceiling."
+    },
+    "operating_margin_year_one": {
+     "reason": "The tariff refunds that lifted the latest quarters stop. Memory and other component costs keep rising, new tariffs take effect and R&D keeps climbing. The margin falls back to where it stood before the recent run.",
+     "quote": "Products gross margin and gross margin percentage increased during the third quarter and first nine months of 2026 compared to the same periods in 2025 primarily due to a different mix of products and tariff refunds, partially offset by higher costs, including memory.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "earnings_versus_cash.history.years.2.operating_margin"
+     ],
+     "history": "Bear margin is below the trailing operating margin of {ratios.profitability.operating_margin|pct} and the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}. It is a little below fiscal 2023's {earnings_versus_cash.history.years.2.operating_margin|pct}, the low point of the last three years."
+    },
+    "operating_margin_year_ten": {
+     "reason": "The trade measures the MD&A lists widen. Component cost inflation becomes structural, and spending on AI infrastructure grows faster than the revenue it brings, so the margin drifts down toward the lower part of the company's recent history.",
+     "quote": "Various modifications to U.S. tariffs have been announced, including the recent imposition of tariffs under Section 301 of the Trade Act of 1974, and further changes could be made in the future",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "earnings_versus_cash.history.years.4.operating_margin",
+      "earnings_versus_cash.history.years.5.operating_margin"
+     ],
+     "history": "Bear margin in year ten is below the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct} and below fiscal 2021's {earnings_versus_cash.history.years.4.operating_margin|pct}. It stays above fiscal 2020's {earnings_versus_cash.history.years.5.operating_margin|pct}, the lowest year in the printed record."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "The working-capital release of the trailing year reverses: suppliers in a tight component market demand faster payment, and the component inventory has to be paid for. Capital spending also returns above depreciation to build AI infrastructure.",
+     "quote": "if suppliers, in the supply squeeze the 10-Q expects to intensify, demanded faster payment on payables",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital",
+      "terms.trailing_four_quarters.change_in_payables",
+      "terms.balances_now.accounts_payable",
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters.depreciation_and_amortization"
+     ],
+     "history": "Bear reinvestment is well above the trailing year's. Net reinvestment over the trailing four quarters was negative because capital expenditure of {terms.trailing_four_quarters.capital_expenditure} ran below depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization}. Trade working capital also changed by {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital}, a release of cash carried by payables of {terms.trailing_four_quarters.change_in_payables}."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "AI infrastructure and manufacturing commitments that now sit off the capital line come onto it. Growth in a mature, tariff-exposed business earns a much lower return on new capital than the existing base does, so a larger share of income must be reinvested just to grow slowly.",
+     "quote": "If infrastructure is obtained as a service or through commitments rather than bought, cash spending moves off the capital line.",
+     "quote_from": "analysis_accounting.json",
+     "fields": [
+      "ratios.profitability.return_on_invested_capital",
+      "terms.balances_now.unconditional_purchase_obligations"
+     ],
+     "history": "Bear reinvestment in year ten is far above anything in the trailing year. Set against bear terminal growth, it implies a return on new capital well below the trailing return on invested capital of {ratios.profitability.return_on_invested_capital|pct}."
+    }
+   }
+  },
+  "base": {
+   "revenue_growth_year_one": 0.08,
+   "terminal_growth": 0.03,
+   "operating_margin_year_one": 0.32,
+   "operating_margin_year_ten": 0.31,
+   "reinvestment_rate_year_one": 0.04,
+   "reinvestment_rate_year_ten": 0.08,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "The trailing year grew fast on a strong iPhone cycle, with every geographic segment up. The next twelve months lap those quarters, and the MD&A describes supply constraints and rising component costs that it expects to intensify. Base growth therefore steps down well below the trailing pace but stays above fiscal 2025.",
+     "quote": "The Company is experiencing a period of supply constraints and increasing costs for components driven by factors such as industry supply-demand imbalances for components, including advanced semiconductors, storage (NAND) and memory (DRAM).",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.growth.revenue.trailing_four_quarters",
+      "ratios.growth.revenue.year_over_year",
+      "earnings_versus_cash.history.years.0.revenue_growth",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.revenue_growth_five_year_compound"
+     ],
+     "history": "Base growth is below the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct} and the quarter's year-over-year {ratios.growth.revenue.year_over_year|pct}, because those comparisons will be lapped. It is above fiscal 2025's {earnings_versus_cash.history.years.0.revenue_growth|pct} and the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, and a little below the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}."
+    },
+    "terminal_growth": {
+     "reason": "Over the long run the company grows with nominal world output, supported by Services and a still-rising installed base. Terminal growth stays below the risk-free rate, as it must, with room to spare.",
+     "quote": "Services net sales increased during the third quarter and first nine months of 2026 compared to the same periods in 2025 primarily due to higher net sales from advertising and cloud services.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.revenue_growth_five_year_compound"
+     ],
+     "history": "Base terminal growth sits between the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, and below the risk-free rate of {cost_of_capital.risk_free_rate|pct}."
+    },
+    "operating_margin_year_one": {
+     "reason": "The trailing margin includes tariff refunds, which the release sizes for the quarter and which neither filing says will recur. The MD&A also says memory costs already offset part of the products margin. Taking out the refunds and letting memory costs run leaves a margin at about the fiscal 2025 level.",
+     "quote": "Company gross margin was 50.1 percent, including a favorable impact of approximately 2 percentage points from tariff refunds.",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "earnings_versus_cash.history.years.0.operating_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "trend_table.quarters-back-0.ratios.gross_margin",
+      "trend_table.quarters-back-4.ratios.gross_margin"
+     ],
+     "history": "Base margin is below the trailing operating margin of {ratios.profitability.operating_margin|pct}, because the trailing figure carries refunds that lifted the quarter's gross margin to {trend_table.quarters-back-0.ratios.gross_margin|pct}. It is at about fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}, the highest full year on record, and above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}."
+    },
+    "operating_margin_year_ten": {
+     "reason": "Over ten years the Services mix that has lifted margin keeps working. R&D for AI infrastructure and headcount, plus recurring tariff and component pressure, absorbs most of that gain, so the margin settles at the three-year average.",
+     "quote": "primarily due to higher infrastructure-related costs, including investments in artificial intelligence, and headcount-related expenses",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "ratios.profitability.operating_margin",
+      "terms.trailing_four_quarters.research_and_development_expense",
+      "terms.trailing_four_quarters.research_and_development_expense.parts.prior_fiscal_year"
+     ],
+     "history": "Base margin in year ten is at about the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct} and below the trailing {ratios.profitability.operating_margin|pct}. The pressure is visible already: R&D over the trailing four quarters is {terms.trailing_four_quarters.research_and_development_expense} against {terms.trailing_four_quarters.research_and_development_expense.parts.prior_fiscal_year} in fiscal 2025."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "The trailing year reinvested less than nothing: capital spending fell below depreciation and payables released cash. Neither lasts. The payables rise should unwind as the component inventory is paid for, and capital spending goes back to its usual level near depreciation. Because suppliers fund the working capital, a small positive share of after-tax operating income is the company's normal pattern.",
+     "quote": "The benign reading is that payables rose with the component purchases behind the inventory build, and that this reverses as the inventory is paid for.",
+     "quote_from": "analysis_accounting.json",
+     "fields": [
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters.depreciation_and_amortization",
+      "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital",
+      "earnings_versus_cash.history.years.0.capital_expenditure",
+      "terms.trailing_four_quarters.depreciation_and_amortization.parts.prior_fiscal_year"
+     ],
+     "history": "Base reinvestment is above the trailing year's, which was negative. Capital expenditure of {terms.trailing_four_quarters.capital_expenditure} ran below depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization}, and trade working capital changed by {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital}. In fiscal 2025 capital expenditure of {earnings_versus_cash.history.years.0.capital_expenditure} ran above depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization.parts.prior_fiscal_year}, and the base returns toward that pattern."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "Terminal growth has to be paid for. By year ten the base reinvests enough to fund perpetual growth at a return on new capital that is still high but well below today's return on invested capital. Today's return is inflated by negative working capital and a small capital base. The MD&A's other purchase obligations already include capital assets for product manufacturing.",
+     "quote": "noncancelable obligations related to supplier arrangements, licensed intellectual property and content, distribution rights, and the acquisition of capital assets related to product manufacturing",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.profitability.return_on_invested_capital",
+      "ratios.profitability.return_on_invested_capital.invested_capital",
+      "earnings_versus_cash.history.years.0.capital_expenditure"
+     ],
+     "history": "Base reinvestment rises over ten years from the trailing negative figure to a modest positive share. Set against base terminal growth, it implies a return on new capital well below the trailing return on invested capital of {ratios.profitability.return_on_invested_capital|pct}, as competition and a maturing base should bring."
+    }
+   }
+  },
+  "bull": {
+   "revenue_growth_year_one": 0.13,
+   "terminal_growth": 0.035,
+   "operating_margin_year_one": 0.335,
+   "operating_margin_year_ten": 0.34,
+   "reinvestment_rate_year_one": 0.02,
+   "reinvestment_rate_year_ten": 0.05,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "The current cycle carries into another year. Growth is double-digit across iPhone, Mac and Services and in every geographic segment, and the installed base is at an all-time high. Price increases raise revenue per unit without the demand loss the MD&A fears.",
+     "quote": "double-digit revenue growth across iPhone, Mac and Services, and in every geographic segment",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.growth.revenue.trailing_four_quarters",
+      "ratios.growth.revenue.year_over_year",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.revenue_growth_five_year_compound",
+      "earnings_versus_cash.history.years.4.revenue_growth"
+     ],
+     "history": "Bull growth is slightly below the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct}. It is well above both the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}. The record holds one year faster than this: fiscal 2021, at {earnings_versus_cash.history.years.4.revenue_growth|pct}."
+    },
+    "terminal_growth": {
+     "reason": "An installed base at an all-time high across all major categories and segments supports Services and upgrade revenue that grow a little faster than the economy for good.",
+     "quote": "Our installed base of active devices also reached a new all-time high across all major product categories and geographic segments.",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.revenue_growth_five_year_compound"
+     ],
+     "history": "Bull terminal growth is above the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and below the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}. It is still below the risk-free rate of {cost_of_capital.risk_free_rate|pct}."
+    },
+    "operating_margin_year_one": {
+     "reason": "Mix keeps moving toward Services, whose gross margin is rising on higher sales and a richer mix. Price increases pass component costs through, so the trailing margin holds even without refunds.",
+     "quote": "Services gross margin increased during the third quarter and first nine months of 2026 compared to the same periods in 2025 primarily due to higher Services net sales and a different mix of services, partially offset by higher costs.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "ratios.profitability.gross_margin",
+      "earnings_versus_cash.history.years.0.operating_margin"
+     ],
+     "history": "Bull margin is about the trailing operating margin of {ratios.profitability.operating_margin|pct}. It is above every full fiscal year on record, the highest of which is fiscal 2025 at {earnings_versus_cash.history.years.0.operating_margin|pct}."
+    },
+    "operating_margin_year_ten": {
+     "reason": "Services takes a larger share of sales at a richer margin. The company extends the margin climb its record shows and holds the margin above today's level.",
+     "quote": "Profitability is strong and at the top of the company's own history; the pressure is on how much of the latest margin lasts, not on its level.",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "earnings_versus_cash.history.years.0.operating_margin",
+      "earnings_versus_cash.history.years.5.operating_margin"
+     ],
+     "history": "Bull margin in year ten is above the trailing {ratios.profitability.operating_margin|pct}. It extends a record that rose from {earnings_versus_cash.history.years.5.operating_margin|pct} in fiscal 2020 to {earnings_versus_cash.history.years.0.operating_margin|pct} in fiscal 2025."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "The capital-light model persists. Suppliers keep financing the operating cycle, Services growth needs little capital, and capital spending stays near depreciation, so only a sliver of after-tax operating income is reinvested.",
+     "quote": "suppliers finance the operating cycle",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "ratios.efficiency.cash_conversion_cycle",
+      "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now",
+      "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier"
+     ],
+     "history": "Bull reinvestment is a little above the trailing year's negative figure. It fits a record of negative trade working capital, {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now} now against {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier} a year earlier, and a cash conversion cycle of {ratios.efficiency.cash_conversion_cycle} days."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "Even at maturity the business needs little capital. Returns on invested capital are very high, and a modest share of income funds bull terminal growth at a return on new capital that stays far above any plausible cost of capital.",
+     "quote": "Return on equity is lifted by a small equity base (see the DuPont reading), so return on assets and return on invested capital are the cleaner reads, and both are high.",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "ratios.profitability.return_on_invested_capital",
+      "ratios.profitability.return_on_assets"
+     ],
+     "history": "Bull reinvestment in year ten stays modest, though it is above the trailing year's negative reinvestment. That fits a trailing return on invested capital of {ratios.profitability.return_on_invested_capital|pct} and return on assets of {ratios.profitability.return_on_assets|pct}."
+    }
+   }
+  }
+ },
+ "wacc_overrides": {},
+ "dropped_items": [],
+ "dropped_count": 0
+}

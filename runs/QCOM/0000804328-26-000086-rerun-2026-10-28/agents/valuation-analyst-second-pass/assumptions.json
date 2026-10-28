@@ -1,0 +1,241 @@
+{
+ "scenarios": {
+  "bear": {
+   "revenue_growth_year_one": -0.04,
+   "terminal_growth": 0.02,
+   "operating_margin_year_one": 0.15,
+   "operating_margin_year_ten": 0.17,
+   "reinvestment_rate_year_one": 0.45,
+   "reinvestment_rate_year_ten": 0.2,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "The bear case carries the third quarter's change of {ratios.growth.revenue.year_over_year|pct} on the year-ago quarter through a full year: handset revenue keeps falling under memory supply constraints, supplier capacity limits cost revenue outright, and the non-handset acceleration the release expects arrives late and smaller.",
+     "quote": "we may be unable to fully satisfy customer demand, which could result in lost or delayed revenue",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.growth.revenue.year_over_year",
+      "ratios.growth.revenue.quarter_over_quarter",
+      "ratios.growth.revenue.trailing_four_quarters"
+     ],
+     "history": "Below the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct} and the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, but milder than the fiscal 2023 contraction of {earnings_versus_cash.history.years.2.revenue_growth|pct}, the company's last handset downturn."
+    },
+    "terminal_growth": {
+     "reason": "In the bear case the company settles into a slow-growing handset and licensing franchise whose diversification adds little, and licence renewals with key OEMs from fiscal 2027 reset royalties lower, so perpetual growth sits well below the risk-free rate of {cost_of_capital.risk_free_rate|pct}.",
+     "quote": "Patent licences with key OEMs have their earliest remaining terms expiring in fiscal 2027.",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound"
+     ],
+     "history": "Above the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, which runs from a cyclical peak to a recovery, and far below the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}."
+    },
+    "operating_margin_year_one": {
+     "reason": "The bear case holds the year at or below the third quarter's level, operating income of {ratios.growth.operating_income.this_quarter} on revenue of {ratios.growth.revenue.this_quarter}, because supplier cost increases outrun the pricing actions and the fourth-quarter guidance points lower still.",
+     "quote": "The release guides fourth-quarter fiscal 2026 GAAP diluted EPS to a range that sits wholly below the third quarter's reported GAAP diluted EPS",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "ratios.growth.operating_income.this_quarter",
+      "ratios.growth.revenue.this_quarter",
+      "ratios.profitability.operating_margin",
+      "trend_table.quarters-back-0.ratios.gross_margin"
+     ],
+     "history": "Below the trailing operating margin of {ratios.profitability.operating_margin|pct}, the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct} and the fiscal 2023 low of {earnings_versus_cash.history.years.2.operating_margin|pct}; the bear case takes the third quarter, not the trailing year, as the new level."
+    },
+    "operating_margin_year_ten": {
+     "reason": "In the bear case pricing never fully recovers input costs, licence renewals come at lower rates, and the loss-making businesses outside the reportable segments keep diluting margin, so margin recovers only a little from year one.",
+     "quote": "we continue to see increased product costs from certain of our key suppliers, which could negatively impact our margins",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "earnings_versus_cash.history.years.2.operating_margin",
+      "trend_table.years-back-0.ratios.gross_margin"
+     ],
+     "history": "Below every fiscal year in the calculator's record, the lowest of which is fiscal 2023 at {earnings_versus_cash.history.years.2.operating_margin|pct}, and well below the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "The bear case keeps spending at the current pace, with capital expenditure above depreciation, acquisitions for diversification, and an inventory build that does not unwind because the demand it was built for does not return, so this reinvestment produces no growth.",
+     "quote": "an increase in inventory reflecting certain customer demand impacts from memory supply constraints",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters.depreciation_and_amortization",
+      "earnings_versus_cash.working_capital.inventory.balance_sheet_change",
+      "terms.trailing_four_quarters.change_in_receivables"
+     ],
+     "history": "Above the company's usual low reinvestment: in fiscal 2025 capital expenditure of {earnings_versus_cash.history.years.0.capital_expenditure} was below depreciation of {terms.trailing_four_quarters.depreciation_and_amortization.parts.prior_fiscal_year}, while over the trailing four quarters capital expenditure of {terms.trailing_four_quarters.capital_expenditure} exceeds depreciation of {terms.trailing_four_quarters.depreciation_and_amortization} and inventory rose {earnings_versus_cash.working_capital.inventory.balance_sheet_change}."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "The bear case keeps putting a sizeable share of after-tax operating income into diversification at the end of the decade while growth stays low, so new capital earns little more than its cost and adds little value.",
+     "quote": "$1.6 billion in capital expenditures, $1.6 billion in cash paid for acquisitions and other investments (net of cash acquired)",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.cash_flow_families.acquisitions",
+      "earnings_versus_cash.history.years.0.capital_expenditure"
+     ],
+     "history": "Above the fiscal 2025 pattern, when capital expenditure of {earnings_versus_cash.history.years.0.capital_expenditure} ran below depreciation, because the bear case assumes the fiscal 2026 acquisition pace continues; the calculator's acquisitions line reads {terms.cash_flow_families.acquisitions} and does not see that cash."
+    }
+   }
+  },
+  "base": {
+   "revenue_growth_year_one": 0.02,
+   "terminal_growth": 0.03,
+   "operating_margin_year_one": 0.19,
+   "operating_margin_year_ten": 0.24,
+   "reinvestment_rate_year_one": 0.4,
+   "reinvestment_rate_year_ten": 0.15,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "The next four quarters straddle a soft fourth quarter, with handset revenue under memory and supply pressure, and the non-handset acceleration the release expects in fiscal 2027; the base case grows at about the trailing pace, giving the release's acceleration only partial weight because part of the Data Center growth is acquired rather than organic.",
+     "quote": "we expect year-over-year growth in non-handset revenues, including Data Center, to accelerate from 24% in fiscal 2026 to greater than 60% in fiscal 2027",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.growth.revenue.trailing_four_quarters",
+      "ratios.growth.revenue.year_over_year",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.revenue_growth_five_year_compound"
+     ],
+     "history": "About level with the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct}, above the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and far below the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, which carries the fiscal 2021 and fiscal 2022 handset boom; the base case reads the latest quarter's change of {ratios.growth.revenue.year_over_year|pct} as a supply-driven dip, not the trend."
+    },
+    "terminal_growth": {
+     "reason": "A chip and licensing business moving from handsets into automotive, IoT and data center can grow at about the pace of nominal output in perpetuity, held below the risk-free rate of {cost_of_capital.risk_free_rate|pct}; with the linear fade, growth edges up from year one as non-handset revenue becomes a larger share.",
+     "quote": "$223 million in higher shipments primarily from new vehicle launches with our Snapdragon digital cockpit",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.revenue_growth_five_year_compound"
+     ],
+     "history": "Above the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and well below the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}; the record spans one boom and one bust, and the base case sits between them."
+    },
+    "operating_margin_year_one": {
+     "reason": "Year one starts between the trailing margin and the third quarter's level: gross margin is falling on input costs, and research, share-based compensation and acquisition expenses keep rising, while the pricing actions take effect only gradually.",
+     "quote": "Gross margin percentage decreased in the third quarter and first nine months of fiscal 2026 primarily due to a decrease in QCT gross margin percentage",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "ratios.growth.operating_income.this_quarter",
+      "ratios.growth.revenue.this_quarter",
+      "ratios.growth.operating_income.year_over_year",
+      "trend_table.quarters-back-0.ratios.gross_margin",
+      "terms.trailing_four_quarters.share_based_compensation"
+     ],
+     "history": "Below the trailing operating margin of {ratios.profitability.operating_margin|pct}, the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct} and the fiscal 2023 low of {earnings_versus_cash.history.years.2.operating_margin|pct}, because the third quarter's gross margin of {trend_table.quarters-back-0.ratios.gross_margin|pct} is the lowest the calculator holds and quarterly operating income of {ratios.growth.operating_income.this_quarter} changed {ratios.growth.operating_income.year_over_year|pct} on the year."
+    },
+    "operating_margin_year_ten": {
+     "reason": "By year ten pricing has caught up with input costs and the diversified businesses have scale, lifting margin back toward the company's average; it stays a little below that average because growth comes from chip businesses rather than licensing, and key licences are renewed from fiscal 2027.",
+     "quote": "Key licence agreements begin expiring in fiscal 2027",
+     "quote_from": "analysis_accounting.json",
+     "fields": [
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "earnings_versus_cash.history.years.0.operating_margin",
+      "earnings_versus_cash.history.years.2.operating_margin"
+     ],
+     "history": "Just below the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct} and below fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}, above the fiscal 2023 low of {earnings_versus_cash.history.years.2.operating_margin|pct}."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "Year one keeps the higher spending now visible, with capital expenditure above depreciation and cash acquisitions that the calculator does not see, but assumes the memory-driven inventory build stops growing, so reinvestment is below this year's pace and well above the company's usual level.",
+     "quote": "$1.6 billion in capital expenditures, $1.6 billion in cash paid for acquisitions and other investments (net of cash acquired)",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters.depreciation_and_amortization",
+      "earnings_versus_cash.working_capital.inventory.balance_sheet_change",
+      "terms.trailing_four_quarters.change_in_receivables",
+      "terms.cash_flow_families.acquisitions"
+     ],
+     "history": "Above fiscal 2025, when capital expenditure of {earnings_versus_cash.history.years.0.capital_expenditure} ran below depreciation of {terms.trailing_four_quarters.depreciation_and_amortization.parts.prior_fiscal_year}; over the trailing four quarters capital expenditure of {terms.trailing_four_quarters.capital_expenditure} exceeds depreciation of {terms.trailing_four_quarters.depreciation_and_amortization}, inventory rose {earnings_versus_cash.working_capital.inventory.balance_sheet_change} and receivables absorbed {terms.trailing_four_quarters.change_in_receivables}."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "At the end of the decade reinvestment falls to the share needed to sustain the terminal growth at a high return on new capital, fitting a design and licensing model that needs little physical capital, but stays above the company's lowest years because diversification keeps needing capital.",
+     "quote": "",
+     "quote_from": "",
+     "fields": [
+      "earnings_versus_cash.history.years.0.free_cash_flow_simple",
+      "earnings_versus_cash.history.years.0.operating_income",
+      "earnings_versus_cash.history.years.0.capital_expenditure"
+     ],
+     "history": "Above the fiscal 2025 pattern, when capital expenditure of {earnings_versus_cash.history.years.0.capital_expenditure} ran below depreciation and free cash flow of {earnings_versus_cash.history.years.0.free_cash_flow_simple} exceeded operating income of {earnings_versus_cash.history.years.0.operating_income}, and well below the current year's higher spending."
+    }
+   }
+  },
+  "bull": {
+   "revenue_growth_year_one": 0.09,
+   "terminal_growth": 0.035,
+   "operating_margin_year_one": 0.22,
+   "operating_margin_year_ten": 0.29,
+   "reinvestment_rate_year_one": 0.45,
+   "reinvestment_rate_year_ten": 0.12,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "The bull case takes the release's fiscal 2027 non-handset acceleration at face value and holds handset revenue steady once memory supply loosens, so total revenue grows well above its trailing pace in year one and stays on the path to the release's longer-range target.",
+     "quote": "total non-handset revenues growing to $40 billion by fiscal 2029",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.growth.revenue.trailing_four_quarters",
+      "earnings_versus_cash.history.revenue_growth_five_year_compound",
+      "earnings_versus_cash.history.years.0.revenue_growth"
+     ],
+     "history": "Above the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct} and the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, below fiscal 2025's {earnings_versus_cash.history.years.0.revenue_growth|pct} and the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}."
+    },
+    "terminal_growth": {
+     "reason": "In the bull case the move into automotive, IoT and data center makes the company a broader computing supplier, so its perpetual growth sits above the base case while staying below the risk-free rate of {cost_of_capital.risk_free_rate|pct}.",
+     "quote": "Despite a challenging memory and supply environment, our third quarter results reflect solid execution of our growth strategy",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.revenue_growth_five_year_compound"
+     ],
+     "history": "Above the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and far below the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}."
+    },
+    "operating_margin_year_one": {
+     "reason": "In the bull case the pricing actions recover input costs quickly and higher revenue absorbs the rising operating expenses, so year one returns to about the trailing margin rather than the third quarter's level.",
+     "quote": "expect these actions to benefit our gross margins over time as the pricing changes gradually come into effect",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "trend_table.quarters-back-0.ratios.gross_margin"
+     ],
+     "history": "Slightly below the trailing operating margin of {ratios.profitability.operating_margin|pct} and the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}, just above the fiscal 2023 low of {earnings_versus_cash.history.years.2.operating_margin|pct}."
+    },
+    "operating_margin_year_ten": {
+     "reason": "With scale in automotive, IoT and data center and pricing that holds, the bull case margin returns to the upper part of the company's own record, short of the fiscal 2022 peak, which came at the top of a handset cycle.",
+     "quote": "",
+     "quote_from": "",
+     "fields": [
+      "earnings_versus_cash.history.years.0.operating_margin",
+      "earnings_versus_cash.history.years.3.operating_margin",
+      "earnings_versus_cash.history.years.4.operating_margin"
+     ],
+     "history": "Above fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}, about level with fiscal 2021's {earnings_versus_cash.history.years.4.operating_margin|pct}, and below the fiscal 2022 peak of {earnings_versus_cash.history.years.3.operating_margin|pct}."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "Faster growth needs more capital: the bull case funds the data center and automotive ramp with capital expenditure, working capital and acquisitions above the base case's pace, and this spending earns high returns.",
+     "quote": "Capital spending runs ahead of depreciation",
+     "quote_from": "analysis_accounting.json",
+     "fields": [
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters.depreciation_and_amortization",
+      "terms.trailing_four_quarters_a_year_earlier.capital_expenditure"
+     ],
+     "history": "Above fiscal 2025, when capital expenditure of {earnings_versus_cash.history.years.0.capital_expenditure} ran below depreciation, and closer to the trailing four quarters, when capital expenditure rose to {terms.trailing_four_quarters.capital_expenditure} from {terms.trailing_four_quarters_a_year_earlier.capital_expenditure} a year earlier."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "By year ten the bull case earns high returns on new capital, because the design and licensing model needs little physical capital, so a small share of after-tax operating income sustains its terminal growth.",
+     "quote": "",
+     "quote_from": "",
+     "fields": [
+      "earnings_versus_cash.history.years.0.free_cash_flow_simple",
+      "earnings_versus_cash.history.years.0.operating_income",
+      "earnings_versus_cash.history.years.0.capital_expenditure"
+     ],
+     "history": "Close to the company's own record before fiscal 2026: in fiscal 2025 free cash flow of {earnings_versus_cash.history.years.0.free_cash_flow_simple} exceeded operating income of {earnings_versus_cash.history.years.0.operating_income} and capital expenditure of {earnings_versus_cash.history.years.0.capital_expenditure} ran below depreciation."
+    }
+   }
+  }
+ },
+ "wacc_overrides": {},
+ "dropped_items": [],
+ "dropped_count": 0
+}

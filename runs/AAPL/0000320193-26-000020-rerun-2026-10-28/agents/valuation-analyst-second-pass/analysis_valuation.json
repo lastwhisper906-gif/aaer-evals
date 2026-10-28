@@ -1,0 +1,98 @@
+{
+ "question": "what is this company worth, and what does the price already assume?",
+ "value_range": {
+  "reading": "Python did not compute a value. The calculator prints under valuation.missing: \"WACC is not computed: the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". Under cost_of_capital.missing it prints: \"the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". The beta, the market value of equity, the cost of equity, the capital weights and the WACC are each printed as missing for that one reason, so there is no value range and no scenario enterprise value, equity value or value per share, and none is estimated here. Only the market side is absent. The filing side is in place, with trailing revenue of {terms.trailing_four_quarters.revenue}, trailing operating income of {terms.trailing_four_quarters.operating_income}, a tax rate of {cost_of_capital.tax_rate|pct}, net debt of {ratios.solvency.net_debt} and {terms.shares_outstanding} shares outstanding. So are the other cost-of-capital inputs: a risk-free rate of {cost_of_capital.risk_free_rate|pct}, an equity risk premium of {cost_of_capital.equity_risk_premium|pct}, and a pre-tax cost of debt of {cost_of_capital.pre_tax_cost_of_debt|pct}, which is a fallback of the risk-free rate plus a fixed spread because no interest expense is on record. What can be read is how my scenarios sit against the record. Base starts at about the fiscal 2025 operating margin of {earnings_versus_cash.history.years.0.operating_margin|pct}, below the trailing {ratios.profitability.operating_margin|pct} that carries tariff refunds, and steps growth down from the trailing {ratios.growth.revenue.trailing_four_quarters|pct}. Bear assumes a stall like fiscal 2023, when revenue moved {earnings_versus_cash.history.years.2.revenue_growth|pct}, at a margin a little below that year's {earnings_versus_cash.history.years.2.operating_margin|pct}. Bull assumes the trailing growth pace and margin largely hold.",
+  "fields": [
+   "valuation.missing",
+   "cost_of_capital.missing",
+   "cost_of_capital.beta.missing",
+   "cost_of_capital.market_value_of_equity.missing",
+   "cost_of_capital.cost_of_equity.missing",
+   "terms.trailing_four_quarters.revenue",
+   "terms.trailing_four_quarters.operating_income",
+   "cost_of_capital.tax_rate",
+   "ratios.solvency.net_debt",
+   "terms.shares_outstanding",
+   "cost_of_capital.risk_free_rate",
+   "cost_of_capital.equity_risk_premium",
+   "cost_of_capital.pre_tax_cost_of_debt",
+   "earnings_versus_cash.history.years.0.operating_margin",
+   "ratios.profitability.operating_margin",
+   "ratios.growth.revenue.trailing_four_quarters",
+   "earnings_versus_cash.history.years.2.revenue_growth",
+   "earnings_versus_cash.history.years.2.operating_margin"
+  ]
+ },
+ "price_position": {
+  "reading": "Not computed. There is no price to place in a range: the calculator prints under market.missing \"no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\", and the price at the cutoff under the free cash flow yield is printed as missing for the same reason. Without a price there is no position in the range, no market value of equity and no free cash flow yield to cross-check the DCF, and none is estimated here. The trailing cash flows that yield would have divided are on record: free cash flow to the firm of {free_cash_flow.free_cash_flow_to_firm} and free cash flow to equity of {free_cash_flow.free_cash_flow_to_equity}.",
+  "fields": [
+   "market.missing",
+   "free_cash_flow_yield.price_at_cutoff.missing",
+   "free_cash_flow_yield.enterprise_value.missing",
+   "free_cash_flow.free_cash_flow_to_firm",
+   "free_cash_flow.free_cash_flow_to_equity"
+  ]
+ },
+ "market_implied_growth": {
+  "reading": "Not computed. The calculator prints under implied_growth_beside_history that there is \"no reverse DCF: WACC is not computed\", for the missing price series above, so the growth the price assumes cannot be read, and none is estimated here. The record it would have been set against is printed. Revenue grew at a three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and a five-year compound rate of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct} to fiscal 2025, by {earnings_versus_cash.history.years.0.revenue_growth|pct} in fiscal 2025 itself, and by {ratios.growth.revenue.trailing_four_quarters|pct} over the trailing four quarters, with the latest quarter up {ratios.growth.revenue.year_over_year|pct} year over year. My growth drivers sit against that record as follows. Base year-one growth is below the trailing pace, above fiscal 2025 and the three-year compound, and a little below the five-year compound, and it fades to a terminal rate between the two compounds. Bear year-one growth is below even the three-year compound. Bull year-one growth is slightly below the trailing pace. Every terminal rate is below the risk-free rate of {cost_of_capital.risk_free_rate|pct}. The paragraphs I read carry no revenue guidance. The one forward statement on the business points down, since the MD&A describes supply constraints and rising component costs and says \"The Company expects these trends to intensify\". It supports a base below the trailing pace, but it gives no figure to test against.",
+  "fields": [
+   "implied_growth_beside_history.implied_ten_year_revenue_growth.missing",
+   "earnings_versus_cash.history.revenue_growth_three_year_compound",
+   "earnings_versus_cash.history.revenue_growth_five_year_compound",
+   "earnings_versus_cash.history.years.0.revenue_growth",
+   "ratios.growth.revenue.trailing_four_quarters",
+   "ratios.growth.revenue.year_over_year",
+   "cost_of_capital.risk_free_rate"
+  ],
+  "quote": "The Company expects these trends to intensify, which may materially negatively impact the Company’s revenue, costs, gross margin, results of operations and financial condition.",
+  "quote_from": "input_mdna.md"
+ },
+ "most_sensitive": [
+  {
+   "assumption": "Revenue growth in year one and its fade to terminal growth",
+   "reading": "Not computed. The valuation was not run, so there is no sensitivity grid and no scenario spread, and which assumption moves value most cannot be read here. What can be read is where my scenarios part most against the record, and year-one growth is one such place. Bear sits below the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, base sits above fiscal 2025's {earnings_versus_cash.history.years.0.revenue_growth|pct}, and bull sits just under the trailing {ratios.growth.revenue.trailing_four_quarters|pct}. The record swings as widely, from {earnings_versus_cash.history.years.2.revenue_growth|pct} in fiscal 2023 to {earnings_versus_cash.history.years.4.revenue_growth|pct} in fiscal 2021.",
+   "fields": [
+    "valuation.missing",
+    "earnings_versus_cash.history.revenue_growth_three_year_compound",
+    "earnings_versus_cash.history.years.0.revenue_growth",
+    "ratios.growth.revenue.trailing_four_quarters",
+    "earnings_versus_cash.history.years.2.revenue_growth",
+    "earnings_versus_cash.history.years.4.revenue_growth"
+   ]
+  },
+  {
+   "assumption": "Operating margin path, and the reinvestment it needs",
+   "reading": "Not computed, for the same reason. The margin drivers span the record. Bear ends year ten below fiscal 2021's {earnings_versus_cash.history.years.4.operating_margin|pct} but above fiscal 2020's {earnings_versus_cash.history.years.5.operating_margin|pct}, base ends at about the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}, and bull ends above the trailing {ratios.profitability.operating_margin|pct}. Whether the trailing margin holds turns partly on tariff refunds. The release describes the quarter's gross margin of {trend_table.quarters-back-0.ratios.gross_margin|pct} as \"including a favorable impact of approximately 2 percentage points from tariff refunds\", and neither the release nor the 10-Q says the refunds recur. The reinvestment drivers hold a weak spot of mine. In base and bull, early-year reinvestment is light beside early-year growth, which implies a return on new capital above the trailing return on invested capital of {ratios.profitability.return_on_invested_capital|pct}. That holds only if suppliers keep funding working capital, as they do now with trade working capital at {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now}.",
+   "fields": [
+    "valuation.missing",
+    "earnings_versus_cash.history.years.4.operating_margin",
+    "earnings_versus_cash.history.years.5.operating_margin",
+    "earnings_versus_cash.history.operating_margin_three_year_average",
+    "ratios.profitability.operating_margin",
+    "trend_table.quarters-back-0.ratios.gross_margin",
+    "ratios.profitability.return_on_invested_capital",
+    "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now"
+   ]
+  }
+ ],
+ "accounting_adjustments": {
+  "reading": "None. The accounting analysis wrote no adjustment, and the calculator applied none: quality-adjusted free cash flow of {free_cash_flow.free_cash_flow_quality_adjusted} differs from simple free cash flow of {free_cash_flow.free_cash_flow_simple} only by share-based compensation of {terms.trailing_four_quarters.share_based_compensation}, since no acquisition line is printed. With no valuation run, there is no value effect to report either way. The accounting analysis left three items unadjusted, each for a stated reason. Trailing operating cash flow bears a payment that will not recur, since the MD&A says \"the Company paid the remaining $8.8 billion balance of the deemed repatriation tax payable\", and no calculator field carries it. Payables supplied cash, with trade working capital changing by {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital}, and no quote ties the rise to extended terms or a finance programme. The tariff refunds that lift the latest margin are sized only in the release. My drivers take up the last two directly instead of through an adjustment. Every scenario reinvests more than the trailing year did, and base margin starts at about fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct} instead of the trailing {ratios.profitability.operating_margin|pct}.",
+  "fields": [
+   "valuation.missing",
+   "free_cash_flow.free_cash_flow_quality_adjusted",
+   "free_cash_flow.free_cash_flow_simple",
+   "terms.trailing_four_quarters.share_based_compensation",
+   "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital",
+   "earnings_versus_cash.history.years.0.operating_margin",
+   "ratios.profitability.operating_margin"
+  ]
+ },
+ "summary_ko": {
+  "value_range": "주가 자료가 주어지지 않아 베타와 자기자본비용, 가중평균자본비용(WACC)이 계산되지 않았고, 그래서 가치 범위와 시나리오별 기업가치·주당가치도 계산되지 않았으며 여기서 추정하지도 않습니다. 읽을 수 있는 것은 가정과 과거 기록의 비교로, 기준 시나리오는 영업이익률을 관세 환급이 포함된 최근 네 분기 {ratios.profitability.operating_margin|pct}가 아니라 직전 회계연도 수준 {earnings_versus_cash.history.years.0.operating_margin|pct}에서 시작합니다.",
+  "price_position": "주가 시계열이 없어 현재 주가가 가치 범위의 어디에 있는지 계산할 수 없고, 잉여현금흐름 수익률도 계산되지 않았습니다. 비교에 쓰였을 최근 네 분기 기업잉여현금흐름은 {free_cash_flow.free_cash_flow_to_firm}입니다.",
+  "market_implied_growth": "가중평균자본비용이 없어 역DCF가 실행되지 않았으므로 주가에 담긴 성장률은 읽을 수 없습니다. 비교할 과거 기록은 세 해 연평균 매출 성장률 {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, 다섯 해 연평균 {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, 최근 네 분기 {ratios.growth.revenue.trailing_four_quarters|pct}이며, 회사는 매출 전망치 없이 부품 공급 제약과 원가 상승이 심해질 것이라고만 밝혔습니다.",
+  "most_sensitive": "가치 계산이 실행되지 않아 민감도 표가 없으므로 어떤 가정이 가치를 가장 크게 움직이는지는 읽을 수 없습니다. 다만 세 시나리오가 과거 기록 대비 가장 크게 갈리는 곳은 첫해 매출 성장률과 영업이익률 경로이고, 기준·낙관 시나리오의 초기 재투자율은 성장률에 비해 낮아 공급업체가 운전자본을 계속 대 준다는 전제에 기대고 있습니다.",
+  "accounting_adjustments": "회계 분석이 적용한 조정은 없고 가치 계산도 실행되지 않았으므로, 조정이 가치에 미친 영향은 보고할 것이 없습니다. 주식보상비용만 뺀 품질조정 잉여현금흐름은 {free_cash_flow.free_cash_flow_quality_adjusted}로 단순 잉여현금흐름 {free_cash_flow.free_cash_flow_simple}보다 작습니다."
+ },
+ "limits": "This valuation is a set of stated assumptions run through a stated formula. It states no recommendation to trade, and a different reader choosing different drivers would reach a different value."
+}
