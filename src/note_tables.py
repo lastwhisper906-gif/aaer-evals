@@ -36,8 +36,9 @@ period ...]` paragraphs carry no table of this filing), a prose paragraph (its
 numbers are the readers' to quote), a text fact inside a table, which is not a
 number, and a price (`is_a_price`): an amount in a currency per share or per
 any unit -- an option's exercise price, a grant-date fair value per share, a
-repurchase's average price -- or a concept that names a price or a volatility,
-each the market's price of the company's own shares or read from it. The two analysts never see a price, and each table
+repurchase's average price -- or a concept that names a price, a volatility or
+an intrinsic value, or an equity award's fair value, each the market's price of
+the company's own shares or worked out from it. The two analysts never see a price, and each table
 counts what it left out under `left_out_as_a_price`. A fair value in dollars
 (of debt, of a portfolio) is carried. A typed dimension's value is written
 `element = value`, so a date it carries is never read as a period.
@@ -84,21 +85,30 @@ def inline_tables(html: bytes) -> dict[str, list[str]]:
     return out
 
 
+# What a concept's name says when the number is a price of the company's own
+# shares or is worked out from one: a price or a volatility, an intrinsic value
+# (the share price less the strike, times the shares), and an equity award's
+# fair value (the share price at grant, or a model fed by it).
+PRICE_WORDS = ("price", "volatility", "intrinsicvalue")
+AWARD_WORDS = ("sharebased", "award", "option", "restrictedstock", "equityinstrument")
+
+
 def is_a_price(fact: dict) -> bool:
     """A fact the accounting and financial analysts are not handed: an amount in
     a currency per anything (per share, or per a unit the filer defines, as
-    Western Digital's `usdPerUnit` for its capped call's cap price) or a concept
-    that names a price or a volatility (an option's strike or exercise price, a
-    cap price, a grant-date price, a purchase price too, which is left out with
-    them). Each is, or may be, the market's price of the company's own shares,
-    or read from it, at some date the filing names, and those analysts never
-    see a price (CLAUDE.md). Earnings and dividends per share go with the
-    per-share amounts; the calculator carries them from companyfacts."""
+    Western Digital's `usdPerUnit` for its capped call's cap price), a concept
+    that names a price, a volatility or an intrinsic value, or an equity
+    award's fair value. Each is, or is worked out from, the market's price of
+    the company's own shares at some date the filing names, and those analysts
+    never see a price (CLAUDE.md). Earnings and dividends per share go with the
+    per-share amounts, and an acquisition's purchase price with the names; the
+    calculator carries the first two from companyfacts."""
     unit = fact.get("unit") or ""
     numerator = unit.split("/", 1)[0]
     per_something = "/" in unit and numerator.startswith("iso4217:")
     local = fact["name"].rsplit(":", 1)[-1].lower()
-    return per_something or "price" in local or "volatility" in local
+    award_value = "fairvalue" in local and any(word in local for word in AWARD_WORDS)
+    return per_something or award_value or any(word in local for word in PRICE_WORDS)
 
 
 def cell(fact: dict) -> dict:

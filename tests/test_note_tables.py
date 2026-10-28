@@ -61,7 +61,16 @@ SEGMENT = table("<td>Segment</td>" + number("f-6", "us-gaap:Revenues", "segment"
                 "<td>Grant</td>" + number("f-14", "us-gaap:ShareBasedCompensationArrangementBy"
                                           "ShareBasedPaymentAwardEquityInstrumentsOtherThan"
                                           "OptionsGrantsInPeriodWeightedAverageGrantDate"
-                                          "FairValue", "now", "258.16"))
+                                          "FairValue", "now", "258.16"),
+                # amounts in plain dollars worked out from the share price: an
+                # intrinsic value, and the fair value of the awards that vested
+                "<td>Intrinsic</td>" + number("f-15", "us-gaap:ShareBasedCompensationArrangement"
+                                              "ByShareBasedPaymentAwardOptionsOutstanding"
+                                              "IntrinsicValue", "now", "8,123"),
+                "<td>Vested</td>" + number("f-16", "us-gaap:ShareBasedCompensationArrangement"
+                                           "ByShareBasedPaymentAwardEquityInstrumentsOther"
+                                           "ThanOptionsVestedInPeriodTotalFairValue", "now",
+                                           "6,457"))
 
 INLINE = f"""<html xmlns="http://www.w3.org/1999/xhtml"
  xmlns:ix="http://www.xbrl.org/2013/inlineXBRL"
@@ -104,6 +113,8 @@ INSTANCE = f"""<xbrl xmlns="http://www.xbrl.org/2003/instance"
 <us-gaap:DerivativeCapPrice id="f-12" contextRef="now" unitRef="usdPerUnit" decimals="2">50.41</us-gaap:DerivativeCapPrice>
 <us-gaap:DerivativePriceRiskOptionStrikePrice id="f-13" contextRef="now" unitRef="usd" decimals="2">37.74</us-gaap:DerivativePriceRiskOptionStrikePrice>
 <us-gaap:ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsGrantsInPeriodWeightedAverageGrantDateFairValue id="f-14" contextRef="now" unitRef="usdPerShare" decimals="2">258.16</us-gaap:ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsGrantsInPeriodWeightedAverageGrantDateFairValue>
+<us-gaap:ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsOutstandingIntrinsicValue id="f-15" contextRef="now" unitRef="usd" decimals="-3">8123000</us-gaap:ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsOutstandingIntrinsicValue>
+<us-gaap:ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsVestedInPeriodTotalFairValue id="f-16" contextRef="now" unitRef="usd" decimals="-3">6457000</us-gaap:ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsVestedInPeriodTotalFairValue>
 <us-gaap:InventoryNet id="f-7" contextRef="now" unitRef="usd" decimals="-3">1000000</us-gaap:InventoryNet>
 <us-gaap:InventoryNet id="f-8" contextRef="then" unitRef="usd" decimals="-3">900000</us-gaap:InventoryNet>
 </xbrl>""".encode()
@@ -189,9 +200,12 @@ def test_a_typed_member_is_carried_and_its_date_is_never_read_as_a_period(found)
 
 def test_a_price_per_share_and_a_volatility_never_reach_the_analysts(found):
     concepts = {cell["concept"] for cell in found["tables"]["notes_4"]["facts"]}
-    assert not any("Price" in name or "Volatility" in name or "GrantDateFairValue" in name
-                   for name in concepts)
-    assert found["left_out_as_a_price"] == {"notes_4": 5}
+    assert not any(word in name for name in concepts
+                   for word in ("Price", "Volatility", "FairValue", "IntrinsicValue"))
+    assert found["left_out_as_a_price"] == {"notes_4": 7}
+    # and a value in dollars that is no equity award's stands: the segment's
+    # revenue and the backlog band
+    assert {"us-gaap:Revenues", "us-gaap:RevenueRemainingPerformanceObligation"} <= concepts
     for printed in ("258.16", "191.2", "50.41", "37.74"):
         assert printed not in json.dumps(found)
 
