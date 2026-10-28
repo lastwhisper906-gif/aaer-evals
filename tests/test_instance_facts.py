@@ -156,3 +156,71 @@ def test_a_filing_after_the_cutoff_is_refused_before_any_request(tmp_path, serve
     with pytest.raises(cutoff_guard.CutoffGuardError, match="after the cutoff"):
         read(tmp_path, server, "NVDA", cutoff="2026-02-24")
     assert server.seen == []
+
+
+def test_standard_namespaces_beside_us_gaap_and_dei_are_not_extensions(tmp_path, server):
+    """Arista's instance declares, read by eye, `srt` as http://fasb.org/srt/2025,
+    `ecd` as http://xbrl.sec.gov/ecd/2025 and `cyd` as
+    http://xbrl.sec.gov/cyd/2025, and its own `anet` as
+    http://www.arista.com/20251231. Two of its facts, read by eye:
+    `srt:StockRepurchaseProgramAuthorizedAmount1` 1200000000 in context `c-173`
+    (f-757) and `ecd:TrdArrDuration` P463D in context `c-224` (f-1077)."""
+    found = read(tmp_path, server, "ANET")
+    by_prefix = {}
+    for fact in found:
+        by_prefix.setdefault(fact["name"].split(":")[0], set()).add(fact["extension"])
+    assert {prefix: flags for prefix, flags in by_prefix.items()
+            if prefix in ("srt", "ecd", "cyd", "us-gaap", "dei")} == {
+        "srt": {False}, "ecd": {False}, "cyd": {False}, "us-gaap": {False}, "dei": {False}}
+    assert by_prefix["anet"] == {True}
+    buyback = [f for f in instance_facts.named(found, "srt:StockRepurchaseProgramAuthorizedAmount1")
+               if f["context_ref"] == "c-173"]
+    assert [(f["value"], f["kind"]) for f in buyback] == [(1200000000.0, "numeric")]
+    trading = [f for f in instance_facts.named(found, "ecd:TrdArrDuration")
+               if f["context_ref"] == "c-224"]
+    assert [(f["value"], f["kind"], f["unit"]) for f in trading] == [("P463D", "text", None)]
+
+
+def test_a_nil_fact_is_nil_with_no_value(tmp_path, server):
+    """Apple's balance sheet line for commitments and contingencies, read by eye:
+    `<us-gaap:CommitmentsAndContingencies contextRef="c-20" id="f-203"
+    unitRef="usd" xsi:nil="true"/>` and the same in `c-21` (f-204)."""
+    nil = [f for f in instance_facts.named(read(tmp_path, server, "AAPL"),
+                                           "us-gaap:CommitmentsAndContingencies")]
+    assert [(f["context_ref"], f["nil"], f["raw"], f["value"], f["kind"]) for f in nil] == [
+        ("c-20", True, None, None, "numeric"), ("c-21", True, None, None, "numeric")]
+    assert {f["id"] for f in nil} == {"0000320193-25-000079:f-203", "0000320193-25-000079:f-204"}
+
+
+PLANTED = b"""<?xml version="1.0" encoding="utf-8"?>
+<xbrli:xbrl xmlns:xbrli="http://www.xbrl.org/2003/instance"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:us-gaap="http://xbrl.us/us-gaap/2009-01-31"
+  xmlns:dei="http://xbrl.us/dei/2009-01-31"
+  xmlns:iso4217="http://www.xbrl.org/2003/iso4217"
+  xmlns:plant="http://www.example.com/20091231">
+  <xbrli:context id="c1"><xbrli:entity><xbrli:identifier scheme="http://www.sec.gov/CIK">0000000001</xbrli:identifier></xbrli:entity><xbrli:period><xbrli:instant>2009-12-31</xbrli:instant></xbrli:period></xbrli:context>
+  <xbrli:unit id="usd"><xbrli:measure>iso4217:USD</xbrli:measure></xbrli:unit>
+  <us-gaap:Cash contextRef="c1" unitRef="usd" decimals="-3">125000</us-gaap:Cash>
+  <us-gaap:Goodwill contextRef="c1" unitRef="usd" xsi:nil="1"/>
+  <dei:EntityRegistrantName contextRef="c1">
+    Planted Company Inc.
+  </dei:EntityRegistrantName>
+  <plant:BacklogAmount contextRef="c1" unitRef="usd" decimals="-3">7000</plant:BacklogAmount>
+</xbrli:xbrl>
+"""
+
+
+def test_a_planted_instance_of_2009():
+    """Planted: the us-gaap and dei taxonomies of 2009, published under xbrl.us;
+    a nil written `1`, which XML Schema reads as true; a name with whitespace
+    around it; and one fact in the filer's own namespace."""
+    found = {f["name"]: f for f in instance_facts.facts(PLANTED, accession="0000000001-10-000001")}
+    assert {name: f["extension"] for name, f in found.items()} == {
+        "us-gaap:Cash": False, "us-gaap:Goodwill": False,
+        "dei:EntityRegistrantName": False, "plant:BacklogAmount": True}
+    assert (found["us-gaap:Cash"]["value"], found["us-gaap:Cash"]["unit"]) == \
+        (125000.0, "iso4217:USD")
+    assert (found["us-gaap:Goodwill"]["nil"], found["us-gaap:Goodwill"]["value"]) == (True, None)
+    assert found["dei:EntityRegistrantName"]["value"] == "Planted Company Inc."
+    assert found["plant:BacklogAmount"]["value"] == 7000.0

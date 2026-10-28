@@ -39,10 +39,14 @@ from src.extract_numbers import XBRLI, XSI, _context, _number, _qname, _unit
 
 ARCHIVES = "https://www.sec.gov/Archives/edgar/data/"
 # the hosts the standard taxonomies are published under: FASB (us-gaap, srt),
-# the SEC (dei, country, currency, exch, ecd and the rest), XBRL International
-# and the IFRS Foundation; any other namespace is a filer's extension
-STANDARD = re.compile(r"https?://(?:[\w.-]*\.)?(?:fasb\.org|xbrl\.sec\.gov|xbrl\.org|"
-                      r"xbrl\.ifrs\.org|w3\.org)/")
+# the SEC (dei, country, currency, exch, ecd and the rest), XBRL US (the us-gaap
+# and dei taxonomies of 2009 and 2010, `http://xbrl.us/us-gaap/2009-01-31`),
+# XBRL International and the IFRS Foundation; any other namespace is a filer's
+# extension
+STANDARD = re.compile(r"https?://(?:[\w.-]*\.)?(?:fasb\.org|xbrl\.sec\.gov|xbrl\.us|"
+                      r"xbrl\.org|xbrl\.ifrs\.org|w3\.org)/")
+# XML Schema's two spellings of true
+NIL = ("true", "1")
 
 
 def archive_url(cik, accession: str, name: str, base: str = ARCHIVES) -> str:
@@ -81,7 +85,7 @@ def facts(xml_bytes: bytes, *, accession: str) -> list[dict]:
         if not context_ref:
             continue
         uri, local = _qname(element.tag)
-        nil = element.get(f"{{{XSI}}}nil") == "true"
+        nil = (element.get(f"{{{XSI}}}nil") or "").strip() in NIL
         raw = None if nil else "".join(element.itertext())
         unit_ref = element.get("unitRef")
         numeric = unit_ref is not None
