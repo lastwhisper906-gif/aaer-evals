@@ -56,6 +56,7 @@ from __future__ import annotations
 
 import gzip
 import hashlib
+import json
 import os
 import re
 import threading
@@ -189,6 +190,12 @@ class EdgarClient:
                 raise EdgarError(f"{url}: {error.reason}") from None
             return unpacked(body, encoding)
         raise EdgarError(f"{url}: no answer")    # not reached
+
+    def get_json(self, url: str):
+        try:
+            return json.loads(self.get(url))
+        except ValueError:
+            raise EdgarError(f"{url}: the answer is not JSON") from None
 
     def document(self, url: str, *, cik: str, accession: str, name: str,
                  expected_sha256: str | None = None) -> Path:

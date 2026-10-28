@@ -19,22 +19,19 @@ from __future__ import annotations
 
 import gzip
 import hashlib
-import http.server
 import socket
 import threading
 import time
-import urllib.request
 import zlib
 
 import pytest
 
 from src import edgar_client
 from src.edgar_client import CacheMismatch, EdgarClient, EdgarError, MissingContact, Throttle
+from tests.planted_edgar import DIRECT, SAMPLE_CONTACT, serve
 
 # the page: "Current max request rate: 10 requests/second."
 MAX_PER_SECOND = 10
-# the page's sample, with its placeholder domain filled in
-SAMPLE_CONTACT = "Sample Company Name AdminContact@samplecompanydomain.com"
 # the page's sample header
 SAMPLE_ACCEPT_ENCODING = "gzip, deflate"
 
@@ -43,49 +40,9 @@ CIK = "0000320193"
 ACCESSION = "0000320193-26-000018"
 
 
-class Planted(http.server.BaseHTTPRequestHandler):
-    """Serves the test's bytes; counts and records every request it is sent."""
-
-    def do_GET(self):  # noqa: N802 (the standard library's name)
-        server = self.server
-        with server.lock:
-            server.seen.append((self.path, dict(self.headers)))
-            hits = server.hits[self.path] = server.hits.get(self.path, 0) + 1
-        script = server.script.get(self.path)
-        status = script[hits - 1] if script and hits <= len(script) else 200
-        if status != 200:
-            self.send_response(status)
-            self.send_header("Content-Length", "0")
-            self.end_headers()
-            return
-        body, encoding = server.bodies.get(self.path, (FILED, ""))
-        self.send_response(200)
-        if encoding:
-            self.send_header("Content-Encoding", encoding)
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
-
-    def log_message(self, *args):
-        pass
-
-
 @pytest.fixture
 def server():
-    planted = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Planted)
-    planted.lock = threading.Lock()
-    planted.seen, planted.hits, planted.script, planted.bodies = [], {}, {}, {}
-    thread = threading.Thread(target=planted.serve_forever, kwargs={"poll_interval": 0.05},
-                              daemon=True)
-    thread.start()
-    planted.url = f"http://127.0.0.1:{planted.server_address[1]}"
-    yield planted
-    planted.shutdown()
-    planted.server_close()
-
-
-# the session's proxy is for the outside world; the planted server is local
-DIRECT = urllib.request.build_opener(urllib.request.ProxyHandler({})).open
+    yield from serve(default=FILED)
 
 
 def client(tmp_path, *, pace=None, sleep=None, opener=DIRECT, **environ):
