@@ -66,6 +66,7 @@ import argparse
 import datetime as dt
 import gzip
 import hashlib
+import html
 import json
 import os
 import re
@@ -77,10 +78,10 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 try:
-    from src import interpreter_pin, universe
+    from src import cutoff_guard, interpreter_pin, universe
 except ImportError:  # invoked as a plain script: python3.12 src/fetch_fixtures.py
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from src import interpreter_pin, universe
+    from src import cutoff_guard, interpreter_pin, universe
 
 # The twelve were a literal here and three other modules imported it from this
 # one, which made the universe a code change. It is `universe.json` at the
@@ -302,7 +303,8 @@ def submissions_record(ticker: str, cik: str, as_of: str,
         "cik": cik,
         "as_of": as_of,
         "url": SUBMISSIONS_URL.format(cik=cik),
-        "note": ("the recent-filings rows of the EDGAR submissions index, "
+        "note": ("the rows of the EDGAR submissions index read for this store (the "
+                 "recent list, and every older page for a store up to one filing), "
                  "projected to these fields and filtered to filing_date <= as_of"),
         "filings": rows,
     }
@@ -558,6 +560,173 @@ def fetch_company(fetcher: Fetcher, ticker: str, cik: str, as_of: str,
     return manifest, problems
 
 
+ACCESSION = re.compile(r"(\d{10})-(\d{2})-(\d{6})$")
+def accepted_at(stamp) -> dt.datetime | None:
+    """An index row's acceptance as an instant, or None when it carries none.
+
+    Read by `eastern_stamp`, the reading the store writes the stamp in and the
+    owner's grader compares, so the rule that picks the store and the grader
+    that checks it never read one stamp two ways; a stamp it cannot read, a
+    date that does not exist among them, is no stamp.
+    """
+    eastern = eastern_stamp(stamp) if isinstance(stamp, str) else None
+    return dt.datetime.fromisoformat(eastern) if eastern else None
+
+
+def stood_before(row: dict, filing: dict) -> bool:
+    """Whether a filing of the trigger's own day was accepted before it.
+
+    The rule of the owner's grader (`evals/regression/mechanical.py`,
+    `accepted_before_trigger`), so a store built here is never one it refuses:
+    both acceptance stamps, compared as instants, the same instant counting as
+    before; else the filer agent's accession sequence, a lower number under the
+    same agent and year showing an earlier assembly; else no, since nothing
+    shows it.
+    """
+    if row["accessionNumber"] == filing["accessionNumber"]:
+        return True
+    theirs = accepted_at(row.get("acceptanceDateTime"))
+    mine = accepted_at(filing.get("acceptanceDateTime"))
+    if theirs is not None and mine is not None:
+        return theirs <= mine
+    a, b = ACCESSION.match(row["accessionNumber"]), ACCESSION.match(filing["accessionNumber"])
+    return bool(a and b and a.group(1, 2) == b.group(1, 2) and int(a.group(3)) < int(b.group(3)))
+
+
+def known_at(rows: list[dict], filing: dict) -> list[dict]:
+    """The filings that stood when `filing` was accepted.
+
+    The cutoff is the filing's own date, and a filing made later that same day
+    is not one its reader could have seen: the owner's grader refuses a
+    document accepted after the triggering report on the cutoff day. A row of
+    that day is kept when `stood_before` shows it was accepted first. A row
+    dated earlier is kept unless both stamps show it was accepted after: a
+    Form 4 accepted before ten at night is dated that day, after a report
+    accepted after half past five that is dated the next.
+    """
+    day = filing["filingDate"]
+    mine = accepted_at(filing.get("acceptanceDateTime"))
+
+    def later(row: dict) -> bool:
+        theirs = accepted_at(row.get("acceptanceDateTime"))
+        return theirs is not None and mine is not None and theirs > mine
+
+    return [row for row in rows
+            if (row["filingDate"] < day and not later(row))
+            or (row["filingDate"] == day and stood_before(row, filing))]
+
+
+REGISTRANT_NAME = re.compile(
+    rb"<dei:EntityRegistrantName\b[^>]*>\s*([^<]*?)\s*</dei:EntityRegistrantName>")
+
+
+def name_as_filed(out: Path, ticker: str, filing: dict) -> str:
+    """The registrant's name as the filing itself states it, or "" when its
+    instance states none. EDGAR serves today's name, which a company renamed
+    after the filing would show through. Read through the gate, at the filing's
+    own date."""
+    for row in cutoff_guard.documents(ticker, role="xbrl_instance", fixtures_root=out):
+        if row.get("accession") == filing["accessionNumber"]:
+            found = REGISTRANT_NAME.search(cutoff_guard.load_bytes(
+                row["full_path"], filing["filingDate"], fixtures_root=out))
+            return html.unescape(found.group(1).decode("utf-8", "replace")) if found else ""
+    return ""
+
+
+def held_to_the_trigger(out: Path, ticker: str, filing: dict,
+                        known: frozenset[str]) -> list[str]:
+    """What a store holds that the filing's reader could not have known: an index
+    row of a filing that did not stand when it was accepted, a companyfacts row
+    filed that day by such a filing, a name other than the one it states. The
+    store is read through the gate, at the filing's own date, as the bundle
+    reads it."""
+    from src import fetch_companyfacts      # it imports this module
+    problems = []
+    try:
+        rows = cutoff_guard.documents(ticker, fixtures_root=out)
+        for row in rows:
+            if row.get("form") not in ("submissions", fetch_companyfacts.FORM):
+                continue
+            path = row["full_path"]
+            stored = json.loads(cutoff_guard.load_bytes(path, filing["filingDate"],
+                                                        fixtures_root=out))
+            if row.get("form") == "submissions":
+                late = sorted({one["accession"] for one in stored.get("filings", [])} - known)
+                if late:
+                    problems.append(f"{path} lists {len(late)} filing(s) that did not stand "
+                                    f"when {filing['accessionNumber']} was accepted: "
+                                    f"{', '.join(late[:3])}")
+                continue
+            late = sorted({one.get("accn") for *_, one in fetch_companyfacts.rows(
+                               stored.get("facts", {}))
+                           if one.get("filed") == filing["filingDate"]
+                           and one.get("accn") not in known}, key=str)
+            if late:
+                problems.append(f"{path} holds rows filed on {filing['filingDate']} by "
+                                f"filing(s) accepted after the trigger: "
+                                f"{', '.join(map(str, late[:3]))}")
+            if stored.get("facts") != fetch_companyfacts.as_of_the_filing(
+                    stored.get("facts", {})):
+                problems.append(f"{path} keeps a frame or a taxonomy label EDGAR writes today")
+            if stored.get("entity_name") != name_as_filed(out, ticker, filing):
+                problems.append(f"{path} names the company {stored.get('entity_name')!r}, "
+                                "not the name the filing states")
+    except cutoff_guard.CutoffGuardError as exc:
+        problems.append(f"the store cannot be read through the gate: {exc}")
+    return problems
+
+
+def store_up_to(fetcher, ticker: str, cik: str, filing: dict, out: Path,
+                filings: list[dict]) -> list[str]:
+    """A store up to one filing, as `--accession` builds one, for `src/on_demand.py`.
+
+    `filing` is the filing's submissions row and `filings` the index rows that
+    stood when it was accepted. A store that already holds it, the documents
+    around it, the index and companyfacts, as of the filing's own date, is used
+    as it is once its bytes are its manifest's and it holds nothing the filing's
+    reader could not have known (`held_to_the_trigger`): a store built under an
+    earlier rule is refused, not reused. Any other is fetched. The problems come
+    back, an empty list when the store is whole.
+    """
+    ticker_dir = out / ticker
+    known = frozenset(row["accessionNumber"] for row in filings)
+    manifest = load_manifest(ticker_dir)
+    roles = {(entry.get("form"), entry.get("role"), entry.get("accession"))
+             for entry in manifest.get("documents", [])}
+    whole = (manifest.get("as_of") == filing["filingDate"]
+             and (filing["form"], "primary_html", filing["accessionNumber"]) in roles
+             and any(form == "companyfacts" for form, _, _ in roles)
+             and any(form == "submissions" for form, _, _ in roles))
+    if whole:
+        problems = [f"changed: {line}" if not line.startswith(("changed:", "missing:")) else line
+                    for line in verify_existing(ticker_dir, manifest)]
+        return problems or stale(out, ticker, filing, known)
+    _, problems = fetch_company(fetcher, ticker, cik, filing["filingDate"], out,
+                                filings=filings)
+    if not problems:
+        # Imported here: the companyfacts fetcher imports this module.
+        from src import fetch_companyfacts
+        try:
+            name = name_as_filed(out, ticker, filing)
+        except cutoff_guard.CutoffGuardError as exc:
+            return [f"the filing's own name cannot be read through the gate: {exc}"]
+        problems = fetch_companyfacts.fetch_company(
+            fetcher, ticker, filing["filingDate"], out, known=known, entity_name=name)
+    if not problems:
+        held = {entry["accession"] for entry in load_manifest(ticker_dir).get("documents", [])
+                if entry.get("form") == filing["form"] and entry.get("role") == "primary_html"}
+        if held != {filing["accessionNumber"]}:
+            problems = [f"the store's {filing['form']} is "
+                        f"{', '.join(sorted(held)) or 'missing'}, not {filing['accessionNumber']}"]
+    # a store finished off here keeps the index, documents and companyfacts it
+    # already held, so it is held to the rule as a whole one is
+    return problems or stale(out, ticker, filing, known)
+
+
+def stale(out: Path, ticker: str, filing: dict, known: frozenset[str]) -> list[str]:
+    return [f"{line}; the store was built under another rule, so remove {out} and fetch again"
+            for line in held_to_the_trigger(out, ticker, filing, known)]
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--as-of", default=None,
@@ -590,8 +759,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.accession is not None:
         try:
-            filing = filing_for(recent_filings(fetcher, universe.cik(tickers[0])),
-                                args.accession)
+            rows = every_filing(fetcher, universe.cik(tickers[0]))
+            filing = filing_for(rows, args.accession)
         except (NotInIndex, universe.UniverseError) as exc:
             print(f"fetch_fixtures: {tickers[0]}: {exc}", file=sys.stderr)
             return FETCH_FAILED
@@ -621,28 +790,18 @@ def main(argv: list[str] | None = None) -> int:
             continue
         print(f"{ticker} (CIK {cik})")
         try:
-            _, found = fetch_company(fetcher, ticker, cik, args.as_of, out)
+            if args.accession is not None:
+                # the filing, what stood when it was accepted, companyfacts and
+                # the check that the store holds nothing later, in one
+                found = store_up_to(fetcher, ticker, cik, filing, out,
+                                    filings=known_at(rows, filing))
+            else:
+                _, found = fetch_company(fetcher, ticker, cik, args.as_of, out)
         except Exception as exc:  # noqa: BLE001
             problems.append(f"{ticker}: {type(exc).__name__}: {exc}")
             continue
         for line in found:
             (changed if line.startswith(("changed:", "missing:")) else problems).append(line)
-
-    if args.accession is not None and not problems:
-        # Imported here: the companyfacts fetcher imports this module.
-        from src import fetch_companyfacts
-        try:
-            problems.extend(fetch_companyfacts.fetch_company(
-                fetcher, tickers[0], args.as_of, out))
-        except Exception as exc:  # noqa: BLE001
-            problems.append(f"{tickers[0]}: companyfacts: {type(exc).__name__}: {exc}")
-    if args.accession is not None and not problems:
-        held = {entry["accession"] for entry in
-                load_manifest(out / tickers[0]).get("documents", [])
-                if entry.get("form") == filing["form"] and entry.get("role") == "primary_html"}
-        if held != {args.accession}:
-            problems.append(f"{tickers[0]}: the store's {filing['form']} is "
-                            f"{', '.join(sorted(held)) or 'missing'}, not {args.accession}")
 
     if changed:
         print("fetch_fixtures: fixtures on disk no longer match their manifest — "
