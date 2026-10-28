@@ -128,6 +128,67 @@ def test_a_bundle_file_that_is_not_there_is_refused(tmp_path):
         cutoff_guard.load_bundle_file(tmp_path, "input_numbers.json")
 
 
+# --- a document filed in private and made public later ----------------------
+#
+# A comment letter's EDGAR filing date is the day it was filed in private; the
+# day it was made public is its header's (ADTRAN's staff letter: filed
+# 2024-09-26, made public 2024-12-04, `tests/test_comment_letters.py`). The
+# rows below are planted, one letter each.
+
+def _letter_tree(tmp_path: Path, form: str, released=_MISSING) -> Path:
+    root = tmp_path / "fixtures"
+    folder = root / "ZZZZ" / "events" / "0000000000-24-010922"
+    folder.mkdir(parents=True)
+    (folder / "filename2.txt").write_bytes(b"September 25, 2024\n")
+    entry = {"form": form, "role": "staff_letter", "accession": "0000000000-24-010922",
+             "filing_date": "2024-09-26", "path": "events/0000000000-24-010922/filename2.txt",
+             "stored": "identity", "url": "https://example.invalid/filename2.txt"}
+    if released is not _MISSING:
+        entry["released"] = released
+    (root / "ZZZZ" / "manifest.json").write_text(json.dumps(
+        {"ticker": "ZZZZ", "as_of": "2025-03-03", "documents": [entry]}) + "\n")
+    return root
+
+
+LETTER = Path("ZZZZ") / "events" / "0000000000-24-010922" / "filename2.txt"
+
+
+@pytest.mark.parametrize("form", cutoff_guard.RELEASED_LATER_FORMS)
+def test_a_letter_with_no_release_on_record_is_refused(tmp_path, form):
+    root = _letter_tree(tmp_path, form)
+    with pytest.raises(CutoffGuardError, match="no release date on record"):
+        cutoff_guard.load_bytes(root / LETTER, "2025-03-03", fixtures_root=root)
+
+
+def test_a_letter_is_refused_until_it_was_made_public_whatever_its_filing_date(tmp_path):
+    root = _letter_tree(tmp_path, "UPLOAD", released="2024-12-04")
+    for cutoff in ("2024-09-26", "2024-12-03"):
+        with pytest.raises(cutoff_guard.NotYetPublicError) as caught:
+            cutoff_guard.load_bytes(root / LETTER, cutoff, fixtures_root=root)
+        assert caught.value.doc_date == dt.date(2024, 12, 4)
+    with pytest.raises(CutoffViolationError) as caught:
+        cutoff_guard.load_bytes(root / LETTER, "2024-09-25", fixtures_root=root)
+    assert caught.value.doc_date == dt.date(2024, 9, 26)
+    assert cutoff_guard.load_bytes(root / LETTER, "2024-12-04", fixtures_root=root) == \
+        b"September 25, 2024\n"
+
+
+def test_an_unreadable_release_is_refused(tmp_path):
+    root = _letter_tree(tmp_path, "CORRESP", released="December 4, 2024")
+    with pytest.raises(CutoffGuardError, match="not an ISO date"):
+        cutoff_guard.load_bytes(root / LETTER, "2025-03-03", fixtures_root=root)
+
+
+def test_a_store_records_whether_it_fetched_event_filings(tmp_path):
+    root = _letter_tree(tmp_path, "UPLOAD", released="2024-12-04")
+    assert cutoff_guard.fetched_event_filings("ZZZZ", fixtures_root=root) is None
+    assert cutoff_guard.fetched_event_filings("NVDA")["for"] == "0001045810-26-000075"
+    path = root / "ZZZZ" / "manifest.json"
+    path.write_text(json.dumps(dict(json.loads(path.read_text()), event_filings=["x"])))
+    with pytest.raises(CutoffGuardError, match="not an object"):
+        cutoff_guard.fetched_event_filings("ZZZZ", fixtures_root=root)
+
+
 # --- the companyfacts catalogue ----------------------------------------------
 #
 # The record is not a filing, so the cutoff is applied to its rows. Every

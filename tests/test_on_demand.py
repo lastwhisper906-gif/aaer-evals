@@ -762,3 +762,119 @@ def test_a_header_page_that_fails_otherwise_is_not_passed_over():
     fetcher = _OldFolder(edgar_client.EdgarError("https://www.sec.gov/...: HTTP 503"))
     with pytest.raises(edgar_client.EdgarError, match="503"):
         fetch_fixtures.document_types(fetcher, "0001092492", "0001193125-13-084624")
+
+
+# --- the event filings of the window, fetched on demand --------------------------
+#
+# Planted around NVIDIA's 10-Q of 2026-08-26, whose window opens after its 10-Q of
+# 2026-05-20: an 8-K with item 2.05, a notice of late filing, a staff letter filed
+# before the window and made public inside it, and a response filed inside the
+# window and made public after the 10-Q. The bodies and the release days are
+# planted values; what is asserted is where each one lands.
+
+EXIT_8K, NOTICE, LETTER, RESPONSE = ("0001045810-26-000060", "0001045810-26-000070",
+                                     "0000000000-26-000100", "0001045810-26-000055")
+EXIT_SENTENCE = "On June 9, 2026, the Company committed to a plan to close one of its sites."
+NOTICE_SENTENCE = "The Company is unable to file its Form 10-Q within the prescribed period."
+LETTER_SENTENCE = "We have reviewed your filing and have the following comment."
+
+
+def archive(accession: str, name: str) -> str:
+    return f"/Archives/edgar/data/{int(CIK)}/{accession.replace('-', '')}/{name}"
+
+
+def plant_the_window(server) -> None:
+    plant_rows(server,
+               {"accessionNumber": EXIT_8K, "filingDate": "2026-06-10", "reportDate": "2026-06-09",
+                "form": "8-K", "items": "2.05,9.01", "primaryDocument": "nvda-20260609.htm",
+                "primaryDocDescription": "8-K", "isXBRL": 0,
+                "acceptanceDateTime": "2026-06-10T20:05:00.000Z"},
+               {"accessionNumber": NOTICE, "filingDate": "2026-08-21", "reportDate": "2026-07-26",
+                "form": "NT 10-Q", "items": "", "primaryDocument": "nt10q.htm",
+                "primaryDocDescription": "NT 10-Q", "isXBRL": 0,
+                "acceptanceDateTime": "2026-08-21T21:00:00.000Z"},
+               {"accessionNumber": LETTER, "filingDate": "2026-04-02", "reportDate": "",
+                "form": "UPLOAD", "items": "", "primaryDocument": "filename1.pdf",
+                "primaryDocDescription": "", "isXBRL": 0,
+                "acceptanceDateTime": "2026-04-02T14:00:00.000Z"},
+               {"accessionNumber": RESPONSE, "filingDate": "2026-05-25", "reportDate": "",
+                "form": "CORRESP", "items": "", "primaryDocument": "filename1.htm",
+                "primaryDocDescription": "", "isXBRL": 0,
+                "acceptanceDateTime": "2026-05-25T15:00:00.000Z"})
+    server.bodies.update({
+        archive(EXIT_8K, "nvda-20260609.htm"): (
+            f"<html><body><p>Item 2.05 Costs Associated with Exit or Disposal Activities.</p>"
+            f"<p>{EXIT_SENTENCE}</p><p>Item 9.01 Financial Statements and Exhibits.</p>"
+            f"<p>SIGNATURES</p></body></html>".encode(), ""),
+        archive(NOTICE, "nt10q.htm"): (
+            f"<html><body><p>PART III — NARRATIVE</p><p>{NOTICE_SENTENCE}</p></body></html>"
+            .encode(), ""),
+        archive(LETTER, f"{LETTER}.hdr.sgml"): (
+            f"<SEC-HEADER>{LETTER}.hdr.sgml : 20260630\n<ACCEPTANCE-DATETIME>20260402100000\n"
+            "<PRIVATE-TO-PUBLIC>\n".encode(), ""),
+        archive(LETTER, f"{LETTER}-index-headers.html"): (
+            b"<TYPE>LETTER\n<SEQUENCE>1\n<FILENAME>filename1.pdf\n"
+            b"<TYPE>TEXT-EXTRACT\n<SEQUENCE>2\n<FILENAME>filename2.txt\n", ""),
+        archive(LETTER, "filename2.txt"): (
+            f"<DOCUMENT>\n<TYPE>TEXT-EXTRACT\n<TEXT>\n      April 2, 2026\n\n"
+            f"       {LETTER_SENTENCE}\n</TEXT>\n</DOCUMENT>\n".encode(), ""),
+        # made public after the 10-Q: its header is read, and nothing else is asked
+        archive(RESPONSE, f"{RESPONSE}.hdr.sgml"): (
+            f"<SEC-HEADER>{RESPONSE}.hdr.sgml : 20260915\n<PRIVATE-TO-PUBLIC>\n".encode(), ""),
+    })
+
+
+def test_the_store_on_demand_holds_the_window_s_event_filings_with_their_own_roles(
+        tmp_path, server):
+    plant_the_window(server)
+    held = on_demand.fetch_store(client(tmp_path, server), TICKER, accession=ACCESSION)
+    manifest = fetch_fixtures.load_manifest(held["store"] / TICKER)
+    assert manifest["event_filings"]["for"] == ACCESSION
+    assert manifest["event_filings"]["after"] == "0001045810-26-000052"   # 2026-05-20
+    rows = {(entry["role"], entry["accession"]): entry for entry in manifest["documents"]
+            if entry["accession"] in (EXIT_8K, NOTICE, LETTER, RESPONSE)}
+    assert sorted(rows) == [("event_body", EXIT_8K), ("late_notice", NOTICE),
+                            ("release_header", LETTER), ("staff_letter", LETTER)]
+    got = {key: (entry["form"], entry["filing_date"], entry.get("acceptance_datetime"),
+                 entry.get("released")) for key, entry in rows.items()}
+    assert got == {
+        ("event_body", EXIT_8K): ("8-K", "2026-06-10", "2026-06-10T16:05:00-04:00", None),
+        ("late_notice", NOTICE): ("NT 10-Q", "2026-08-21", "2026-08-21T17:00:00-04:00", None),
+        ("release_header", LETTER): ("UPLOAD", "2026-06-30", None, "2026-06-30"),
+        ("staff_letter", LETTER): ("UPLOAD", "2026-04-02", "2026-04-02T10:00:00-04:00",
+                                   "2026-06-30"),
+    }
+    assert archive(RESPONSE, "filename1.htm") not in server.hits
+    before = sum(server.hits.values())
+    on_demand.fetch_store(client(tmp_path, server), TICKER, accession=ACCESSION)
+    assert sum(server.hits.values()) - before == 1          # the index alone, as before
+
+
+def test_the_bundle_from_the_store_on_demand_carries_them_and_the_owners_grader_passes_it(
+        tmp_path, server):
+    from evals.common import PASS
+    from evals.regression import mechanical
+    from src import assemble_bundle
+    plant_the_window(server)
+    held = on_demand.fetch_store(client(tmp_path, server), TICKER, accession=ACCESSION)
+    run = tmp_path / "runs" / TICKER / ACCESSION
+    bundle = assemble_bundle.build(TICKER, "10-Q", accession=ACCESSION,
+                                   fixtures_root=held["store"], prior_runs=run.parent.parent)
+    assemble_bundle.write(bundle, run)
+    text = (run / "input_8k.md").read_text(encoding="utf-8")
+    for identifier, sentence in ((f"{EXIT_8K}:8k_event:2", EXIT_SENTENCE),
+                                 (f"{NOTICE}:late_notice:2", NOTICE_SENTENCE),
+                                 (f"{LETTER}:staff_letter:2", LETTER_SENTENCE)):
+        assert f"[{identifier}]\n{sentence}\n" in text
+    assert RESPONSE not in text
+    assert ("## event filings made public after the 10-Q 0001045810-26-000052 filed "
+            "2026-05-20, through 2026-08-26") in text
+    documents = {row["accession"]: row for row in bundle["manifest"]["documents"]
+                 if row["accession"] in (EXIT_8K, NOTICE, LETTER)}
+    assert {accession: row["contributed_to"] for accession, row in documents.items()} == \
+        {EXIT_8K: ["input_8k.md"], NOTICE: ["input_8k.md"], LETTER: ["input_8k.md"]}
+    assert documents[LETTER]["released"] == "2026-06-30"
+    assert RESPONSE not in json.dumps(bundle["manifest"])
+    for check in (mechanical.check_nothing_after_cutoff, mechanical.check_inputs_on_record):
+        result = check(run)
+        assert result.status == PASS, (check.__name__, result.failures)
