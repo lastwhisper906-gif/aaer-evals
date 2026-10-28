@@ -86,12 +86,19 @@ def test_the_cutoff_reads_edgars_filing_date_and_the_release_never_the_printed_d
         cutoff_guard.load_bytes(path, "2024-09-25", fixtures_root=root)
     assert not isinstance(printed.value, cutoff_guard.NotYetPublicError)
     assert printed.value.doc_date.isoformat() == "2024-09-26"
-    # filed, and still private: refused by the release, through the release day
-    for cutoff in ("2024-09-26", "2024-11-12", "2024-12-04"):
-        with pytest.raises(cutoff_guard.NotYetPublicError):
+    # filed, and still private: refused by the release until its day, which the
+    # date rule allows as it allows a filing date; which letters of the trigger's
+    # own day stood is decided where they are picked (the test after the next)
+    for cutoff in ("2024-09-26", "2024-11-12", "2024-12-03"):
+        with pytest.raises(cutoff_guard.NotYetPublicError) as private:
             cutoff_guard.load_bytes(path, cutoff, fixtures_root=root)
-    assert cutoff_guard.load_bytes(path, "2024-12-05", fixtures_root=root) == \
+        assert private.value.doc_date.isoformat() == "2024-12-04"
+    assert cutoff_guard.load_bytes(path, "2024-12-04", fixtures_root=root) == \
         recorded(STAFF, "filename2.txt")
+    # the header, EDGAR's record of the release, is dated by its own first line
+    header = row(root, STAFF, fetch_fixtures.RELEASE_HEADER)
+    assert (header["filing_date"], header["released"], header["edgar_filing_date"]) == \
+        ("2024-12-04", "2024-12-04", "2024-09-26")
 
 
 def test_letters_filed_before_a_report_and_made_public_after_it_never_reach_it(tmp_path):

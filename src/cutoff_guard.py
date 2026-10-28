@@ -66,13 +66,13 @@ class CutoffViolationError(CutoffGuardError):
 
 
 class NotYetPublicError(CutoffViolationError):
-    """The document was filed in private and made public on or after the cutoff."""
+    """The document was filed in private and made public after the cutoff."""
 
     def __init__(self, path, released: dt.date, cutoff_date: dt.date):
         CutoffGuardError.__init__(
-            self, f"look-ahead violation: {path} was made public {released}, not "
-                  f"before the cutoff {cutoff_date}; its EDGAR filing date is the day "
-                  "it was filed in private, not a day anyone could read it")
+            self, f"look-ahead violation: {path} was made public {released}, after "
+                  f"the cutoff {cutoff_date}; its EDGAR filing date is the day it was "
+                  "filed in private, not a day anyone could read it")
         self.path = str(path)
         self.doc_date = released
         self.cutoff_date = cutoff_date
@@ -85,9 +85,12 @@ class NotYetPublicError(CutoffViolationError):
 # `<PRIVATE-TO-PUBLIC>`): Apple's letters filed 2024-03-06 to 2024-05-16 were all
 # made public 2024-06-14, NVIDIA's of July to September 2025 on 2026-01-13. A row
 # of one of these forms is read only with its release on record (`released`),
-# and only when the release came before the cutoff day: the release is a date
-# with no time, so one on the cutoff day is not shown to have come before the
-# triggering report and is refused as unshown.
+# and never when the release came after the cutoff -- the date rule, applied to
+# the day the document became public, `doc_date == cutoff_date` allowed as it
+# is for a filing date. Which documents of the cutoff day stood when the
+# triggering report was accepted is decided where they are picked, as it is for
+# a filing of that day (`fetch_fixtures.known_at`): a release is a day with no
+# time, so `fetch_fixtures.public_in_window` keeps none of the trigger's own day.
 RELEASED_LATER_FORMS = ("UPLOAD", "CORRESP")
 
 
@@ -257,7 +260,7 @@ def check(path, cutoff_date, *, fixtures_root=FIXTURES) -> dict:
     if released is not None:
         public = parse_date(released, f"{row.get('ticker', '?')} "
                                       f"{row.get('path', path)} released")
-        if public >= cutoff:
+        if public > cutoff:
             raise NotYetPublicError(path, public, cutoff)
     return row
 

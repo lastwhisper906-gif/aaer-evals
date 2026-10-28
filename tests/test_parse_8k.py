@@ -684,3 +684,178 @@ def test_the_late_filing_list_is_a_recount_of_the_stored_file(ticker):
                if row["form"] in ("NT 10-K", "NT 10-Q", "NT 10-K/A", "NT 10-Q/A")]
     assert {row["accession"] for row in by_hand} == \
         {row["accession"] for row in parse_8k.late_filings(raw)}
+
+
+# --- event 8-Ks: a real one of each item --------------------------------------
+#
+# Each found through its company's submissions index -- the `items` field of the
+# row in the committed `tests/fixtures/{ticker}/submissions.json` -- and its
+# body fetched from EDGAR on 2026-10-28 into `tests/fixtures/event_filings/`
+# (address and sha256 in `record.json`), then read by eye. The words asserted
+# are the filing's, compared with each run of whitespace read as one space,
+# because the filings write non-breaking and thin spaces where a reader sees one.
+
+from tests import event_store  # noqa: E402
+
+EVENT_8KS = {
+    # ticker, accession, document: the index's items, then what the body says
+    ("STX", "0001193125-25-141454", "d77702d8k.htm"): ("1.02,2.04,8.01,9.01", {
+        "1.02": ["Item 1.02. Termination of a Material Definitive Agreement.",
+                 "On June 11, 2025 (the “Redemption Date”), the Seagate HDD Cayman (“Seagate "
+                 "HDD”), a direct subsidiary of Seagate Technology Holdings public limited "
+                 "company (the “Company”), redeemed all of its remaining outstanding 4.875% "
+                 "Senior Notes due 2027"],
+        "2.04": ["Item 2.04 Triggering Events That Accelerate or Increase a Direct Financial "
+                 "Obligation or an Obligation under an Off-Balance Sheet Arrangement.",
+                 "The information set forth in Item 1.02 of this Current Report on Form 8-K "
+                 "is incorporated by reference into this Item 2.04."]}),
+    ("STX", "0001137789-23-000021", "stx-20230329.htm"): ("2.05,5.02", {
+        "2.05": ["Item 2.05 Costs Associated with Exit or Disposal Activities.",
+                 "On March 29, 2023, Seagate Technology Holdings plc (the “Company”) committed "
+                 "to an expansion of the October 2022 Restructuring Plan"]}),
+    ("POWL", "0000950123-11-096524", "h85596e8vk.htm"): ("2.02,2.06,4.02,9.01", {
+        "2.06": ["Item 2.06 Material Impairments.",
+                 "In connection with the Company’s ongoing procedures relating to its fiscal "
+                 "year end review, the Company’s management, on November 8, 2011 concluded "
+                 "that the Company will record an impairment of the remaining intangible "
+                 "assets recorded in connection with the acquisition of Powell Canada totaling "
+                 "$7.2 million, or $0.61 per diluted share."],
+        "4.02": ["Item 4.02 Non-Reliance on Previously Issued Financial Statements or a "
+                 "Related Audit Report or Completed Interim Review.",
+                 "On November 8, 2011, the Audit Committee of the board of directors (the "
+                 "“Audit Committee”) of Powell Industries, Inc. (the “Company”), based on "
+                 "consultation with management, concluded that the Company’s unaudited "
+                 "interim consolidated financial statements for the quarters ended March 31 "
+                 "and June 30, 2011"]}),
+    ("SMCI", "0001375365-24-000045", "smci-20241206.htm"): ("3.01,9.01", {
+        "3.01": ["Item 3.01",
+                 "Notice of Delisting or Failure to Satisfy a Continued Listing Rule or "
+                 "Standard; Transfer of Listing",
+                 "On December 6, 2024, Super Micro Computer, Inc. (the “Company”) received a "
+                 "letter (the “Letter”) from the Nasdaq Stock Market (“Nasdaq”) informing the "
+                 "Company that Nasdaq has granted the Company’s request for an exception to "
+                 "Nasdaq’s Listing Rule 5250(c)(1) through February 25, 2025."]}),
+    ("WDC", "0001193125-26-055920", "d107707d8k.htm"): ("3.03", {
+        "3.03": ["Item 3.03 Material Modification to Rights of Security Holders.",
+                 "As previously disclosed, Western Digital Corporation (the “Company”) "
+                 "previously issued and sold shares of the Company’s Series A Convertible "
+                 "Perpetual Preferred Stock",
+                 "On February 17, 2026, in connection with the Mandatory Conversion, the Company "
+                 "converted all shares issued and outstanding of Preferred Stock into shares of "
+                 "Common Stock, pursuant to and in accordance with Section 8.2 of the "
+                 "Certificate of Designations."]}),
+}
+
+
+def _folded(text: str) -> str:
+    return " ".join(text.split())
+
+
+@pytest.mark.parametrize("key", sorted(EVENT_8KS), ids=lambda key: f"{key[0]}-{key[1]}")
+def test_a_real_event_8k_is_split_into_the_items_its_index_row_names(key):
+    ticker, accession, name = key
+    items, said = EVENT_8KS[key]
+    row = event_store.row_of(ticker, accession)
+    assert row["items"] == items
+    body = parse_8k.body_items(parse_8k.document_text(
+        event_store.recorded(accession, name).decode("utf-8")))
+    for code, paragraphs in said.items():
+        assert code in parse_8k.fetch_fixtures.EVENT_ITEMS + parse_8k.VERBATIM_ITEMS
+        got = [_folded(paragraph) for paragraph in body[code]["paragraphs"]]
+        for want, have in zip(paragraphs, got):
+            assert have.startswith(want), (code, have[:200])
+
+
+def test_a_table_of_contents_line_does_not_take_its_items_body():
+    """Powell's 8-K lists its four items before the first of them. Read the first
+    occurrence, its impairment would be the heading alone and the reason for it
+    gone; the body is the occurrence that carries more than one line."""
+    body = parse_8k.body_items(parse_8k.document_text(event_store.recorded(
+        "0000950123-11-096524", "h85596e8vk.htm").decode("utf-8")))
+    assert len(body["2.06"]["paragraphs"]) == 2
+    assert "Powell Canada" in body["2.06"]["text"]
+    assert "should\nno longer be relied upon" in body["4.02"]["text"]
+
+
+def test_an_auditor_change_carries_its_body_and_the_former_auditors_letter(tmp_path):
+    """Littelfuse's 8-K 0000889331-23-000135, filed 2023-08-16, items "4.01": its
+    header types `exhibit161.htm` EX-16.1, and the letter, read by eye, is Grant
+    Thornton's of August 16, 2023. It falls in the window of the 10-Q of
+    2023-11-01 (0000889331-23-000157), after the 10-Q of 2023-08-02. The staff's
+    letter filed 2023-10-30 (0000000000-23-011863) was made public 2023-12-12, after
+    that 10-Q, so the store holds nothing of it."""
+    root, problems, _ = event_store.fetched(tmp_path, "LFUS", "0000889331-23-000157")
+    assert problems == []
+    rows = event_store.manifest_rows(root, "LFUS")
+    assert {(entry["role"], entry["path"]) for entry in rows
+            if entry["accession"] == "0000889331-23-000135"} == {
+        ("event_body", "events/0000889331-23-000135/lfus-20230815.htm"),
+        ("auditor_letter", "events/0000889331-23-000135/exhibit161.htm")}
+    assert "0000000000-23-011863" not in {entry["accession"] for entry in rows}
+    events, text = event_store.section(root, "LFUS", "0000889331-23-000157")
+    body, letter = events["carried"]
+    assert (body["role"], letter["role"]) == ("event_body", "auditor_letter")
+    assert _folded(body["paragraphs"][0]) == "Item 4.01"
+    assert any(_folded(paragraph).startswith(
+        "As a result of this process, on August 15, 2023, the Committee approved the "
+        "dismissal of Grant Thornton as the Company’s auditor and appointed Deloitte & "
+        "Touche LLP") for paragraph in body["paragraphs"])
+    assert ("We have read Item 4.01 of Form 8-K of Littelfuse, Inc. dated August 16, 2023, "
+            "and agree with the statements concerning our Firm contained therein."
+            in [_folded(paragraph) for paragraph in letter["paragraphs"]])
+    assert letter["paragraph_ids"][0] == "0000889331-23-000135:auditor_letter:1"
+    assert body["paragraph_ids"][0] == "0000889331-23-000135:8k_event:1"
+    assert ("### 8-K 0000889331-23-000135 filed 2023-08-16, item 4.01: the body of item "
+            "4.01, verbatim") in text
+    assert ("### 8-K 0000889331-23-000135 filed 2023-08-16: exhibit 16, the former "
+            "auditor's letter (exhibit161.htm), verbatim") in text
+
+
+def test_a_body_that_heads_no_item_its_index_row_names_is_carried_whole(tmp_path):
+    """Logitech's 8-K 0001032975-25-000071, filed 2025-10-02, is indexed under item
+    3.01 and its body heads Item 5.03, an amendment to its articles. The window is
+    the 10-Q of 2025-10-29 (0001032975-25-000080), after the 10-Q of 2025-07-30."""
+    root, problems, _ = event_store.fetched(tmp_path, "LOGI", "0001032975-25-000080")
+    assert problems == []
+    events, text = event_store.section(root, "LOGI", "0001032975-25-000080")
+    [entry] = events["carried"]
+    assert ("### 8-K 0001032975-25-000071 filed 2025-10-02, item 3.01: its body heads no "
+            "item 3.01, so the whole body is carried, verbatim") in text
+    assert any(_folded(paragraph).startswith(
+        "Logitech International S.A. (the “Company”) amended Article 27 of its Articles of "
+        "Incorporation") for paragraph in entry["paragraphs"])
+
+
+def test_an_event_8k_filed_after_the_cutoff_is_refused_by_the_gate(tmp_path):
+    root, _, _ = event_store.fetched(tmp_path, "LFUS", "0000889331-23-000157")
+    [body] = [entry for entry in event_store.manifest_rows(root, "LFUS")
+              if entry["role"] == "event_body"]
+    with pytest.raises(cutoff_guard.CutoffViolationError):
+        cutoff_guard.load_bytes(root / "LFUS" / body["path"], "2023-08-15", fixtures_root=root)
+
+
+def test_a_store_fetched_without_event_filings_says_so_and_names_the_windows_8ks():
+    """The committed stores were fetched before the event filings were. AMD's
+    committed index holds the 8-K 0001193125-26-226746 of 2026-05-15, items
+    "1.01,1.02,2.03,5.02,5.07,9.01", inside the window of its 10-Q of 2026-08-05
+    (0000002488-26-000123), which opens after the 10-Q of 2026-05-06; the bundle
+    names it and carries no text of it. The window is recounted here from the
+    index with `json` and the two filing dates."""
+    trigger = cutoff_guard.one_document("AMD", "10-Q", "primary_html")
+    events = parse_8k.event_filings("AMD", cutoff=trigger["filing_date"], trigger=trigger)
+    assert events["state"] == "not_fetched"
+    assert events["carried"] == []
+    listed = [(row["form"], row["filing_date"], row["items"]) for row in events["listed"]]
+    raw = json.loads(cutoff_guard.load_index(cutoff_guard.one_document(
+        "AMD", "submissions", "submissions_index")["full_path"]))
+    by_hand = [("8-K", row["filing_date"], row["items"].split(","))
+               for row in raw["filings"] if row["form"] in ("8-K", "8-K/A")
+               and events["previous"]["filing_date"] < row["filing_date"] <= trigger["filing_date"]
+               and {"1.02", "2.04", "2.05", "2.06", "3.01", "3.03", "4.01"}
+               & set(row["items"].split(","))]
+    assert listed == sorted(by_hand, key=lambda one: one[1])
+    assert [row["accession"] for row in events["listed"]] == ["0001193125-26-226746"]
+    text = "\n".join(parse_8k.render_event_filings(events))
+    assert "### this store was fetched without event filings" in text
+    assert ("### listed by the index, its text not in the store: 8-K 0001193125-26-226746 "
+            "filed 2026-05-15, items 1.01, 1.02, 2.03, 5.02, 5.07, 9.01") in text

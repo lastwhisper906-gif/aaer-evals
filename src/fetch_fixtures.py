@@ -816,10 +816,11 @@ def stale(out: Path, ticker: str, filing: dict, known: frozenset[str]) -> list[s
 # a store read by filing date would have handed that 10-Q's reader a letter
 # nobody outside the company and the SEC could see. So each letter's header is
 # fetched and recorded (`release_header`), every letter row carries `released`,
-# the gate refuses one not public before the cutoff day
+# the gate refuses one made public after the cutoff
 # (`cutoff_guard.RELEASED_LATER_FORMS`), and a letter released on or after the
-# trigger's day is not in the store at all -- not its text, not its header. The
-# date printed on a letter decides nothing.
+# trigger's day is not in the store at all -- not its text, not its header,
+# since a release is a day with no time and the trigger's own day does not show
+# it came first. The date printed on a letter decides nothing.
 #
 # The letters looked at are those filed in the two years before the window
 # opens (`LETTER_LOOKBACK_YEARS`), since a letter's release can only be known
@@ -999,6 +1000,14 @@ def fetch_event_filings(fetcher, ticker: str, cik: str, filing: dict, out: Path,
                  "bytes": len(raw), "sha256": sha256(raw)}
         if released is not None:
             entry["released"] = released
+        if role == RELEASE_HEADER:
+            # The header served is EDGAR's dissemination record, and its first
+            # line dates it the day the filing was made public: it is dated that
+            # day here, with the letter's own filing date and acceptance beside
+            # it under their names, on the letter's row.
+            entry["edgar_filing_date"] = entry["filing_date"]
+            entry["filing_date"] = released
+            del entry["acceptance_datetime"]
         documents.append(entry)
         held.add((row["accessionNumber"], role, url))
         print(f"  {ticker} {row['form']:8s} {role:16s} {len(raw):>9,d} B  "
