@@ -441,6 +441,11 @@ def test_eodhd_goes_through_the_proxy_and_bundle_the_environment_names(
     ({"HTTPS_PROXY": "http://p:1", "NO_PROXY": "api"}, "http://p:1"),
     # a star is all hosts only when it is the whole list
     ({"HTTPS_PROXY": "http://p:1", "NO_PROXY": "localhost,*"}, "http://p:1"),
+    # the two cases `requests`' own bypass reads more widely, read as the
+    # standard library reads them (docs/needs_judgment.md)
+    ({"HTTPS_PROXY": "http://p:1", "NO_PROXY": "api. tiingo.com"}, "http://p:1"),
+    ({"HTTPS_PROXY": "http://p:1", "no_proxy": "", "NO_PROXY": "api.tiingo.com"},
+     "http://p:1"),
 ])
 def test_the_proxy_is_read_as_the_standard_library_reads_it(variables, proxy) -> None:
     assert prices.route("https://api.tiingo.com/tiingo/daily/zzzz", variables) == \
@@ -457,11 +462,17 @@ def test_the_bundle_is_requests_own_first_then_curls(tmp_path) -> None:
                               "REQUESTS_CA_BUNDLE": str(ours)})["verify"] == str(ours)
 
 
+def test_a_directory_of_certificates_is_a_bundle(tmp_path) -> None:
+    """`requests` takes a directory for `verify`, so a directory stands."""
+    assert prices.route("https://api.tiingo.com/x",
+                        {"REQUESTS_CA_BUNDLE": str(tmp_path)})["verify"] == str(tmp_path)
+
+
 def test_a_bundle_that_is_not_a_file_is_refused_before_any_request(
     monkeypatch: pytest.MonkeyPatch, tmp_path,
 ) -> None:
     calls = stand_in_requests(monkeypatch, tiingo_answers())
-    with pytest.raises(prices.Unconfigured, match="REQUESTS_CA_BUNDLE names a certificate"):
+    with pytest.raises(prices.Unconfigured, match="REQUESTS_CA_BUNDLE names a certificate bundle that is not there"):
         tiingo.history("ZZZZ", environ={"TIINGO_TOKEN": "stand-in",
                                         "REQUESTS_CA_BUNDLE": str(tmp_path / "none.crt")})
     assert calls == []
