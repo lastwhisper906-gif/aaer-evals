@@ -128,6 +128,9 @@ def korean_number(value: float, unit: str, *, percent: bool = False) -> str:
         return f"{value:,.1f}개월"
     if unit == "shares":
         return f"{value / 1e6:,.1f}백만 주"
+    if unit.startswith("iso4217:") and "/" not in unit:
+        # another currency a note table states, named by its code, never read as dollars
+        return f"{value:,.0f} {unit.split(':', 1)[1]}"
     return f"{value:,.3f}"
 
 

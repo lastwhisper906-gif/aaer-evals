@@ -88,7 +88,10 @@ SEGMENT = table("<td>Segment</td>" + number("f-6", "us-gaap:Revenues", "segment"
                 # a repurchase's average price per share, a name that names no
                 # price: only its unit says it is one
                 "<td>Repurchase</td>" + number("f-22", "us-gaap:TreasuryStockAcquiredAverage"
-                                               "CostPerShare", "now", "212.40"))
+                                               "CostPerShare", "now", "212.40"),
+                # a final price paid per share, tagged in plain dollars
+                "<td>Paid</td>" + number("f-23", "zzzz:FinalPricePaidPerShare", "now",
+                                         "205.10"))
 
 INLINE = f"""<html xmlns="http://www.w3.org/1999/xhtml"
  xmlns:ix="http://www.xbrl.org/2013/inlineXBRL"
@@ -140,6 +143,7 @@ INSTANCE = f"""<xbrl xmlns="http://www.xbrl.org/2003/instance"
 <us-gaap:PriceRiskDerivativeAssetsAtFairValue id="f-20" contextRef="now" unitRef="usd" decimals="-3">34000</us-gaap:PriceRiskDerivativeAssetsAtFairValue>
 <us-gaap:Revenues id="f-21" contextRef="later" unitRef="usd" decimals="-3">9000</us-gaap:Revenues>
 <us-gaap:TreasuryStockAcquiredAverageCostPerShare id="f-22" contextRef="now" unitRef="usdPerShare" decimals="2">212.40</us-gaap:TreasuryStockAcquiredAverageCostPerShare>
+<zzzz:FinalPricePaidPerShare id="f-23" contextRef="now" unitRef="usd" decimals="2">205.10</zzzz:FinalPricePaidPerShare>
 <us-gaap:InventoryNet id="f-7" contextRef="now" unitRef="usd" decimals="-3">1000000</us-gaap:InventoryNet>
 <us-gaap:InventoryNet id="f-8" contextRef="then" unitRef="usd" decimals="-3">900000</us-gaap:InventoryNet>
 </xbrl>""".encode()
@@ -229,8 +233,8 @@ def test_a_price_per_share_and_a_volatility_never_reach_the_analysts(found):
     held = {cell["fact"].rsplit(":", 1)[1] for cell in found["tables"]["notes_4"]["facts"]}
     # the exercise price, volatility, cap price, strike price, grant-date fair
     # value, intrinsic value, vested awards' fair value and dividend yield
-    assert not held & ({f"f-{n}" for n in range(10, 18)} | {"f-22"})
-    assert found["left_out_as_a_price"] == {"notes_4": 9}
+    assert not held & ({f"f-{n}" for n in range(10, 18)} | {"f-22", "f-23"})
+    assert found["left_out_as_a_price"] == {"notes_4": 10}
     # and a value in dollars that is no share's price stands: the segment's
     # revenue, the backlog band, debt at fair value, the fair-value option, a
     # commodity hedge
@@ -248,6 +252,8 @@ def test_the_memo_prints_a_filing_unit_as_it_prints_the_calculators():
 
     assert memo.korean_number(20_342e6, "iso4217:USD") == "203.4억 달러" == \
         memo.korean_number(20_342e6, "USD")
+    # another currency keeps its code and is never printed as dollars
+    assert memo.korean_number(1_250_000.0, "iso4217:EUR") == "1,250,000 EUR"
 
 
 def test_a_table_no_table_renders_to_is_unmatched_and_never_guessed(found):

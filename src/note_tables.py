@@ -93,7 +93,8 @@ def inline_tables(html: bytes) -> dict[str, list[str]]:
 # shares or is worked out from one. Words, not the bare "price": a commodity
 # hedge (`PriceRiskDerivativeAssetsAtFairValue`) or a contract's transaction
 # price is no share's price and stands.
-PRICE_WORDS = ("shareprice", "stockprice", "pricepershare", "pershareprice",
+PRICE_WORDS = ("shareprice", "stockprice", "pricepershare", "pershareprice", "pershare",
+               "pricepaid",
                "exerciseprice", "strikeprice", "capprice", "floorprice", "conversionprice",
                "volatility",
                # the share price less the strike, times the shares
