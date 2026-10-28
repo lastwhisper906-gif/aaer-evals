@@ -1328,6 +1328,13 @@ def test_the_rows_of_a_note_table_reach_the_accounting_analyst(tmp_path, ticker)
                for fact in table["facts"])
     assert held["note_tables"]["unmatched"] == []
     if ticker == "AAPL":
+        # the weighted-average grant-date fair value of the units granted, 258.16
+        # dollars a unit (`aapl-20260627_htm.xml`, unit usdPerShare), is a price
+        # and never reaches the analyst, though its name names none
+        assert not any("GrantDateFairValue" in fact["concept"] or fact["value"] == 258.16
+                       for entry in held["note_tables"]["tables"].values()
+                       for fact in entry["facts"])
+        assert held["note_tables"]["left_out_as_a_price"].get("notes_48")
         # the table prints five rows in two columns, and those ten numbers are
         # all it holds: f-656 to f-665, read by eye in the inline document
         assert sorted(fact["fact"] for fact in table["facts"]) == \
