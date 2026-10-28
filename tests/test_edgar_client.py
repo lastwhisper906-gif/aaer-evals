@@ -259,13 +259,17 @@ def test_a_body_slow_to_arrive_does_not_hold_the_gate(tmp_path, server):
     server.trickle["/slow.htm"] = 2.0
     done = {}
 
+    # a gate of the test's own: another process on the machine taking the
+    # shared one could make the quick request wait for it
+    gate = Gate(path=tmp_path / "gate")
+
     def slow():
-        client(tmp_path).get(server.url + "/slow.htm")
+        client(tmp_path, gate=gate).get(server.url + "/slow.htm")
         done["slow"] = time.monotonic()
     worker = threading.Thread(target=slow)
     worker.start()
     time.sleep(0.5)
-    client(tmp_path).get(server.url + "/quick.htm")
+    client(tmp_path, gate=gate).get(server.url + "/quick.htm")
     done["quick"] = time.monotonic()
     worker.join()
     assert done["quick"] < done["slow"]
@@ -511,6 +515,51 @@ def test_a_hash_without_its_file_refuses_bytes_unlike_it(tmp_path, server):
     assert not path.exists()
     assert (path.parent / "filing.htm.sha256").read_text().strip() == \
         hashlib.sha256(FILED).hexdigest()
+
+
+def test_a_store_stopped_between_its_two_renames_is_finished_by_the_next_fetch(
+        tmp_path, server, monkeypatch):
+    """Planted: the store is stopped (a Ctrl-C, a job's time running out) after
+    its first rename. Hash first, the next fetch finishes it against that hash;
+    file first, the file would stand without a hash and be refused for good."""
+    real = edgar_client._write_whole
+    calls = []
+
+    def stop_after_first(path, data):
+        calls.append(path.name)
+        if len(calls) == 2:
+            raise KeyboardInterrupt("stopped between the two renames")
+        real(path, data)
+    monkeypatch.setattr(edgar_client, "_write_whole", stop_after_first)
+    with pytest.raises(KeyboardInterrupt):
+        fetch(client(tmp_path, server))
+    monkeypatch.setattr(edgar_client, "_write_whole", real)
+    assert calls == ["filing.htm.sha256", "filing.htm"]
+    assert fetch(client(tmp_path, server)).read_bytes() == FILED
+    assert server.hits[ARCHIVED] == 2
+
+
+def test_the_machines_gate_measures_on_the_monotonic_clock():
+    """The wall clock steps (a time server, a person); a step forward would let
+    one request skip its wait."""
+    assert edgar_client.machine_gate._clock is time.monotonic
+
+
+def test_an_existing_gate_file_is_opened_without_asking_to_create_it(tmp_path, monkeypatch):
+    """Linux's protected_regular refuses `O_CREAT` on another user's file in a
+    sticky /tmp whatever its mode; the file that is there is opened as it is."""
+    path = tmp_path / "gate"
+    path.write_text("")
+    flags = []
+    real = os.open
+
+    def recorded(target, mode, *rest):
+        flags.append(mode)
+        return real(target, mode, *rest)
+    monkeypatch.setattr(edgar_client.os, "open", recorded)
+    with Gate(path=path).slot():
+        pass
+    assert flags and not flags[0] & os.O_CREAT
 
 
 def test_the_stored_file_is_hashed_again_before_it_is_handed_back(tmp_path, server, monkeypatch):

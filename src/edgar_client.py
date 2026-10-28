@@ -183,7 +183,12 @@ class Gate:
             yield None
             return
         try:
-            descriptor = os.open(self.path, os.O_RDWR | os.O_CREAT, 0o666)
+            # opened as it is first: Linux's protected_regular refuses O_CREAT on
+            # another user's file in a sticky /tmp, whatever its mode
+            try:
+                descriptor = os.open(self.path, os.O_RDWR)
+            except FileNotFoundError:
+                descriptor = os.open(self.path, os.O_RDWR | os.O_CREAT, 0o666)
         except OSError as error:
             raise EdgarError(f"the gate {self.path} cannot be opened: {error}") from None
         with os.fdopen(descriptor, "r+b") as handle:
