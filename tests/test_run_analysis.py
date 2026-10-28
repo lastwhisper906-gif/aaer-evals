@@ -3320,3 +3320,47 @@ def test_plain_name_a_code_left_on_a_stopped_night_does_not_stop_a_clean_resume(
     assert "numbers-reader" in called and "notes-text-reader" in called
     assert manifest["analysis_failure"] is None
     assert "plain_names" not in manifest["agents"]["numbers-reader"]
+
+
+# Two lines copied by hand from reports the plain-name check refuses today, each
+# put in a reader's session directory over its own company's bundle. Expected by
+# hand: PANW's prose inputs print no fiscal-year tag at all, and DELL's print
+# "FY27" six times in `input_8k.md` and "FY26" nowhere (grep over the input_*.md
+# files of the published runs). The line from PANW's numbers reader of
+# 2026-10-28 (`report_numbers.md` line 207 of its session copy) and from DELL's
+# notes-text-reader of 2026-10-08 (`report_notes_text.md` line 100):
+PANW_LINE = ('"what_changed": "Q3 FY26 revenue is printed as 3002000000, against 2289000000 '
+             'for 2025-02-01..2025-04-30."')
+DELL_LINE = ('"what_changed": "The other corporate expenses bullet states severance from '
+             'workforce reductions of $0.5 billion in the first six months of FY27 and $0.3 '
+             'billion in the same FY26 period."')
+
+
+@pytest.mark.parametrize("ticker, accession, reader, line, expected", [
+    ("PANW", "0001327567-26-000015", "numbers-reader", PANW_LINE, ["FY26"]),
+    ("DELL", "0001571996-26-000046", "notes-text-reader", DELL_LINE, ["FY26"]),
+])
+def test_plain_name_the_lines_of_the_refused_records_are_named(
+        tmp_path, ticker, accession, reader, line, expected):
+    run = tmp_path / ticker / accession
+    assemble_bundle.write(assemble_bundle.build(ticker, "10-Q", accession=accession,
+                                                prior_runs=run.parent.parent), run)
+    agent_inputs.build(run, reader)
+    report = agent_inputs.session_root(run, reader) / agent_inputs.AGENTS[reader].writes
+    report.write_text(line + "\n", encoding="utf-8")
+    assert run_analysis.reader_codes(run, reader) == expected
+
+
+def test_plain_name_a_run_stopped_on_a_code_is_final_and_its_report_is_not_on_record(
+        tmp_path, monkeypatch):
+    """The stop is a finished failure: a run that ends there is not resumed (a
+    correction is a new run, `resume_plan`), and nothing of the coded report is
+    in the run root for a later invocation to take as on record."""
+    run = _nvda_run(tmp_path)
+    monkeypatch.setattr(run_analysis, "ask", _reports_in_turn({"report_numbers.md": [CODED]}, {}))
+    manifest = run_analysis.run_company(run=run, **_run_keyword())
+    assert "still carries a letter-number code" in manifest["analysis_failure"]
+    assert not (run / "report_numbers.md").exists()
+    for resume in (False, True):
+        with pytest.raises(run_analysis.RunError, match="did not stop at the limit"):
+            run_analysis.run_company(run=run, **_run_keyword(), resume=resume)

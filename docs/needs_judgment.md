@@ -142,6 +142,8 @@ force.
 
 [ ] **the rubric's fourth dealbreaker, a contradiction reported as unresolved, is graded against inputs the accounting analyst never sees** · default in force: `evals/` is the owner's and is not changed; the count is reported with this beside it: over the nine reruns of 2026-10-28, 6 of the 10 such dealbreakers name a row in `input_notes.md` or `input_8k.md` that never reached the analyst's directory (four of them a table the notes reader marks "amounts only"), and the queue row of 2026-10-28 brings those rows to the analyst as calculator fields · the owner says whether the grader reads dealbreaker four against the analyst's own directory (the rubric says "the analyst saw both") or against every input of the run
 
+[ ] **a reader asked again for a report with a code of its own: the same message, or one naming the codes** · default in force since 2026-10-28: the same message; the rule is a paragraph in both readers' definitions, because `docs/HOW_WE_WORK.md` says nothing in the read, compare or decide stages writes a prompt at run time, and the queue row asked for the codes to be named · the owner says whether a retry may name what the first answer broke (then the rule in `docs/HOW_WE_WORK.md` gains that exception and the runner writes the note into the agent's record) or not (the default)
+
 ## Settled by default
 
 Every other row that was open on 2026-09-28. Nothing waits on any of them: the
