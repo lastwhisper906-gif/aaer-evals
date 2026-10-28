@@ -558,6 +558,41 @@ def fetch_company(fetcher: Fetcher, ticker: str, cik: str, as_of: str,
     return manifest, problems
 
 
+def store_up_to(fetcher, ticker: str, cik: str, filing: dict, out: Path,
+                filings: list[dict]) -> list[str]:
+    """A store up to one filing, as `--accession` builds one, for `src/on_demand.py`.
+
+    `filing` is the filing's submissions row. A store that already holds it, the
+    documents around it, the index and companyfacts, as of the filing's own date,
+    is used as it is once its bytes are its manifest's; any other is fetched.
+    The problems come back, an empty list when the store is whole.
+    """
+    ticker_dir = out / ticker
+    manifest = load_manifest(ticker_dir)
+    roles = {(entry.get("form"), entry.get("role"), entry.get("accession"))
+             for entry in manifest.get("documents", [])}
+    whole = (manifest.get("as_of") == filing["filingDate"]
+             and (filing["form"], "primary_html", filing["accessionNumber"]) in roles
+             and any(form == "companyfacts" for form, _, _ in roles)
+             and any(form == "submissions" for form, _, _ in roles))
+    if whole:
+        return [f"changed: {line}" if not line.startswith(("changed:", "missing:")) else line
+                for line in verify_existing(ticker_dir, manifest)]
+    _, problems = fetch_company(fetcher, ticker, cik, filing["filingDate"], out,
+                                filings=filings)
+    if not problems:
+        # Imported here: the companyfacts fetcher imports this module.
+        from src import fetch_companyfacts
+        problems = fetch_companyfacts.fetch_company(fetcher, ticker, filing["filingDate"], out)
+    if not problems:
+        held = {entry["accession"] for entry in load_manifest(ticker_dir).get("documents", [])
+                if entry.get("form") == filing["form"] and entry.get("role") == "primary_html"}
+        if held != {filing["accessionNumber"]}:
+            problems = [f"the store's {filing['form']} is "
+                        f"{', '.join(sorted(held)) or 'missing'}, not {filing['accessionNumber']}"]
+    return problems
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--as-of", default=None,
