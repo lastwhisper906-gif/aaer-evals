@@ -2158,10 +2158,32 @@ def test_each_analysts_digit_sentence_names_the_quotations_the_gate_accepts():
     `what_changed`; for the valuation analyst also the MD&A and the release, never an
     analysis; and a failing sentence left out, marked."""
     root = Path(analysis_check.__file__).resolve().parent.parent / ".claude" / "agents"
-    for name in ("accounting-analyst.md", "financial-analyst.md", "valuation-analyst.md"):
+    for name in ("accounting-analyst.md", "financial-analyst.md"):
         text = " ".join((root / name).read_text(encoding="utf-8").split())
         assert "the `quote` of an item in a reader report" in text, name
-        assert "`what_changed`" in text and "left out where it stood, marked" in text, name
-        assert "four-digit year" not in text, name
+        assert "never its `what_changed`" in text, name
+    for name in ("accounting-analyst.md", "financial-analyst.md", "valuation-analyst.md"):
+        text = " ".join((root / name).read_text(encoding="utf-8").split())
+        assert "left out where it stood, marked" in text and "four-digit year" not in text, name
+    # the valuation analyst's directory holds no reader report: its quotations are of
+    # the MD&A and the release it read, which `_filer_texts` reads as `input_*`
     valuation = " ".join((root / "valuation-analyst.md").read_text(encoding="utf-8").split())
-    assert "never from an analysis" in valuation
+    assert "the MD&A or the earnings release you read (never from an analysis" in valuation
+    assert "reader report" not in valuation.split("Digits may otherwise appear")[1].split(".")[0]
+
+
+def test_a_trimmed_driver_whose_scenario_the_owners_rules_drop_is_recorded_once(monkeypatch):
+    long = ("Gross margin has held near its history across the last two years. Growth "
+            "was 12 percent. The release keeps its outlook and names no new customer loss.")
+    driver = {"reason": long, "fields": ["ratios.profitability.gross_margin"]}
+    scenario = dict({name: 0.02 for name in DRIVERS}, reasons={name: dict(driver) for name in DRIVERS})
+    monkeypatch.setattr(analysis_check, "owner_problems", lambda payload, **_: [
+        (("scenarios", "base", "reasons", "terminal_growth", "quote"), "a planted departure")])
+    out = analysis_check.check_assumptions({"scenarios": {name: copy.deepcopy(scenario)
+                                                          for name in ("bear", "base", "bull")}},
+                                           fields=FIELDS, sources={})
+    assert set(out["scenarios"]) == {"bear", "bull"}
+    base = [d for d in out["dropped_items"] if d["where"].startswith("scenarios.base")]
+    assert base == [{"where": "scenarios.base", "reason": "a planted departure"}], base
+    assert out["dropped_count"] == 13      # six left-out sentences in each standing scenario
+    assert all(analysis_check.HELD not in d for d in out["dropped_items"])

@@ -1361,8 +1361,8 @@ def check_assumptions(payload: dict, *, fields: dict, sources: dict[str, str],
                 if why and item_problem(cut, fields, sources, set(), forbidden=forbidden,
                                         filing=filing) is None:
                     reasons[driver] = reason = cut
-                    left_out += [{"where": f"scenarios.{name}.reasons.{driver}", "reason": one}
-                                 for one in why]
+                    left_out += [{"where": f"scenarios.{name}.reasons.{driver}", "reason": one,
+                                  HELD: scenario} for one in why]
                 problem = item_problem(reason, fields, sources, set(),
                                        forbidden=FORBIDDEN_EVERYWHERE + FORBIDDEN_IN_VALUATION,
                                        filing=filing)
@@ -1400,6 +1400,7 @@ def check_assumptions(payload: dict, *, fields: dict, sources: dict[str, str],
     drop_departures(payload, owner_problems(
         payload, kind="assumptions", fields=fields, sources=sources, filing=filing,
         kept=None, citable=None), dropped)
+    settle_trims(payload, dropped)
     payload["dropped_items"] = dropped
     payload["dropped_count"] = len(dropped)
     return payload

@@ -39,8 +39,8 @@ number, write the calculator's field path in braces —
 Python puts the value there. A path that does not resolve drops the sentence it
 is in. Digits may otherwise appear only inside quotation marks around three or more
 words copied character for character from the MD&A or the earnings release you
-read, or from the `quote` of an item in a reader report (never from an analysis
-or a `what_changed`), opening and closing on a word; inside an id; as a form name
+read (never from an analysis, whose quotations are not yours to repeat), opening
+and closing on a word; inside an id; as a form name
 (10-K, 10-Q, 8-K, or their plurals); or as a year written after "fiscal" or
 "calendar" (fiscal 2025) or in a date (2026-06-30). A sentence that breaks this
 is left out where it stood, marked, and counted; an item whose sentences mostly
