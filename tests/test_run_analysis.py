@@ -3168,29 +3168,39 @@ def test_a_memo_line_carrying_a_ruled_out_word_stops_the_run_before_it_is_finish
 
 # --- a reader's report held to the plain-name rule (src/plain_name_check.py) ----------------
 #
-# Planted: the numbers reader's report says "Q3 FY25" outside its items. The rule
-# exempts Q3 (a fiscal quarter is a word this project writes) and refuses FY25,
-# which NVDA's prose inputs never print; they do print FY27 (read by
-# `plain_name_check.quoted_codes` over the bundle, and asserted below), so FY27
-# is the filer's and stands.
+# Planted: a reader's report says "Q3 FY25" outside its items. The rule exempts Q3
+# (a fiscal quarter is a word this project writes) and refuses FY25, which
+# NVDA's prose inputs never print; they do print FY27 (read by
+# `plain_name_check.quoted_codes` over the bundle, and asserted below), so FY27 is
+# the filer's and stands. The second ask carries the same message as the first:
+# the rule is in both readers' definitions, and nothing writes a prompt at run
+# time (`docs/HOW_WE_WORK.md`).
 
 CODED = NUMBERS_REPORT + "\nThe quarter read is Q3 FY25.\n"
 FILERS = NUMBERS_REPORT + "\nGuidance is for FY27.\n"
+NOTES_CODED = "no items\n\nThe quarter read is Q3 FY25.\n"
 
 
-def _reports_in_turn(reports: list[str], messages: list[str]):
-    """The stubbed agents, the numbers reader writing `reports` in turn."""
-    turn = {"numbers": 0}
-    base = _fake_ask({})
+def _reports_in_turn(reports: dict, messages: dict, limit: dict | None = None):
+    """The stubbed agents; `reports` maps a reader's output file to what it writes
+    on each call in turn (the last one repeated), `limit` an agent to the call on
+    which it answers the limit."""
+    turns: dict = {}
 
     def ask(directory, *, agent, writes, message, spec, log):
-        if "report_numbers.md" in writes:
-            messages.append(message)
-            text = reports[min(turn["numbers"], len(reports) - 1)]
-            turn["numbers"] += 1
-            return _fake_ask({}, numbers_report=text)(directory, agent=agent, writes=writes,
-                                                     message=message, spec=spec, log=log)
-        return base(directory, agent=agent, writes=writes, message=message, spec=spec, log=log)
+        name = writes[0]
+        turns[name] = turns.get(name, 0) + 1
+        messages.setdefault(name, []).append(message)
+        if limit and limit.get(agent) == turns[name]:
+            return {"agent": agent, "result": "failed", "limit_reached": True,
+                    "reason": "You've reached your Fable limit."}
+        texts = reports.get(name)
+        fake = {}
+        if texts:
+            text = texts[min(turns[name], len(texts)) - 1]
+            fake = {"numbers_report": text} if name == "report_numbers.md" else {"notes_report": text}
+        return _fake_ask({}, **fake)(directory, agent=agent, writes=writes, message=message,
+                                     spec=spec, log=log)
     return ask
 
 
@@ -3201,30 +3211,44 @@ def _nvda_run(tmp_path):
     return run
 
 
-def test_plain_name_a_readers_own_code_is_named_back_once_and_the_run_goes_on(
-        tmp_path, monkeypatch):
+def test_plain_name_both_readers_are_told_the_rule_in_their_definitions():
+    for name in ("numbers-reader", "notes-text-reader"):
+        text = (run_analysis.DEFINITIONS / f"{name}.md").read_text(encoding="utf-8")
+        assert "**Plain names in your own words.**" in text
+        assert "asked for once more, with the same message" in text
+
+
+@pytest.mark.parametrize("report, coded", [("report_numbers.md", CODED),
+                                           ("report_notes_text.md", NOTES_CODED)])
+def test_plain_name_a_readers_own_code_is_asked_for_again_and_the_run_goes_on(
+        tmp_path, monkeypatch, report, coded):
     run = _nvda_run(tmp_path)
-    messages: list[str] = []
-    monkeypatch.setattr(run_analysis, "ask", _reports_in_turn([CODED, NUMBERS_REPORT], messages))
+    clean = NUMBERS_REPORT if report == "report_numbers.md" else "no items\n"
+    messages: dict = {}
+    monkeypatch.setattr(run_analysis, "ask", _reports_in_turn({report: [coded, clean]}, messages))
     manifest = run_analysis.run_company(run=run, **_run_keyword())
-    assert len(messages) == 2
-    assert "FY25" not in messages[0] and "FY25" in messages[1]
-    assert manifest["analysis_stages"]["plain_names"] == {
-        "numbers-reader": {"named": ["FY25"], "asked_again": True, "left": []}}
+    reader = "numbers-reader" if report == "report_numbers.md" else "notes-text-reader"
+    assert len(messages[report]) == 2 and messages[report][0] == messages[report][1]
+    assert manifest["agents"][reader]["plain_names"] == {
+        "codes": ["FY25"], "asked_again": True, "left": []}
+    assert len(manifest["agents"][reader]["attempts"]) == 2
     assert manifest["analysis_failure"] is None
-    assert "FY25" not in (run / "report_numbers.md").read_text(encoding="utf-8")
+    assert "FY25" not in (run / report).read_text(encoding="utf-8")
 
 
 def test_plain_name_a_code_left_after_the_second_ask_stops_the_run_before_the_analysts(
         tmp_path, monkeypatch):
     run = _nvda_run(tmp_path)
-    messages: list[str] = []
-    monkeypatch.setattr(run_analysis, "ask", _reports_in_turn([CODED], messages))
+    messages: dict = {}
+    monkeypatch.setattr(run_analysis, "ask", _reports_in_turn({"report_numbers.md": [CODED]},
+                                                              messages))
     manifest = run_analysis.run_company(run=run, **_run_keyword())
-    assert len(messages) == 2
+    assert len(messages["report_numbers.md"]) == 2
     assert "still carries a letter-number code" in manifest["analysis_failure"]
     assert "numbers-reader: FY25" in manifest["analysis_failure"]
+    assert manifest["agents"]["numbers-reader"]["plain_names"]["left"] == ["FY25"]
     assert "accounting-analyst" not in manifest["agents"]
+    assert not (run / "report_numbers.md").exists()
     assert not (run / "analysis_accounting.json").exists()
 
 
@@ -3232,18 +3256,67 @@ def test_plain_name_a_code_the_filing_prints_is_the_filers_and_is_not_named(
         tmp_path, monkeypatch):
     run = _nvda_run(tmp_path)
     assert "FY27" in run_analysis.plain_name_check.quoted_codes(run)
-    messages: list[str] = []
-    monkeypatch.setattr(run_analysis, "ask", _reports_in_turn([FILERS], messages))
+    messages: dict = {}
+    monkeypatch.setattr(run_analysis, "ask", _reports_in_turn({"report_numbers.md": [FILERS]},
+                                                              messages))
     manifest = run_analysis.run_company(run=run, **_run_keyword())
-    assert len(messages) == 1
-    assert "plain_names" not in manifest["analysis_stages"]
+    assert len(messages["report_numbers.md"]) == 1
+    assert "plain_names" not in manifest["agents"]["numbers-reader"]
     assert manifest["analysis_failure"] is None
 
 
-def test_plain_name_a_clean_report_is_asked_for_once(tmp_path, monkeypatch):
+def test_plain_name_a_coded_report_is_not_put_on_record_when_the_limit_stops_the_run(
+        tmp_path, monkeypatch):
+    """The numbers reader writes a code; the notes reader answers the limit on its
+    first call. The coded report is not gated, so the resume asks it afresh."""
     run = _nvda_run(tmp_path)
-    messages: list[str] = []
-    monkeypatch.setattr(run_analysis, "ask", _reports_in_turn([NUMBERS_REPORT], messages))
-    manifest = run_analysis.run_company(run=run, **_run_keyword())
-    assert len(messages) == 1
-    assert "plain_names" not in manifest["analysis_stages"]
+    messages: dict = {}
+    monkeypatch.setattr(run_analysis, "ask", _reports_in_turn(
+        {"report_numbers.md": [CODED]}, messages, limit={"notes-text-reader": 1}))
+    stopped = run_analysis.run_company(run=run, **_run_keyword(), on_fable_limit="stop")
+    assert stopped["fable_limit_reached"] == ["notes-text-reader"]
+    assert not (run / "report_numbers.md").exists()
+    assert not run_analysis.on_record(run, "numbers-reader", stopped["agents"]["numbers-reader"])
+    manifest, called = _resumed(run, monkeypatch, "never")
+    assert "numbers-reader" in called and "notes-text-reader" in called
+    assert manifest["analysis_failure"] is None
+
+
+def test_plain_name_a_coded_report_is_not_put_on_record_when_the_boundary_stops_the_run(
+        tmp_path, monkeypatch, nvda_bundle):
+    """The numbers reader writes a code; the notes reader leaves a stray file and
+    the boundary stops the run when both return. The coded report is not put on
+    record with the clean side of the stage, so the resume, once the file is
+    gone, asks the numbers reader again rather than publishing its code."""
+    run, asked, manifest, stopped = _run_leaving(tmp_path, monkeypatch, nvda_bundle,
+                                                 {"notes-text-reader": DRAFT},
+                                                 numbers_report=CODED)
+    assert isinstance(stopped, agent_inputs.AgentInputError), stopped
+    assert not (run / "report_numbers.md").exists()
+    assert not run_analysis.on_record(run, "numbers-reader", manifest["agents"]["numbers-reader"])
+    (run / "agents" / "notes-text-reader" / "draft.json").unlink()
+    called, finished, error = _night(run, monkeypatch)
+    assert error is None and "numbers-reader" in called
+    assert finished["analysis_failure"] is None
+    assert "FY25" not in (run / "report_numbers.md").read_text(encoding="utf-8")
+
+
+def test_plain_name_a_code_left_on_a_stopped_night_does_not_stop_a_clean_resume(
+        tmp_path, monkeypatch):
+    """Night one: the numbers reader writes the code on both asks, and the notes
+    reader writes a code and then answers the limit on its second ask, so the run
+    stops resumable with the numbers reader's code left on its record. Night two:
+    both readers are asked afresh and write clean reports; the left code of night
+    one is not tonight's report, and the run finishes."""
+    run = _nvda_run(tmp_path)
+    messages: dict = {}
+    monkeypatch.setattr(run_analysis, "ask", _reports_in_turn(
+        {"report_numbers.md": [CODED], "report_notes_text.md": [NOTES_CODED]}, messages,
+        limit={"notes-text-reader": 2}))
+    stopped = run_analysis.run_company(run=run, **_run_keyword(), on_fable_limit="stop")
+    assert stopped["fable_limit_reached"] == ["notes-text-reader"]
+    assert stopped["agents"]["numbers-reader"]["plain_names"]["left"] == ["FY25"]
+    manifest, called = _resumed(run, monkeypatch, "never")
+    assert "numbers-reader" in called and "notes-text-reader" in called
+    assert manifest["analysis_failure"] is None
+    assert "plain_names" not in manifest["agents"]["numbers-reader"]

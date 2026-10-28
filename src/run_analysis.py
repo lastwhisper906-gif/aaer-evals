@@ -274,16 +274,15 @@ INSTRUCTION = ("Your directory holds: {files}. Read every one of them in full, f
 # A reader's report is held to the plain-name rule before an analyst reads it, by
 # the rule `src/plain_name_check.py` holds a published run to: a letter-number
 # code the run's prose inputs carry is the filer's and stands; any other is the
-# reader's own, and the reader is asked once more with each one named. A record
-# the check would refuse is never published, so a run whose reader still writes
-# one stops before the analysts are paid for. DELL's notes-text-reader of
-# 2026-10-08, FN's numbers-reader of 2026-10-27 and PANW's of 2026-10-28 each
-# wrote a fiscal year as a two-letter tag on two digits where the filing writes
-# the year out, and none of the three runs could be published.
-PLAIN_NAMES = ("Your last report wrote {codes} in its own words. This project does not "
-               "allow letter-number codes: write each period, item or form in words, the way "
-               "the filing writes it (the third quarter of fiscal 2026, not a tag of letters "
-               "and digits). A code may stand only where the filing itself prints it.")
+# reader's own. Both readers' definitions say so, and a report that carries one
+# is asked for once more with the same message (nothing here writes a prompt at
+# run time, `docs/HOW_WE_WORK.md`), recorded on the reader's own record under
+# `plain_names`. A record the check would refuse is never published, so a run
+# whose reader still writes one stops before the analysts are paid for, and a
+# coded report is never put on record. DELL's notes-text-reader of 2026-10-08,
+# FN's numbers-reader of 2026-10-27 and PANW's of 2026-10-28 each wrote a fiscal
+# year as a two-letter tag on two digits where the filing writes the year out,
+# and none of the three runs could be published.
 
 CONTROL_DIRNAME = "control-single-agent-analyses"
 CONTROL_WRITES = ("control_analysis_accounting.json", "control_analysis_financial.json",
@@ -765,15 +764,12 @@ def record_agent(run: Path, name: str, record: dict) -> None:
 
 
 def run_agent(run: Path, name: str, logs: Path, model: str | None = None,
-              policy: LimitPolicy | None = None, *, check: bool = True,
-              note: str | None = None) -> dict:
+              policy: LimitPolicy | None = None, *, check: bool = True) -> dict:
     agent_inputs.build(run, name)
     directory = agent_inputs.session_root(run, name)
     spec = agent_inputs.AGENTS[name]
     names = {path.name for path in directory.iterdir() if path.name != spec.writes}
     message = INSTRUCTION.format(files=", ".join(message_files(names)), writes=spec.writes)
-    if note:
-        message = f"{message} {note}"
     earlier = recorded_agent(run, name)       # a call made again on a resume
     record = call(run, directory, agent=spec.prompt, writes=(spec.writes,), message=message,
                   spec=definition_for(spec.prompt, model), log=logs / f"{name}.log",
@@ -854,7 +850,8 @@ def parallel(run: Path, names: tuple[str, ...], logs: Path, model: str | None = 
     if broken:
         stop = boundary_broken(broken, f"after {', '.join(names)} returned")
         clean = tuple(name for name in names if records[name].get("result") == "written"
-                      and not any(line.startswith(f"{name}: ") for line in broken))
+                      and not any(line.startswith(f"{name}: ") for line in broken)
+                      and not (name in READERS and reader_codes(run, name)))
         try:
             put_on_record(run, clean)
         except STOPS as exc:
@@ -1539,11 +1536,11 @@ def _run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: 
             codes = reader_codes(run, name)
             if not codes:
                 continue
-            agents[name] = run_agent(run, name, logs, model, policy,
-                                     note=PLAIN_NAMES.format(codes=", ".join(codes)))
-            left = reader_codes(run, name) if agents[name].get("result") == "written" else []
-            stages.setdefault("plain_names", {})[name] = {"named": codes, "asked_again": True,
-                                                          "left": left}
+            again = run_agent(run, name, logs, model, policy)
+            left = reader_codes(run, name) if again.get("result") == "written" else []
+            agents[name] = dict(again, plain_names={"codes": codes, "asked_again": True,
+                                                    "left": left})
+            record_agent(run, name, agents[name])
     if limit_hit(agents):
         # what finished is gated into the run root, so it is on record and the
         # resumed run never calls it again; a report with a code of its own is
@@ -1558,8 +1555,10 @@ def _run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: 
         return finish(run, agents, stages, "a reader failed twice", model, skipped=skipped,
                       resumed_from=resumed,
                       fallback=policy.fallback)
-    still = {name: row["left"] for name, row in stages.get("plain_names", {}).items()
-             if row["left"]}
+    # the readers this invocation called, and no other: a record restored from a
+    # stopped night says nothing about the report the reader wrote tonight
+    still = {name: agents[name]["plain_names"]["left"] for name in readers
+             if (agents[name].get("plain_names") or {}).get("left")}
     if still:
         return finish(run, agents, stages,
                       "a reader's report still carries a letter-number code of its own after "
