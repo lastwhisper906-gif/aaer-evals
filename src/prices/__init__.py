@@ -222,6 +222,59 @@ def credentials(name: str, environ) -> dict[str, Any]:
     return {"environ": dict(environ)}
 
 
+# The variables `requests` itself reads for a proxy and a certificate bundle
+# when a session trusts the environment, in the order it reads them.
+PROXY_VARIABLES = ("https_proxy", "all_proxy")
+BUNDLE_VARIABLES = ("REQUESTS_CA_BUNDLE", "CURL_CA_BUNDLE")
+
+
+def _variable(environ, name: str) -> str:
+    """A variable by either spelling, the lower case first, as `urllib` reads it."""
+    return (environ.get(name.lower()) or environ.get(name.upper()) or "").strip()
+
+
+def _bypassed(host: str, no_proxy: str) -> bool:
+    """Whether `NO_PROXY` names the host: itself, a domain above it, or `*`.
+
+    An address range (`10.0.0.0/8`) is never a host name and never matches one.
+    """
+    host = host.lower()
+    for entry in no_proxy.split(","):
+        entry = entry.strip().lower()
+        if entry == "*":
+            return True
+        entry = entry.removeprefix("*").removeprefix(".")
+        if entry and (host == entry or host.endswith("." + entry)):
+            return True
+    return False
+
+
+def route(url: str, environ=None) -> dict[str, Any]:
+    """The proxy and the certificate bundle a request to `url` goes through.
+
+    Tiingo's and EODHD's sessions set `trust_env` false, because a session that
+    trusts the environment reads the process's `~/.netrc`, whose password for
+    the host replaces the token handed in. The same switch drops the proxy
+    variables and the bundle, and where every request leaves through a proxy
+    with its own certificate -- the cloud session's -- that is every request
+    failing as an SSL error. So the two are read out of `environ`, and nothing
+    else, and handed to the request explicitly: `proxies` and `verify`, as
+    `requests` takes them. `~/.netrc` is still never read.
+    """
+    from urllib.parse import urlsplit
+
+    environ = os.environ if environ is None else environ
+    host = urlsplit(url).hostname or ""
+    proxies = {}
+    if not _bypassed(host, _variable(environ, "no_proxy")):
+        for name in PROXY_VARIABLES:
+            if _variable(environ, name):
+                proxies["https"] = _variable(environ, name)
+                break
+    bundle = next((environ[name].strip() for name in BUNDLE_VARIABLES
+                   if (environ.get(name) or "").strip()), "")
+    return {"proxies": proxies, "verify": bundle or True}
+
 def as_csv_rows(rows: list[dict[str, Any]]) -> list[dict[str, str]]:
     """The frame in the shape `src/market.py:read_prices` already reads.
 
