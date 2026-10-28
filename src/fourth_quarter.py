@@ -503,7 +503,24 @@ def fourth_quarters(ticker: str, cutoff=None, *,
     cutoff = cutoff_guard.resolve_cutoff(cutoff, ticker, fixtures_root=fixtures_root)
 
     held = read_record(ticker, cutoff, fixtures_root=fixtures_root)
-    document, row = held["document"], held["row"]
+    return from_document(ticker, held["document"], cutoff,
+                         source={"path": held["row"]["path"], "url": held["row"]["url"],
+                                 "date_basis": held["row"].get("date_basis", "")},
+                         years=years)
+
+
+def from_document(ticker: str, document: dict, cutoff, *, source: dict,
+                  years=YEARS_REQUESTED) -> dict:
+    """`fourth_quarters` over a record already cut at the cutoff.
+
+    The committed record arrives here through `read_record`; a record fetched on
+    demand arrives through `src/company_facts.py`, cut by
+    `cutoff_guard.cut_catalogue`. Either way a row filed after the cutoff is
+    refused here again rather than trusted to have been dropped. `source` names
+    where the record came from: `path` (None for a fetched one), `url` and
+    `date_basis`.
+    """
+    cutoff = cutoff_guard.parse_date(cutoff, "cutoff")
     gathered = duration_rows(document)
     late = filed_after(gathered, cutoff)
     if late:
@@ -530,10 +547,10 @@ def fourth_quarters(ticker: str, cutoff=None, *,
         # after the cutoff whenever the record is newer than the trigger: it is
         # not published as a filing date, the way `assemble_bundle` does not
         # publish it, and what stands in its place is how far the rows go.
-        "source": {"path": row["path"], "url": row["url"],
+        "source": {"path": source.get("path"), "url": source.get("url"),
                    "filing_date": None,
                    "rows_used_through": cutoff.isoformat(),
-                   "date_basis": row.get("date_basis", ""),
+                   "date_basis": source.get("date_basis", ""),
                    "duration_facts": sum(len(rows) for rows in gathered.values())},
         "requested_years": years,
         "fiscal_years_on_record": len(available),
