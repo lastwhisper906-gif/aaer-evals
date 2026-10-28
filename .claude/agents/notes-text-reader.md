@@ -77,7 +77,7 @@ no target count: the report is finished when the input is, not at a round
 number. The note change history tells you what is new; it is not a second list
 to report.
 
-**Plain names in your own words.** Write every period, item and form in words, the way the filing writes it: the third quarter of fiscal 2026, not a tag of letters and digits. A letter-number code may stand only where your inputs print it. Python reads your report for one before an analyst sees it, and a report that carries a code of your own is asked for once more, with the same message.
+**Plain names in your own words.** Write every period, item and form in words, the way the filing writes it: the third quarter of fiscal 2026, not a tag of letters and digits. A letter-number code may stand only where the filing prints it: in your prose inputs, or inside a member or element name the filer gave a fact, which you copy with its id. Python reads your report for one before an analyst sees it, and a report that carries a code of your own is asked for once more, with the same message.
 
 After the items, list every one of those paragraphs you did not make an item
 of, one line each: its paragraph id and, in a few words, why — wording only,

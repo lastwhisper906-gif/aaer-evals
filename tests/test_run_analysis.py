@@ -3397,6 +3397,20 @@ def test_plain_name_a_code_only_another_readers_input_prints_is_the_readers_own(
         assert run_analysis.reader_codes(run, reader) == expected, reader
 
 
+@pytest.mark.parametrize("prose", ["input_risk_factors.md", "input_exhibits.md"])
+def test_plain_name_a_code_the_risk_factors_or_an_exhibit_prints_is_the_filers(tmp_path, prose):
+    """Planted: the notes reader is handed the risk factors and the exhibits too,
+    read but not quoted by id; a code one of them prints is the filer's."""
+    run = _nvda_run(tmp_path)
+    agent_inputs.build(run, "notes-text-reader")
+    directory = agent_inputs.session_root(run, "notes-text-reader")
+    (directory / prose).write_text("Demand for the GB300 platform may fall.\n", encoding="utf-8")
+    (directory / "report_notes_text.md").write_text("The GB300 risk is new.\n", encoding="utf-8")
+    assert run_analysis.reader_codes(run, "notes-text-reader") == []
+    (directory / prose).unlink()
+    assert run_analysis.reader_codes(run, "notes-text-reader") == ["GB300"]
+
+
 def test_plain_name_a_member_the_filer_names_in_its_facts_is_the_filers(tmp_path):
     """DELL's numbers input of its 10-Q filed 2026-09-08 prints the fact id below
     once and the member `dell:A4.75DueApril2028Member` four times (counted by grep

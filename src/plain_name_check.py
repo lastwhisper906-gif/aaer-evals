@@ -141,7 +141,13 @@ project's structures -- ids, labels and keys Python wrote around the filer's
 numbers -- so a code carried only by one of them is ours, and it is reported
 wherever a record repeats it. The trend table's period labels were exactly that
 kind of code, and an exemption reaching `input_trends.json` would have silenced
-them in every report that quoted a cell.
+them in every report that quoted a cell. One thing inside a JSON input is the
+filer's: a taxonomy name, prefix and colon, in a fact's id -- the member or
+element the filer named (`dell:A4.75DueApril2028Member`, a note due April
+2028), which a reader copies with the id. A code inside one is exempt; any
+other code in a JSON input is still ours. The prose that exempts is every
+prose input a reader is handed: the six whose paragraphs are quoted, and the
+exhibits and the risk factors.
 * it is `.git`, `.venv`, `__pycache__`, `.pytest_cache`, `node_modules`, or does
   not decode as UTF-8.
 """
@@ -283,6 +289,9 @@ QUOTABLE_PROSE = frozenset({"input_notes.md", "input_notes_history.md", "input_m
 # 2028), the numbers reader copies the id character for character, and the name
 # is the filer's, as a code its prose prints is.
 FILER_FACTS = frozenset({"input_numbers.json", "input_trends.json", "input_companyfacts.json"})
+# Every prose input a reader is handed (`src/agent_inputs.py`): the quoted six,
+# and the exhibits and the risk factors, which are read but not quoted by id.
+FILER_PROSE = QUOTABLE_PROSE | frozenset({"input_exhibits.md", "input_risk_factors.md"})
 TAXONOMY_NAME = re.compile(r"(?<![A-Za-z0-9-])[a-z][a-z0-9-]*:([A-Za-z][A-Za-z0-9_.]*)")
 
 
@@ -291,14 +300,14 @@ def quoted_codes(run: Path) -> frozenset[str]:
     taxonomy name in its facts -- the filer's tokens its records may repeat."""
     carried = set()
     for path in _all_files_under(run):
-        if path.name not in QUOTABLE_PROSE | FILER_FACTS or not path.is_file():
+        if path.name not in FILER_PROSE | FILER_FACTS or not path.is_file():
             continue
         try:
             text = path.read_text(encoding="utf-8")
         except (UnicodeDecodeError, OSError):
             continue
         for line in text.splitlines():
-            if path.name in QUOTABLE_PROSE:
+            if path.name in FILER_PROSE:
                 carried.update(codes_in(line))
             else:
                 for name in TAXONOMY_NAME.finditer(line):
