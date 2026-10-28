@@ -477,7 +477,12 @@ def without_verified_quotations(text: str, sources, filing=None, fallen=frozense
     def blank(match: re.Match) -> str:
         inner = next(group for group in match.groups() if group is not None)
         needle = fold(inner).strip()
-        if len(WORDS_OF_LETTERS.findall(needle)) >= 3 and any(
+        # its first and last word are words of letters: a reader's quote may itself
+        # open or close inside a number ("3.1 million" cut from "$13.1 million"), and
+        # a quotation that does the same would carry a number the filing never printed
+        ends = needle.strip(" .,;:!?()[]—–-\"'‘’“”")
+        if ends and ends[0].isalpha() and ends[-1].isalpha() and \
+                len(WORDS_OF_LETTERS.findall(needle)) >= 3 and any(
                 _on_word_boundaries(needle, seen)
                 and (full is None or _on_word_boundaries(needle, full))
                 for seen, full in folded):
@@ -703,7 +708,8 @@ def _check_block(payload: dict, key: str, names, fields, sources, upstream, drop
         if reasons and item_problem(cut, fields, sources, upstream, forbidden=forbidden,
                                     filing=filing, fallen=fallen) is None:
             block[name] = entry = cut
-            dropped.extend({"where": f"{key}.{name}", "reason": reason} for reason in reasons)
+            dropped.extend({"where": f"{key}.{name}", "reason": reason, HELD: cut}
+                           for reason in reasons)
         problem = item_problem(entry, fields, sources, upstream, forbidden=forbidden,
                                filing=filing, fallen=fallen)
         if problem:
@@ -723,7 +729,7 @@ def _check_list(payload: dict, key: str, fields, sources, upstream, dropped, *, 
                 and (extra is None or extra(cut) is None):
             item = cut
             dropped.extend({"where": f"{key}[{position}]", "id": item.get("id"),
-                            "reason": reason} for reason in reasons)
+                            "reason": reason, HELD: cut} for reason in reasons)
         problem = item_problem(item, fields, sources, upstream, forbidden=forbidden,
                                filing=filing, fallen=fallen)
         if problem is None and extra is not None:
@@ -1105,6 +1111,23 @@ def _where(path: tuple) -> str:
     return out
 
 
+HELD = "_trimmed_unit"
+
+
+def settle_trims(payload: dict, dropped: list) -> None:
+    """Keep a unit's "one sentence left out" rows only while the unit still stands:
+    one the owner's departures dropped afterwards is recorded once, for its fall."""
+    standing = set()
+    for value in payload.values():
+        children = value.values() if isinstance(value, dict) else (
+            value if isinstance(value, list) else ())
+        standing.add(id(value))
+        standing.update(id(child) for child in children)
+    dropped[:] = [row for row in dropped if HELD not in row or id(row[HELD]) in standing]
+    for row in dropped:
+        row.pop(HELD, None)
+
+
 def drop_departures(payload: dict, problems: list[tuple[tuple, str]], dropped: list) -> None:
     """Drop the unit that holds each departure, once, and record why."""
     units: dict[tuple, str] = {}
@@ -1246,7 +1269,8 @@ def check(kind: str, payload: dict, *, fields: dict, sources: dict[str, str],
                 if reasons and item_problem(cut, fields, sources, upstream, forbidden=forbidden,
                                             fallen=fallen, filing=filing) is None:
                     payload[key] = entry = cut
-                    dropped.extend({"where": key, "reason": reason} for reason in reasons)
+                    dropped.extend({"where": key, "reason": reason, HELD: cut}
+                                   for reason in reasons)
             problem = ("the analyst wrote nothing for it" if entry is None else
                        item_problem(entry, fields, sources, upstream, forbidden=forbidden, fallen=fallen,
                                     filing=filing))
@@ -1267,7 +1291,8 @@ def check(kind: str, payload: dict, *, fields: dict, sources: dict[str, str],
                 if reasons and item_problem(cut, fields, sources, upstream, forbidden=forbidden,
                                             fallen=fallen, filing=filing) is None:
                     payload[key] = entry = cut
-                    dropped.extend({"where": key, "reason": reason} for reason in reasons)
+                    dropped.extend({"where": key, "reason": reason, HELD: cut}
+                                   for reason in reasons)
             problem = ("the analyst wrote nothing for it" if entry is None else
                        item_problem(entry, fields, sources, upstream, forbidden=forbidden, fallen=fallen,
                                     filing=filing))
@@ -1285,6 +1310,7 @@ def check(kind: str, payload: dict, *, fields: dict, sources: dict[str, str],
     drop_departures(payload, owner_problems(
         payload, kind=kind, fields=fields, sources=sources, filing=filing,
         kept=kept, citable=citable), dropped)
+    settle_trims(payload, dropped)
     unanswered(payload, kind, dropped)
     _limits(payload, kind, dropped)
     payload["normalized_quotes"] = normalized_quotes(payload, sources)
@@ -1312,6 +1338,7 @@ def check_assumptions(payload: dict, *, fields: dict, sources: dict[str, str],
     for name in calculator.SCENARIOS:
         scenario = scenarios.get(name)
         problem = None
+        left_out = []
         if not isinstance(scenario, dict):
             problem = "no such scenario"
         else:
@@ -1329,6 +1356,13 @@ def check_assumptions(payload: dict, *, fields: dict, sources: dict[str, str],
                 if not reason.get("quote") and not reason.get("fields"):
                     problem = f"{driver} carries neither a quote nor a calculator field"
                     break
+                forbidden = FORBIDDEN_EVERYWHERE + FORBIDDEN_IN_VALUATION
+                cut, why = trimmed(reason, fields, sources, forbidden=forbidden, filing=filing)
+                if why and item_problem(cut, fields, sources, set(), forbidden=forbidden,
+                                        filing=filing) is None:
+                    reasons[driver] = reason = cut
+                    left_out += [{"where": f"scenarios.{name}.reasons.{driver}", "reason": one}
+                                 for one in why]
                 problem = item_problem(reason, fields, sources, set(),
                                        forbidden=FORBIDDEN_EVERYWHERE + FORBIDDEN_IN_VALUATION,
                                        filing=filing)
@@ -1338,6 +1372,8 @@ def check_assumptions(payload: dict, *, fields: dict, sources: dict[str, str],
         if problem:
             dropped.append({"where": f"scenarios.{name}", "reason": problem})
             scenarios.pop(name, None)
+        else:
+            dropped += left_out
     payload["scenarios"] = scenarios
     overrides = payload.get("wacc_overrides") or {}
     for name, chosen in list(overrides.items()):

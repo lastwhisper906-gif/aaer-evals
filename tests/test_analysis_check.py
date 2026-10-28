@@ -1082,8 +1082,8 @@ PUBLISHED_ITEMS = (
     # disagrees, or None. "quoted": every digit the analyst wrote there sits inside a
     # quotation of a reader item's quote-gated `quote`, recorded by hand in
     # QUOTED_BY_HAND with the report line that holds it -- a number in its own words
-    # to the rule before 2026-10-28, the filer's since. LFUS's anomalies[35] opened its
-    # quotation with a year and stood marked xfail until the quotation itself was read.
+    # to the rule before 2026-10-28, the filer's since. LFUS's anomalies[35] opens its
+    # quotation with a year and stays marked xfail: a quotation must open on a word.
     ('AAPL',
      '0000320193-26-000020',
      'assumptions.json',
@@ -1497,7 +1497,7 @@ PUBLISHED_ITEMS = (
      'analysis_accounting.json',
      'anomalies[35]',
      'year',
-     None),
+     'a quotation that opens on a year cannot be told from one that opens inside a number, so the gate holds a quotation to open and close on a word'),
     ('LFUS',
      '0001628280-26-050481',
      'analysis_financial.json',
@@ -2106,3 +2106,62 @@ def test_a_korean_summary_marks_its_left_out_sentence():
     out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
     assert out["summary_ko"]["earnings_versus_cash"] == (
         good + " " + analysis_check.LEFT_OUT_KO + tail)
+
+
+# --- the second lens's third reading (2026-10-28) ----------------------------------------
+
+DRIVERS = ("revenue_growth_year_one", "terminal_growth", "operating_margin_year_one",
+           "operating_margin_year_ten", "reinvestment_rate_year_one",
+           "reinvestment_rate_year_ten")
+
+
+def test_a_drivers_reason_leaves_out_its_failing_sentence_and_the_scenario_stands():
+    long = ("Gross margin has held near its history across the last two years. Growth "
+            "was 12 percent. The release keeps its outlook and names no new customer loss.")
+    driver = {"reason": long, "fields": ["ratios.profitability.gross_margin"]}
+    scenario = dict({name: 0.02 for name in DRIVERS}, reasons={name: dict(driver) for name in DRIVERS})
+    out = analysis_check.check_assumptions({"scenarios": {name: copy.deepcopy(scenario)
+                                                          for name in ("bear", "base", "bull")}},
+                                           fields=FIELDS, sources={})
+    assert set(out["scenarios"]) == {"bear", "base", "bull"}
+    reason = out["scenarios"]["base"]["reasons"]["terminal_growth"]["reason"]
+    assert analysis_check.LEFT_OUT in reason and "12 percent" not in reason
+    assert out["dropped_count"] == 18      # one left-out sentence per driver per scenario
+
+
+def test_a_trimmed_item_the_owners_rules_drop_afterwards_is_recorded_once():
+    twice = NOTES + "\n```json\n" + NOTES.split("```json\n")[1].split("```")[0] + "```\n"
+    sources = {**SOURCES, "report_notes_text.md": twice}
+    payload = accounting()
+    payload["anomalies"][0]["what"] = (
+        "Receivables outran revenue across the last two quarters. DSO rose to 61 days. "
+        "The notes name no customer and no change of terms behind it.")
+    payload["anomalies"][0]["evidence"] = ["revenue_recognition_payment_terms_extended"]
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=sources)
+    rows = [d for d in out["dropped_items"] if d["where"].startswith("anomalies")]
+    assert out["anomalies"] == [] and len(rows) == 1, rows
+    assert "one sentence left out" not in rows[0]["reason"]
+    assert all(analysis_check.HELD not in d for d in out["dropped_items"])
+
+
+def test_a_quotation_that_opens_or_closes_on_a_number_is_the_analysts():
+    sources = {"report_notes_text.md": '```json\n{ "id": "x", "quote": '
+               '"3.1 million at two sites in the quarter" }\n```'}
+    for text in ('It said "3.1 million at two sites in the quarter" then.',
+                 'It said "at two sites in the quarter 3.1" then.'):
+        assert "a number written" in (analysis_check.words_problem(
+            text, FIELDS, forbidden=(), sources=sources) or ""), text
+
+
+def test_each_analysts_digit_sentence_names_the_quotations_the_gate_accepts():
+    """The definitions promise what the gate does: a reader item's `quote`, never a
+    `what_changed`; for the valuation analyst also the MD&A and the release, never an
+    analysis; and a failing sentence left out, marked."""
+    root = Path(analysis_check.__file__).resolve().parent.parent / ".claude" / "agents"
+    for name in ("accounting-analyst.md", "financial-analyst.md", "valuation-analyst.md"):
+        text = " ".join((root / name).read_text(encoding="utf-8").split())
+        assert "the `quote` of an item in a reader report" in text, name
+        assert "`what_changed`" in text and "left out where it stood, marked" in text, name
+        assert "four-digit year" not in text, name
+    valuation = " ".join((root / "valuation-analyst.md").read_text(encoding="utf-8").split())
+    assert "never from an analysis" in valuation
