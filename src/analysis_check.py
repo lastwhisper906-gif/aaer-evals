@@ -403,8 +403,8 @@ def placeholder_problem(fields: dict, path: str) -> str | None:
 # quotes that open after a space or a bracket and close before one (an
 # apostrophe inside a word is not a quote). It stands for the filer's words only
 # when it is the filer's words: it matches, folded and on word boundaries, either
-# the `quote` of an item in a reader report (each one the quote gate held to the
-# filing) or a filing prose file the analyst read (`FILING_PROSE`), and it carries at
+# the `quote` of an item in the notes reader's report (each one the quote gate held
+# to the filing; `FILING_QUOTES`) or a filing prose file the analyst read (`FILING_PROSE`), and it carries at
 # least three words of letters, so a bare "61" or '4,989' is never the filer's by
 # accident. A reader's own prose (`what_changed`) and another analyst's analysis
 # are not the filer's words. Then its digits are the filer's, not the analyst's
@@ -421,6 +421,11 @@ WORDS_OF_LETTERS = re.compile(r"[A-Za-z]{2,}")
 # control is handed all of them).
 FILING_PROSE = frozenset({"input_mdna.md", "input_8k.md", "input_notes.md",
                           "input_controls.md"})
+# The reader reports whose quotes are the filing's prose: the notes reader quotes the
+# notes, the MD&A, the controls and the 8-Ks. The numbers reader quotes Python's
+# numbers and trends tables, which are not the filer's words (the second lens's
+# seventh reading: "lowest of the 5 filled years" is Python's).
+FILING_QUOTES = frozenset({"report_notes_text.md"})
 
 
 @functools.lru_cache(maxsize=16)
@@ -428,8 +433,8 @@ def _filer_texts(sources: tuple[tuple[str, str], ...], filing: tuple[tuple[str, 
                  fallen: frozenset) -> tuple[tuple[str, str | None], ...]:
     """The filer's words among the files an analyst saw, folded, each with the
     full filing text it must also match (or None): the `quote` of each fenced
-    item of a reader report that stood (one id, once, not dropped by the quote
-    gate), and each filing prose file the analyst read (`FILING_PROSE`), held to the
+    item of the notes reader's report that stood (one id, once, not dropped by
+    the quote gate), and each filing prose file the analyst read (`FILING_PROSE`), held to the
     run's full file too when the analyst's copy was trimmed, so a quotation across
     the seam between two paragraphs that were not adjacent is not the filer's."""
     full = dict(filing)
@@ -437,7 +442,7 @@ def _filer_texts(sources: tuple[tuple[str, str], ...], filing: tuple[tuple[str, 
     for name, text in sources:
         if name in FILING_PROSE:
             out.append((fold(text), fold(full[name]) if name in full else None))
-        elif name.startswith("report_"):
+        elif name in FILING_QUOTES:
             items = _items_of(text)
             ids = [item.get("id") for item in items]
             for item in items:

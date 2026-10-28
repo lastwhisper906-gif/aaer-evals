@@ -2045,8 +2045,10 @@ def test_a_quotation_that_is_not_the_filers_words_carries_the_analysts_numbers()
     analyst's analysis is not the filer's words."""
     reader_prose = "Deferred revenue 4989000 at the quarter end against the year end"
     sources = planted_sources(**{
-        "report_numbers.md": SOURCES["report_numbers.md"]
-        + f'\n{{ "id": "planted_prose", "what_changed": "{reader_prose}" }}\n 2061 0.612\n',
+        # a fenced item that stands, whose `what_changed` is the reader's own prose
+        "report_notes_text.md": planted_sources()["report_notes_text.md"]
+        + '\n```json\n{ "id": "planted_prose", "what_changed": "' + reader_prose
+        + '", "quote": "a different sentence of the filing entirely" }\n```\n 2061 0.612\n',
         "analysis_accounting.json": '{"what": "margin of 12 percent rose on the quarter"}'})
     for text in ('DSO rose to "61" days.', "margin of '12' percent.",
                  # a number cut out of a longer one: "$13" out of "$13.1"
@@ -2160,7 +2162,8 @@ def test_each_analysts_digit_sentence_names_the_quotations_the_gate_accepts():
     root = Path(analysis_check.__file__).resolve().parent.parent / ".claude" / "agents"
     for name in ("accounting-analyst.md", "financial-analyst.md"):
         text = " ".join((root / name).read_text(encoding="utf-8").split())
-        assert "the `quote` of an item in a reader report" in text, name
+        assert "the `quote` of an item in the notes reader's report" in text, name
+        assert "never the numbers reader's" in text, name
         assert "never its `what_changed`" in text, name
     for name in ("accounting-analyst.md", "financial-analyst.md", "valuation-analyst.md"):
         text = " ".join((root / name).read_text(encoding="utf-8").split())
@@ -2214,3 +2217,13 @@ def test_a_trimmed_korean_summary_the_owners_rules_empty_is_recorded_once():
     assert out["summary_ko"]["earnings_versus_cash"] is None
     assert len(rows) == 1 and "one sentence left out" not in rows[0]["reason"], rows
     assert all(analysis_check.HELD not in d for d in out["dropped_items"])
+
+
+def test_a_quote_of_the_numbers_reader_is_pythons_not_the_filers():
+    """The second lens's seventh reading: the numbers reader quotes Python's tables."""
+    numbers = SOURCES["report_numbers.md"] + (
+        '\n```json\n{ "id": "planted_position", "quote": '
+        '"position_in_history: lowest of the 5 filled years" }\n```\n')
+    text = 'The table says "lowest of the 5 filled years" for the margin.'
+    assert "a number written" in (analysis_check.words_problem(
+        text, FIELDS, forbidden=(), sources={**SOURCES, "report_numbers.md": numbers}) or "")
