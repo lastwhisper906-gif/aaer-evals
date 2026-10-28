@@ -404,7 +404,7 @@ def placeholder_problem(fields: dict, path: str) -> str | None:
 # apostrophe inside a word is not a quote). It stands for the filer's words only
 # when it is the filer's words: it matches, folded and on word boundaries, either
 # the `quote` of an item in a reader report (each one the quote gate held to the
-# filing) or a filing file the analyst read whole (`input_*`), and it carries at
+# filing) or a filing prose file the analyst read (`FILING_PROSE`), and it carries at
 # least three words of letters, so a bare "61" or '4,989' is never the filer's by
 # accident. A reader's own prose (`what_changed`) and another analyst's analysis
 # are not the filer's words. Then its digits are the filer's, not the analyst's
@@ -415,6 +415,12 @@ QUOTATION = re.compile(r'"([^"\n]{2,800})"|“([^”\n]{2,800})”|‘([^’\n]{
 
 
 WORDS_OF_LETTERS = re.compile(r"[A-Za-z]{2,}")
+# The files that are the filing's own prose. The other `input_*` files are not the
+# filer's words: the prior predictions are an earlier run's output, and the numbers
+# and trends tables are Python's (the second lens's fifth reading: the single-agent
+# control is handed all of them).
+FILING_PROSE = frozenset({"input_mdna.md", "input_8k.md", "input_notes.md",
+                          "input_controls.md"})
 
 
 @functools.lru_cache(maxsize=16)
@@ -423,13 +429,13 @@ def _filer_texts(sources: tuple[tuple[str, str], ...], filing: tuple[tuple[str, 
     """The filer's words among the files an analyst saw, folded, each with the
     full filing text it must also match (or None): the `quote` of each fenced
     item of a reader report that stood (one id, once, not dropped by the quote
-    gate), and each filing file the analyst read whole (`input_*`), held to the
+    gate), and each filing prose file the analyst read (`FILING_PROSE`), held to the
     run's full file too when the analyst's copy was trimmed, so a quotation across
     the seam between two paragraphs that were not adjacent is not the filer's."""
     full = dict(filing)
     out = []
     for name, text in sources:
-        if name.startswith("input_"):
+        if name in FILING_PROSE:
             out.append((fold(text), fold(full[name]) if name in full else None))
         elif name.startswith("report_"):
             items = _items_of(text)

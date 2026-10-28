@@ -2187,3 +2187,16 @@ def test_a_trimmed_driver_whose_scenario_the_owners_rules_drop_is_recorded_once(
     assert base == [{"where": "scenarios.base", "reason": "a planted departure"}], base
     assert out["dropped_count"] == 13      # six left-out sentences in each standing scenario
     assert all(analysis_check.HELD not in d for d in out["dropped_items"])
+
+
+def test_only_the_filings_own_prose_files_hold_the_filers_words():
+    """The second lens's fifth reading: the control is handed every `input_*` file,
+    and the prior predictions, the numbers and the trends are not the filer's words."""
+    words = "Revenue rose to 412 million on strong demand for the new product line"
+    text = f'The file says "{words}" plainly.'
+    for name in ("input_prior_predictions.md", "input_trends.json", "input_numbers.json"):
+        assert "a number written" in (analysis_check.words_problem(
+            text, FIELDS, forbidden=(), sources={name: words}) or ""), name
+    for name in ("input_notes.md", "input_mdna.md", "input_8k.md", "input_controls.md"):
+        assert analysis_check.words_problem(
+            text, FIELDS, forbidden=(), sources={name: words}) is None, name
