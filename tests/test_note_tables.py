@@ -51,7 +51,12 @@ SEGMENT = table("<td>Segment</td>" + number("f-6", "us-gaap:Revenues", "segment"
                                           "ShareBasedPaymentAwardOptionsExercisePrice", "now",
                                           "258.16"),
                 "<td>Volatility</td>" + number("f-11", "us-gaap:FairValueAssumptionsExpected"
-                                               "Volatility", "now", "0.3"))
+                                               "Volatility", "now", "0.3"),
+                # Western Digital's shape: a cap price per a unit the filer
+                # defines, and a strike price in plain dollars
+                "<td>Cap</td>" + number("f-12", "us-gaap:DerivativeCapPrice", "now", "50.41"),
+                "<td>Strike</td>" + number("f-13", "us-gaap:DerivativePriceRiskOption"
+                                           "StrikePrice", "now", "37.74"))
 
 INLINE = f"""<html xmlns="http://www.w3.org/1999/xhtml"
  xmlns:ix="http://www.xbrl.org/2013/inlineXBRL"
@@ -81,6 +86,7 @@ INSTANCE = f"""<xbrl xmlns="http://www.xbrl.org/2003/instance"
 <xbrli:unit id="usd"><xbrli:measure>iso4217:USD</xbrli:measure></xbrli:unit>
 <xbrli:unit id="usdPerShare"><xbrli:divide><xbrli:unitNumerator><xbrli:measure>iso4217:USD</xbrli:measure></xbrli:unitNumerator><xbrli:unitDenominator><xbrli:measure>xbrli:shares</xbrli:measure></xbrli:unitDenominator></xbrli:divide></xbrli:unit>
 <xbrli:unit id="pure"><xbrli:measure>xbrli:pure</xbrli:measure></xbrli:unit>
+<xbrli:unit id="usdPerUnit"><xbrli:divide><xbrli:unitNumerator><xbrli:measure>iso4217:USD</xbrli:measure></xbrli:unitNumerator><xbrli:unitDenominator><xbrli:measure>zzzz:Unit</xbrli:measure></xbrli:unitDenominator></xbrli:divide></xbrli:unit>
 <us-gaap:InventoryNet id="f-1" contextRef="now" unitRef="usd" decimals="-3">1000000</us-gaap:InventoryNet>
 <us-gaap:InventoryNet id="f-2" contextRef="then" unitRef="usd" decimals="-3">900000</us-gaap:InventoryNet>
 <zzzz:ReturnsReserve id="f-3" contextRef="now" unitRef="usd" decimals="-3">1000000</zzzz:ReturnsReserve>
@@ -90,6 +96,8 @@ INSTANCE = f"""<xbrl xmlns="http://www.xbrl.org/2003/instance"
 <us-gaap:RevenueRemainingPerformanceObligation id="f-9" contextRef="band" unitRef="usd" decimals="-3">40000</us-gaap:RevenueRemainingPerformanceObligation>
 <us-gaap:ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsExercisePrice id="f-10" contextRef="now" unitRef="usdPerShare" decimals="2">258.16</us-gaap:ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsExercisePrice>
 <us-gaap:FairValueAssumptionsExpectedVolatility id="f-11" contextRef="now" unitRef="pure" decimals="3">0.3</us-gaap:FairValueAssumptionsExpectedVolatility>
+<us-gaap:DerivativeCapPrice id="f-12" contextRef="now" unitRef="usdPerUnit" decimals="2">50.41</us-gaap:DerivativeCapPrice>
+<us-gaap:DerivativePriceRiskOptionStrikePrice id="f-13" contextRef="now" unitRef="usd" decimals="2">37.74</us-gaap:DerivativePriceRiskOptionStrikePrice>
 <us-gaap:InventoryNet id="f-7" contextRef="now" unitRef="usd" decimals="-3">1000000</us-gaap:InventoryNet>
 <us-gaap:InventoryNet id="f-8" contextRef="then" unitRef="usd" decimals="-3">900000</us-gaap:InventoryNet>
 </xbrl>""".encode()
@@ -175,9 +183,10 @@ def test_a_typed_member_is_carried_and_its_date_is_never_read_as_a_period(found)
 
 def test_a_price_per_share_and_a_volatility_never_reach_the_analysts(found):
     concepts = {cell["concept"] for cell in found["tables"]["notes_4"]["facts"]}
-    assert not any("ExercisePrice" in name or "Volatility" in name for name in concepts)
-    assert found["left_out_as_a_price"] == {"notes_4": 2}
-    assert "258.16" not in json.dumps(found)
+    assert not any("Price" in name or "Volatility" in name for name in concepts)
+    assert found["left_out_as_a_price"] == {"notes_4": 4}
+    for printed in ("258.16", "50.41", "37.74"):
+        assert printed not in json.dumps(found)
 
 
 def test_the_memo_prints_a_filing_unit_as_it_prints_the_calculators():

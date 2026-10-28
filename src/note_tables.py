@@ -34,10 +34,10 @@ listed once. A table paragraph no table renders to is listed under
 What is left out, and why: a paragraph of the prior filing (`[same as prior
 period ...]` paragraphs carry no table of this filing), a prose paragraph (its
 numbers are the readers' to quote), a text fact inside a table, which is not a
-number, and a price (`is_a_price`): an amount in a currency per share -- an
-option's exercise price, a grant-date fair value per share, a repurchase's
-average price -- or a volatility, each the market's price of the company's own
-shares or read from it. The two analysts never see a price, and each table
+number, and a price (`is_a_price`): an amount in a currency per share or per
+any unit -- an option's exercise price, a grant-date fair value per share, a
+repurchase's average price -- or a concept that names a price or a volatility,
+each the market's price of the company's own shares or read from it. The two analysts never see a price, and each table
 counts what it left out under `left_out_as_a_price`. A fair value in dollars
 (of debt, of a portfolio) is carried. A typed dimension's value is written
 `element = value`, so a date it carries is never read as a period.
@@ -85,16 +85,20 @@ def inline_tables(html: bytes) -> dict[str, list[str]]:
 
 
 def is_a_price(fact: dict) -> bool:
-    """A fact the accounting and financial analysts are not handed: a currency
-    per share (an option's exercise price, a grant-date fair value per share, a
-    repurchase's average price; earnings and dividends per share too, which the
-    calculator carries from companyfacts) or a volatility. Each is the market's
-    price of the company's own shares, or read from it, at some date the filing
-    names, and those analysts never see a price (CLAUDE.md)."""
+    """A fact the accounting and financial analysts are not handed: an amount in
+    a currency per anything (per share, or per a unit the filer defines, as
+    Western Digital's `usdPerUnit` for its capped call's cap price) or a concept
+    that names a price or a volatility (an option's strike or exercise price, a
+    cap price, a grant-date price, a purchase price too, which is left out with
+    them). Each is, or may be, the market's price of the company's own shares,
+    or read from it, at some date the filing names, and those analysts never
+    see a price (CLAUDE.md). Earnings and dividends per share go with the
+    per-share amounts; the calculator carries them from companyfacts."""
     unit = fact.get("unit") or ""
-    per_share = "/" in unit and unit.split("/", 1)[0].startswith("iso4217:") \
-        and unit.split("/", 1)[1].endswith("shares")
-    return per_share or "volatility" in fact["name"].lower()
+    numerator = unit.split("/", 1)[0]
+    per_something = "/" in unit and numerator.startswith("iso4217:")
+    local = fact["name"].rsplit(":", 1)[-1].lower()
+    return per_something or "price" in local or "volatility" in local
 
 
 def cell(fact: dict) -> dict:
