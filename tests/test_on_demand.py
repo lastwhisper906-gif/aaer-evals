@@ -242,8 +242,9 @@ def test_a_run_directory_that_holds_anything_is_never_written_over(tmp_path, ser
 
 
 # Planted stamps on the cutoff day, in the index's own universal time: NVIDIA's
-# 10-Q at 20:36:00Z (EDGAR's stamp for it, read 2026-10-06; tests/test_run_analysis.py
-# carries it as NVDA_ACCEPTED), and four rows the test plants around it.
+# 10-Q at 20:36:00.000Z, EDGAR's stamp for it as the committed index rows in
+# tests/fixtures/acceptance_stamp/nvda_submissions_rows.json carry it, and the
+# rows the test plants around it.
 STAMPS = {ACCESSION: "2026-08-26T20:36:00.000Z"}
 ROWS = [
     {"accessionNumber": "a", "filingDate": "2026-08-26", "acceptanceDateTime": "2026-08-26T20:21:00.000Z"},
@@ -414,3 +415,162 @@ def test_the_latest_of_two_reports_of_one_day_is_the_higher_accession():
             {"accessionNumber": "0001045810-26-000076", "filingDate": "2026-08-26",
              "form": "10-Q"}]
     assert on_demand.the_filing(rows, "10-Q", None)["accessionNumber"] == "0001045810-26-000076"
+
+
+# --- round three of the refute check: every store held to the rule ----------------------
+
+
+def test_a_stale_store_cut_short_is_held_to_the_rule_when_finished(tmp_path, server,
+                                                                  monkeypatch):
+    """A store built under the earlier rule that stopped before companyfacts is
+    finished off from what it holds, and the check runs on it all the same."""
+    plant_the_day(server)
+    fetcher = client(tmp_path, server)
+    with monkeypatch.context() as patch:
+        patch.setattr(on_demand, "known_at", lambda rows, filing: rows)
+        from src import fetch_companyfacts
+        patch.setattr(fetch_companyfacts, "fetch_company", lambda *a, **k: ["cut short"])
+        with pytest.raises(on_demand.OnDemandError, match="cut short"):
+            on_demand.fetch_store(fetcher, TICKER, accession=ACCESSION)
+    with pytest.raises(on_demand.OnDemandError, match="built under another rule"):
+        on_demand.fetch_store(fetcher, TICKER, accession=ACCESSION)
+
+
+def plant_late_rows(server) -> None:
+    path = f"/api/xbrl/companyfacts/CIK{CIK}.json"
+    served = json.loads(server.bodies[path][0])
+    served["facts"]["us-gaap"]["Revenues"]["units"]["USD"].append(
+        {"start": "2026-04-27", "end": "2026-07-26", "val": 3, "accn": LATE, "form": "8-K",
+         "filed": "2026-08-26"})
+    server.bodies[path] = (json.dumps(served).encode(), "")
+
+
+def test_a_whole_store_holding_a_later_companyfacts_row_is_refused(tmp_path, server,
+                                                                  monkeypatch):
+    plant_the_day(server)
+    plant_late_rows(server)
+    fetcher = client(tmp_path, server)
+    from src import fetch_companyfacts
+    real = fetch_companyfacts.within_cutoff
+    with monkeypatch.context() as patch:
+        patch.setattr(fetch_companyfacts, "within_cutoff",
+                      lambda facts, as_of, known=None: real(facts, as_of))
+        # the store is held to the rule as it is built, too
+        with pytest.raises(on_demand.OnDemandError,
+                           match=f"accepted after the trigger: {LATE}"):
+            on_demand.fetch_store(fetcher, TICKER, accession=ACCESSION)
+    # and, whole now, it is refused rather than reused
+    with pytest.raises(on_demand.OnDemandError, match=f"accepted after the trigger: {LATE}"):
+        on_demand.fetch_store(fetcher, TICKER, accession=ACCESSION)
+
+
+def test_a_whole_store_naming_the_company_otherwise_is_refused(tmp_path, server, monkeypatch):
+    fetcher = client(tmp_path, server)
+    with monkeypatch.context() as patch:
+        patch.setattr(fetch_fixtures, "name_as_filed", lambda *a: "NVIDIA LIQUIDATING TRUST")
+        on_demand.fetch_store(fetcher, TICKER, accession=ACCESSION)
+    with pytest.raises(on_demand.OnDemandError, match="not the name the filing states"):
+        on_demand.fetch_store(fetcher, TICKER, accession=ACCESSION)
+
+
+def test_the_store_keeps_no_frame_and_no_taxonomy_words_of_today(tmp_path, server):
+    """The committed record carries frames (`CY2026Q2`-style labels) and each
+    concept's label and description, as EDGAR serves them now."""
+    served = json.loads(server.bodies[f"/api/xbrl/companyfacts/CIK{CIK}.json"][0])
+    assert any("frame" in row for _, _, _, row in fetch_fixtures_rows(served["facts"]))
+    held = on_demand.fetch_store(client(tmp_path, server), TICKER, accession=ACCESSION)
+    facts = stored_facts(held["store"])["facts"]
+    assert not any("frame" in row for _, _, _, row in fetch_fixtures_rows(facts))
+    assert not any({"label", "description"} & set(concept) for concepts in facts.values()
+                   for concept in concepts.values())
+
+
+def fetch_fixtures_rows(facts):
+    from src import fetch_companyfacts
+    return fetch_companyfacts.rows(facts)
+
+
+def test_the_run_directory_is_claimed_even_against_a_claim_made_a_moment_before(
+        tmp_path, server, monkeypatch):
+    """Another invocation creates the directory between this one's look and its
+    own creation: the creation itself is the claim, so this one is refused."""
+    fetcher = client(tmp_path, server)
+    monkeypatch.setattr(on_demand.edgar_client, "EdgarClient", lambda: fetcher)
+    out = tmp_path / "runs" / TICKER / ACCESSION
+    real = Path.mkdir
+
+    def raced(self, *args, **kwargs):
+        if self == out and not self.exists():
+            real(self)                      # the other invocation, first
+            (self / "input_manifest.json").write_text("theirs\n")
+        return real(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "mkdir", raced)
+    assert on_demand.main(["--ticker", TICKER, "--accession", ACCESSION,
+                           "--out", str(out)]) == on_demand.BAD_INPUT
+    assert (out / "input_manifest.json").read_text() == "theirs\n"
+    assert [p.name for p in out.iterdir()] == ["input_manifest.json"]
+
+
+@pytest.mark.parametrize("failure", ["a status", "an exception"])
+def test_a_bundle_that_fails_gives_the_claim_back(tmp_path, server, monkeypatch, failure):
+    fetcher = client(tmp_path, server)
+    monkeypatch.setattr(on_demand.edgar_client, "EdgarClient", lambda: fetcher)
+
+    def fails(argv):
+        if failure == "a status":
+            return 2
+        raise ValueError("a reader the bundle calls broke")
+
+    monkeypatch.setattr(on_demand.assemble_bundle, "main", fails)
+    out = tmp_path / "runs" / TICKER / ACCESSION
+    argv = ["--ticker", TICKER, "--accession", ACCESSION, "--out", str(out)]
+    if failure == "a status":
+        assert on_demand.main(argv) == 2
+    else:
+        with pytest.raises(ValueError):
+            on_demand.main(argv)
+    assert not out.exists()
+
+
+def test_the_same_instant_stood_and_a_stamp_of_another_shape_is_no_stamp():
+    trigger = {"accessionNumber": ACCESSION, "filingDate": "2026-08-26",
+               "acceptanceDateTime": STAMPS[ACCESSION]}
+    same = {"accessionNumber": "0001193125-26-000002", "filingDate": "2026-08-26",
+            "acceptanceDateTime": STAMPS[ACCESSION]}
+    assert on_demand.stood_before(same, trigger)
+    # shapes EDGAR's index does not write are read as no stamp, as the grader
+    # reads a stamp it cannot parse: another filer agent's row is then not shown
+    for stamp in ("2026-08-26T20:00:00+00:00", "2026-08-26T20:00:00.000",
+                  "2026-08-26 20:00:00Z", "2026-08-26"):
+        other = dict(same, acceptanceDateTime=stamp)
+        assert not on_demand.stood_before(other, trigger), stamp
+        assert on_demand.known_at([other], trigger) == []
+
+
+def test_a_row_dated_earlier_but_accepted_after_the_trigger_is_not_known_at_it():
+    """A report accepted after half past five is dated the next day, and a Form 4
+    accepted before ten at night that same evening is dated the day it was
+    accepted: earlier, though accepted after."""
+    trigger = {"accessionNumber": ACCESSION, "filingDate": "2026-08-26",
+               "acceptanceDateTime": "2026-08-25T21:45:00.000Z"}
+    form4 = {"accessionNumber": "0001127602-26-000001", "filingDate": "2026-08-25",
+             "acceptanceDateTime": "2026-08-26T01:30:00.000Z"}
+    before = dict(form4, accessionNumber="0001127602-26-000000",
+                  acceptanceDateTime="2026-08-25T20:00:00.000Z")
+    assert [row["accessionNumber"] for row in on_demand.known_at([form4, before], trigger)] \
+        == ["0001127602-26-000000"]
+
+
+def test_the_command_lines_store_up_to_a_filing_holds_the_same_rule(tmp_path, server,
+                                                                    monkeypatch):
+    """`python -m src.fetch_fixtures --accession` builds through the same store."""
+    plant_the_day(server)
+    fetcher = client(tmp_path, server)
+    monkeypatch.setattr(fetch_fixtures, "Fetcher", lambda _agent: fetcher)
+    out = tmp_path / "store"
+    assert fetch_fixtures.main(["--ticker", TICKER, "--accession", ACCESSION,
+                                "--out", str(out)]) == 0
+    rows = json.loads((out / TICKER / "submissions.json").read_text())["filings"]
+    assert LATE not in {row["accession"] for row in rows}
+    assert EARLY in {row["accession"] for row in rows}

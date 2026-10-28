@@ -1540,7 +1540,7 @@ def test_the_store_is_fetched_up_to_the_named_filing(tmp_path, monkeypatch):
     monkeypatch.setattr(fetch_fixtures, "Fetcher", lambda _agent: index)
     store = _stand_in_store(DETECTED[0], monkeypatch)
     monkeypatch.setattr(fetch_fixtures, "fetch_company",
-                        lambda _f, ticker, cik, as_of, out:
+                        lambda _f, ticker, cik, as_of, out, filings=None:
                         asked_as_of.append((ticker, cik, as_of))
                         or store(_f, ticker, cik, as_of, out))
     assert fetch_fixtures.main(["--ticker", "CIEN", "--accession", DETECTED[0],
@@ -1552,7 +1552,7 @@ def test_an_accession_the_index_does_not_list_fetches_nothing(tmp_path, monkeypa
     from src import fetch_fixtures
     monkeypatch.setattr(fetch_fixtures, "Fetcher", lambda _agent: _Index([STORE_HOLDS]))
     monkeypatch.setattr(fetch_fixtures, "fetch_company",
-                        lambda *a: pytest.fail("fetched a store for an unlisted filing"))
+                        lambda *a, **k: pytest.fail("fetched a store for an unlisted filing"))
     code = fetch_fixtures.main(["--ticker", "CIEN", "--accession", DETECTED[0],
                                 "--out", str(tmp_path / "store")])
     assert code == fetch_fixtures.FETCH_FAILED
@@ -1567,9 +1567,9 @@ def _stand_in_store(held_accession, monkeypatch):
     stand-in index serves no companyfacts record.
     """
     from src import fetch_companyfacts
-    monkeypatch.setattr(fetch_companyfacts, "fetch_company", lambda *a: [])
+    monkeypatch.setattr(fetch_companyfacts, "fetch_company", lambda *a, **k: [])
 
-    def fetch_company(_fetcher, ticker, cik, as_of, out):
+    def fetch_company(_fetcher, ticker, cik, as_of, out, filings=None):
         manifest = {"ticker": ticker, "cik": cik, "as_of": as_of, "documents": [
             {"form": "10-Q", "role": "primary_html", "accession": held_accession,
              "filing_date": as_of}]}
@@ -1610,7 +1610,7 @@ def test_an_existing_store_is_not_refetched_to_another_date(tmp_path, monkeypatc
     (store / "CIEN" / held).write_text("{}")
     monkeypatch.setattr(fetch_fixtures, "Fetcher", lambda _agent: _Index([DETECTED]))
     monkeypatch.setattr(fetch_fixtures, "fetch_company",
-                        lambda *a: pytest.fail("fetched into a store that already exists"))
+                        lambda *a, **k: pytest.fail("fetched into a store that already exists"))
     code = fetch_fixtures.main(["--ticker", "CIEN", "--accession", DETECTED[0],
                                 "--out", str(store)])
     assert code == fetch_fixtures.FETCH_FAILED

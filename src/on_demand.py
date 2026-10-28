@@ -39,16 +39,18 @@ or before the filing; a company without them is refused with what is missing.
 from __future__ import annotations
 
 import argparse
-import datetime as dt
-import re
 import sys
 from pathlib import Path
 
 try:
     from src import assemble_bundle, edgar_client, fetch_fixtures, interpreter_pin, universe
+    # the rule of what stood when a filing was accepted is the store's, shared
+    # with `fetch_fixtures --accession`
+    from src.fetch_fixtures import known_at, stood_before  # noqa: F401
 except ImportError:  # invoked as a plain script
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     from src import assemble_bundle, edgar_client, fetch_fixtures, interpreter_pin, universe
+    from src.fetch_fixtures import known_at, stood_before  # noqa: F401
 
 TICKER_MAP = "https://www.sec.gov/files/company_tickers.json"
 FORMS = ("10-Q", "10-K")
@@ -95,47 +97,6 @@ def the_filing(rows: list[dict], form: str, accession: str | None) -> dict:
         raise OnDemandError(f"the company has filed no {form}")
     return latest
 
-
-ACCESSION = re.compile(r"(\d{10})-(\d{2})-(\d{6})$")
-
-
-def _accepted_by(stamp: str) -> dt.datetime | None:
-    try:
-        return dt.datetime.fromisoformat(stamp.replace("Z", "+00:00"))
-    except ValueError:
-        return None
-
-
-def stood_before(row: dict, filing: dict) -> bool:
-    """Whether a filing of the trigger's own day was accepted before it.
-
-    The rule of the owner's grader (`evals/regression/mechanical.py`,
-    `accepted_before_trigger`), so a store built here is never one it refuses:
-    both acceptance stamps, compared as instants; else the filer agent's
-    accession sequence, a lower number under the same agent and year showing an
-    earlier assembly; else no, since nothing shows it.
-    """
-    if row["accessionNumber"] == filing["accessionNumber"]:
-        return True
-    theirs = _accepted_by(row.get("acceptanceDateTime") or "")
-    mine = _accepted_by(filing.get("acceptanceDateTime") or "")
-    if theirs is not None and mine is not None:
-        return theirs <= mine
-    a, b = ACCESSION.match(row["accessionNumber"]), ACCESSION.match(filing["accessionNumber"])
-    return bool(a and b and a.group(1, 2) == b.group(1, 2) and int(a.group(3)) < int(b.group(3)))
-
-
-def known_at(rows: list[dict], filing: dict) -> list[dict]:
-    """The filings that stood when `filing` was accepted.
-
-    The cutoff is the filing's own date, and a filing made later that same day
-    is not one its reader could have seen: the owner's grader refuses a
-    document accepted after the triggering report on the cutoff day. A row of
-    that day is kept when `stood_before` shows it was accepted first.
-    """
-    day = filing["filingDate"]
-    return [row for row in rows if row["filingDate"] < day
-            or (row["filingDate"] == day and stood_before(row, filing))]
 
 def fetch_store(client, ticker: str, *, form: str = "10-Q", accession: str | None = None,
                 root: Path | None = None, ticker_map: str = TICKER_MAP) -> dict:
@@ -186,11 +147,21 @@ def main(argv: list[str] | None = None) -> int:
         print(f"on_demand: {run} cannot be claimed for a new run ({type(exc).__name__}); "
               "name a new directory with --out", file=sys.stderr)
         return BAD_INPUT
-    status = assemble_bundle.main(["--ticker", held["ticker"], "--form", held["form"],
-                                   "--accession", held["accession"],
-                                   "--fixtures", str(held["store"]), "--out", run])
-    if status and not any(Path(run).iterdir()):
-        Path(run).rmdir()       # nothing was built in it; the claim is given back
+    status = None
+    try:
+        status = assemble_bundle.main(["--ticker", held["ticker"], "--form", held["form"],
+                                       "--accession", held["accession"],
+                                       "--fixtures", str(held["store"]), "--out", run])
+    finally:
+        # a bundle that failed, by its status or by an exception, gives the
+        # claim back when nothing was written in it; what it did write stays,
+        # named, for whoever reads the failure
+        if status != 0:
+            if not any(Path(run).iterdir()):
+                Path(run).rmdir()
+            else:
+                print(f"on_demand: the bundle failed part-way; what it wrote is left in "
+                      f"{run}", file=sys.stderr)
     if status or not args.run:
         return status
     from src import run_analysis      # imported here: the fetch needs none of it
