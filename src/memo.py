@@ -104,8 +104,14 @@ def unit_of(path: str, node) -> str:
     return "ratio"
 
 
+# A filing's own units, as `note_tables` carries a fact's (`iso4217:USD`), read as
+# the calculator's words for them.
+INSTANCE_UNITS = {"iso4217:USD": "USD", "xbrli:shares": "shares", "shares": "shares"}
+
+
 def korean_number(value: float, unit: str, *, percent: bool = False) -> str:
     """A number as a Korean reader expects it, never rounded to hide a sign."""
+    unit = INSTANCE_UNITS.get(unit, unit)
     if value is None or not math.isfinite(value):
         return "(값 없음)"
     if percent:

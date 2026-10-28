@@ -44,7 +44,14 @@ RESERVE = table("<td>Reserve</td>" + number("f-3", "zzzz:ReturnsReserve", "now",
                 "contextRef=\"now\" unitRef=\"usd\" xsi:nil=\"true\"/></td>")
 # A segment's revenue, against a member, and a fact the instance never carried.
 SEGMENT = table("<td>Segment</td>" + number("f-6", "us-gaap:Revenues", "segment", "250"),
-                "<td>Lost</td>" + number("f-99", "us-gaap:Revenues", "now", "7"))
+                "<td>Lost</td>" + number("f-99", "us-gaap:Revenues", "now", "7"),
+                "<td>Backlog</td>" + number("f-9", "us-gaap:RevenueRemainingPerformanceObligation",
+                                            "band", "40"),
+                "<td>Price</td>" + number("f-10", "us-gaap:ShareBasedCompensationArrangementBy"
+                                          "ShareBasedPaymentAwardOptionsExercisePrice", "now",
+                                          "258.16"),
+                "<td>Volatility</td>" + number("f-11", "us-gaap:FairValueAssumptionsExpected"
+                                               "Volatility", "now", "0.3"))
 
 INLINE = f"""<html xmlns="http://www.w3.org/1999/xhtml"
  xmlns:ix="http://www.xbrl.org/2013/inlineXBRL"
@@ -67,13 +74,22 @@ INSTANCE = f"""<xbrl xmlns="http://www.xbrl.org/2003/instance"
 <xbrldi:explicitMember dimension="us-gaap:StatementBusinessSegmentsAxis">zzzz:WidgetsMember</xbrldi:explicitMember>
 </xbrli:segment></xbrli:entity>
 <xbrli:period><xbrli:startDate>2026-04-01</xbrli:startDate><xbrli:endDate>2026-06-30</xbrli:endDate></xbrli:period></xbrli:context>
+<xbrli:context id="band"><xbrli:entity><xbrli:segment>
+<xbrldi:typedMember dimension="us-gaap:RevenueRemainingPerformanceObligationExpectedTimingOfSatisfactionStartDateAxis"><us-gaap:date.domain>2027-07-01</us-gaap:date.domain></xbrldi:typedMember>
+</xbrli:segment></xbrli:entity>
+<xbrli:period><xbrli:instant>2026-06-30</xbrli:instant></xbrli:period></xbrli:context>
 <xbrli:unit id="usd"><xbrli:measure>iso4217:USD</xbrli:measure></xbrli:unit>
+<xbrli:unit id="usdPerShare"><xbrli:divide><xbrli:unitNumerator><xbrli:measure>iso4217:USD</xbrli:measure></xbrli:unitNumerator><xbrli:unitDenominator><xbrli:measure>xbrli:shares</xbrli:measure></xbrli:unitDenominator></xbrli:divide></xbrli:unit>
+<xbrli:unit id="pure"><xbrli:measure>xbrli:pure</xbrli:measure></xbrli:unit>
 <us-gaap:InventoryNet id="f-1" contextRef="now" unitRef="usd" decimals="-3">1000000</us-gaap:InventoryNet>
 <us-gaap:InventoryNet id="f-2" contextRef="then" unitRef="usd" decimals="-3">900000</us-gaap:InventoryNet>
 <zzzz:ReturnsReserve id="f-3" contextRef="now" unitRef="usd" decimals="-3">1000000</zzzz:ReturnsReserve>
 <zzzz:ReserveBasis id="f-4" contextRef="now">estimated</zzzz:ReserveBasis>
 <zzzz:Other id="f-5" contextRef="now" unitRef="usd" xsi:nil="true"/>
 <us-gaap:Revenues id="f-6" contextRef="segment" unitRef="usd" decimals="-3">250000</us-gaap:Revenues>
+<us-gaap:RevenueRemainingPerformanceObligation id="f-9" contextRef="band" unitRef="usd" decimals="-3">40000</us-gaap:RevenueRemainingPerformanceObligation>
+<us-gaap:ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsExercisePrice id="f-10" contextRef="now" unitRef="usdPerShare" decimals="2">258.16</us-gaap:ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsExercisePrice>
+<us-gaap:FairValueAssumptionsExpectedVolatility id="f-11" contextRef="now" unitRef="pure" decimals="3">0.3</us-gaap:FairValueAssumptionsExpectedVolatility>
 <us-gaap:InventoryNet id="f-7" contextRef="now" unitRef="usd" decimals="-3">1000000</us-gaap:InventoryNet>
 <us-gaap:InventoryNet id="f-8" contextRef="then" unitRef="usd" decimals="-3">900000</us-gaap:InventoryNet>
 </xbrl>""".encode()
@@ -136,11 +152,40 @@ def test_a_text_fact_is_not_a_cell_and_a_nil_fact_says_so(found):
 
 def test_a_dimensional_fact_carries_its_axes_and_a_missing_one_is_named(found):
     segment = found["tables"]["notes_4"]["facts"]
-    assert segment == [{"concept": "us-gaap:Revenues", "value": 250_000.0,
-                        "unit": "iso4217:USD", "start": "2026-04-01", "end": "2026-06-30",
-                        "axes": {"us-gaap:StatementBusinessSegmentsAxis": "zzzz:WidgetsMember"},
-                        "fact": f"{ACCESSION}:f-6"}]
+    assert segment[0] == {"concept": "us-gaap:Revenues", "value": 250_000.0,
+                          "unit": "iso4217:USD", "start": "2026-04-01", "end": "2026-06-30",
+                          "axes": {"us-gaap:StatementBusinessSegmentsAxis": "zzzz:WidgetsMember"},
+                          "fact": f"{ACCESSION}:f-6"}
     assert found["not_in_the_instance"] == [f"{ACCESSION}:notes:4: f-99"]
+
+
+def test_a_typed_member_is_carried_and_its_date_is_never_read_as_a_period(found):
+    """A remaining-performance-obligation band starting 2027-07-01, a date after
+    the filing that the filing states; written whole it would read as a period
+    after the cutoff, which the owner's grader refuses."""
+    from src import run_analysis
+
+    band = next(cell for cell in found["tables"]["notes_4"]["facts"]
+                if cell["fact"].endswith(":f-9"))
+    assert band["axes"] == {
+        "us-gaap:RevenueRemainingPerformanceObligationExpectedTimingOfSatisfactionStartDateAxis":
+            "date.domain = 2027-07-01"}
+    assert run_analysis.calculator_problems({"note_tables": found}, "2026-07-31") == []
+
+
+def test_a_price_per_share_and_a_volatility_never_reach_the_analysts(found):
+    concepts = {cell["concept"] for cell in found["tables"]["notes_4"]["facts"]}
+    assert not any("ExercisePrice" in name or "Volatility" in name for name in concepts)
+    assert found["left_out_as_a_price"] == {"notes_4": 2}
+    assert "258.16" not in json.dumps(found)
+
+
+def test_the_memo_prints_a_filing_unit_as_it_prints_the_calculators():
+    """Apple's non-current intangible assets, 20,342 million: 203.4억 달러."""
+    from src import memo
+
+    assert memo.korean_number(20_342e6, "iso4217:USD") == "203.4억 달러" == \
+        memo.korean_number(20_342e6, "USD")
 
 
 def test_a_table_no_table_renders_to_is_unmatched_and_never_guessed(found):

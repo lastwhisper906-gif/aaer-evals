@@ -1327,6 +1327,11 @@ def test_the_rows_of_a_note_table_reach_the_accounting_analyst(tmp_path, ticker)
     assert all(fact["fact"].startswith(paragraph.split(":")[0] + ":")
                for fact in table["facts"])
     assert held["note_tables"]["unmatched"] == []
+    if ticker == "AAPL":
+        # the table prints five rows in two columns, and those ten numbers are
+        # all it holds: f-656 to f-665, read by eye in the inline document
+        assert sorted(fact["fact"] for fact in table["facts"]) == \
+            [f"{paragraph.split(':')[0]}:f-{n}" for n in range(656, 666)]
     # and the directory is still the layer's: no price, no filing
     assert "market" not in held and "valuation" not in held
     assert not any(name.startswith("input_") and name.endswith((".md", ".htm"))

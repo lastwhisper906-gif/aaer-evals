@@ -33,11 +33,14 @@ listed once. A table paragraph no table renders to is listed under
 
 What is left out, and why: a paragraph of the prior filing (`[same as prior
 period ...]` paragraphs carry no table of this filing), a prose paragraph (its
-numbers are the readers' to quote), and a text fact inside a table, which is
-not a number. A per-share amount the filing states in a note -- the average
-price paid in a repurchase, an option's exercise price -- is a fact of the
-filing like any other and is carried; the market's price is never in a filing
-and never here.
+numbers are the readers' to quote), a text fact inside a table, which is not a
+number, and a price (`is_a_price`): an amount in a currency per share -- an
+option's exercise price, a grant-date fair value per share, a repurchase's
+average price -- or a volatility, each the market's price of the company's own
+shares or read from it. The two analysts never see a price, and each table
+counts what it left out under `left_out_as_a_price`. A fair value in dollars
+(of debt, of a portfolio) is carried. A typed dimension's value is written
+`element = value`, so a date it carries is never read as a period.
 """
 
 from __future__ import annotations
@@ -72,11 +75,26 @@ def inline_tables(html: bytes) -> dict[str, list[str]]:
     root = ET.fromstring(html)
     out: dict[str, list[str]] = {}
     for table in root.iter(f"{{{XHTML}}}table"):
+        # an inline fact with no id cannot be looked up in the instance; it is
+        # kept as None, so the table that holds it says so
         ids = [fact.get("id") for fact in table.iter(f"{{{IX}}}nonFraction")]
         for rendered in clean_text.clean_stream(_bare(table))["paragraphs"]:
             held = out.setdefault(rendered.strip(), [])
-            held.extend(one for one in ids if one and one not in held)
+            held.extend(one for one in ids if one is None or one not in held)
     return out
+
+
+def is_a_price(fact: dict) -> bool:
+    """A fact the accounting and financial analysts are not handed: a currency
+    per share (an option's exercise price, a grant-date fair value per share, a
+    repurchase's average price; earnings and dividends per share too, which the
+    calculator carries from companyfacts) or a volatility. Each is the market's
+    price of the company's own shares, or read from it, at some date the filing
+    names, and those analysts never see a price (CLAUDE.md)."""
+    unit = fact.get("unit") or ""
+    per_share = "/" in unit and unit.split("/", 1)[0].startswith("iso4217:") \
+        and unit.split("/", 1)[1].endswith("shares")
+    return per_share or "volatility" in fact["name"].lower()
 
 
 def cell(fact: dict) -> dict:
@@ -88,6 +106,11 @@ def cell(fact: dict) -> dict:
     else:
         out["start"], out["end"] = context.get("start"), context.get("end")
     axes = instance_facts.members(fact)
+    # a typed member carries a value of its own (a date, a name), written as
+    # "element = value": the date of a remaining-performance-obligation band is
+    # one the filing states, and as a whole string it would read as a period
+    for typed in context.get("typed_segment", []):
+        axes[typed["dimension"]] = f"{typed['element']} = {typed['value']}"
     if axes:
         out["axes"] = axes
     if fact["nil"]:
@@ -111,7 +134,7 @@ def tables(paragraphs: list[tuple[str, str]], html: bytes, instance: bytes, *,
     by_id = {fact["id"].split(":", 1)[1]: fact
              for fact in instance_facts.facts(instance, accession=accession)
              if fact["kind"] == "numeric"}
-    found, unmatched, untagged = {}, [], []
+    found, unmatched, untagged, prices = {}, [], [], {}
     for paragraph, text in paragraphs:
         if not paragraph.startswith(f"{accession}:notes:") or not text.startswith("|"):
             continue
@@ -121,9 +144,12 @@ def tables(paragraphs: list[tuple[str, str]], html: bytes, instance: bytes, *,
             continue
         cells, seen = [], set()
         for one in ids:
-            fact = by_id.get(one)
+            fact = by_id.get(one) if one is not None else None
             if fact is None:
-                untagged.append(f"{paragraph}: {one}")
+                untagged.append(f"{paragraph}: {one or 'an inline fact with no id'}")
+                continue
+            if is_a_price(fact):
+                prices[key(paragraph)] = prices.get(key(paragraph), 0) + 1
                 continue
             # one fact the document states twice, in two tables that render
             # the same, is one cell
@@ -133,7 +159,8 @@ def tables(paragraphs: list[tuple[str, str]], html: bytes, instance: bytes, *,
                 cells.append(cell(fact))
         if cells:
             found[key(paragraph)] = {"paragraph": paragraph, "facts": cells}
-    return {"tables": found, "unmatched": unmatched, "not_in_the_instance": untagged}
+    return {"tables": found, "unmatched": unmatched, "not_in_the_instance": untagged,
+            "left_out_as_a_price": prices}
 
 
 WHAT_THIS_IS = ("for each table of the triggering filing's notes that reached the readers "

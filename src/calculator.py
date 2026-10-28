@@ -2309,7 +2309,9 @@ def calculate(*, ticker: str, cutoff, period_end: str, form: str, accession: str
         missing.append(f"valuation: {value['missing']}")
     tables = note_tables.from_run(ticker, accession, cutoff, fixtures_root=fixtures_root,
                                   bundle=bundle)
-    if "missing" in tables:
+    if bundle is not None and "missing" in tables:
+        # a run's bundle whose tables cannot be read; a call with no bundle at
+        # all (the command line's default) never had any to read
         missing.append(f"note_tables: {tables['missing']}")
 
     return {
