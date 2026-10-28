@@ -25,10 +25,13 @@ across companies.
 `{ratios.solvency.interest_coverage}`,
 `{ratios.growth.revenue.year_over_year|pct}` — and Python puts the value there.
 `|pct` shows a ratio as a percentage. A path that does not resolve to a number
-drops the item it is in, and the drop is counted. If the number you want is not
-in `calculator_filings_only.json`, say it is not there; never work it out. Digits may appear
-only inside a verbatim quote, inside an id you cite, or as a form name or a
-four-digit year.
+drops the sentence it is in, and the drop is counted. If the number you want is not
+in `calculator_filings_only.json`, say it is not there; never work it out.
+Digits may appear only inside a verbatim quote in quotation marks, copied
+character for character from a file you read; inside an id you cite; as a form
+name (10-K, 10-Q, 8-K, or their plurals); or as a year written after "fiscal" or
+"calendar" (fiscal 2025) or in a date (2026-06-30). A sentence that breaks this
+is dropped alone, and the drop is counted.
 
 ## What to read, in this order
 

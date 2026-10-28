@@ -252,7 +252,9 @@ YEAR_TERMINATOR = (r"(?=\s*(?:$|[^\sA-Za-z0-9]|" + YEAR + r"|(?i:" + CONNECTOR +
                    + AFTER_A_HYPHENATED_ADJECTIVE + r"))")
 ALLOWED_DIGITS = re.compile(
     r"(?<![A-Za-z0-9])(?:"
-    r"10-K|10-Q|8-K|COVID-19"
+    # a form's name, its plural or its possessive: "the 10-Q", "the two 10-Qs", "the
+    # 10-K's note" (ANET, FTNT and LFUS of 2026-10-08 lost areas over "10-Qs")
+    r"(?:10-K|10-Q|8-K)(?:['’]?s)?|COVID-19"
     r"|(?:19|20)\d{2}-\d{2}-\d{2}"
     # A fiscal year, or a range or list of years opening with one and followed by a
     # year-terminator: "fiscal 2025", "the flat stretch of fiscal 2022 to 2025," (AAPL's
@@ -396,8 +398,112 @@ def placeholder_problem(fields: dict, path: str) -> str | None:
 
 # --- one string -----------------------------------------------------------------------
 
-def words_problem(text, fields: dict, *, forbidden: tuple[str, ...]) -> str | None:
-    """Why these words cannot stand, or None."""
+# A quotation in an analyst's own words: double quotes, curly quotes, or single
+# quotes that open after a space or a bracket and close before one (an
+# apostrophe inside a word is not a quote). It stands for the filer's words only
+# when it string-matches, folded, a file the analyst saw; then its digits are the
+# filer's, not the analyst's (148 of the 339 digits that dropped an area or a
+# section over the nineteen runs read on 2026-10-27 were inside such a quote).
+QUOTATION = re.compile(r'"([^"\n]{2,800})"|“([^”\n]{2,800})”|‘([^’\n]{2,800})’'
+                       r"|(?<![A-Za-z0-9])'([^'\n]{2,800})'(?![A-Za-z0-9])")
+
+
+def _folded_sources(sources) -> tuple[str, ...]:
+    return tuple(fold(text) for text in (sources or {}).values() if isinstance(text, str))
+
+
+def without_verified_quotations(text: str, sources) -> str:
+    """The text with every quotation that string-matches a file the analyst saw
+    blanked out, so its digits are not read as the analyst's numbers. A quotation
+    that matches nothing is left in place, and its digits are the analyst's."""
+    folded = _folded_sources(sources)
+    if not folded:
+        return text
+
+    def blank(match: re.Match) -> str:
+        inner = next(group for group in match.groups() if group is not None)
+        needle = fold(inner).strip()
+        if needle and any(needle in haystack for haystack in folded):
+            return " " * len(match.group(0))
+        return match.group(0)
+
+    return QUOTATION.sub(blank, text)
+
+
+# The keys that hold an analyst's running prose: a failing sentence in one of
+# them is dropped and the rest of the text stands. Short keys (an anomaly's
+# `name`, `name_ko`) stand or fall whole.
+SENTENCE_KEYS = ("finding", "verdict", "why", "what", "reading", "reason", "history",
+                 "assumption")
+# A sentence ends at ".", "!", "?" or "。" before whitespace, outside a quotation
+# and outside a {path} placeholder, and not after a common abbreviation.
+ABBREVIATIONS = re.compile(r"(?:\b(?:U\.S|e\.g|i\.e|Inc|Corp|Co|Ltd|No|vs|approx|"
+                           r"Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec|"
+                           r"Mr|Ms|Dr|St|Nos|Fig|est)\.)$")
+
+
+def sentences(text: str) -> list[str]:
+    """The text cut into sentences, each with the whitespace that followed it, so
+    joining them gives the text back character for character."""
+    shielded = list(text)
+    for pattern in (PLACEHOLDER, QUOTATION):
+        for match in pattern.finditer(text):
+            for i in range(match.start(), match.end()):
+                if shielded[i] in ".!?。":
+                    shielded[i] = "\0"
+    flat = "".join(shielded)
+    out, start = [], 0
+    # a sentence that ends inside a closing quotation mark ends there too
+    for match in re.finditer(r"(?:[.!?。]+|\0[\"”’'])\s+", flat):
+        if ABBREVIATIONS.search(flat[start:match.start() + 1]):
+            continue
+        out.append(text[start:match.end()])
+        start = match.end()
+    if start < len(text):
+        out.append(text[start:])
+    return out
+
+
+def trim_sentences(item, fields: dict, sources, *, forbidden) -> list[str]:
+    """Drop, in place, each sentence of the item's running prose that cannot
+    stand, and each `fields` citation that names nothing, and return why each one
+    went. A key whose every sentence fails is left as written, so the item falls
+    whole for the reason the first sentence gives."""
+    reasons = []
+    if not isinstance(item, dict):
+        return reasons
+    # a `fields` citation that names nothing in the calculator is dropped alone, as a
+    # sentence is: AAPL's, FTNT's and WDC's areas of 2026-10-08 fell whole for citing
+    # `growth.revenue.year_over_year` where the calculator has `ratios.growth.…`
+    cited = item.get("fields")
+    if isinstance(cited, list) and cited:
+        kept = [path for path in cited if field_cited(fields, path)]
+        if len(kept) < len(cited):
+            reasons += [f"fields: {path!r} is not a field of calculator.json; the citation "
+                        "is dropped" for path in cited if not field_cited(fields, path)]
+            item["fields"] = kept
+    for key in SENTENCE_KEYS:
+        text = item.get(key)
+        if not isinstance(text, str) or not text:
+            continue
+        parts = sentences(text)
+        problems = [words_problem(part, fields, forbidden=forbidden, sources=sources)
+                    for part in parts]
+        if not any(problems) or all(problems):
+            continue
+        item[key] = "".join(part for part, problem in zip(parts, problems)
+                            if not problem).rstrip()
+        reasons += [f"{key}: one sentence dropped: {problem}"
+                    for problem in problems if problem]
+    return reasons
+
+
+
+def words_problem(text, fields: dict, *, forbidden: tuple[str, ...],
+                  sources=None) -> str | None:
+    """Why these words cannot stand, or None. `sources` is the files the analyst
+    saw: a quotation that string-matches one of them is the filer's words, and its
+    digits are not read as the analyst's (`without_verified_quotations`)."""
     if text is None or text == "":
         return None
     if not isinstance(text, str):
@@ -406,7 +512,7 @@ def words_problem(text, fields: dict, *, forbidden: tuple[str, ...]) -> str | No
         problem = placeholder_problem(fields, path)
         if problem:
             return problem
-    bare = PLACEHOLDER.sub(" ", text)
+    bare = PLACEHOLDER.sub(" ", without_verified_quotations(text, sources))
     if BRACE.search(bare):
         return "a brace that is not a whole {path} placeholder"
     bare = ALLOWED_DIGITS.sub(" ", bare)
@@ -486,7 +592,7 @@ def item_problem(item, fields: dict, sources: dict[str, str], upstream: set[str]
     if not isinstance(item, dict):
         return "the item is not an object"
     for key in PROSE_KEYS:
-        problem = words_problem(item.get(key), fields, forbidden=forbidden)
+        problem = words_problem(item.get(key), fields, forbidden=forbidden, sources=sources)
         if problem:
             return f"{key}: {problem}"
     for path in item.get("fields") or []:
@@ -519,6 +625,8 @@ def _check_block(payload: dict, key: str, names, fields, sources, upstream, drop
                 block[name] = {"dropped": "the analyst wrote nothing for it"}
                 dropped.append({"where": f"{key}.{name}", "reason": "missing"})
             continue
+        for reason in trim_sentences(entry, fields, sources, forbidden=forbidden):
+            dropped.append({"where": f"{key}.{name}", "reason": reason})
         problem = item_problem(entry, fields, sources, upstream, forbidden=forbidden,
                                filing=filing, fallen=fallen)
         if problem:
@@ -531,6 +639,10 @@ def _check_list(payload: dict, key: str, fields, sources, upstream, dropped, *, 
                 extra=None, filing=None, fallen=frozenset()) -> None:
     kept = []
     for position, item in enumerate(payload.get(key) or []):
+        for reason in trim_sentences(item, fields, sources, forbidden=forbidden):
+            dropped.append({"where": f"{key}[{position}]",
+                            "id": item.get("id") if isinstance(item, dict) else None,
+                            "reason": reason})
         problem = item_problem(item, fields, sources, upstream, forbidden=forbidden,
                                filing=filing, fallen=fallen)
         if problem is None and extra is not None:
@@ -550,6 +662,15 @@ def _check_summary(payload: dict, fields, dropped, *, forbidden) -> None:
         payload["summary_ko"] = {}
         return
     for name, text in list(summary.items()):
+        if isinstance(text, str) and text:
+            parts = sentences(text)
+            problems = [words_problem(part, fields, forbidden=forbidden) for part in parts]
+            if any(problems) and not all(problems):
+                summary[name] = text = "".join(
+                    part for part, problem in zip(parts, problems) if not problem).rstrip()
+                dropped += [{"where": f"summary_ko.{name}",
+                             "reason": f"one sentence dropped: {problem}"}
+                            for problem in problems if problem]
         problem = words_problem(text, fields, forbidden=forbidden)
         if problem:
             summary[name] = None
@@ -1038,6 +1159,8 @@ def check(kind: str, payload: dict, *, fields: dict, sources: dict[str, str],
                      dropped, forbidden=forbidden, fallen=fallen, required=True, filing=filing)
         for key in ("dupont", "path_to_distress"):
             entry = payload.get(key)
+            for reason in trim_sentences(entry, fields, sources, forbidden=forbidden):
+                dropped.append({"where": key, "reason": reason})
             problem = ("the analyst wrote nothing for it" if entry is None else
                        item_problem(entry, fields, sources, upstream, forbidden=forbidden, fallen=fallen,
                                     filing=filing))
@@ -1052,6 +1175,8 @@ def check(kind: str, payload: dict, *, fields: dict, sources: dict[str, str],
         payload.pop("readings", None)
         for key in VALUATION_KEYS:
             entry = payload.get(key)
+            for reason in trim_sentences(entry, fields, sources, forbidden=forbidden):
+                dropped.append({"where": key, "reason": reason})
             problem = ("the analyst wrote nothing for it" if entry is None else
                        item_problem(entry, fields, sources, upstream, forbidden=forbidden, fallen=fallen,
                                     filing=filing))

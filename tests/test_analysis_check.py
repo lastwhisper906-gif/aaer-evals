@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import copy
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -1078,7 +1079,11 @@ PUBLISHED_WINDOWS = (
 )
 PUBLISHED_ITEMS = (
     # ticker · accession · file · item · the hand reading of its whole text · why the rule
-    # disagrees, or None
+    # disagrees, or None. "quoted": every digit the analyst wrote there sits inside a
+    # quotation that string-matches a report the analyst read -- a number in its own
+    # words to the rule before 2026-10-28, the filer's (or the reader report's, itself
+    # quote-gated) since. LFUS's anomalies[35] opened its quotation with a year and
+    # stood marked xfail until the quotation itself was read.
     ('AAPL',
      '0000320193-26-000020',
      'assumptions.json',
@@ -1437,13 +1442,13 @@ PUBLISHED_ITEMS = (
      '0001628280-26-050481',
      'analysis_accounting.json',
      'areas.revenue_recognition',
-     'number',
+     'quoted',
      None),
     ('LFUS',
      '0001628280-26-050481',
      'analysis_accounting.json',
      'areas.estimates_and_reserves',
-     'number',
+     'quoted',
      None),
     ('LFUS',
      '0001628280-26-050481',
@@ -1455,7 +1460,7 @@ PUBLISHED_ITEMS = (
      '0001628280-26-050481',
      'analysis_accounting.json',
      'areas.industry_lens',
-     'number',
+     'quoted',
      None),
     ('LFUS',
      '0001628280-26-050481',
@@ -1467,7 +1472,7 @@ PUBLISHED_ITEMS = (
      '0001628280-26-050481',
      'analysis_accounting.json',
      'anomalies[1]',
-     'number',
+     'quoted',
      None),
     ('LFUS',
      '0001628280-26-050481',
@@ -1479,20 +1484,20 @@ PUBLISHED_ITEMS = (
      '0001628280-26-050481',
      'analysis_accounting.json',
      'anomalies[12]',
-     'number',
+     'quoted',
      None),
     ('LFUS',
      '0001628280-26-050481',
      'analysis_accounting.json',
      'anomalies[13]',
-     'number',
+     'quoted',
      None),
     ('LFUS',
      '0001628280-26-050481',
      'analysis_accounting.json',
      'anomalies[35]',
      'year',
-     'a year that opens a quotation has no word before it'),
+     None),
     ('LFUS',
      '0001628280-26-050481',
      'analysis_financial.json',
@@ -1670,8 +1675,39 @@ def test_the_rule_reads_each_published_item_whole_as_the_hand_did(row):
     dropped = {d["where"]: d["reason"] for d in out["dropped_items"]}
     if reading == "number":
         assert where in dropped and "a number written in the analyst's own words" in dropped[where]
+    elif reading == "quoted":
+        # it stands, and it stands for its quotation alone: read without the files the
+        # analyst saw, the same words carry a number of the analyst's own
+        assert where not in dropped, dropped.get(where)
+        item = written_item(ticker, accession, written, where)
+        fields, _ = written_inputs(ticker, accession, written)
+        assert any("a number written in the analyst's own words"
+                   in (analysis_check.words_problem(item.get(key), fields,
+                                                    forbidden=analysis_check.FORBIDDEN_EVERYWHERE)
+                       or "")
+                   for key in analysis_check.PROSE_KEYS), where
     else:
         assert where not in dropped, dropped.get(where)
+
+
+def written_inputs(ticker: str, accession: str, written: str):
+    agent = {"analysis_accounting.json": "accounting-analyst",
+             "analysis_financial.json": "financial-analyst",
+             "assumptions.json": "valuation-analyst"}[written]
+    agent_dir = RUNS / ticker / accession / "agents" / agent
+    calculator = next(agent_dir / name for name in ("calculator_filings_only.json",
+                                                      "calculator_before_drivers.json")
+                      if (agent_dir / name).is_file())
+    return json.loads(calculator.read_text(encoding="utf-8")), agent_dir
+
+
+def written_item(ticker: str, accession: str, written: str, where: str) -> dict:
+    """The item at `where` in the analyst's file as written, before the gate."""
+    _, agent_dir = written_inputs(ticker, accession, written)
+    node = json.loads((agent_dir / written).read_text(encoding="utf-8"))
+    for part in re.findall(r"[^.\[\]]+|\[\d+\]", where):
+        node = node[int(part[1:-1])] if part.startswith("[") else node[part]
+    return node
 
 
 PUBLISHED_SCENARIOS = (
@@ -1871,3 +1907,98 @@ def test_a_quarter_of_a_year_stands_and_a_labelled_quantity_does_not():
         payload["anomalies"][0]["what"] = text
         assert analysis_check.check("accounting", payload, fields=FIELDS,
                                     sources=SOURCES)["anomalies"] == [], text
+
+
+# --- the sentence rule (2026-10-28) ------------------------------------------------------
+# Over the nineteen runs read on 2026-10-27 the gate dropped 65 of 152 accounting areas
+# and 26 of 114 financial sections whole for one sentence each. A failing sentence now
+# goes alone, and the rest of the area stands.
+
+
+def test_a_number_in_one_sentence_drops_that_sentence_and_the_area_stands():
+    payload = accounting()
+    first = payload["areas"]["earnings_versus_cash"]["finding"]
+    payload["areas"]["earnings_versus_cash"]["finding"] = first + " Receivables rose by 61 days."
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+    area = out["areas"]["earnings_versus_cash"]
+    assert "dropped" not in area
+    assert area["finding"] == first.rstrip()
+    rows = [d for d in out["dropped_items"] if d["where"] == "areas.earnings_versus_cash"]
+    assert len(rows) == 1
+    assert rows[0]["reason"].startswith("finding: one sentence dropped: a number written in "
+                                        "the analyst's own words")
+
+
+def test_an_area_whose_every_sentence_fails_falls_whole_as_before():
+    payload = accounting()
+    payload["areas"]["earnings_versus_cash"]["finding"] = "DSO rose to 61 days. Margin was 12."
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+    assert "dropped" in out["areas"]["earnings_versus_cash"]
+
+
+def test_an_anomaly_keeps_its_good_sentences():
+    payload = accounting()
+    payload["anomalies"][0]["what"] = "Receivables outran revenue. DSO rose to 61 days."
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+    assert [a["what"] for a in out["anomalies"]] == ["Receivables outran revenue."]
+    assert out["dropped_items"][0]["where"] == "anomalies[0]"
+
+
+def test_a_digit_inside_a_quotation_of_a_file_the_analyst_saw_is_the_filers():
+    quoted = next(line for text in SOURCES.values() for line in text.splitlines()
+                  if re.search(r"\d", line) and '"' not in line and len(line) > 12)
+    words = quoted.strip()[:60].rstrip()
+    payload = accounting()
+    payload["anomalies"][0]["what"] = f'The report states "{words}" and nothing else.'
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+    assert out["dropped_count"] == 0, out["dropped_items"]
+
+
+def test_a_digit_inside_a_quotation_that_matches_nothing_is_the_analysts():
+    for text in ('The note says "inventory rose 61 percent" plainly.',
+                 "The note says 'receivables of 4,989' plainly.",
+                 "The note says “a charge of $99 million” plainly."):
+        payload = accounting()
+        payload["anomalies"][0]["what"] = text
+        out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+        assert out["anomalies"] == [], text
+
+
+def test_a_form_names_plural_or_possessive_is_a_form_name():
+    payload = accounting()
+    payload["anomalies"][0]["what"] = "The two 10-Qs and the 10-K's note and both 8-Ks agree."
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+    assert out["dropped_count"] == 0, out["dropped_items"]
+    payload["anomalies"][0]["what"] = "The 10-Qs show 61 days."
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+    assert out["anomalies"] == []
+
+
+def test_sentences_give_the_text_back_and_do_not_cut_inside_a_quote_or_a_path():
+    text = ('A {ratios.efficiency.days_sales_outstanding} rose. The note says "approx. 95% '
+            'was held." U.S. sales fell! 매출이 줄었다. 끝')
+    parts = analysis_check.sentences(text)
+    assert "".join(parts) == text
+    assert parts == ['A {ratios.efficiency.days_sales_outstanding} rose. ',
+                     'The note says "approx. 95% was held." ',
+                     'U.S. sales fell! ', '매출이 줄었다. ', '끝']
+
+
+def test_a_korean_summary_loses_only_its_failing_sentence():
+    payload = accounting()
+    good = "영업현금흐름이 순이익을 넘었다."
+    payload["summary_ko"]["earnings_versus_cash"] = good + " 매출채권 회수일수는 61일이다."
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+    assert out["summary_ko"]["earnings_versus_cash"] == good
+
+
+def test_a_fields_citation_that_names_nothing_is_dropped_alone():
+    payload = accounting()
+    area = payload["areas"]["earnings_versus_cash"]
+    good = list(area.get("fields") or [])
+    area["fields"] = good + ["growth.revenue.year_over_year"]
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+    assert "dropped" not in out["areas"]["earnings_versus_cash"]
+    assert out["areas"]["earnings_versus_cash"]["fields"] == good
+    assert any("'growth.revenue.year_over_year' is not a field of calculator.json; the "
+               "citation is dropped" in d["reason"] for d in out["dropped_items"])
