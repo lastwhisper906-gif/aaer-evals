@@ -74,7 +74,17 @@ SEGMENT = table("<td>Segment</td>" + number("f-6", "us-gaap:Revenues", "segment"
                 # the option model's dividend yield: the dividend over the price
                 "<td>Yield</td>" + number("f-17", "us-gaap:ShareBasedCompensationArrangement"
                                           "ByShareBasedPaymentAwardFairValueAssumptions"
-                                          "ExpectedDividendRate", "now", "0.0006"))
+                                          "ExpectedDividendRate", "now", "0.0006"),
+                # dollar values that are no share's price, and stand: debt at
+                # fair value, the fair-value option, a commodity hedge
+                "<td>Debt</td>" + number("f-18", "us-gaap:LongTermDebtFairValue", "now",
+                                         "71,200"),
+                "<td>Option</td>" + number("f-19", "us-gaap:FairValueOptionAggregate"
+                                           "DifferencesLongTermDebtInstruments", "now", "12"),
+                "<td>Hedge</td>" + number("f-20", "us-gaap:PriceRiskDerivativeAssetsAtFair"
+                                          "Value", "now", "34"),
+                # a fact the filing dates after the day it was filed
+                "<td>Later</td>" + number("f-21", "us-gaap:Revenues", "later", "9"))
 
 INLINE = f"""<html xmlns="http://www.w3.org/1999/xhtml"
  xmlns:ix="http://www.xbrl.org/2013/inlineXBRL"
@@ -101,6 +111,7 @@ INSTANCE = f"""<xbrl xmlns="http://www.xbrl.org/2003/instance"
 <xbrldi:typedMember dimension="us-gaap:RevenueRemainingPerformanceObligationExpectedTimingOfSatisfactionStartDateAxis"><us-gaap:date.domain>2027-07-01</us-gaap:date.domain></xbrldi:typedMember>
 </xbrli:segment></xbrli:entity>
 <xbrli:period><xbrli:instant>2026-06-30</xbrli:instant></xbrli:period></xbrli:context>
+<xbrli:context id="later"><xbrli:period><xbrli:startDate>2026-07-01</xbrli:startDate><xbrli:endDate>2026-09-30</xbrli:endDate></xbrli:period></xbrli:context>
 <xbrli:unit id="usd"><xbrli:measure>iso4217:USD</xbrli:measure></xbrli:unit>
 <xbrli:unit id="usdPerShare"><xbrli:divide><xbrli:unitNumerator><xbrli:measure>iso4217:USD</xbrli:measure></xbrli:unitNumerator><xbrli:unitDenominator><xbrli:measure>xbrli:shares</xbrli:measure></xbrli:unitDenominator></xbrli:divide></xbrli:unit>
 <xbrli:unit id="pure"><xbrli:measure>xbrli:pure</xbrli:measure></xbrli:unit>
@@ -120,6 +131,10 @@ INSTANCE = f"""<xbrl xmlns="http://www.xbrl.org/2003/instance"
 <us-gaap:ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsOutstandingIntrinsicValue id="f-15" contextRef="now" unitRef="usd" decimals="-3">8123000</us-gaap:ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsOutstandingIntrinsicValue>
 <us-gaap:ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsVestedInPeriodTotalFairValue id="f-16" contextRef="now" unitRef="usd" decimals="-3">6457000</us-gaap:ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsVestedInPeriodTotalFairValue>
 <us-gaap:ShareBasedCompensationArrangementByShareBasedPaymentAwardFairValueAssumptionsExpectedDividendRate id="f-17" contextRef="now" unitRef="pure" decimals="4">0.0006</us-gaap:ShareBasedCompensationArrangementByShareBasedPaymentAwardFairValueAssumptionsExpectedDividendRate>
+<us-gaap:LongTermDebtFairValue id="f-18" contextRef="now" unitRef="usd" decimals="-3">71200000</us-gaap:LongTermDebtFairValue>
+<us-gaap:FairValueOptionAggregateDifferencesLongTermDebtInstruments id="f-19" contextRef="now" unitRef="usd" decimals="-3">12000</us-gaap:FairValueOptionAggregateDifferencesLongTermDebtInstruments>
+<us-gaap:PriceRiskDerivativeAssetsAtFairValue id="f-20" contextRef="now" unitRef="usd" decimals="-3">34000</us-gaap:PriceRiskDerivativeAssetsAtFairValue>
+<us-gaap:Revenues id="f-21" contextRef="later" unitRef="usd" decimals="-3">9000</us-gaap:Revenues>
 <us-gaap:InventoryNet id="f-7" contextRef="now" unitRef="usd" decimals="-3">1000000</us-gaap:InventoryNet>
 <us-gaap:InventoryNet id="f-8" contextRef="then" unitRef="usd" decimals="-3">900000</us-gaap:InventoryNet>
 </xbrl>""".encode()
@@ -151,7 +166,8 @@ PARAGRAPHS = [
 
 @pytest.fixture(scope="module")
 def found() -> dict:
-    return note_tables.tables(PARAGRAPHS, INLINE, INSTANCE, accession=ACCESSION)
+    return note_tables.tables(PARAGRAPHS, INLINE, INSTANCE, accession=ACCESSION,
+                              cutoff="2026-07-31")
 
 
 def ids(entry: dict) -> list[str]:
@@ -205,12 +221,18 @@ def test_a_typed_member_is_carried_and_its_date_is_never_read_as_a_period(found)
 
 def test_a_price_per_share_and_a_volatility_never_reach_the_analysts(found):
     concepts = {cell["concept"] for cell in found["tables"]["notes_4"]["facts"]}
-    assert not any(word in name for name in concepts
-                   for word in ("Price", "Volatility", "FairValue", "IntrinsicValue"))
+    held = {cell["fact"].rsplit(":", 1)[1] for cell in found["tables"]["notes_4"]["facts"]}
+    # the exercise price, volatility, cap price, strike price, grant-date fair
+    # value, intrinsic value, vested awards' fair value and dividend yield
+    assert not held & {f"f-{n}" for n in range(10, 18)}
     assert found["left_out_as_a_price"] == {"notes_4": 8}
-    # and a value in dollars that is no equity award's stands: the segment's
-    # revenue and the backlog band
-    assert {"us-gaap:Revenues", "us-gaap:RevenueRemainingPerformanceObligation"} <= concepts
+    # and a value in dollars that is no share's price stands: the segment's
+    # revenue, the backlog band, debt at fair value, the fair-value option, a
+    # commodity hedge
+    assert {"us-gaap:Revenues", "us-gaap:RevenueRemainingPerformanceObligation",
+            "us-gaap:LongTermDebtFairValue",
+            "us-gaap:FairValueOptionAggregateDifferencesLongTermDebtInstruments",
+            "us-gaap:PriceRiskDerivativeAssetsAtFairValue"} <= concepts
     for printed in ("258.16", "191.2", "50.41", "37.74"):
         assert printed not in json.dumps(found)
 
@@ -284,3 +306,15 @@ def test_an_inline_document_that_is_not_xml_is_named_not_raised(tmp_path):
     found = note_tables.from_run("ZZZZ", ACCESSION, "2026-07-31", fixtures_root=store,
                                  bundle=run)
     assert "not well-formed XML" in found["missing"]
+
+
+def test_a_fact_the_filing_dates_after_the_cutoff_is_left_out_and_counted(found):
+    """A context ending 2026-09-30 in a filing cut at 2026-07-31: the owner's
+    grader refuses any calculator file holding a date after the cutoff, so the
+    cell is left out and named by count, and the stage is not refused whole."""
+    from src import run_analysis
+
+    assert not any(cell["fact"].endswith(":f-21")
+                   for cell in found["tables"]["notes_4"]["facts"])
+    assert found["left_out_ending_after_the_cutoff"] == {"notes_4": 1}
+    assert run_analysis.calculator_problems({"note_tables": found}, "2026-07-31") == []

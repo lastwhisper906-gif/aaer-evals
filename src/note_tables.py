@@ -36,12 +36,16 @@ period ...]` paragraphs carry no table of this filing), a prose paragraph (its
 numbers are the readers' to quote), a text fact inside a table, which is not a
 number, and a price (`is_a_price`): an amount in a currency per share or per
 any unit -- an option's exercise price, a grant-date fair value per share, a
-repurchase's average price -- or a concept that names a price, a volatility or
-an intrinsic value, or an equity award's fair value, each the market's price of
-the company's own shares or worked out from it. The two analysts never see a price, and each table
+repurchase's average price -- or a concept that names a share's price, a
+volatility, an intrinsic value or an input of the model that values an award,
+or an equity award's fair value, each the market's price of the company's own
+shares or worked out from it. A fact whose own period ends after the cutoff is left
+out too, and counted; a typed member's date, a band of a remaining performance
+obligation the filing states, is carried as `element = value`
+(`docs/needs_judgment.md`). The two analysts never see a price, and each table
 counts what it left out under `left_out_as_a_price`. A fair value in dollars
-(of debt, of a portfolio) is carried. A typed dimension's value is written
-`element = value`, so a date it carries is never read as a period.
+(of debt, of a portfolio, under the fair-value option) and a commodity hedge's
+value are carried.
 """
 
 from __future__ import annotations
@@ -86,28 +90,36 @@ def inline_tables(html: bytes) -> dict[str, list[str]]:
 
 
 # What a concept's name says when the number is a price of the company's own
-# shares or is worked out from one: a price or a volatility, an intrinsic value
-# (the share price less the strike, times the shares), an input of the model
-# that values an award, and an equity award's fair value (the share price at
-# grant, or a model fed by it).
-PRICE_WORDS = ("price", "volatility", "intrinsicvalue",
+# shares or is worked out from one. Words, not the bare "price": a commodity
+# hedge (`PriceRiskDerivativeAssetsAtFairValue`) or a contract's transaction
+# price is no share's price and stands.
+PRICE_WORDS = ("shareprice", "stockprice", "pricepershare", "pershareprice",
+               "exerciseprice", "strikeprice", "capprice", "floorprice", "conversionprice",
+               "volatility",
+               # the share price less the strike, times the shares
+               "intrinsicvalue",
                # every input of the model that values an award: a dividend
                # yield is the dividend over the share price, and the rest go
                # with it, so the model's inputs are one class
                "fairvalueassumptions")
-AWARD_WORDS = ("sharebased", "award", "option", "restrictedstock", "equityinstrument")
+# An equity award's fair value is the share price at grant, or a model fed by
+# it. The words name share-based pay only: the fair-value option of ASC 825
+# (`FairValueOption...`) is a dollar fair value of debt or assets, and stands.
+AWARD_WORDS = ("sharebased", "restrictedstock", "stockoption", "stockappreciationright",
+               "performanceshare")
 
 
 def is_a_price(fact: dict) -> bool:
     """A fact the accounting and financial analysts are not handed: an amount in
     a currency per anything (per share, or per a unit the filer defines, as
     Western Digital's `usdPerUnit` for its capped call's cap price), a concept
-    that names a price, a volatility or an intrinsic value, or an equity
-    award's fair value. Each is, or is worked out from, the market's price of
-    the company's own shares at some date the filing names, and those analysts
-    never see a price (CLAUDE.md). Earnings and dividends per share go with the
-    per-share amounts, and an acquisition's purchase price with the names; the
-    calculator carries the first two from companyfacts."""
+    that names a share's price (an exercise, strike, cap or conversion price), a
+    volatility, an intrinsic value or an input of the model that values an
+    award, or an equity award's fair value. Each is, or is worked out from, the
+    market's price of the company's own shares at some date the filing names,
+    and those analysts never see a price (CLAUDE.md). Earnings and dividends per
+    share go with the per-share amounts; the calculator carries both from
+    companyfacts."""
     unit = fact.get("unit") or ""
     numerator = unit.split("/", 1)[0]
     per_something = "/" in unit and numerator.startswith("iso4217:")
@@ -146,14 +158,23 @@ def key(paragraph: str) -> str:
     return "notes_" + paragraph.rsplit(":", 1)[1]
 
 
+def ends_after(fact: dict, cutoff: str | None) -> bool:
+    """Whether a fact's own period ends after the cutoff: a context the filing
+    dates later than the day it was filed, which the owner's grader refuses in
+    any calculator file. A typed member's date is not the fact's period."""
+    context = fact["context"]
+    end = context.get("instant") or context.get("end") or ""
+    return bool(cutoff) and end[:10] > str(cutoff)[:10]
+
+
 def tables(paragraphs: list[tuple[str, str]], html: bytes, instance: bytes, *,
-           accession: str) -> dict:
+           accession: str, cutoff: str | None = None) -> dict:
     """The facts of each table paragraph of this filing, keyed by paragraph id."""
     rendered = inline_tables(html)
     by_id = {fact["id"].split(":", 1)[1]: fact
              for fact in instance_facts.facts(instance, accession=accession)
              if fact["kind"] == "numeric"}
-    found, unmatched, untagged, prices = {}, [], [], {}
+    found, unmatched, untagged, prices, later = {}, [], [], {}, {}
     for paragraph, text in paragraphs:
         if not paragraph.startswith(f"{accession}:notes:") or not text.startswith("|"):
             continue
@@ -170,6 +191,9 @@ def tables(paragraphs: list[tuple[str, str]], html: bytes, instance: bytes, *,
             if is_a_price(fact):
                 prices[key(paragraph)] = prices.get(key(paragraph), 0) + 1
                 continue
+            if ends_after(fact, cutoff):
+                later[key(paragraph)] = later.get(key(paragraph), 0) + 1
+                continue
             # one fact the document states twice, in two tables that render
             # the same, is one cell
             same = (fact["name"], fact["context_ref"], fact["unit"], fact["value"])
@@ -179,7 +203,7 @@ def tables(paragraphs: list[tuple[str, str]], html: bytes, instance: bytes, *,
         if cells:
             found[key(paragraph)] = {"paragraph": paragraph, "facts": cells}
     return {"tables": found, "unmatched": unmatched, "not_in_the_instance": untagged,
-            "left_out_as_a_price": prices}
+            "left_out_as_a_price": prices, "left_out_ending_after_the_cutoff": later}
 
 
 WHAT_THIS_IS = ("for each table of the triggering filing's notes that reached the readers "
@@ -215,7 +239,7 @@ def from_run(ticker: str, accession: str | None, cutoff, *, fixtures_root,
         return {"missing": str(exc)}
     try:
         found = tables(assemble_bundle.paragraph_blocks(notes), html, instance,
-                       accession=accession)
+                       accession=accession, cutoff=str(cutoff))
     except ET.ParseError as exc:
         return {"missing": f"the inline document of {accession} is not well-formed XML: {exc}"}
     return {"what_this_is": WHAT_THIS_IS, **found}
