@@ -292,7 +292,8 @@ FILER_FACTS = frozenset({"input_numbers.json", "input_trends.json", "input_compa
 # Every prose input a reader is handed (`src/agent_inputs.py`): the quoted six,
 # and the exhibits and the risk factors, which are read but not quoted by id.
 FILER_PROSE = QUOTABLE_PROSE | frozenset({"input_exhibits.md", "input_risk_factors.md"})
-TAXONOMY_NAME = re.compile(r"(?<![A-Za-z0-9-])[a-z][a-z0-9-]*:([A-Za-z][A-Za-z0-9_.]*)")
+# the local name read as far as `TOKEN` reads a token, hyphens and dots included
+TAXONOMY_NAME = re.compile(r"(?<![A-Za-z0-9-])[a-z][a-z0-9-]*:([A-Za-z][A-Za-z0-9_.-]*)")
 
 
 def quoted_codes(run: Path) -> frozenset[str]:

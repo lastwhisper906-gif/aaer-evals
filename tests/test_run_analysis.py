@@ -3383,18 +3383,23 @@ def test_plain_name_no_second_ask_on_a_run_that_is_already_ending(tmp_path, monk
     assert "numbers-reader: FY25" in manifest["analysis_failure"]
 
 
-def test_plain_name_a_code_only_another_readers_input_prints_is_the_readers_own(tmp_path):
-    """H200 stands in a notes report (the MD&A is the notes reader's) and is named
-    in a numbers report (the numbers reader is never handed the MD&A)."""
+def test_plain_name_a_code_the_filing_prints_anywhere_in_the_run_stands_for_both_readers(
+        tmp_path):
+    """H200 is printed by NVDA's MD&A alone, which the numbers reader is never
+    handed: it stands in either reader's report, as the published-run check lets
+    it stand in any record of the run. WDC's numbers reader wrote "Term Loan A-3",
+    the filer's name for a loan its notes print, met through a member of its
+    numbers input; held to its own directory the gate refused a record the
+    published-run check passes."""
     run = _nvda_run(tmp_path)
     inputs = {path.name: path.read_text(encoding="utf-8") for path in run.glob("input_*.md")}
     assert [name for name, text in sorted(inputs.items())
             if any(word.strip(".,;:()'\"") == "H200" for word in text.split())] == ["input_mdna.md"]
-    for reader, expected in (("notes-text-reader", []), ("numbers-reader", ["H200"])):
+    for reader in ("notes-text-reader", "numbers-reader"):
         agent_inputs.build(run, reader)
         report = agent_inputs.session_root(run, reader) / agent_inputs.AGENTS[reader].writes
         report.write_text("The H200 inventory charge.\n", encoding="utf-8")
-        assert run_analysis.reader_codes(run, reader) == expected, reader
+        assert run_analysis.reader_codes(run, reader) == [], reader
 
 
 @pytest.mark.parametrize("prose", ["input_risk_factors.md", "input_exhibits.md"])
@@ -3433,7 +3438,8 @@ def test_plain_name_a_member_the_filer_names_in_its_facts_is_the_filers(tmp_path
     assert run_analysis.plain_name_check.occurrences([report]) == []
 
 
-# Two lines copied by hand from reports the plain-name check refuses today, each
+# Lines copied by hand from reader reports, two the plain-name check refuses today
+# and one it passes, each
 # put in a reader's session directory over its own company's bundle. Expected by
 # hand: PANW's prose inputs print no fiscal-year tag at all, and DELL's print
 # "FY27" six times in `input_8k.md` and "FY26" nowhere (grep over the input_*.md
@@ -3445,11 +3451,19 @@ PANW_LINE = ('"what_changed": "Q3 FY26 revenue is printed as 3002000000, against
 DELL_LINE = ('"what_changed": "The other corporate expenses bullet states severance from '
              'workforce reductions of $0.5 billion in the first six months of FY27 and $0.3 '
              'billion in the same FY26 period."')
+# WDC's published numbers reader (`report_numbers.md` line 390 of its session
+# copy, the run of 2026-10-08): "Term Loan A-3" is the filer's name for a loan its
+# notes print four times (`input_notes.md`), which the numbers reader met as the
+# member `wdc:TermLoanA3Member`; the published-run check passes the record, and so
+# does the gate.
+WDC_LINE = ('"what_changed": "The printed components are -539000000 on Term Loan A-3 and '
+            '-6000000 on senior notes, both dated 2026-02-01..2026-02-28."')
 
 
 @pytest.mark.parametrize("ticker, accession, reader, line, expected", [
     ("PANW", "0001327567-26-000015", "numbers-reader", PANW_LINE, ["FY26"]),
     ("DELL", "0001571996-26-000046", "notes-text-reader", DELL_LINE, ["FY26"]),
+    ("WDC", "0001628280-26-029054", "numbers-reader", WDC_LINE, []),
 ])
 def test_plain_name_the_lines_of_the_refused_records_are_named(
         tmp_path, ticker, accession, reader, line, expected):

@@ -144,6 +144,8 @@ force.
 
 [ ] **a reader asked again for a report with a code of its own: the same message, or one naming the codes** · default in force since 2026-10-28: the same message; the rule is a paragraph in both readers' definitions, because `docs/HOW_WE_WORK.md` says nothing in the read, compare or decide stages writes a prompt at run time, and the queue row asked for the codes to be named · the owner says whether a retry may name what the first answer broke (then the rule in `docs/HOW_WE_WORK.md` gains that exception and the runner writes the note into the agent's record) or not (the default)
 
+[ ] **which inputs make a code the filer's for a reader: any input of the run, or the reader's own** · default in force since 2026-10-28: any input of the run, as `src/plain_name_check.py` holds a published run; held to its own directory, the gate refused WDC's numbers reader for the filer's own name of a term loan (a capital, a hyphen and a digit) that its notes print, met through a member of its numbers input, a record the published-run check passes · the owner says whether a reader may repeat only what its own inputs print (then both the gate and the published-run check narrow, and WDC's record is refused) or anything the filing prints (the default)
+
 ## Settled by default
 
 Every other row that was open on 2026-09-28. Nothing waits on any of them: the
