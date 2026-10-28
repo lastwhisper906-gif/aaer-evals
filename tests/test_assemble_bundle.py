@@ -1572,7 +1572,7 @@ def _stand_in_store(held_accession, monkeypatch):
     def fetch_company(_fetcher, ticker, cik, as_of, out, filings=None):
         manifest = {"ticker": ticker, "cik": cik, "as_of": as_of, "documents": [
             {"form": "10-Q", "role": "primary_html", "accession": held_accession,
-             "filing_date": as_of}]}
+             "filing_date": as_of, "path": "10-Q/stand-in.htm"}]}
         (out / ticker).mkdir(parents=True)
         (out / ticker / "manifest.json").write_text(json.dumps(manifest))
         return manifest, []
