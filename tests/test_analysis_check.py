@@ -1665,16 +1665,46 @@ def gate_whole(ticker: str, accession: str, written: str) -> dict:
     sources = analysis_check.read_sources(agent_dir, analysis_check.SOURCES[kind])
     if kind == "assumptions":
         return analysis_check.check_assumptions(payload, fields=fields, sources=sources)
-    return analysis_check.check(kind, payload, fields=fields, sources=sources)
+    from src import run_analysis
+    return analysis_check.check(kind, payload, fields=fields, sources=sources,
+                                excluded=run_analysis.excluded_by_report(
+                                    RUNS / ticker / accession))
 
 
 @pytest.mark.parametrize("row", [_param(row, 4) for row in PUBLISHED_ITEMS])
 def test_the_rule_reads_each_published_item_whole_as_the_hand_did(row):
     ticker, accession, written, where, reading, _ = row
     out = gate_whole(ticker, accession, written)
+    rows = [d for d in out["dropped_items"] if d["where"] == where]
     dropped = {d["where"]: d["reason"] for d in out["dropped_items"]}
     if reading == "number":
-        assert where in dropped and "a number written in the analyst's own words" in dropped[where]
+        assert rows and all("a number written in the analyst's own words" in d["reason"]
+                            or "one sentence left out" in d["reason"] for d in rows), rows
+        trims = [d for d in rows if "one sentence left out" in d["reason"]]
+        if not trims:
+            # it fell whole, for a number, recorded once
+            assert len(rows) == 1 and "a number written in the analyst's own words" \
+                in rows[0]["reason"], rows
+        else:
+            # it stands with sentences left out: each one left out carries a digit
+            # outside a placeholder, read here by its own pattern, and each one kept is
+            # a sentence of the analyst's text as written, in order
+            item = written_item(ticker, accession, written, where)
+            published = published_item(out, where, item)
+            for key in analysis_check.SENTENCE_KEYS:
+                before, after = item.get(key), published.get(key)
+                if not isinstance(before, str) or before == after:
+                    continue
+                kept = [s.strip() for s in after.split(analysis_check.LEFT_OUT) if s.strip()]
+                position = 0
+                for piece in kept:
+                    position = before.find(piece, position)
+                    assert position != -1, (where, key, piece)
+                left = before
+                for piece in kept:
+                    left = left.replace(piece, "\n", 1)
+                for gone in (s.strip() for s in left.split("\n") if s.strip()):
+                    assert re.search(r"\d", re.sub(r"\{[^}]*\}", " ", gone)), (where, gone)
     elif reading == "quoted":
         # it stands, and it stands for its quotation alone: the quotation is the one
         # read by hand off the reader report's line, and read without the files the
@@ -1702,6 +1732,20 @@ QUOTED_BY_HAND = {
                                 "between $6 million and $8 million",
                                 "report_notes_text.md", 109),
 }
+
+
+def published_item(out: dict, where: str, written: dict) -> dict:
+    """The published unit at `where`: a block's entry by name, a list's item by its
+    id (the published list is renumbered once an item falls)."""
+    parts = re.findall(r"[^.\[\]]+|\[\d+\]", where)
+    if parts[-1].startswith("["):
+        found = [item for item in out[parts[0]] if item.get("id") == written.get("id")]
+        assert len(found) == 1, (where, written.get("id"))
+        return found[0]
+    node = out
+    for part in parts:
+        node = node[part]
+    return node
 
 
 def written_inputs(ticker: str, accession: str, written: str):
@@ -2275,3 +2319,16 @@ def test_a_ruled_out_word_beside_a_digit_still_drops_the_whole_unit():
     out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
     assert out["summary_ko"]["earnings_versus_cash"] is None
     assert [d["where"] for d in out["dropped_items"]].count("summary_ko.earnings_versus_cash") == 1
+
+
+def test_a_trimmed_unit_that_unanswered_replaces_is_recorded_once():
+    """The second lens's tenth reading: `unanswered` runs after the departures."""
+    payload = accounting()
+    payload["areas"]["earnings_versus_cash"] = {
+        "finding": "", "evidence": ["revenue_recognition_receivables_rising"],
+        "verdict": ("Receivables outran revenue across the last two quarters. DSO rose to "
+                    "61 days. The notes name no customer and no change of terms behind it.")}
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+    rows = [d for d in out["dropped_items"] if d["where"] == "areas.earnings_versus_cash"]
+    assert "dropped" in out["areas"]["earnings_versus_cash"]
+    assert len(rows) == 1 and "one sentence left out" not in rows[0]["reason"], rows

@@ -1350,8 +1350,10 @@ def check(kind: str, payload: dict, *, fields: dict, sources: dict[str, str],
     drop_departures(payload, owner_problems(
         payload, kind=kind, fields=fields, sources=sources, filing=filing,
         kept=kept, citable=citable), dropped)
-    settle_trims(payload, dropped)
     unanswered(payload, kind, dropped)
+    # after every step that replaces a unit: a trimmed unit that fell after all is
+    # recorded once, for its fall (the second lens's tenth reading)
+    settle_trims(payload, dropped)
     _limits(payload, kind, dropped)
     payload["normalized_quotes"] = normalized_quotes(payload, sources)
     payload["dropped_items"] = dropped
