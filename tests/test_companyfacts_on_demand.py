@@ -17,6 +17,7 @@ the only one under `Revenues`, and the 10-Q filed 2019-01-30 the first under
 from __future__ import annotations
 
 import gzip
+import hashlib
 import json
 from pathlib import Path
 
@@ -108,7 +109,9 @@ def test_the_cut_keeps_exactly_the_rows_filed_by_the_cutoff(tmp_path, server, cu
                   for ns, concepts in document["facts"].items()
                   for tag, concept in concepts.items()
                   for unit, rows in concept["units"].items() for row in rows)
-    expected = sorted((ns, tag, unit, json.dumps(row, sort_keys=True))
+    # every row filed by the cutoff, as filed, less EDGAR's cross-filing `frame`
+    expected = sorted((ns, tag, unit, json.dumps({k: v for k, v in row.items() if k != "frame"},
+                                                 sort_keys=True))
                       for ns, concepts in committed_record()["facts"].items()
                       for tag, concept in concepts.items()
                       for unit, rows in concept["units"].items()
@@ -119,7 +122,7 @@ def test_the_cut_keeps_exactly_the_rows_filed_by_the_cutoff(tmp_path, server, cu
 
 def test_the_first_value_is_the_earliest_filing_under_any_name(tmp_path, server):
     document = fetched(tmp_path, server, "2019-12-31")
-    reading = company_facts.first_xbrl_value(document, CHAIN, QUARTER)
+    reading = company_facts.first_xbrl_value(document, CHAIN, QUARTER, cutoff="2019-12-31")
     rows = independent("2019-12-31")
     earliest = min(rows, key=lambda row: (row["filed"], row["accn"]))
     assert pick(reading) == FIRST == {"accession": earliest["accn"], "form": earliest["form"],
@@ -132,13 +135,13 @@ def test_the_first_value_is_the_earliest_filing_under_any_name(tmp_path, server)
 def test_the_first_value_is_not_found_under_one_name_alone(tmp_path, server):
     """Read under the name of 2019 alone, the quarter dates to 2019's comparative."""
     document = fetched(tmp_path, server, "2019-12-31")
-    alone = company_facts.first_xbrl_value(document, CHAIN[-1:], QUARTER)
+    alone = company_facts.first_xbrl_value(document, CHAIN[-1:], QUARTER, cutoff="2019-12-31")
     assert alone["accession"] == COMPARATIVE_OF_2019
 
 
 def test_the_as_of_value_is_the_latest_filing_by_the_cutoff(tmp_path, server):
     document = fetched(tmp_path, server, "2019-12-31")
-    reading = company_facts.as_of_cutoff_value(document, CHAIN, QUARTER)
+    reading = company_facts.as_of_cutoff_value(document, CHAIN, QUARTER, cutoff="2019-12-31")
     rows = independent("2019-12-31")
     latest = max(rows, key=lambda row: (row["filed"], row["accn"]))
     assert pick(reading) == LATEST_BY_2019 == {
@@ -148,8 +151,8 @@ def test_the_as_of_value_is_the_latest_filing_by_the_cutoff(tmp_path, server):
 
 def test_before_any_restatement_the_two_readings_agree(tmp_path, server):
     document = fetched(tmp_path, server, "2018-06-30")
-    first = company_facts.first_xbrl_value(document, CHAIN, QUARTER)
-    as_of = company_facts.as_of_cutoff_value(document, CHAIN, QUARTER)
+    first = company_facts.first_xbrl_value(document, CHAIN, QUARTER, cutoff="2018-06-30")
+    as_of = company_facts.as_of_cutoff_value(document, CHAIN, QUARTER, cutoff="2018-06-30")
     assert pick(first) == pick(as_of) == FIRST
     assert len(independent("2018-06-30")) == 1
 
@@ -165,8 +168,10 @@ def test_a_revised_value_is_first_in_one_reading_and_latest_in_the_other(tmp_pat
     row["val"] = 88300000000
     plant(server, revised)
     document = fetched(tmp_path, server, "2019-12-31")
-    assert company_facts.first_xbrl_value(document, CHAIN, QUARTER)["value"] == 88293000000
-    assert company_facts.as_of_cutoff_value(document, CHAIN, QUARTER)["value"] == 88300000000
+    assert company_facts.first_xbrl_value(document, CHAIN, QUARTER,
+                                         cutoff="2019-12-31")["value"] == 88293000000
+    assert company_facts.as_of_cutoff_value(document, CHAIN, QUARTER,
+                                           cutoff="2019-12-31")["value"] == 88300000000
 
 
 def test_one_filing_stating_the_period_twice_is_a_conflict_not_a_pick(tmp_path, server):
@@ -178,9 +183,13 @@ def test_one_filing_stating_the_period_twice_is_a_conflict_not_a_pick(tmp_path, 
          "filed": FIRST["filed"]})
     plant(server, record)
     reading = company_facts.first_xbrl_value(fetched(tmp_path, server, "2019-12-31"),
-                                             CHAIN, QUARTER)
+                                             CHAIN, QUARTER, cutoff="2019-12-31")
     assert reading["value"] is None
-    assert reading["conflicting"] == [88000000000, 88293000000]
+    assert reading["conflicting"] == [
+        {"accession": FIRST["accession"], "form": "10-Q", "tag": "us-gaap:Revenues",
+         "value": 88000000000},
+        {"accession": FIRST["accession"], "form": "10-Q", "tag": "us-gaap:SalesRevenueNet",
+         "value": 88293000000}]
     assert reading["accession"] == FIRST["accession"]
 
 
@@ -193,7 +202,7 @@ def test_a_row_from_an_earnings_release_is_not_a_statement_value(tmp_path, serve
          "filed": "2018-02-01"})
     plant(server, record)
     reading = company_facts.first_xbrl_value(fetched(tmp_path, server, "2019-12-31"),
-                                             CHAIN, QUARTER)
+                                             CHAIN, QUARTER, cutoff="2019-12-31")
     assert pick(reading) == FIRST
 
 
@@ -251,3 +260,84 @@ def test_a_record_with_rows_after_the_cutoff_is_refused_by_the_fourth_quarter():
     """The cut is not trusted: an uncut record handed straight in is refused."""
     with pytest.raises(fourth_quarter.FourthQuarterError, match="filed after the cutoff"):
         company_facts.fourth_quarters("AAPL", committed_record(), "2017-11-03")
+
+
+def test_a_record_that_was_not_cut_is_refused_by_the_readings():
+    """The readings take the cutoff and do not trust the cut: the committed record
+    handed straight in holds the rows of 2018 and 2019 for the quarter."""
+    for reading in (company_facts.first_xbrl_value, company_facts.as_of_cutoff_value):
+        with pytest.raises(cutoff_guard.CutoffGuardError, match="filed after the cutoff"):
+            reading(committed_record(), CHAIN, QUARTER, cutoff="2018-06-30")
+
+
+def test_filings_of_one_day_that_disagree_are_a_conflict_not_a_pick(tmp_path, server):
+    """Super Micro's allowance for doubtful accounts at 2016-06-30, read by eye off
+    its committed record: four filings dated 2019-05-17 state it, the 10-Q/A
+    0001375365-19-000033 at 2,000 and the 10-Q/As -000035 and -000037 and the
+    10-K -000039 at 2,413,000. No earlier filing states it, so the first day's
+    four filings disagree, and their accession numbers are not the order they
+    were made in."""
+    plant(server, source.record("SMCI"))
+    document = fetched(tmp_path, server, "2019-05-17")
+    tag = ("us-gaap:AllowanceForDoubtfulAccountsReceivable",)
+    reading = company_facts.first_xbrl_value(document, tag, "2016-06-30", cutoff="2019-05-17")
+    rows = source.for_period(source.inside(source.rows(
+        "SMCI", "AllowanceForDoubtfulAccountsReceivable", every_form=True), "2019-05-17"),
+        "2016-06-30")
+    assert reading["value"] is None and reading["accession"] is None
+    assert reading["filed"] == "2019-05-17"
+    assert [(c["accession"], c["value"]) for c in reading["conflicting"]] == \
+        sorted((row["accn"], row["val"]) for row in rows) == [
+            ("0001375365-19-000033", 2000), ("0001375365-19-000035", 2413000),
+            ("0001375365-19-000037", 2413000), ("0001375365-19-000039", 2413000)]
+
+
+def test_acceptance_stamps_order_one_days_filings(tmp_path, server):
+    """American Superconductor's cash at 2008-03-31, read by eye: the 10-Q/A
+    0000950123-11-086248 states 70,674,000 and the 10-K 0000950123-11-086249
+    states 67,834,000, both dated 2011-09-23. Without their acceptance order
+    both readings are the conflict; with stamps the test plants (the 10-Q/A
+    accepted first), the first reading is the 10-Q/A's and the latest the 10-K's."""
+    plant(server, source.record("AMSC"))
+    document = fetched(tmp_path, server, "2011-12-31")
+    tag = ("us-gaap:CashAndCashEquivalentsAtCarryingValue",)
+    unordered = company_facts.first_xbrl_value(document, tag, "2008-03-31", cutoff="2011-12-31")
+    assert unordered["value"] is None
+    assert [(c["accession"], c["value"]) for c in unordered["conflicting"]] == [
+        ("0000950123-11-086248", 70674000), ("0000950123-11-086249", 67834000)]
+    stamps = {"0000950123-11-086248": "2011-09-23T16:01:00-04:00",
+              "0000950123-11-086249": "2011-09-23T16:05:00-04:00"}
+    first = company_facts.first_xbrl_value(document, tag, "2008-03-31", cutoff="2011-12-31",
+                                           accepted=stamps)
+    latest = company_facts.as_of_cutoff_value(document, tag, "2008-03-31",
+                                              cutoff="2011-12-31", accepted=stamps)
+    assert (first["accession"], first["value"]) == ("0000950123-11-086248", 70674000)
+    assert (latest["accession"], latest["value"]) == ("0000950123-11-086249", 67834000)
+
+
+def test_an_instant_is_read_by_its_date_alone(tmp_path, server):
+    """Apple's cash at 2017-09-30, read by eye: 20,289,000,000 in the 10-K
+    0000320193-17-000070 filed 2017-11-03, then in every quarterly through the
+    10-Q 0000320193-19-000010 filed 2019-01-30."""
+    document = fetched(tmp_path, server, "2019-12-31")
+    tag = ("us-gaap:CashAndCashEquivalentsAtCarryingValue",)
+    first = company_facts.first_xbrl_value(document, tag, "2017-09-30", cutoff="2019-12-31")
+    latest = company_facts.as_of_cutoff_value(document, tag, "2017-09-30", cutoff="2019-12-31")
+    assert (first["accession"], first["filed"], first["value"]) == \
+        ("0000320193-17-000070", "2017-11-03", 20289000000)
+    assert (latest["accession"], latest["filed"], latest["value"]) == \
+        ("0000320193-19-000010", "2019-01-30", 20289000000)
+
+
+def test_the_cut_record_carries_no_frame_and_names_what_it_was_cut_from(tmp_path, server):
+    """A frame is EDGAR's label across all filings: in the committed record
+    Apple's quarter ending 2017-12-30 is framed `CY2017Q4` on the row filed
+    2019-10-31, which a cut at 2019-06-30 leaves out."""
+    document = fetched(tmp_path, server, "2019-06-30")
+    assert not any("frame" in row for concepts in document["facts"].values()
+                   for concept in concepts.values()
+                   for rows in concept["units"].values() for row in rows)
+    served = gzip.decompress(server.bodies[PATH][0])
+    assert document["read_from"] == {
+        "url": server.url + PATH, "sha256": hashlib.sha256(served).hexdigest(),
+        "bytes": len(served), "cutoff": "2019-06-30"}

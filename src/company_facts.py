@@ -5,8 +5,11 @@ The third item of the build order in `docs/HEDGE_FUND_ANALYSIS.md` §5.1. The
 companyfacts record at `data.sec.gov/api/xbrl/companyfacts/CIK##########.json`
 holds every fact a company ever filed, each row carrying the accession and the
 `filed` date it came from. Fetched through `src/edgar_client.py` and cut by
-`cutoff_guard.cut_catalogue` before anything reads it, it is the record as it
-stood on the cutoff; nothing about it needs to be committed to be exact.
+`cutoff_guard.cut_catalogue` before anything reads it, it holds the rows filed
+on or before the cutoff and nothing else; the one thing EDGAR assigns across
+filings, a row's calendar `frame`, is taken off. The record is not committed;
+it carries the URL and the hash of the bytes it was cut from (`read_from`), and
+the run that reads it records them.
 
 Three readings of one period, over the chain of names a company reported a
 series under (`tag_continuity.tags_of`: Apple's top line is `SalesRevenueNet`,
@@ -23,16 +26,21 @@ then `Revenues`, then `RevenueFromContractWithCustomerExcludingAssessedTax`):
   the nine months, by `src/fourth_quarter.py` over the same cut record.
 
 Numeric facts come from the periodic statements (§1: 10-K, 10-Q and their
-amendments); a row from any other form is not read. When the filing a reading
-settles on states the period twice with two values, both are returned under
-`conflicting` and `value` is None: Python does not pick between a filer's own
-numbers.
+amendments); a row from any other form is not read. Both readings take the
+cutoff and refuse a row filed after it, so an uncut record cannot be read
+through them. When the filings a reading settles on (one filing, or one day's
+filings when their acceptance order is not known) state the period at two
+values, every one is returned under `conflicting` and `value` is None: Python
+does not pick between a filer's own numbers.
 """
 
 from __future__ import annotations
 
+import datetime as dt
+import json
+
 from src import cutoff_guard, fourth_quarter, tag_continuity
-from src.edgar_client import EdgarClient
+from src.edgar_client import EdgarClient, EdgarError, sha256
 
 COMPANYFACTS = "https://data.sec.gov/api/xbrl/companyfacts/"
 NAMESPACE = "us-gaap"
@@ -47,10 +55,21 @@ def facts_url(cik, base: str = COMPANYFACTS) -> str:
 
 
 def fetch(client: EdgarClient, cik, *, cutoff, base: str = COMPANYFACTS) -> dict:
-    """The companyfacts record with every row filed after the cutoff taken out."""
-    cutoff_guard.parse_date(cutoff, "cutoff")    # refused before any request
+    """The companyfacts record with every row filed after the cutoff taken out.
+
+    The record carries `read_from`: the URL, and the sha256 and length of the
+    bytes EDGAR served, for the run that read it to put in its manifest.
+    """
+    limit = cutoff_guard.parse_date(cutoff, "cutoff")    # refused before any request
     url = facts_url(cik, base)
-    return cutoff_guard.cut_catalogue(client.get_json(url), cutoff, source=url)
+    body = client.get(url)
+    try:
+        document = json.loads(body)
+    except ValueError:
+        raise EdgarError(f"{url}: the answer is not JSON") from None
+    return dict(cutoff_guard.cut_catalogue(document, limit, source=url),
+                read_from={"url": url, "sha256": sha256(body), "bytes": len(body),
+                           "cutoff": limit.isoformat()})
 
 
 def chain(ticker: str, series: str) -> tuple[str, ...]:
@@ -82,35 +101,63 @@ def statement_rows(document: dict, tags, period: str, *, unit: str = UNIT,
     return found
 
 
-def _reading(rows: list[dict], period: str) -> dict | None:
-    """What one filing's rows say about the period: a value, or the conflict."""
+def _moment(stamp: str):
+    return dt.datetime.fromisoformat(stamp)
+
+
+def _settle(rows: list[dict], period: str, which, cutoff: dt.date,
+            accepted: dict | None) -> dict | None:
+    """What the first (`which=min`) or last (`which=max`) filing day says.
+
+    The cutoff is a date, so every filing made on one day is equally inside it,
+    and the accession number is not the order filings were made in. Within the
+    day the filings are ordered by their acceptance stamps when `accepted`
+    (accession to the Eastern stamp `src/submissions.py` gives) holds one for
+    each; otherwise the day stands whole. Either way, filings that disagree are
+    a conflict: `value` is None and every filing's number is listed.
+    """
+    late = sorted({row["accn"] for row in rows
+                   if cutoff_guard.parse_date(row.get("filed"), "filed") > cutoff})
+    if late:
+        raise cutoff_guard.CutoffGuardError(
+            f"{period}: {', '.join(late)} filed after the cutoff {cutoff.isoformat()} "
+            "reached the reader; a record is read only once cut at the cutoff")
     if not rows:
         return None
-    first = rows[0]
+    day = which(row["filed"] for row in rows)
+    rows = [row for row in rows if row["filed"] == day]
+    stamps = {row["accn"]: (accepted or {}).get(row["accn"]) for row in rows}
+    if accepted is not None and all(stamps.values()):
+        moment = which(_moment(stamp) for stamp in stamps.values())
+        rows = [row for row in rows if _moment(stamps[row["accn"]]) == moment]
+    accessions = sorted({row["accn"] for row in rows})
+    forms = sorted({row["form"] for row in rows})
+    tags = sorted({row["tag"] for row in rows})
     values = sorted({row["val"] for row in rows})
-    reading = {"period": period, "accession": first["accn"], "form": first["form"],
-               "filed": first["filed"], "tags": sorted({row["tag"] for row in rows})}
+    reading = {"period": period, "filed": day, "accessions": accessions,
+               "accession": accessions[0] if len(accessions) == 1 else None,
+               "form": forms[0] if len(forms) == 1 else None,
+               "tags": tags, "tag": tags[0] if len(tags) == 1 else None}
     if len(values) == 1:
-        return dict(reading, value=values[0], tag=first["tag"], conflicting=[])
-    return dict(reading, value=None, tag=None, conflicting=values)
+        return dict(reading, value=values[0], conflicting=[])
+    return dict(reading, value=None, conflicting=sorted(
+        ({"accession": row["accn"], "form": row["form"], "tag": row["tag"],
+          "value": row["val"]} for row in rows),
+        key=lambda found: (found["accession"], found["tag"], found["value"])))
 
 
-def first_xbrl_value(document: dict, tags, period: str, *, unit: str = UNIT) -> dict | None:
+def first_xbrl_value(document: dict, tags, period: str, *, cutoff, unit: str = UNIT,
+                     accepted: dict | None = None) -> dict | None:
     """The value the earliest filing stated for the period, under any name in `tags`."""
-    rows = statement_rows(document, tags, period, unit=unit)
-    if not rows:
-        return None
-    earliest = min((row["filed"], row["accn"]) for row in rows)
-    return _reading([row for row in rows if (row["filed"], row["accn"]) == earliest], period)
+    return _settle(statement_rows(document, tags, period, unit=unit), period, min,
+                   cutoff_guard.parse_date(cutoff, "cutoff"), accepted)
 
 
-def as_of_cutoff_value(document: dict, tags, period: str, *, unit: str = UNIT) -> dict | None:
-    """The value the latest filing in the cut record stated for the period."""
-    rows = statement_rows(document, tags, period, unit=unit)
-    if not rows:
-        return None
-    latest = max((row["filed"], row["accn"]) for row in rows)
-    return _reading([row for row in rows if (row["filed"], row["accn"]) == latest], period)
+def as_of_cutoff_value(document: dict, tags, period: str, *, cutoff, unit: str = UNIT,
+                       accepted: dict | None = None) -> dict | None:
+    """The value the latest filing at or before the cutoff stated for the period."""
+    return _settle(statement_rows(document, tags, period, unit=unit), period, max,
+                   cutoff_guard.parse_date(cutoff, "cutoff"), accepted)
 
 
 def fourth_quarters(ticker: str, document: dict, cutoff, *, url: str | None = None,
