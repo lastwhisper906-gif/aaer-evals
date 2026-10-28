@@ -3301,25 +3301,103 @@ def test_plain_name_a_coded_report_is_not_put_on_record_when_the_boundary_stops_
     assert "FY25" not in (run / "report_numbers.md").read_text(encoding="utf-8")
 
 
-def test_plain_name_a_code_left_on_a_stopped_night_does_not_stop_a_clean_resume(
-        tmp_path, monkeypatch):
-    """Night one: the numbers reader writes the code on both asks, and the notes
-    reader writes a code and then answers the limit on its second ask, so the run
-    stops resumable with the numbers reader's code left on its record. Night two:
-    both readers are asked afresh and write clean reports; the left code of night
-    one is not tonight's report, and the run finishes."""
+def test_plain_name_the_codes_of_each_attempt_survive_a_resume(tmp_path, monkeypatch):
+    """Night one: the numbers reader writes the code, then a clean report; the
+    notes reader writes a code and answers the limit when asked again, so the run
+    stops resumable with the clean numbers report on record. Night two asks the
+    notes reader afresh and finishes. The numbers reader's record still says
+    what each of its attempts wrote."""
     run = _nvda_run(tmp_path)
-    messages: dict = {}
     monkeypatch.setattr(run_analysis, "ask", _reports_in_turn(
-        {"report_numbers.md": [CODED], "report_notes_text.md": [NOTES_CODED]}, messages,
-        limit={"notes-text-reader": 2}))
+        {"report_numbers.md": [CODED, NUMBERS_REPORT], "report_notes_text.md": [NOTES_CODED]},
+        {}, limit={"notes-text-reader": 2}))
     stopped = run_analysis.run_company(run=run, **_run_keyword(), on_fable_limit="stop")
     assert stopped["fable_limit_reached"] == ["notes-text-reader"]
-    assert stopped["agents"]["numbers-reader"]["plain_names"]["left"] == ["FY25"]
+    assert run_analysis.on_record(run, "numbers-reader", stopped["agents"]["numbers-reader"])
     manifest, called = _resumed(run, monkeypatch, "never")
-    assert "numbers-reader" in called and "notes-text-reader" in called
+    assert "numbers-reader" not in called and "notes-text-reader" in called
     assert manifest["analysis_failure"] is None
-    assert "plain_names" not in manifest["agents"]["numbers-reader"]
+    numbers = manifest["agents"]["numbers-reader"]
+    assert [row.get("codes") for row in numbers["attempts"]] == [["FY25"], []]
+    notes = manifest["agents"]["notes-text-reader"]
+    assert ["FY25"] in [row.get("codes") for row in notes["attempts"]]
+
+
+def test_plain_name_a_boundary_stop_on_the_second_ask_keeps_the_record_and_the_clean_side(
+        tmp_path, monkeypatch):
+    """The numbers reader writes the code, then a clean report and a stray file.
+    The stop records the second ask, puts the clean notes report on record, and
+    the resume, once the file is gone, calls the numbers reader and no other
+    reader."""
+    run = _nvda_run(tmp_path)
+    turns = {"n": 0}
+    base = _reports_in_turn({"report_numbers.md": [CODED, NUMBERS_REPORT]}, {})
+
+    def ask(directory, **keyword):
+        record = base(directory, **keyword)
+        if directory.name == "numbers-reader":
+            turns["n"] += 1
+            if turns["n"] == 2:
+                (directory / "draft.json").write_bytes(b"{}")
+        return record
+    monkeypatch.setattr(run_analysis, "ask", ask)
+    with pytest.raises(agent_inputs.AgentInputError, match="after numbers-reader was asked again"):
+        run_analysis.run_company(run=run, **_run_keyword())
+    manifest = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
+    assert manifest["agents"]["numbers-reader"]["plain_names"]["codes"] == ["FY25"]
+    assert run_analysis.on_record(run, "notes-text-reader", manifest["agents"]["notes-text-reader"])
+    (run / "agents" / "numbers-reader" / "draft.json").unlink()
+    called, finished, error = _night(run, monkeypatch)
+    assert error is None and "numbers-reader" in called and "notes-text-reader" not in called
+    assert finished["analysis_failure"] is None
+
+
+def test_plain_name_no_second_ask_on_a_run_that_is_already_ending(tmp_path, monkeypatch):
+    """The notes reader fails twice: the numbers reader's code is not asked about
+    again, the run ending as a reader failed. And once one reader's code outlives
+    its second ask, the other reader's code is not asked about."""
+    run = _nvda_run(tmp_path)
+    messages: dict = {}
+    base = _reports_in_turn({"report_numbers.md": [CODED]}, messages)
+
+    def ask(directory, *, agent, writes, message, spec, log):
+        if agent == "notes-text-reader":
+            return {"agent": agent, "result": "failed", "reason": "planted"}
+        return base(directory, agent=agent, writes=writes, message=message, spec=spec, log=log)
+    monkeypatch.setattr(run_analysis, "ask", ask)
+    manifest = run_analysis.run_company(run=run, **_run_keyword())
+    assert len(messages["report_numbers.md"]) == 1
+    assert manifest["analysis_failure"] == "a reader failed twice"
+
+    run = _nvda_run(tmp_path / "second")
+    messages = {}
+    monkeypatch.setattr(run_analysis, "ask", _reports_in_turn(
+        {"report_numbers.md": [CODED], "report_notes_text.md": [NOTES_CODED]}, messages))
+    manifest = run_analysis.run_company(run=run, **_run_keyword())
+    assert len(messages["report_numbers.md"]) == 2
+    assert len(messages["report_notes_text.md"]) == 1
+    assert "numbers-reader: FY25" in manifest["analysis_failure"]
+
+
+def test_plain_name_a_member_the_filer_names_in_its_facts_is_the_filers(tmp_path):
+    """DELL's numbers input prints, read by eye, the fact id
+    `0001571996-26-000008:facts:ProceedsFromIssuanceOfDebt:2025-02-01..2026-01-30:us-gaap:DebtInstrumentAxis=dell:A4.75DueApril2028Member,us-gaap:LongtermDebtTypeAxis=us-gaap:UnsecuredDebtMember`
+    four times; a report that copies it, as the reader is told to, carries the
+    filer's name for a note due April 2028, not a code of its own."""
+    fact_id = ("0001571996-26-000008:facts:ProceedsFromIssuanceOfDebt:2025-02-01..2026-01-30:"
+               "us-gaap:DebtInstrumentAxis=dell:A4.75DueApril2028Member,"
+               "us-gaap:LongtermDebtTypeAxis=us-gaap:UnsecuredDebtMember")
+    # under `runs/`, where the plain-name check finds a run's own inputs
+    run = tmp_path / "runs" / "DELL" / "0001571996-26-000046"
+    assemble_bundle.write(assemble_bundle.build("DELL", "10-Q", accession="0001571996-26-000046",
+                                                prior_runs=run.parent.parent), run)
+    numbers = (run / "input_numbers.json").read_text(encoding="utf-8")
+    assert numbers.count(fact_id) == 1 and numbers.count("dell:A4.75DueApril2028Member") == 4
+    agent_inputs.build(run, "numbers-reader")
+    report = agent_inputs.session_root(run, "numbers-reader") / "report_numbers.md"
+    report.write_text(f'{{ "paragraph_id": "{fact_id}" }}\n', encoding="utf-8")
+    assert run_analysis.reader_codes(run, "numbers-reader") == []
+    assert run_analysis.plain_name_check.occurrences([report]) == []
 
 
 # Two lines copied by hand from reports the plain-name check refuses today, each

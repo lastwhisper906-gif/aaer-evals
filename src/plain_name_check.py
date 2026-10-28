@@ -276,18 +276,33 @@ QUOTABLE_PROSE = frozenset({"input_notes.md", "input_notes_history.md", "input_m
                             "input_prior_predictions.md"})
 
 
+# The run's fact inputs. They are this project's structures, so a code in one
+# is ours and is not exempt (the trend table's period labels were such codes),
+# with one exception: a taxonomy name, prefix and colon, inside a fact's id. A
+# filer names its own members (`dell:A4.75DueApril2028Member`, a note due April
+# 2028), the numbers reader copies the id character for character, and the name
+# is the filer's, as a code its prose prints is.
+FILER_FACTS = frozenset({"input_numbers.json", "input_trends.json", "input_companyfacts.json"})
+TAXONOMY_NAME = re.compile(r"(?<![A-Za-z0-9-])[a-z][a-z0-9-]*:([A-Za-z][A-Za-z0-9_.]*)")
+
+
 def quoted_codes(run: Path) -> frozenset[str]:
-    """Every code the run's prose inputs carry: the filer's tokens its records may repeat."""
+    """Every code the run's inputs carry: anywhere in its prose, and inside a
+    taxonomy name in its facts -- the filer's tokens its records may repeat."""
     carried = set()
     for path in _all_files_under(run):
-        if path.name not in QUOTABLE_PROSE or not path.is_file():
+        if path.name not in QUOTABLE_PROSE | FILER_FACTS or not path.is_file():
             continue
         try:
             text = path.read_text(encoding="utf-8")
         except (UnicodeDecodeError, OSError):
             continue
         for line in text.splitlines():
-            carried.update(codes_in(line))
+            if path.name in QUOTABLE_PROSE:
+                carried.update(codes_in(line))
+            else:
+                for name in TAXONOMY_NAME.finditer(line):
+                    carried.update(codes_in(name.group(1)))
     return frozenset(carried)
 
 

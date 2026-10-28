@@ -731,9 +731,17 @@ def agent_entry(record: dict, earlier=None) -> dict:
         entry[agent_inputs.TRIMMED_KEY] = earlier[agent_inputs.TRIMMED_KEY]
     if isinstance(earlier, dict) and isinstance(earlier.get("attempts"), list):
         prior, own = earlier["attempts"], attempts_of(entry)
-        if own[:len(prior)] != prior and entry is not earlier:
+        # an attempt is the same attempt once the codes its report carried
+        # (`plain_names`) are written onto it, and once `carried_forward` has
+        # numbered it by its place
+        if _bare(own[:len(prior)]) != _bare(prior) and entry is not earlier:
             entry = carried_forward(earlier, entry)
     return entry
+
+
+def _bare(rows: list) -> list:
+    return [{key: value for key, value in row.items() if key not in ("codes", "attempt")}
+            if isinstance(row, dict) else row for row in rows]
 
 
 def recorded_agent(run: Path, name: str) -> dict | None:
@@ -846,18 +854,26 @@ def parallel(run: Path, names: tuple[str, ...], logs: Path, model: str | None = 
         futures = {name: pool.submit(run_agent, run, name, logs, model, policy, check=False)
                    for name in names}
         records = {name: future.result() for name, future in futures.items()}
-    broken = boundary_violations(run)
-    if broken:
-        stop = boundary_broken(broken, f"after {', '.join(names)} returned")
-        clean = tuple(name for name in names if records[name].get("result") == "written"
-                      and not any(line.startswith(f"{name}: ") for line in broken)
-                      and not (name in READERS and reader_codes(run, name)))
-        try:
-            put_on_record(run, clean)
-        except STOPS as exc:
-            raise stop from exc
-        raise stop
+    stop_on_a_broken_boundary(run, names, records, f"after {', '.join(names)} returned")
     return records
+
+
+def stop_on_a_broken_boundary(run: Path, names, records: dict, when: str) -> None:
+    """A broken boundary stops the run; first each agent of `names` that wrote,
+    whose directory the check names nothing in, and whose report carries no
+    code of its own, is put on record."""
+    broken = boundary_violations(run)
+    if not broken:
+        return
+    stop = boundary_broken(broken, when)
+    clean = tuple(name for name in names if records[name].get("result") == "written"
+                  and not any(line.startswith(f"{name}: ") for line in broken)
+                  and not (name in READERS and reader_codes(run, name)))
+    try:
+        put_on_record(run, clean)
+    except STOPS as exc:
+        raise stop from exc
+    raise stop
 
 
 def put_on_record(run: Path, names: tuple[str, ...]) -> None:
@@ -1530,17 +1546,31 @@ def _run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: 
     readers = pending("numbers-reader", "notes-text-reader")
     if readers:
         agents.update(parallel(run, readers, logs, model, policy))
-        for name in readers:
-            if limit_hit(agents) or agents[name].get("result") != "written":
-                continue
+        # a second ask only on a run that can still go on: no limit, and every
+        # reader written; and none after a reader whose code outlived its own
+        ending = limit_hit(agents) or any(agents[name].get("result") != "written"
+                                          for name in readers)
+        for name in () if ending else readers:
             codes = reader_codes(run, name)
             if not codes:
                 continue
-            again = run_agent(run, name, logs, model, policy)
-            left = reader_codes(run, name) if again.get("result") == "written" else []
-            agents[name] = dict(again, plain_names={"codes": codes, "asked_again": True,
-                                                    "left": left})
-            record_agent(run, name, agents[name])
+            # the codes ride on the attempt that wrote them, so a resume that
+            # carries the attempts forward carries what each one wrote
+            first = dict(agents[name], attempts=attempts_of(agents[name]))
+            first["attempts"][-1] = dict(first["attempts"][-1], codes=codes)
+            record_agent(run, name, first)
+            again = run_agent(run, name, logs, model, policy, check=False)
+            written = again.get("result") == "written"
+            left = reader_codes(run, name) if written else None
+            again = dict(again, attempts=attempts_of(again),
+                         plain_names={"codes": codes, "asked_again": True, "left": left})
+            if written:
+                again["attempts"][-1] = dict(again["attempts"][-1], codes=left)
+            agents[name] = again
+            record_agent(run, name, again)
+            stop_on_a_broken_boundary(run, readers, agents, f"after {name} was asked again")
+            if left or not written:
+                break
     if limit_hit(agents):
         # what finished is gated into the run root, so it is on record and the
         # resumed run never calls it again; a report with a code of its own is
