@@ -3164,3 +3164,86 @@ def test_a_memo_line_carrying_a_ruled_out_word_stops_the_run_before_it_is_finish
     assert "valuation-analyst-second-pass" in asked
     assert agent_inputs.ANALYSED_KEY not in manifest
     assert f"memo_ko.md:{len(lines)}: 매수 추천" in coverage.check_forbidden_words(run).failures
+
+
+# --- a reader's report held to the plain-name rule (src/plain_name_check.py) ----------------
+#
+# Planted: the numbers reader's report says "Q3 FY25" outside its items. The rule
+# exempts Q3 (a fiscal quarter is a word this project writes) and refuses FY25,
+# which NVDA's prose inputs never print; they do print FY27 (read by
+# `plain_name_check.quoted_codes` over the bundle, and asserted below), so FY27
+# is the filer's and stands.
+
+CODED = NUMBERS_REPORT + "\nThe quarter read is Q3 FY25.\n"
+FILERS = NUMBERS_REPORT + "\nGuidance is for FY27.\n"
+
+
+def _reports_in_turn(reports: list[str], messages: list[str]):
+    """The stubbed agents, the numbers reader writing `reports` in turn."""
+    turn = {"numbers": 0}
+    base = _fake_ask({})
+
+    def ask(directory, *, agent, writes, message, spec, log):
+        if "report_numbers.md" in writes:
+            messages.append(message)
+            text = reports[min(turn["numbers"], len(reports) - 1)]
+            turn["numbers"] += 1
+            return _fake_ask({}, numbers_report=text)(directory, agent=agent, writes=writes,
+                                                     message=message, spec=spec, log=log)
+        return base(directory, agent=agent, writes=writes, message=message, spec=spec, log=log)
+    return ask
+
+
+def _nvda_run(tmp_path):
+    run = tmp_path / "NVDA" / NVDA_ACCESSION
+    assemble_bundle.write(assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                                prior_runs=run.parent.parent), run)
+    return run
+
+
+def test_plain_name_a_readers_own_code_is_named_back_once_and_the_run_goes_on(
+        tmp_path, monkeypatch):
+    run = _nvda_run(tmp_path)
+    messages: list[str] = []
+    monkeypatch.setattr(run_analysis, "ask", _reports_in_turn([CODED, NUMBERS_REPORT], messages))
+    manifest = run_analysis.run_company(run=run, **_run_keyword())
+    assert len(messages) == 2
+    assert "FY25" not in messages[0] and "FY25" in messages[1]
+    assert manifest["analysis_stages"]["plain_names"] == {
+        "numbers-reader": {"named": ["FY25"], "asked_again": True, "left": []}}
+    assert manifest["analysis_failure"] is None
+    assert "FY25" not in (run / "report_numbers.md").read_text(encoding="utf-8")
+
+
+def test_plain_name_a_code_left_after_the_second_ask_stops_the_run_before_the_analysts(
+        tmp_path, monkeypatch):
+    run = _nvda_run(tmp_path)
+    messages: list[str] = []
+    monkeypatch.setattr(run_analysis, "ask", _reports_in_turn([CODED], messages))
+    manifest = run_analysis.run_company(run=run, **_run_keyword())
+    assert len(messages) == 2
+    assert "still carries a letter-number code" in manifest["analysis_failure"]
+    assert "numbers-reader: FY25" in manifest["analysis_failure"]
+    assert "accounting-analyst" not in manifest["agents"]
+    assert not (run / "analysis_accounting.json").exists()
+
+
+def test_plain_name_a_code_the_filing_prints_is_the_filers_and_is_not_named(
+        tmp_path, monkeypatch):
+    run = _nvda_run(tmp_path)
+    assert "FY27" in run_analysis.plain_name_check.quoted_codes(run)
+    messages: list[str] = []
+    monkeypatch.setattr(run_analysis, "ask", _reports_in_turn([FILERS], messages))
+    manifest = run_analysis.run_company(run=run, **_run_keyword())
+    assert len(messages) == 1
+    assert "plain_names" not in manifest["analysis_stages"]
+    assert manifest["analysis_failure"] is None
+
+
+def test_plain_name_a_clean_report_is_asked_for_once(tmp_path, monkeypatch):
+    run = _nvda_run(tmp_path)
+    messages: list[str] = []
+    monkeypatch.setattr(run_analysis, "ask", _reports_in_turn([NUMBERS_REPORT], messages))
+    manifest = run_analysis.run_company(run=run, **_run_keyword())
+    assert len(messages) == 1
+    assert "plain_names" not in manifest["analysis_stages"]

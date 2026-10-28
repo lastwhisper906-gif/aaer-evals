@@ -189,11 +189,13 @@ from pathlib import Path
 
 try:
     from src import (agent_inputs, analysis_check, baselines, calculator, cutoff_guard, decide,
-                     interpreter_pin, market_labels, memo, quote_gate, trends)
+                     interpreter_pin, market_labels, memo, plain_name_check, quote_gate,
+                     trends)
 except ImportError:  # invoked as a plain script
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     from src import (agent_inputs, analysis_check, baselines, calculator, cutoff_guard, decide,
-                     interpreter_pin, market_labels, memo, quote_gate, trends)
+                     interpreter_pin, market_labels, memo, plain_name_check, quote_gate,
+                     trends)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFINITIONS = REPO_ROOT / ".claude" / "agents"
@@ -268,6 +270,20 @@ SHARED_FIRST = ("calculator_filings_only.json", "calculator_before_drivers.json"
 INSTRUCTION = ("Your directory holds: {files}. Read every one of them in full, following "
                "your instructions, and write {writes} in your directory. Nothing else, "
                "anywhere.")
+
+# A reader's report is held to the plain-name rule before an analyst reads it, by
+# the rule `src/plain_name_check.py` holds a published run to: a letter-number
+# code the run's prose inputs carry is the filer's and stands; any other is the
+# reader's own, and the reader is asked once more with each one named. A record
+# the check would refuse is never published, so a run whose reader still writes
+# one stops before the analysts are paid for. DELL's notes-text-reader of
+# 2026-10-08, FN's numbers-reader of 2026-10-27 and PANW's of 2026-10-28 each
+# wrote a fiscal year as a two-letter tag on two digits where the filing writes
+# the year out, and none of the three runs could be published.
+PLAIN_NAMES = ("Your last report wrote {codes} in its own words. This project does not "
+               "allow letter-number codes: write each period, item or form in words, the way "
+               "the filing writes it (the third quarter of fiscal 2026, not a tag of letters "
+               "and digits). A code may stand only where the filing itself prints it.")
 
 CONTROL_DIRNAME = "control-single-agent-analyses"
 CONTROL_WRITES = ("control_analysis_accounting.json", "control_analysis_financial.json",
@@ -749,12 +765,15 @@ def record_agent(run: Path, name: str, record: dict) -> None:
 
 
 def run_agent(run: Path, name: str, logs: Path, model: str | None = None,
-              policy: LimitPolicy | None = None, *, check: bool = True) -> dict:
+              policy: LimitPolicy | None = None, *, check: bool = True,
+              note: str | None = None) -> dict:
     agent_inputs.build(run, name)
     directory = agent_inputs.session_root(run, name)
     spec = agent_inputs.AGENTS[name]
     names = {path.name for path in directory.iterdir() if path.name != spec.writes}
     message = INSTRUCTION.format(files=", ".join(message_files(names)), writes=spec.writes)
+    if note:
+        message = f"{message} {note}"
     earlier = recorded_agent(run, name)       # a call made again on a resume
     record = call(run, directory, agent=spec.prompt, writes=(spec.writes,), message=message,
                   spec=definition_for(spec.prompt, model), log=logs / f"{name}.log",
@@ -765,6 +784,22 @@ def run_agent(run: Path, name: str, logs: Path, model: str | None = None,
         # not from inside `parallel`: the other call's directory is still being built
         boundary_holds(run, f"after {name} returned")
     return record
+
+
+def reader_codes(run: Path, name: str) -> list[str]:
+    """The letter-number codes a reader's report carries that the run's prose inputs do not.
+
+    The rule `plain_name_check.occurrences` applies to a published run: a code
+    the filing prints (`quoted_codes`) is the filer's and stands.
+    """
+    report = agent_inputs.session_root(run, name) / agent_inputs.AGENTS[name].writes
+    quoted = plain_name_check.quoted_codes(run)
+    found: list[str] = []
+    for line in report.read_text(encoding="utf-8").splitlines():
+        for code in plain_name_check.codes_in(line):
+            if code not in quoted and code not in found:
+                found.append(code)
+    return found
 
 
 def boundary_holds(run: Path, when: str) -> None:
@@ -1498,10 +1533,23 @@ def _run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: 
     readers = pending("numbers-reader", "notes-text-reader")
     if readers:
         agents.update(parallel(run, readers, logs, model, policy))
+        for name in readers:
+            if limit_hit(agents) or agents[name].get("result") != "written":
+                continue
+            codes = reader_codes(run, name)
+            if not codes:
+                continue
+            agents[name] = run_agent(run, name, logs, model, policy,
+                                     note=PLAIN_NAMES.format(codes=", ".join(codes)))
+            left = reader_codes(run, name) if agents[name].get("result") == "written" else []
+            stages.setdefault("plain_names", {})[name] = {"named": codes, "asked_again": True,
+                                                          "left": left}
     if limit_hit(agents):
         # what finished is gated into the run root, so it is on record and the
-        # resumed run never calls it again
-        finished = tuple(name for name in readers if agents[name]["result"] == "written")
+        # resumed run never calls it again; a report with a code of its own is
+        # not, so the resumed run asks that reader afresh
+        finished = tuple(name for name in readers if agents[name]["result"] == "written"
+                         and not reader_codes(run, name))
         if finished:
             gate_readers(run, finished)
         return finish(run, agents, stages, "the limit was reached", model, skipped=skipped,
@@ -1510,6 +1558,14 @@ def _run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: 
         return finish(run, agents, stages, "a reader failed twice", model, skipped=skipped,
                       resumed_from=resumed,
                       fallback=policy.fallback)
+    still = {name: row["left"] for name, row in stages.get("plain_names", {}).items()
+             if row["left"]}
+    if still:
+        return finish(run, agents, stages,
+                      "a reader's report still carries a letter-number code of its own after "
+                      "it was asked again: " + "; ".join(f"{name}: {', '.join(codes)}"
+                                                        for name, codes in still.items()),
+                      model, skipped=skipped, resumed_from=resumed, fallback=policy.fallback)
     if readers:
         # the readers this invocation called, and no other: a report gated on
         # the night the limit hit stays as the run root holds it
