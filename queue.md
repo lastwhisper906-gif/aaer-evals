@@ -16,6 +16,8 @@ branch changed. A run item is done when its run directory is published and
 
 ## Open
 
+[ ] the real-world test: the accounting analysis run on filings the SEC later found misstated, filed before the problem became public, and on a matched clean filer each, counted by the rule `src/real_world_test.py` fixed before any run (`real_world/`) · `.venv/bin/python -m src.real_world_test score --dir real_world` after `check`, `controls`, `plan`, `run`, `probe` · expected values: the SEC's orders and EDGAR's records for the cases, each quote fetched again and found on its page; the rule's own tests (`.venv/bin/python -m pytest tests/test_real_world_test.py -q`) on planted cases, filings and analyses · PR: this one
+
 [ ] new Fable runs for AAPL, GNRC and LFUS, each in `runs/<ticker>/<accession>-rerun-<date>/` · `.venv/bin/python -m evals --runs runs/AAPL runs/GNRC runs/LFUS` · items one to three
 
 [ ] golden consistency runs: three runs of each approved golden case · `.venv/bin/python -m evals.capability.consistency` · the owner approving at least one case in `evals/golden/cases/`
