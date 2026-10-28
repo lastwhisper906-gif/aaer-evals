@@ -70,7 +70,11 @@ SEGMENT = table("<td>Segment</td>" + number("f-6", "us-gaap:Revenues", "segment"
                 "<td>Vested</td>" + number("f-16", "us-gaap:ShareBasedCompensationArrangement"
                                            "ByShareBasedPaymentAwardEquityInstrumentsOther"
                                            "ThanOptionsVestedInPeriodTotalFairValue", "now",
-                                           "6,457"))
+                                           "6,457"),
+                # the option model's dividend yield: the dividend over the price
+                "<td>Yield</td>" + number("f-17", "us-gaap:ShareBasedCompensationArrangement"
+                                          "ByShareBasedPaymentAwardFairValueAssumptions"
+                                          "ExpectedDividendRate", "now", "0.0006"))
 
 INLINE = f"""<html xmlns="http://www.w3.org/1999/xhtml"
  xmlns:ix="http://www.xbrl.org/2013/inlineXBRL"
@@ -115,6 +119,7 @@ INSTANCE = f"""<xbrl xmlns="http://www.xbrl.org/2003/instance"
 <us-gaap:ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsGrantsInPeriodWeightedAverageGrantDateFairValue id="f-14" contextRef="now" unitRef="usdPerShare" decimals="2">258.16</us-gaap:ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsGrantsInPeriodWeightedAverageGrantDateFairValue>
 <us-gaap:ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsOutstandingIntrinsicValue id="f-15" contextRef="now" unitRef="usd" decimals="-3">8123000</us-gaap:ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsOutstandingIntrinsicValue>
 <us-gaap:ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsVestedInPeriodTotalFairValue id="f-16" contextRef="now" unitRef="usd" decimals="-3">6457000</us-gaap:ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsVestedInPeriodTotalFairValue>
+<us-gaap:ShareBasedCompensationArrangementByShareBasedPaymentAwardFairValueAssumptionsExpectedDividendRate id="f-17" contextRef="now" unitRef="pure" decimals="4">0.0006</us-gaap:ShareBasedCompensationArrangementByShareBasedPaymentAwardFairValueAssumptionsExpectedDividendRate>
 <us-gaap:InventoryNet id="f-7" contextRef="now" unitRef="usd" decimals="-3">1000000</us-gaap:InventoryNet>
 <us-gaap:InventoryNet id="f-8" contextRef="then" unitRef="usd" decimals="-3">900000</us-gaap:InventoryNet>
 </xbrl>""".encode()
@@ -202,7 +207,7 @@ def test_a_price_per_share_and_a_volatility_never_reach_the_analysts(found):
     concepts = {cell["concept"] for cell in found["tables"]["notes_4"]["facts"]}
     assert not any(word in name for name in concepts
                    for word in ("Price", "Volatility", "FairValue", "IntrinsicValue"))
-    assert found["left_out_as_a_price"] == {"notes_4": 7}
+    assert found["left_out_as_a_price"] == {"notes_4": 8}
     # and a value in dollars that is no equity award's stands: the segment's
     # revenue and the backlog band
     assert {"us-gaap:Revenues", "us-gaap:RevenueRemainingPerformanceObligation"} <= concepts

@@ -87,9 +87,14 @@ def inline_tables(html: bytes) -> dict[str, list[str]]:
 
 # What a concept's name says when the number is a price of the company's own
 # shares or is worked out from one: a price or a volatility, an intrinsic value
-# (the share price less the strike, times the shares), and an equity award's
-# fair value (the share price at grant, or a model fed by it).
-PRICE_WORDS = ("price", "volatility", "intrinsicvalue")
+# (the share price less the strike, times the shares), an input of the model
+# that values an award, and an equity award's fair value (the share price at
+# grant, or a model fed by it).
+PRICE_WORDS = ("price", "volatility", "intrinsicvalue",
+               # every input of the model that values an award: a dividend
+               # yield is the dividend over the share price, and the rest go
+               # with it, so the model's inputs are one class
+               "fairvalueassumptions")
 AWARD_WORDS = ("sharebased", "award", "option", "restrictedstock", "equityinstrument")
 
 
