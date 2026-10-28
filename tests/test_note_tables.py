@@ -84,7 +84,11 @@ SEGMENT = table("<td>Segment</td>" + number("f-6", "us-gaap:Revenues", "segment"
                 "<td>Hedge</td>" + number("f-20", "us-gaap:PriceRiskDerivativeAssetsAtFair"
                                           "Value", "now", "34"),
                 # a fact the filing dates after the day it was filed
-                "<td>Later</td>" + number("f-21", "us-gaap:Revenues", "later", "9"))
+                "<td>Later</td>" + number("f-21", "us-gaap:Revenues", "later", "9"),
+                # a repurchase's average price per share, a name that names no
+                # price: only its unit says it is one
+                "<td>Repurchase</td>" + number("f-22", "us-gaap:TreasuryStockAcquiredAverage"
+                                               "CostPerShare", "now", "212.40"))
 
 INLINE = f"""<html xmlns="http://www.w3.org/1999/xhtml"
  xmlns:ix="http://www.xbrl.org/2013/inlineXBRL"
@@ -135,6 +139,7 @@ INSTANCE = f"""<xbrl xmlns="http://www.xbrl.org/2003/instance"
 <us-gaap:FairValueOptionAggregateDifferencesLongTermDebtInstruments id="f-19" contextRef="now" unitRef="usd" decimals="-3">12000</us-gaap:FairValueOptionAggregateDifferencesLongTermDebtInstruments>
 <us-gaap:PriceRiskDerivativeAssetsAtFairValue id="f-20" contextRef="now" unitRef="usd" decimals="-3">34000</us-gaap:PriceRiskDerivativeAssetsAtFairValue>
 <us-gaap:Revenues id="f-21" contextRef="later" unitRef="usd" decimals="-3">9000</us-gaap:Revenues>
+<us-gaap:TreasuryStockAcquiredAverageCostPerShare id="f-22" contextRef="now" unitRef="usdPerShare" decimals="2">212.40</us-gaap:TreasuryStockAcquiredAverageCostPerShare>
 <us-gaap:InventoryNet id="f-7" contextRef="now" unitRef="usd" decimals="-3">1000000</us-gaap:InventoryNet>
 <us-gaap:InventoryNet id="f-8" contextRef="then" unitRef="usd" decimals="-3">900000</us-gaap:InventoryNet>
 </xbrl>""".encode()
@@ -224,8 +229,8 @@ def test_a_price_per_share_and_a_volatility_never_reach_the_analysts(found):
     held = {cell["fact"].rsplit(":", 1)[1] for cell in found["tables"]["notes_4"]["facts"]}
     # the exercise price, volatility, cap price, strike price, grant-date fair
     # value, intrinsic value, vested awards' fair value and dividend yield
-    assert not held & {f"f-{n}" for n in range(10, 18)}
-    assert found["left_out_as_a_price"] == {"notes_4": 8}
+    assert not held & ({f"f-{n}" for n in range(10, 18)} | {"f-22"})
+    assert found["left_out_as_a_price"] == {"notes_4": 9}
     # and a value in dollars that is no share's price stands: the segment's
     # revenue, the backlog band, debt at fair value, the fair-value option, a
     # commodity hedge
@@ -233,7 +238,7 @@ def test_a_price_per_share_and_a_volatility_never_reach_the_analysts(found):
             "us-gaap:LongTermDebtFairValue",
             "us-gaap:FairValueOptionAggregateDifferencesLongTermDebtInstruments",
             "us-gaap:PriceRiskDerivativeAssetsAtFairValue"} <= concepts
-    for printed in ("258.16", "191.2", "50.41", "37.74"):
+    for printed in ("258.16", "191.2", "50.41", "37.74", "212.4"):
         assert printed not in json.dumps(found)
 
 

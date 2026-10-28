@@ -1330,7 +1330,7 @@ def test_the_rows_of_a_note_table_reach_the_accounting_analyst(tmp_path, ticker)
     if ticker == "AAPL":
         # the weighted-average grant-date fair value of the units granted, 258.16
         # dollars a unit (`aapl-20260627_htm.xml`, unit usdPerShare), is a price
-        # and never reaches the analyst, though its name names none
+        # and never reaches the analyst
         assert not any("GrantDateFairValue" in fact["concept"] or fact["value"] == 258.16
                        for entry in held["note_tables"]["tables"].values()
                        for fact in entry["facts"])
