@@ -66,6 +66,7 @@ import argparse
 import datetime as dt
 import gzip
 import hashlib
+import html
 import json
 import os
 import re
@@ -558,16 +559,67 @@ def fetch_company(fetcher: Fetcher, ticker: str, cik: str, as_of: str,
     return manifest, problems
 
 
+REGISTRANT_NAME = re.compile(
+    rb"<dei:EntityRegistrantName\b[^>]*>\s*([^<]*?)\s*</dei:EntityRegistrantName>")
+
+
+def name_as_filed(ticker_dir: Path, manifest: dict, filing: dict) -> str:
+    """The registrant's name as the filing itself states it, or "" when its
+    instance states none. EDGAR serves today's name, which a company renamed
+    after the filing would show through."""
+    for entry in manifest.get("documents", []):
+        if (entry.get("accession"), entry.get("role")) == (filing["accessionNumber"],
+                                                            "xbrl_instance"):
+            found = REGISTRANT_NAME.search(read_stored(ticker_dir / entry["path"],
+                                                       entry["stored"]))
+            return html.unescape(found.group(1).decode("utf-8", "replace")) if found else ""
+    return ""
+
+
+def held_to_the_trigger(ticker_dir: Path, manifest: dict, filing: dict,
+                        known: frozenset[str]) -> list[str]:
+    """What a store holds that the filing's reader could not have known: an index
+    row of a filing that did not stand when it was accepted, a companyfacts row
+    filed that day by such a filing, a name other than the one it states."""
+    from src import fetch_companyfacts      # it imports this module
+    problems = []
+    for entry in manifest.get("documents", []):
+        path = ticker_dir / entry["path"]
+        if entry.get("form") == "submissions":
+            stored = json.loads(read_stored(path, entry["stored"]))
+            late = sorted({row["accession"] for row in stored.get("filings", [])} - known)
+            if late:
+                problems.append(f"{path} lists {len(late)} filing(s) that did not stand when "
+                                f"{filing['accessionNumber']} was accepted: {', '.join(late[:3])}")
+        elif entry.get("form") == fetch_companyfacts.FORM:
+            stored = json.loads(read_stored(path, entry["stored"]))
+            late = sorted({row.get("accn") for *_, row in fetch_companyfacts.rows(
+                               stored.get("facts", {}))
+                           if row.get("filed") == filing["filingDate"]
+                           and row.get("accn") not in known}, key=str)
+            if late:
+                problems.append(f"{path} holds rows filed on {filing['filingDate']} by "
+                                f"filing(s) accepted after the trigger: {', '.join(map(str, late[:3]))}")
+            if stored.get("entity_name") != name_as_filed(ticker_dir, manifest, filing):
+                problems.append(f"{path} names the company {stored.get('entity_name')!r}, "
+                                "not the name the filing states")
+    return problems
+
+
 def store_up_to(fetcher, ticker: str, cik: str, filing: dict, out: Path,
                 filings: list[dict]) -> list[str]:
     """A store up to one filing, as `--accession` builds one, for `src/on_demand.py`.
 
-    `filing` is the filing's submissions row. A store that already holds it, the
-    documents around it, the index and companyfacts, as of the filing's own date,
-    is used as it is once its bytes are its manifest's; any other is fetched.
-    The problems come back, an empty list when the store is whole.
+    `filing` is the filing's submissions row and `filings` the index rows that
+    stood when it was accepted. A store that already holds it, the documents
+    around it, the index and companyfacts, as of the filing's own date, is used
+    as it is once its bytes are its manifest's and it holds nothing the filing's
+    reader could not have known (`held_to_the_trigger`): a store built under an
+    earlier rule is refused, not reused. Any other is fetched. The problems come
+    back, an empty list when the store is whole.
     """
     ticker_dir = out / ticker
+    known = frozenset(row["accessionNumber"] for row in filings)
     manifest = load_manifest(ticker_dir)
     roles = {(entry.get("form"), entry.get("role"), entry.get("accession"))
              for entry in manifest.get("documents", [])}
@@ -576,14 +628,19 @@ def store_up_to(fetcher, ticker: str, cik: str, filing: dict, out: Path,
              and any(form == "companyfacts" for form, _, _ in roles)
              and any(form == "submissions" for form, _, _ in roles))
     if whole:
-        return [f"changed: {line}" if not line.startswith(("changed:", "missing:")) else line
-                for line in verify_existing(ticker_dir, manifest)]
+        problems = [f"changed: {line}" if not line.startswith(("changed:", "missing:")) else line
+                    for line in verify_existing(ticker_dir, manifest)]
+        return problems or [f"{line}; the store was built under another rule, so remove "
+                            f"{out} and fetch again"
+                            for line in held_to_the_trigger(ticker_dir, manifest, filing, known)]
     _, problems = fetch_company(fetcher, ticker, cik, filing["filingDate"], out,
                                 filings=filings)
     if not problems:
         # Imported here: the companyfacts fetcher imports this module.
         from src import fetch_companyfacts
-        problems = fetch_companyfacts.fetch_company(fetcher, ticker, filing["filingDate"], out)
+        problems = fetch_companyfacts.fetch_company(
+            fetcher, ticker, filing["filingDate"], out, known=known,
+            entity_name=name_as_filed(ticker_dir, load_manifest(ticker_dir), filing))
     if not problems:
         held = {entry["accession"] for entry in load_manifest(ticker_dir).get("documents", [])
                 if entry.get("form") == filing["form"] and entry.get("role") == "primary_html"}
@@ -591,7 +648,6 @@ def store_up_to(fetcher, ticker: str, cik: str, filing: dict, out: Path,
             problems = [f"the store's {filing['form']} is "
                         f"{', '.join(sorted(held)) or 'missing'}, not {filing['accessionNumber']}"]
     return problems
-
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)

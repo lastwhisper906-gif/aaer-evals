@@ -210,6 +210,24 @@ def test_the_bundle_from_the_store_on_demand_is_the_bundle_from_the_committed_on
         assert (on_demand_run / name).read_bytes() == (committed_run / name).read_bytes(), name
 
 
+@pytest.mark.parametrize("there", ["an empty directory", "a file"])
+def test_a_run_directory_that_is_already_there_is_never_claimed(tmp_path, server, monkeypatch,
+                                                               there):
+    """Claimed by creating it, which one process alone can do: another
+    invocation's directory, made a moment before, is refused as a published one is."""
+    fetcher = client(tmp_path, server)
+    monkeypatch.setattr(on_demand.edgar_client, "EdgarClient", lambda: fetcher)
+    taken = tmp_path / "runs" / TICKER / ACCESSION
+    taken.parent.mkdir(parents=True)
+    if there == "a file":
+        taken.write_text("kept\n")
+    else:
+        taken.mkdir()
+    assert on_demand.main(["--ticker", TICKER, "--accession", ACCESSION,
+                           "--out", str(taken)]) == on_demand.BAD_INPUT
+    assert (taken.read_text() == "kept\n") if there == "a file" else not any(taken.iterdir())
+
+
 def test_a_run_directory_that_holds_anything_is_never_written_over(tmp_path, server, monkeypatch):
     """`runs/` is append-only: a published run of the same filing stands as it is."""
     fetcher = client(tmp_path, server)
@@ -233,38 +251,125 @@ ROWS = [
     {"accessionNumber": "c", "filingDate": "2026-08-26", "acceptanceDateTime": ""},
     {"accessionNumber": "d", "filingDate": "2026-08-27", "acceptanceDateTime": "2026-08-27T13:00:00.000Z"},
     {"accessionNumber": "e", "filingDate": "2026-08-25", "acceptanceDateTime": "2026-08-25T23:00:00.000Z"},
+    # no stamp: the grader's proxy, the filer agent's own sequence
+    {"accessionNumber": "0001045810-26-000074", "filingDate": "2026-08-26", "acceptanceDateTime": ""},
+    {"accessionNumber": "0001045810-26-000077", "filingDate": "2026-08-26", "acceptanceDateTime": None},
+    {"accessionNumber": "0001193125-26-000001", "filingDate": "2026-08-26", "acceptanceDateTime": ""},
 ]
 
 
 def test_a_filing_made_later_on_the_triggers_day_is_not_known_at_it():
+    """The owner's grader's rule (`accepted_before_trigger`): both stamps, else a
+    lower number in the same filer agent's sequence, else not shown, so not kept."""
     trigger = {"accessionNumber": ACCESSION, "filingDate": "2026-08-26",
                "acceptanceDateTime": STAMPS[ACCESSION]}
     kept = [row["accessionNumber"] for row in on_demand.known_at(ROWS, trigger)]
-    assert kept == ["a", "c", "e"]
+    assert kept == ["a", "e", "0001045810-26-000074"]
+    unstamped = dict(trigger, acceptanceDateTime="")
+    assert [row["accessionNumber"] for row in on_demand.known_at(ROWS, unstamped)] == \
+        ["e", "0001045810-26-000074"]
 
 
-def test_a_filing_made_later_on_the_triggers_day_never_reaches_the_store(tmp_path, server):
-    """Planted: the release 8-K stamped at 20:21Z, before the 10-Q, and an 8-K
-    with item 5.02 stamped at 21:30Z the same day, after it."""
-    index = json.loads(raw_index())
+EARLY, LATE = "0001045810-26-000073", "0001045810-26-000076"
+
+
+def plant_rows(server, *rows: dict) -> None:
+    """Index rows added to the planted index, the newest first as EDGAR lists."""
+    index = json.loads(server.bodies[f"/submissions/CIK{CIK}.json"][0])
+    recent = index["filings"]["recent"]
+    for row in rows:
+        for key in recent:
+            recent[key].insert(0, row.get(key, ""))
+    server.bodies[f"/submissions/CIK{CIK}.json"] = (json.dumps(index).encode(), "")
+
+
+def plant_the_day(server) -> None:
+    """Planted: the release 8-K stamped at 20:21Z, before the 10-Q's 20:36Z, and
+    an 8-K with item 5.02 stamped at 21:30Z the same day, after it."""
+    index = json.loads(server.bodies[f"/submissions/CIK{CIK}.json"][0])
     recent = index["filings"]["recent"]
     for i, accession in enumerate(recent["accessionNumber"]):
         if accession == ACCESSION:
             recent["acceptanceDateTime"][i] = STAMPS[ACCESSION]
-        elif accession == "0001045810-26-000073":
+        elif accession == EARLY:
             recent["acceptanceDateTime"][i] = "2026-08-26T20:21:00.000Z"
-    late = {"accessionNumber": "0001045810-26-000076", "filingDate": "2026-08-26",
-            "reportDate": "2026-08-26", "form": "8-K", "items": "5.02",
-            "primaryDocument": "nvda-20260826b.htm", "primaryDocDescription": "8-K",
-            "isXBRL": 0, "acceptanceDateTime": "2026-08-26T21:30:00.000Z"}
-    for key, value in late.items():
-        recent[key].insert(0, value)
     server.bodies[f"/submissions/CIK{CIK}.json"] = (json.dumps(index).encode(), "")
+    plant_rows(server, {"accessionNumber": LATE, "filingDate": "2026-08-26",
+                        "reportDate": "2026-08-26", "form": "8-K", "items": "5.02",
+                        "primaryDocument": "nvda-20260826b.htm",
+                        "primaryDocDescription": "8-K", "isXBRL": 0,
+                        "acceptanceDateTime": "2026-08-26T21:30:00.000Z"})
+
+
+def stored_facts(store: Path) -> dict:
+    return json.loads(gzip.decompress((store / TICKER / "companyfacts.json.gz").read_bytes()))
+
+
+def test_a_filing_made_later_on_the_triggers_day_never_reaches_the_store(tmp_path, server):
+    plant_the_day(server)
     held = on_demand.fetch_store(client(tmp_path, server), TICKER, accession=ACCESSION)
     rows = json.loads((held["store"] / TICKER / "submissions.json").read_text())["filings"]
     accessions = {row["accession"] for row in rows}
-    assert "0001045810-26-000076" not in accessions
-    assert "0001045810-26-000073" in accessions
+    assert LATE not in accessions
+    assert EARLY in accessions
+
+
+def test_a_companyfacts_row_filed_later_on_the_triggers_day_never_reaches_the_store(
+        tmp_path, server):
+    """Planted: two rows filed 2026-08-26, one by the 8-K accepted before the
+    10-Q and one by the 8-K accepted after it. `filed` is a day, so only the
+    accession tells them apart."""
+    plant_the_day(server)
+    path = f"/api/xbrl/companyfacts/CIK{CIK}.json"
+    served = json.loads(server.bodies[path][0])
+    concept = served["facts"]["us-gaap"]["Revenues"]["units"]["USD"]
+    for accession, value in ((EARLY, 2), (LATE, 3)):
+        concept.append({"start": "2026-04-27", "end": "2026-07-26", "val": value,
+                        "accn": accession, "form": "8-K", "filed": "2026-08-26"})
+    server.bodies[path] = (json.dumps(served).encode(), "")
+    held = on_demand.fetch_store(client(tmp_path, server), TICKER, accession=ACCESSION)
+    kept = {row.get("accn") for row in
+            stored_facts(held["store"])["facts"]["us-gaap"]["Revenues"]["units"]["USD"]}
+    assert EARLY in kept and ACCESSION in kept
+    assert LATE not in kept
+
+
+def test_a_store_built_under_another_rule_is_refused_not_reused(tmp_path, server, monkeypatch):
+    """A store whose index lists the 8-K accepted after the 10-Q, as one built
+    before `known_at` existed would, is refused though its bytes are its manifest's."""
+    plant_the_day(server)
+    fetcher = client(tmp_path, server)
+    with monkeypatch.context() as patch:
+        patch.setattr(on_demand, "known_at", lambda rows, filing: rows)
+        on_demand.fetch_store(fetcher, TICKER, accession=ACCESSION)
+    with pytest.raises(on_demand.OnDemandError, match="built under another rule"):
+        on_demand.fetch_store(fetcher, TICKER, accession=ACCESSION)
+
+
+def test_the_company_is_named_as_the_filing_names_it(tmp_path, server):
+    """Planted: EDGAR's companyfacts serves a later name. The 10-Q's instance
+    states `NVIDIA CORP` (dei:EntityRegistrantName, fact f-6, read by eye)."""
+    path = f"/api/xbrl/companyfacts/CIK{CIK}.json"
+    served = json.loads(server.bodies[path][0])
+    served["entityName"] = "NVIDIA LIQUIDATING TRUST"
+    server.bodies[path] = (json.dumps(served).encode(), "")
+    held = on_demand.fetch_store(client(tmp_path, server), TICKER, accession=ACCESSION)
+    assert stored_facts(held["store"])["entity_name"] == "NVIDIA CORP"
+
+
+def test_a_report_filed_after_the_filing_is_never_picked_for_the_store(tmp_path, server):
+    """Planted: a 10-K filed 2026-09-01, after the 10-Q. The planted EDGAR does
+    not serve it, so picking it would fail the fetch."""
+    plant_rows(server, {"accessionNumber": "0001045810-26-000090", "filingDate": "2026-09-01",
+                        "reportDate": "2026-07-26", "form": "10-K", "items": "",
+                        "primaryDocument": "nvda-20260726x10k.htm",
+                        "primaryDocDescription": "10-K", "isXBRL": 1,
+                        "acceptanceDateTime": "2026-09-01T20:00:00.000Z"})
+    held = on_demand.fetch_store(client(tmp_path, server), TICKER, accession=ACCESSION)
+    manifest = fetch_fixtures.load_manifest(held["store"] / TICKER)
+    assert "0001045810-26-000090" not in {e.get("accession") for e in manifest["documents"]}
+    rows = json.loads((held["store"] / TICKER / "submissions.json").read_text())["filings"]
+    assert "0001045810-26-000090" not in {row["accession"] for row in rows}
 
 
 def test_a_companyfacts_row_filed_after_the_filing_never_reaches_the_store(tmp_path, server):
