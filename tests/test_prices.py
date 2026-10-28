@@ -374,10 +374,16 @@ def test_tiingo_history_asks_the_documented_addresses_with_the_token_in_a_header
 # The cloud session's shape, read 2026-10-27: every request leaves through
 # `HTTPS_PROXY`, whose certificate is in `REQUESTS_CA_BUNDLE`, and a session
 # that trusts no environment variable fails every request as an SSL error.
-PROXIED = {"TIINGO_TOKEN": "stand-in", "EODHD_TOKEN": "stand-in",
-           "HTTPS_PROXY": "http://proxy.invalid:3128",
-           "REQUESTS_CA_BUNDLE": "/etc/stand-in/ca-bundle.crt",
-           "NO_PROXY": "localhost,127.0.0.1,10.0.0.0/8,.svc.cluster.local"}
+PROXY = "http://proxy.invalid:3128"
+
+
+@pytest.fixture
+def proxied(tmp_path) -> dict:
+    bundle = tmp_path / "ca-bundle.crt"
+    bundle.write_text("stand-in\n")
+    return {"TIINGO_TOKEN": "stand-in", "EODHD_TOKEN": "stand-in", "HTTPS_PROXY": PROXY,
+            "REQUESTS_CA_BUNDLE": str(bundle),
+            "NO_PROXY": "localhost,127.0.0.1,10.0.0.0/8,.svc.cluster.local"}
 
 
 def tiingo_answers() -> dict:
@@ -388,41 +394,77 @@ def tiingo_answers() -> dict:
 
 
 def test_tiingo_goes_through_the_proxy_and_bundle_the_environment_names(
-    monkeypatch: pytest.MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch, proxied: dict,
 ) -> None:
     calls = stand_in_requests(monkeypatch, tiingo_answers())
-    tiingo.history("ZZZZ", environ=PROXIED)
+    tiingo.history("ZZZZ", environ=proxied)
     assert len(calls) == 2
     for call in calls:
-        assert call["proxies"] == {"https": "http://proxy.invalid:3128"}
-        assert call["verify"] == "/etc/stand-in/ca-bundle.crt"
+        assert call["proxies"] == {"https": PROXY}
+        assert call["verify"] == proxied["REQUESTS_CA_BUNDLE"]
         # and still no ~/.netrc: the token handed in is the one sent
         assert call["trust_env"] is False
         assert call["headers"]["Authorization"] == "Token stand-in"
 
 
 def test_eodhd_goes_through_the_proxy_and_bundle_the_environment_names(
-    monkeypatch: pytest.MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch, proxied: dict,
 ) -> None:
     calls = stand_in_requests(monkeypatch, {
-        "https://eodhd.com/api/eod/ZZZZ.US": StandInResponse(fixture("eodhd_daily.json"))})
-    eodhd.history("ZZZZ", environ=PROXIED)
+        "https://eodhd.com/api/eod/ZZZZ.US": StandInResponse(fixture("eodhd_daily.json")),
+        "https://eodhd.com/api/exchange-symbol-list/US": StandInResponse(
+            fixture("eodhd_delisted.json"))})
+    eodhd.history("ZZZZ", environ=proxied)
+    eodhd.delisted(environ=proxied)
     assert [(call["proxies"], call["verify"], call["trust_env"]) for call in calls] == [
-        ({"https": "http://proxy.invalid:3128"}, "/etc/stand-in/ca-bundle.crt", False)]
+        ({"https": PROXY}, proxied["REQUESTS_CA_BUNDLE"], False)] * 2
 
 
-def test_a_host_no_proxy_names_is_asked_directly_and_the_lower_case_is_read_first(
-    monkeypatch: pytest.MonkeyPatch,
+# What `urllib.request.getproxies_environment` and `proxy_bypass_environment`
+# answer for the same variables, which is how `requests` reads the process's
+# environment when it trusts it: the expected values are the standard library's
+# documented reading, written out.
+@pytest.mark.parametrize("variables, proxy", [
+    ({"HTTPS_PROXY": "http://upper:1"}, "http://upper:1"),
+    ({"https_proxy": "http://lower:1", "HTTPS_PROXY": "http://upper:1"}, "http://lower:1"),
+    # an empty lower-case variable takes the upper-case one's proxy away
+    ({"https_proxy": "", "HTTPS_PROXY": "http://upper:1"}, None),
+    ({"ALL_PROXY": "http://all:1"}, "http://all:1"),
+    ({"ALL_PROXY": "http://all:1", "HTTPS_PROXY": "http://https:1"}, "http://https:1"),
+    ({"HTTP_PROXY": "http://plain:1"}, None),
+    ({"HTTPS_PROXY": "http://p:1", "NO_PROXY": "*"}, None),
+    ({"HTTPS_PROXY": "http://p:1", "No_Proxy": "api.tiingo.com"}, None),
+    ({"HTTPS_PROXY": "http://p:1", "NO_PROXY": ".tiingo.com"}, None),
+    ({"HTTPS_PROXY": "http://p:1", "NO_PROXY": "example.org, tiingo.com"}, None),
+    # a bare suffix of the name is not the name or a domain above it
+    ({"HTTPS_PROXY": "http://p:1", "NO_PROXY": "ingo.com"}, "http://p:1"),
+    ({"HTTPS_PROXY": "http://p:1", "NO_PROXY": "api"}, "http://p:1"),
+    # a star is all hosts only when it is the whole list
+    ({"HTTPS_PROXY": "http://p:1", "NO_PROXY": "localhost,*"}, "http://p:1"),
+])
+def test_the_proxy_is_read_as_the_standard_library_reads_it(variables, proxy) -> None:
+    assert prices.route("https://api.tiingo.com/tiingo/daily/zzzz", variables) == \
+        {"proxies": {"https": proxy} if proxy else {}, "verify": True}
+
+
+def test_the_bundle_is_requests_own_first_then_curls(tmp_path) -> None:
+    ours, curls = tmp_path / "ours.crt", tmp_path / "curls.crt"
+    ours.write_text("a\n")
+    curls.write_text("b\n")
+    url = "https://api.tiingo.com/x"
+    assert prices.route(url, {"CURL_CA_BUNDLE": str(curls)})["verify"] == str(curls)
+    assert prices.route(url, {"CURL_CA_BUNDLE": str(curls),
+                              "REQUESTS_CA_BUNDLE": str(ours)})["verify"] == str(ours)
+
+
+def test_a_bundle_that_is_not_a_file_is_refused_before_any_request(
+    monkeypatch: pytest.MonkeyPatch, tmp_path,
 ) -> None:
     calls = stand_in_requests(monkeypatch, tiingo_answers())
-    tiingo.history("ZZZZ", environ={**PROXIED, "no_proxy": "example.org,.tiingo.com"})
-    assert {str(call["proxies"]) for call in calls} == {"{}"}
-    assert prices.route("https://api.tiingo.com/x", {"NO_PROXY": "*",
-                                                      "HTTPS_PROXY": "http://p:1"}) == \
-        {"proxies": {}, "verify": True}
-    assert prices.route("https://api.tiingo.com/x", {"https_proxy": "http://lower:1",
-                                                      "HTTPS_PROXY": "http://upper:1"}) == \
-        {"proxies": {"https": "http://lower:1"}, "verify": True}
+    with pytest.raises(prices.Unconfigured, match="REQUESTS_CA_BUNDLE names a certificate"):
+        tiingo.history("ZZZZ", environ={"TIINGO_TOKEN": "stand-in",
+                                        "REQUESTS_CA_BUNDLE": str(tmp_path / "none.crt")})
+    assert calls == []
 
 
 def test_an_environment_with_no_proxy_and_no_bundle_is_asked_directly(
@@ -434,14 +476,22 @@ def test_an_environment_with_no_proxy_and_no_bundle_is_asked_directly(
 
 
 def test_the_proxy_is_read_from_the_environment_handed_in_and_nothing_else(
-    monkeypatch: pytest.MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch, tmp_path,
 ) -> None:
-    """The process's own proxy is not the one a caller's environment names."""
+    """The process's own proxy is not the one a caller's environment names, and
+    is the one read when the caller hands in none."""
+    bundle = tmp_path / "process.crt"
+    bundle.write_text("p\n")
     monkeypatch.setenv("HTTPS_PROXY", "http://process.invalid:1")
-    monkeypatch.setenv("REQUESTS_CA_BUNDLE", "/process/bundle.crt")
+    monkeypatch.setenv("REQUESTS_CA_BUNDLE", str(bundle))
+    monkeypatch.delenv("https_proxy", raising=False)
+    monkeypatch.delenv("no_proxy", raising=False)
+    monkeypatch.delenv("NO_PROXY", raising=False)
     calls = stand_in_requests(monkeypatch, tiingo_answers())
     tiingo.history("ZZZZ", environ={"TIINGO_TOKEN": "stand-in"})
     assert {(str(call["proxies"]), str(call["verify"])) for call in calls} == {("{}", "True")}
+    assert prices.route("https://api.tiingo.com/x") == \
+        {"proxies": {"https": "http://process.invalid:1"}, "verify": str(bundle)}
 
 def test_tiingo_history_refuses_an_answer_that_is_not_a_success(
     monkeypatch: pytest.MonkeyPatch,

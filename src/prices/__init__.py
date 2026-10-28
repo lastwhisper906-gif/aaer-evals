@@ -222,31 +222,30 @@ def credentials(name: str, environ) -> dict[str, Any]:
     return {"environ": dict(environ)}
 
 
-# The variables `requests` itself reads for a proxy and a certificate bundle
-# when a session trusts the environment, in the order it reads them.
-PROXY_VARIABLES = ("https_proxy", "all_proxy")
+# The certificate bundles `requests` itself reads when a session trusts the
+# environment, in the order it reads them.
 BUNDLE_VARIABLES = ("REQUESTS_CA_BUNDLE", "CURL_CA_BUNDLE")
 
 
-def _variable(environ, name: str) -> str:
-    """A variable by either spelling, the lower case first, as `urllib` reads it."""
-    return (environ.get(name.lower()) or environ.get(name.upper()) or "").strip()
+def _proxies_of(environ) -> dict[str, str]:
+    """`urllib.request.getproxies_environment`, over the mapping handed in.
 
-
-def _bypassed(host: str, no_proxy: str) -> bool:
-    """Whether `NO_PROXY` names the host: itself, a domain above it, or `*`.
-
-    An address range (`10.0.0.0/8`) is never a host name and never matches one.
+    The same two passes: any spelling of `<scheme>_proxy` first, then the
+    lower-case one alone, whose empty value takes the scheme's proxy away.
+    `requests` reads the process's proxies through that function; this reads
+    the caller's mapping the same way and never the process's.
     """
-    host = host.lower()
-    for entry in no_proxy.split(","):
-        entry = entry.strip().lower()
-        if entry == "*":
-            return True
-        entry = entry.removeprefix("*").removeprefix(".")
-        if entry and (host == entry or host.endswith("." + entry)):
-            return True
-    return False
+    proxies: dict[str, str] = {}
+    for name, value in environ.items():
+        if value and name.lower().endswith("_proxy"):
+            proxies[name.lower()[:-6]] = value
+    for name, value in environ.items():
+        if name.endswith("_proxy"):
+            if value:
+                proxies[name.lower()[:-6]] = value
+            else:
+                proxies.pop(name.lower()[:-6], None)
+    return proxies
 
 
 def route(url: str, environ=None) -> dict[str, Any]:
@@ -257,23 +256,33 @@ def route(url: str, environ=None) -> dict[str, Any]:
     the host replaces the token handed in. The same switch drops the proxy
     variables and the bundle, and where every request leaves through a proxy
     with its own certificate -- the cloud session's -- that is every request
-    failing as an SSL error. So the two are read out of `environ`, and nothing
-    else, and handed to the request explicitly: `proxies` and `verify`, as
-    `requests` takes them. `~/.netrc` is still never read.
+    failing as an SSL error. So the two are read out of `environ` (the
+    process's when none is handed in), the way `requests` reads them out of the
+    process when it trusts it, and handed to the request: the `https` proxy,
+    else the `all` one, unless `no_proxy` names the host as
+    `urllib.request.proxy_bypass_environment` reads it; and
+    `REQUESTS_CA_BUNDLE`, else `CURL_CA_BUNDLE`. `~/.netrc` is never read. A
+    bundle the environment names that is not a file is refused here, before
+    any request, as unconfigured: nothing was asked, so nothing answered.
     """
+    import urllib.request
+    from pathlib import Path
     from urllib.parse import urlsplit
 
     environ = os.environ if environ is None else environ
-    host = urlsplit(url).hostname or ""
-    proxies = {}
-    if not _bypassed(host, _variable(environ, "no_proxy")):
-        for name in PROXY_VARIABLES:
-            if _variable(environ, name):
-                proxies["https"] = _variable(environ, name)
-                break
-    bundle = next((environ[name].strip() for name in BUNDLE_VARIABLES
-                   if (environ.get(name) or "").strip()), "")
-    return {"proxies": proxies, "verify": bundle or True}
+    proxies = _proxies_of(environ)
+    chosen = {}
+    if not urllib.request.proxy_bypass_environment(urlsplit(url).netloc, proxies):
+        proxy = proxies.get("https") or proxies.get("all")
+        if proxy:
+            chosen["https"] = proxy
+    named = next(((name, environ[name]) for name in BUNDLE_VARIABLES if environ.get(name)),
+                 None)
+    if named is not None and not Path(named[1]).is_file():
+        # unconfigured, not refused: no request was made, so nothing answered
+        raise Unconfigured(f"${named[0]} names a certificate bundle that is not a file, so "
+                           "no request was made")
+    return {"proxies": chosen, "verify": named[1] if named else True}
 
 def as_csv_rows(rows: list[dict[str, Any]]) -> list[dict[str, str]]:
     """The frame in the shape `src/market.py:read_prices` already reads.

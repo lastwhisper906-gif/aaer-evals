@@ -1082,7 +1082,7 @@ def test_the_backend_is_the_one_the_handed_in_environment_names(tmp_path, monkey
 
     asked = []
 
-    def wire(path, params, token):
+    def wire(path, params, token, environ=None):
         asked.append(token)
         return []
 
@@ -1104,7 +1104,7 @@ def test_the_credential_is_the_one_the_handed_in_environment_carries(tmp_path, m
 
     asked = []
 
-    def wire(path, params, token):
+    def wire(path, params, token, environ=None):
         asked.append((path, token))
         # The metadata request answers an object and the price request a list,
         # as Tiingo's do; the list is empty, which the fetch refuses.
