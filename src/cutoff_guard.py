@@ -445,6 +445,41 @@ def load_catalogue(path, cutoff_date, *, fixtures_root=FIXTURES) -> dict:
     return dict(document, facts=kept)
 
 
+def cut_catalogue(document: dict, cutoff_date, *, source: str) -> dict:
+    """A companyfacts record fetched on demand, with the cutoff applied to its rows.
+
+    `load_catalogue`'s cut for a record that never sat under the fixtures root:
+    `src/company_facts.py` fetches it from EDGAR through `src/edgar_client.py`
+    and hands it here before anything reads it. The same parse of the cutoff,
+    the same refusal of a row whose `filed` is absent or unreadable, the same
+    drop of a concept left with no row. `source` is the URL it came from; there
+    is no manifest row to check it against, because the owner's decision of
+    2026-10-28 is that the record is fetched when a run needs it rather than
+    committed. `src/company_facts.py` hands back the hash of the bytes it was
+    cut from, for the run's manifest.
+
+    One difference, on purpose: each kept row loses its `frame`. EDGAR labels
+    one row per calendar period with a frame (`CY2017Q4`) across every filing
+    it holds, so which row carries the label, and whether a cut record carries
+    it at all, depends on filings made after the cutoff. Apple's quarter ending
+    2017-12-30 is framed on the row filed 2019-10-31; cut at 2019-06-30, the
+    row filed 2019-01-30 would stand unframed only because of that later one.
+    """
+    cutoff = parse_date(cutoff_date, "cutoff_date")
+    facts = document.get("facts") if isinstance(document, dict) else None
+    if not isinstance(facts, dict):
+        raise CutoffGuardError(
+            f"{source} carries no facts object — refused, because a document with "
+            "no rows to cut is not the catalogue this route was asked for")
+    kept = _rows_filed_by(facts, cutoff, source)
+    for concepts in kept.values():
+        for concept in concepts.values():
+            concept["units"] = {unit: [{key: value for key, value in row.items()
+                                        if key != "frame"} for row in rows]
+                                for unit, rows in concept["units"].items()}
+    return dict(document, facts=kept)
+
+
 def prior_runs(root, ticker: str) -> list[Path]:
     """Run directories already published for this company, oldest first.
 
