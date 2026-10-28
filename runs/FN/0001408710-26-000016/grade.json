@@ -1,0 +1,375 @@
+{
+ "run": "FN/0001408710-26-000016",
+ "rubric": "evals/capability/rubric.md",
+ "dealbreakers": [
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "cross_document_reconciliation_forward_contract_losses_unbridged",
+   "where": "analysis_accounting.json anomalies[28].numbers_vs_prose",
+   "why": "mdna:106 counts 'lower foreign exchange loss' among its causes, so its components are year-over-year swings, and its forward-contract figure matches, up to rounding, the swing from the prior-year 'unrealized gain of $1.6 million and $0.6 million' (notes:66) to the current loss in notes:65; the analyst cited both and still left it unbridged."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "cross_document_reconciliation_other_comprehensive_loss_attribution_unbridged",
+   "where": "analysis_accounting.json anomalies[29].numbers_vs_prose",
+   "why": "mdna:119 explains 'The change was mainly due to' its components, and they match, up to rounding, the differences between the current and prior-year 'Other comprehensive income (loss)' rows of notes:138 and notes:139, which the analyst cited; the inputs settle them as year-over-year changes."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "profitability_non_operating_support_shrinking_and_hedge_losses_ahead",
+   "where": "analysis_financial.json anomalies[7].what",
+   "why": "Its closing sentence, 'The notes also give two forward-contract loss figures that no text reconciles', leaves unresolved the gap that mdna:106 read with notes:65 and notes:66 settles as a year-over-year swing; it cites both items."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": null,
+   "where": "analysis_accounting.json areas.cross_document_reconciliation.finding",
+   "why": "The finding says the forward-contract and comprehensive-loss figures 'stay unbridged', though mdna:106 with notes:66, and mdna:119 with notes:138 and notes:139, settle both as year-over-year changes."
+  }
+ ],
+ "items": [
+  {
+   "id": "earnings_versus_cash_operating_cash_flow_below_every_prior_year",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "earnings_versus_cash.operating_cash_flow_over_net_income sits below every earnings_versus_cash.history.years value, the prior low being history.years.3; accruals_over_average_assets exceeds every trend_table years-back accruals cell; mdna:129 names working capital."
+  },
+  {
+   "id": "earnings_versus_cash_free_cash_flow_far_below_prior_years",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "free_cash_flow.free_cash_flow_simple and free_cash_flow_quality_adjusted sit far below history.years.0 and history.years.1 free_cash_flow_simple; mdna:129 and mdna:131 name working capital and capital spending."
+  },
+  {
+   "id": "earnings_versus_cash_working_capital_absorbs_earnings",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "working_capital receivables, inventory and accounts_payable balance_sheet_change and share_of_net_income resolve as written; the quote is verbatim in mdna:129."
+  },
+  {
+   "id": "earnings_versus_cash_income_smoother_than_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "smoothness.operating_cash_flow.0 and smoothness.operating_cash_flow.1 are the two lowest entries and smoothness.net_income.0 and smoothness.net_income.1 the two highest, as written; the cited reader items hold only year-to-date cash flow, so the calculator carries the quarterly claim."
+  },
+  {
+   "id": "earnings_versus_cash_inventory_articulation_gap",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "working_capital.inventory.articulation_gap equals in size the write-down in estimates_and_discretion_inventory_write_down_fact; the receivables and payables gaps are small beside their balance_sheet_change."
+  },
+  {
+   "id": "earnings_versus_cash_other_operating_items_unexplained",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The other-operating-assets and other-accounts-payable facts in report_numbers swing far beyond the prior year; mdna:129 names only inventories, receivables and trade payables."
+  },
+  {
+   "id": "revenue_recognition_contract_liabilities_highest_against_revenue",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue is 'highest of the 6 filled quarters'; 'Advance payments received during the period' is verbatim in notes:28 and absent from mdna:129."
+  },
+  {
+   "id": "revenue_recognition_days_sales_outstanding_up_on_prior_quarter",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "days_sales_outstanding at trend_table.quarters-back-0, quarters-back-1, quarters-back-4 and years-back-0 ('highest of the 5 filled years') resolve as written; the quote is verbatim in mdna:129."
+  },
+  {
+   "id": "revenue_recognition_customer_warrant_reduction_to_revenue",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The reductions to revenue in notes:32 and notes:33 match the warrant paid-in-capital fact; notes:128 shows vested unexercised warrant shares rising; the incremental-share fact shows higher dilution."
+  },
+  {
+   "id": "revenue_recognition_new_high_performance_computing_category",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:19 carries a High-performance computing row that the year-earlier columns in notes:20 lack; the quote is verbatim in mdna:86."
+  },
+  {
+   "id": "estimates_and_reserves_credit_loss_allowance_thinnest_and_falling",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "bad_debt_reserve_ratio is 'lowest of the 6 filled quarters' and terms.balances_now.bad_debt_allowance is below balances_a_year_earlier, but mdna:96 cites the 'net increase' as an SG&A expense driver, which write-offs could square with a falling balance; with no roll-forward the 'contradicts' label is not settled."
+  },
+  {
+   "id": "estimates_and_reserves_inventory_write_down_with_no_visible_reserve",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The write-down fact shows a charge against none a year earlier, and trend_table inventory_reserve_ratio and warranty_reserve_ratio are 'missing' in every period, as stated."
+  },
+  {
+   "id": "estimates_and_reserves_hedge_loss_heading_into_earnings",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The quote is verbatim in notes:63; the reader's estimate fact shows the prior fiscal-year estimate was a gain, the AOCI hedge component turned negative and derivative liabilities rose."
+  },
+  {
+   "id": "estimates_and_reserves_unrealized_currency_gain_inside_pretax_growth",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The quote is verbatim in mdna:106; the currency fact swings from loss to gain and the comprehensive-income fact sits below net income."
+  },
+  {
+   "id": "estimates_and_reserves_tax_rate_opposite_explanations",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "Both quotes are verbatim in notes:97 and notes:98; the effective-rate fact confirms both moves and tax_rate.effective_rate resolves."
+  },
+  {
+   "id": "estimates_and_reserves_uncertain_tax_liability_rising_without_cause",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The quote is verbatim in notes:95; the interest-and-penalties fact carries the same amounts."
+  },
+  {
+   "id": "estimates_and_reserves_new_judgments_raytek_at_cost_and_tariff_refund",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The quotes are verbatim in notes:172 and notes:155; the Raytek agreement in notes:171 predates the cutoff."
+  },
+  {
+   "id": "cost_deferral_soft_asset_share_near_its_high",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "soft_asset_share at trend_table.quarters-back-0, years-back-0 ('highest of the 5 filled years') and years-back-4 resolve; the formula treats everything but cash and PP&E as soft, as stated."
+  },
+  {
+   "id": "cost_deferral_capital_spending_far_above_depreciation",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.capital_expenditure far exceeds trailing_four_quarters_a_year_earlier.capital_expenditure and trailing_four_quarters.depreciation_and_amortization; the quote is verbatim in mdna:131."
+  },
+  {
+   "id": "cost_deferral_severance_recurs_while_restructuring_is_nil",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The restructuring fact is nil against a prior-year charge while the severance fact continues; the quote is verbatim in mdna:95 and mdna:98 confirms no restructuring costs."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_purchase_obligations_step_up",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The quote is verbatim in notes:144, note_history:2 gives the prior quarter's figure, terms.balances_now.unconditional_purchase_obligations is 'missing' as stated, and notes:143 gives the cancellable lead-in."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_unpaid_capital_spending_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The incurred-but-unpaid capital spending fact rose against a year earlier, and no calculator field carries it, as the anomaly says."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_short_term_investments_fund_investing",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The quote is verbatim in mdna:131; terms.balances_now.short_term_investments sits below balances_a_year_earlier.short_term_investments."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_share_based_pay_withholding_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "terms.trailing_four_quarters.share_based_compensation resolves; the quote is verbatim in mdna:133; the share-based compensation fact shows no recognized tax benefit."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_litigation_section_removed",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The quote is verbatim in the removed note_history:11; neither the removed paragraphs nor the numbers carry an accrual."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_tags_classify_differently_from_notes",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "input_numbers tags the Raytek stake with BusinessAcquisition and BusinessCombination elements while notes:172 holds it at cost; the uncertain-tax total sits under the interest-and-penalties element."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_irs_examination_wording_inconsistent",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "low",
+   "why": "notes:96 names different entities, 'The Company is currently under examination' versus the completed examination of 'the Company’s U.S. subsidiaries', so the claim that the text does not distinguish them is wrong and no self-contradiction is shown."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_hedging_policy_paragraph_rewritten",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:58 now names 'forward and option contracts', and the prior paragraphs are not in the bundle, so 'cannot be told' is accurate."
+  },
+  {
+   "id": "cross_document_reconciliation_forward_contract_losses_unbridged",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "low",
+   "why": "Both quotes are verbatim (mdna:106, notes:65), but the claim that nothing bridges them fails because the inputs settle the gap; a dealbreaker zeroes this item."
+  },
+  {
+   "id": "cross_document_reconciliation_other_comprehensive_loss_attribution_unbridged",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "low",
+   "why": "The quote is verbatim in mdna:119, but notes:138 and notes:139 bridge it as a year-over-year change, so 'unbridged' fails; a dealbreaker zeroes this item."
+  },
+  {
+   "id": "industry_lens_inventory_build_and_obsolescence_exposure",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.balances_now.inventory against balances_a_year_earlier.inventory, and days_sales_of_inventory at trend_table.quarters-back-0 against quarters-back-4, resolve; notes:75 shows work in progress and raw materials carrying the rise; the quote is verbatim in mdna:129."
+  },
+  {
+   "id": "industry_lens_raytek_counterparty_role_unknown",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The quote is verbatim in mdna:24; neither mdna:24 nor notes:171 names Raytek's trading relationship; the Raytek facts are dated before the cutoff."
+  },
+  {
+   "id": "liquidity_and_capital_earnings_not_converting_to_cash",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "operating_cash_flow_over_net_income against history.years.0, terms.trailing_four_quarters.operating_cash_flow against trailing_four_quarters_a_year_earlier, trailing net_income and accruals_over_average_assets all resolve; both quotes are verbatim in mdna:129."
+  },
+  {
+   "id": "liquidity_and_capital_free_cash_flow_thinned_by_capital_spending",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "free_cash_flow_simple, the negative free_cash_flow.free_cash_flow_to_firm and the capital_expenditure paths resolve; the quote is verbatim in notes:147; the unpaid capital spending fact rose."
+  },
+  {
+   "id": "liquidity_and_capital_purchase_obligations_far_above_inventory",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The quote is verbatim in notes:144 and the prior figure is in note_history:2, set against terms.balances_now.inventory and terms.cash_and_short_term_investments_now; notes:143 supports the cancellable description."
+  },
+  {
+   "id": "liquidity_and_capital_liquid_reserves_flat_while_the_business_grows",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.cash_and_short_term_investments_now against free_cash_flow.free_cash_flow_to_firm.net_working_capital_broad_not_used.a_year_earlier.inputs.cash_and_short_term_investments, and the current_liabilities and short_term_investments paths, resolve; the quotes are verbatim in mdna:131 and mdna:24."
+  },
+  {
+   "id": "efficiency_inventory_days_elevated_by_build_ahead_of_demand",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0.ratios.days_sales_of_inventory is 'second highest of the 6 filled quarters' and above quarters-back-4; inventory share_of_net_income resolves; the quote is verbatim in mdna:129; notes:75 and the write-down fact support the rest."
+  },
+  {
+   "id": "efficiency_receivables_rising_against_a_thinner_allowance",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "receivables balance_sheet_change and share_of_net_income, the days_sales_outstanding cells and bad_debt_reserve_ratio ('lowest of the 6 filled quarters') resolve; notes:169 gives the receivables concentration; the quote is verbatim in mdna:129."
+  },
+  {
+   "id": "profitability_gross_margin_thin_and_drifting_lower",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "gross_margin at trend_table.quarters-back-0, quarters-back-1, years-back-0 and years-back-2 resolves with the positions stated; the text omits that quarters-back-0 exceeds quarters-back-4, but ratios.profitability.gross_margin sits below years-back-0, so the drift holds on the trailing and annual series."
+  },
+  {
+   "id": "profitability_non_operating_support_shrinking_and_hedge_losses_ahead",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The margin paths and the quotes in mdna:103, mdna:106 and notes:63 hold, but the closing sentence reports a settled gap as unreconciled, so a dealbreaker zeroes this item."
+  },
+  {
+   "id": "growth_operating_cash_flow_shrinking_while_revenue_accelerates",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The ratios.growth paths, including operating_cash_flow.this_quarter and operating_cash_flow.year_over_year.inputs.before, resolve; revenue and net income rise while operating cash flow falls."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_automotive_revenue_decline",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The quote is verbatim in mdna:86; the automotive fact is the only end market below its year-earlier quarter among the report_numbers revenue items."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_datacom_revenue_decline",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The quote is verbatim in mdna:87; the datacom fact is lower over the year to date and against the prior quarter, while the telecom, datacenter interconnect and HPC facts rise."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_customer_concentration_rising",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The quote is verbatim in notes:170, which also shows the combined share rising; notes:169 gives the receivables concentration; terms.balances_now.receivables and ratios.growth.revenue.trailing_four_quarters resolve."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_manufacturing_capacity_near_its_limit",
+   "frame": "finance",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "mdna:125 says capacity suffices 'for at least the next few quarters', a floor, not the 'sufficient only for a few quarters' the name asserts, and the prior wording is unavailable, so a capacity limit is not shown."
+  },
+  {
+   "id": "solvency_balance_sheet_funded_by_suppliers_and_customer_advances",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.solvency.total_debt, total_liabilities, liabilities_over_assets, accounts_payable balance_sheet_change and the contract_liabilities paths resolve; the quote is verbatim in mdna:129."
+  }
+ ],
+ "coverage": {
+  "answer": "no",
+  "why": "Every accounting area, the industry lens and every financial section is present, but the gate dropped the industry lens's customer-concentration sentence and its anomaly (analysis_accounting.json dropped_items), which the rubric counts as unanswered."
+ },
+ "calibration": {
+  "answer": "yes",
+  "why": "Each area verdict tracks its anomalies, e.g. estimates_and_reserves 'Mixed' over anomalies cutting both ways and cost_deferral 'No sign of cost deferral' over anomalies that find no capitalization; only the industry lens verdict's concentration claim lost its anomaly to the gate."
+ },
+ "valuation_reading": {
+  "answer": "no",
+  "why": "The calculator has no price, reverse DCF or sensitivity grid (market.missing, implied_growth_beside_history.implied_ten_year_revenue_growth.missing, valuation.missing), so the reading rightly declines to place the price or state implied growth, and it names revenue_growth_year_one and the operating margin assumptions only as where scenarios part, not as measured sensitivities."
+ },
+ "score": 0.91,
+ "grader": {
+  "model_requested": "opus",
+  "model_served": "claude-opus-5-5",
+  "input_tokens": 62,
+  "output_tokens": 77615,
+  "cost_usd": 8.7987724,
+  "seconds": 662.4
+ }
+}

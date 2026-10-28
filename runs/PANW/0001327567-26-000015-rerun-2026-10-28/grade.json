@@ -1,0 +1,509 @@
+{
+ "run": "PANW/0001327567-26-000015",
+ "rubric": "evals/capability/rubric.md",
+ "dealbreakers": [
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "earnings_versus_cash_receivables_articulation_gap",
+   "where": "analysis_accounting.json anomalies[1].what",
+   "why": "The balance-sheet and cash-flow receivables changes disagree, and the anomaly leaves the gap unresolved because 'no item states the acquired amount'. But notes:77 lists 'Accounts receivable, net of allowance for credit losses | 312' acquired with CyberArk, which settles most of earnings_versus_cash.working_capital.receivables.articulation_gap."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "estimates_and_reserves_fair_value_option_on_assumed_convertible_notes",
+   "where": "analysis_accounting.json anomalies[14].what",
+   "why": "The flat OtherNonoperatingIncomeExpense fact sits against the notes' loss, and the anomaly leaves this as 'where the note loss sits is unresolved'. Yet notes:13 says changes 'are recorded in other income, net', and notes:187 lists 'Change in fair value of convertible senior notes' apart from 'Other, net'. The analyst's own cost_deferral anomaly places the loss in that line."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "cross_document_reconciliation_purchase_commitments_mdna_above_note_table",
+   "where": "analysis_accounting.json anomalies[32].what",
+   "why": "mdna:140's 'totaled $8.6 billion' against terms.balances_now.unconditional_purchase_obligations is left unresolved. The off-table notes:143 'a $92 million minimum purchase commitment' accounts for the difference. The analyst names it as the candidate and then declines to settle it."
+  }
+ ],
+ "items": [
+  {
+   "id": "earnings_versus_cash_operating_cash_flow_over_net_income_above_recent_years",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.operating_cash_flow_over_net_income exceeds history.years.0 and years.1. The widening is net income falling (ratios.growth.net_income.trailing_four_quarters) and operating cash rising (operating_cash_flow.trailing_four_quarters), not income alone as the text implies."
+  },
+  {
+   "id": "earnings_versus_cash_receivables_articulation_gap",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "The gap exists at earnings_versus_cash.working_capital.receivables.articulation_gap. The item is struck because the 'unresolved' reading is settled by notes:77 (see dealbreakers)."
+  },
+  {
+   "id": "earnings_versus_cash_receivables_growth_exceeds_trailing_net_income",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "working_capital.receivables.share_of_net_income is above one and accounts_payable.share_of_net_income is far below it, as stated. Much of the build is the notes:77 acquired balance, which the anomaly does not weigh."
+  },
+  {
+   "id": "earnings_versus_cash_earnings_smoother_than_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "earnings_versus_cash.smoothness is below one. smoothness.operating_cash_flow.2 is the quarter ended 2025-10-31 in quarters_read, the first fiscal quarter as stated."
+  },
+  {
+   "id": "revenue_recognition_days_sales_outstanding_highest_of_filled_quarters",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0 days_sales_outstanding and receivables_over_revenue both read 'highest of the 6 filled quarters' (trends:days_sales_outstanding:2026-02-01..2026-04-30)."
+  },
+  {
+   "id": "revenue_recognition_contract_liabilities_over_revenue_lowest_of_filled_quarters",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "quarters-back-0 contract_liabilities_over_revenue reads 'lowest of the 6 filled quarters'. The nine-month IncreaseDecreaseInContractWithCustomerLiability fact is below the prior year, and notes:77 shows the assumed 'Deferred revenue'."
+  },
+  {
+   "id": "revenue_recognition_point_in_time_license_revenue_from_cyberark",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The mdna:39 quote resolves, and mdna:70 says 'We recognize product revenue at the time of hardware shipment or delivery of software license'. The product revenue fact is up on the year-ago quarter. 'Multi-period license terms' is the analyst's addition and is not in the input."
+  },
+  {
+   "id": "revenue_recognition_acquired_revenue_inside_reported_growth",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "ratios.growth.revenue.year_over_year sits beside notes:93 'revenue of $388 million and $391 million' and the mdna:66 language on disclosing at discretion. No organic rate appears in the input."
+  },
+  {
+   "id": "estimates_and_reserves_allowance_ratio_lowest_of_filled_quarters",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "quarters-back-0 bad_debt_reserve_ratio reads 'lowest of the 6 filled quarters'. The allowance fact falls against the second-quarter cell while receivables rise (estimates_and_discretion_trend_bad_debt_reserve_ratio_quarterly)."
+  },
+  {
+   "id": "estimates_and_reserves_contingent_consideration_estimate_cut_raises_income",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "The notes:40 and mdna:112 quotes resolve. The notes:42 rollforward shows the quarter's fair-value reduction, and the remeasurement fact flips sign against the prior nine months."
+  },
+  {
+   "id": "estimates_and_reserves_lower_inventory_obsolescence_charges",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The mdna:86 and mdna:44 quotes resolve. terms.balances_now.inventory_reserve and terms.trailing_four_quarters.inventory_write_down are missing, so the anomaly is right to leave the size unmeasured."
+  },
+  {
+   "id": "estimates_and_reserves_platform_renewals_long_useful_life",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:79 gives platform renewals '12 years - 14 years' against developed technology '5 years - 7 years'. The depreciation_and_amortization this_year_to_date part is above prior_year_to_date."
+  },
+  {
+   "id": "estimates_and_reserves_purchase_price_allocation_open",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The notes:97 quote resolves. The goodwill and intangible facts make up most of terms.balances_now.assets."
+  },
+  {
+   "id": "estimates_and_reserves_surrendered_notes_measured_on_post_period_prices",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The notes:128 measurement window, 'between March 24, 2026 and May 5, 2026', runs past the balance date. The ConvertibleDebtCurrent fact matches the 'related fair value of $160 million'."
+  },
+  {
+   "id": "estimates_and_reserves_fair_value_option_on_assumed_convertible_notes",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:13 and notes:130 support the election and the loss. The item is struck because notes:13 and notes:187 settle where the loss sits (see dealbreakers)."
+  },
+  {
+   "id": "estimates_and_reserves_tax_expense_on_pretax_loss",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The notes:179 quote resolves. The income_tax_expense this_year_to_date part is above prior_year_to_date while pretax income falls, tax_rate.effective_rate is above tax_rate, and the DeferredIncomeTaxesAndTaxCredits fact flips sign."
+  },
+  {
+   "id": "estimates_and_reserves_deductible_goodwill_lowers_future_cash_taxes",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The notes:78 and notes:88 quotes resolve. As the anomaly says, the cash-tax effect lies ahead."
+  },
+  {
+   "id": "estimates_and_reserves_centripetal_accrual_and_prior_year_release",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The notes:150 and notes:149 quotes resolve, and mdna:112 names 'a partial release of litigation-related accrual of $40 million' in the base period. Saying there is no accrual 'because' the matters are pending gives a cause the note does not state."
+  },
+  {
+   "id": "cost_deferral_soft_asset_share_highest_of_filled_quarters",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "quarters-back-0 soft_asset_share reads 'highest of the 6 filled quarters', above quarters-back-1 and years-back-1."
+  },
+  {
+   "id": "cost_deferral_acquisition_charges_framed_as_near_term_while_acquisitions_recur",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The notes:93, notes:176 and mdna:110 quotes resolve. mdna:40, mdna:41 and notes:189 date the Chronosphere, CyberArk, Koi and Portkey closings."
+  },
+  {
+   "id": "cost_deferral_gross_margin_lowest_as_acquired_amortization_enters_cost_of_revenue",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "quarters-back-0 gross_margin reads 'lowest of the 6 filled quarters'. notes:107 shows amortization newly in cost of product revenue, and mdna:95 and mdna:96 give the causes."
+  },
+  {
+   "id": "cost_deferral_other_income_carries_one_off_gains_and_losses",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The mdna:121 quote resolves, and the investment-sale and foreign-currency facts move as stated. Calling the currency losses non-recurring is a stretch."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_financing_receivables_sold_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:59 states this year's sales and the smaller prior-year amounts. terms.trailing_four_quarters.proceeds_from_sale_of_receivables is missing, as the anomaly says."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_financing_receivable_run_off_lifts_operating_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "Both NotesAndLoansReceivableNet facts fall from the year end, and the IncreaseDecreaseInFinanceReceivables release is larger than a year earlier. The change_in_receivables parts show the smaller trade release, while mdna:149 credits collections."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_purchase_obligations_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "unconditional_purchase_obligations in terms.balances_now is well above terms.balances_a_year_earlier, and the notes:142 cloud row dominates. The mdna:140 and notes:143 quotes resolve."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_operating_lease_liability_understated_in_calculator",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.solvency.operating_lease_liability carries its own 'contradicted_at_period_end' flag. The notes:139 quote resolves."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_contingent_consideration_paid_in_financing",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The PaymentForContingentConsiderationLiabilityFinancingActivities fact is nil a year earlier. terms.cash_flow_families.acquisitions reads only PaymentsToAcquireBusinessesNetOfCashAcquired."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_share_based_compensation_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.share_based_compensation is above earnings_versus_cash.history.years.0.share_based_compensation. The notes:176 and notes:76 quotes resolve, and free_cash_flow.free_cash_flow_quality_adjusted already subtracts the cost."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_no_control_change_in_acquisition_quarter",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The item_4_controls:5 quote resolves, and the section says nothing about CyberArk. The Assets fact steps up from the second-quarter cell."
+  },
+  {
+   "id": "cross_document_reconciliation_calculator_debt_omits_convertible_notes",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "ratios.solvency.total_debt and terms.debt_now read none of the convertible tags, while the ConvertibleDebtCurrent and ConvertibleDebtNoncurrent facts sit on the balance sheet (notes:37)."
+  },
+  {
+   "id": "cross_document_reconciliation_receivable_cash_flow_sign_reading",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The change_in_receivables parts carry direction 'increase_in_asset', and both trade and financing receivable balances fell from the year end. The negative lines are therefore releases of cash, contrary to report_numbers."
+  },
+  {
+   "id": "cross_document_reconciliation_koi_consideration_against_prior_filing",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "0001327567-26-000005:note_history:60 reads 'total consideration of $300 million in cash and replacement awards, subject to adjustments'. notes:85 and notes:86 split purchase consideration from post-combination awards, which largely explains the difference the anomaly leaves open."
+  },
+  {
+   "id": "cross_document_reconciliation_purchase_commitments_mdna_above_note_table",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The MD&A total is above the note table, as stated. The item is struck because notes:143 settles the difference (see dealbreakers)."
+  },
+  {
+   "id": "cross_document_reconciliation_capped_call_cash_in_convertible_proceeds_line",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "The notes:133 '$10 million in cash' matches terms.cash_flow_families.borrowing_issued, but no input says how the termination cash was classified."
+  },
+  {
+   "id": "industry_lens_receivables_concentrated_in_distributors_at_receivables_high",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "concentration.facts.0 to .3 are fiscal 2025 facts, as stated, and quarters-back-0 receivables_over_revenue is at its high. With no channel inventory data, 'cannot be tested' is right."
+  },
+  {
+   "id": "results_against_expectations_qradar_payment_estimate_reduced",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "The notes:40 and mdna:112 quotes resolve. ratios.growth.operating_income.this_quarter is the loss that the gain softened."
+  },
+  {
+   "id": "results_against_expectations_expense_outlook_narrowed_and_no_release_on_record",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The mdna:110 and mdna:66 quotes resolve, and input_8k.md lists the results report with no body. 'The only forward expectation' overstates: mdna:84 also says 'We expect our cost of product revenue to fluctuate'."
+  },
+  {
+   "id": "profitability_acquisition_quarter_operating_and_net_loss",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "ratios.growth.operating_income.this_quarter and net_income.this_quarter are losses after positive quarter_over_quarter.inputs.before values. The notes:93 quote resolves, and the ComprehensiveIncomeNetOfTax fact is negative."
+  },
+  {
+   "id": "profitability_gross_margin_at_trend_low",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "quarters-back-0 gross_margin is the lowest filled quarter, and ratios.profitability.gross_margin is below years-back-0. The mdna:91 and mdna:95 quotes resolve."
+  },
+  {
+   "id": "profitability_thin_returns_on_enlarged_capital",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "return_on_invested_capital.invested_capital uses zero debt and the carried lease balance, and tax_rate is held below tax_rate.effective_rate. ROIC is therefore overstated, as the anomaly says."
+  },
+  {
+   "id": "profitability_share_based_compensation_exceeds_net_income",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.share_based_compensation exceeds terms.trailing_four_quarters.net_income. notes:176, notes:76 and notes:86 support the accelerated vesting and the replacement awards."
+  },
+  {
+   "id": "profitability_tax_expense_on_pretax_loss",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The quarter's IncomeTaxExpenseBenefit fact sits on a negative pretax fact. The notes:179 and mdna:123 quotes resolve, and tax_rate.effective_rate is above tax_rate."
+  },
+  {
+   "id": "profitability_other_income_weakened_by_note_losses_and_lower_interest",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The notes:130 and mdna:121 quotes resolve, and notes:187 shows total other income, net down on the year-ago quarter. The closing 'widen the gap' sentence is muddled, since terms.trailing_four_quarters.pretax_income exceeds operating_income."
+  },
+  {
+   "id": "efficiency_receivable_days_at_trend_high",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "quarters-back-0 days_sales_outstanding and receivables_over_revenue are at their highs, and the working_capital.receivables paths match. Its reading of the gap as acquired receivables is borne out by notes:77."
+  },
+  {
+   "id": "efficiency_doubtful_account_allowance_at_trend_low",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "quarters-back-0 bad_debt_reserve_ratio is the lowest filled quarter. terms.balances_now.bad_debt_allowance is below balances_a_year_earlier while receivables rose."
+  },
+  {
+   "id": "efficiency_operating_cash_helped_by_shrinking_customer_financing",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "The NotesAndLoansReceivableNet facts fall, and the notes:59 quote resolves with smaller prior-year sales. It rightly rejects report_numbers' 'larger use of cash' reading, given the calculator's increase_in_asset direction."
+  },
+  {
+   "id": "efficiency_asset_turnover_diluted_by_acquired_goodwill",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.efficiency.asset_turnover uses dupont.asset_turnover.inputs.average_assets, which blends in balances_a_year_earlier.assets. soft_asset_share is at its high."
+  },
+  {
+   "id": "liquidity_and_capital_current_liabilities_exceed_current_assets",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "ratios.liquidity.current_ratio is below one, and current liabilities also exceeded current assets a year earlier (balances_a_year_earlier current paths). contract_liabilities is the largest current item, and the notes:128 quote resolves."
+  },
+  {
+   "id": "liquidity_and_capital_investments_sold_to_fund_acquisitions",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.cash_flow_families.acquisitions exceeds free_cash_flow.free_cash_flow_simple. The mdna:153, mdna:130 and notes:91 quotes resolve, and the LongTermInvestments fact falls."
+  },
+  {
+   "id": "liquidity_and_capital_buyback_during_cash_drawdown",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The notes:157, notes:156 and mdna:156 quotes resolve. The prior_fiscal_year part of share_repurchases is zero."
+  },
+  {
+   "id": "liquidity_and_capital_convertible_notes_may_call_for_cash",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The notes:119, notes:127, notes:128 and notes:129 quotes resolve. mdna:133 states cash settlement of principal and that liquidity is sufficient, and terms.cash_and_short_term_investments_now matches."
+  },
+  {
+   "id": "liquidity_and_capital_quality_adjusted_free_cash_flow_negative",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "free_cash_flow.free_cash_flow_quality_adjusted is negative after the cited share_based_compensation and acquisitions.cash_spent inputs."
+  },
+  {
+   "id": "solvency_convertible_debt_missing_from_calculated_debt",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "total_debt, net_debt and debt_over_ebitda in ratios.solvency omit the ConvertibleDebtCurrent and ConvertibleDebtNoncurrent facts. notes:119 gives '0.0% Convertible Senior Notes' with no financial covenants, and interest_coverage is missing as 'interest_expense is zero'."
+  },
+  {
+   "id": "solvency_lease_obligations_extended_and_understated",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.solvency.operating_lease_liability carries 'contradicted_at_period_end'. The notes:139 quote resolves, and mdna:139 gives 'expiring through fiscal 2040'."
+  },
+  {
+   "id": "solvency_purchase_commitments_rising",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "unconditional_purchase_obligations is up on balances_a_year_earlier. The mdna:140 quote resolves, and notes:143 adds the off-table commitment."
+  },
+  {
+   "id": "solvency_equity_rests_on_acquired_goodwill",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "soft_asset_share is at its high, and notes:75 shows stock as most of the CyberArk consideration. The notes:97 quote resolves, and notes:119 confirms no financial covenants."
+  },
+  {
+   "id": "solvency_patent_litigation_accrual_and_pending_european_claims",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The notes:150 and notes:149 quotes resolve, and terms.balances_now.total_liabilities matches the cited path."
+  },
+  {
+   "id": "growth_earnings_reversed_while_revenue_grew",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The ratios.growth paths for operating and net income match the text. The nine-month operating income, net income and diluted EPS facts are all below the prior year."
+  },
+  {
+   "id": "growth_revenue_growth_partly_acquired",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "ratios.growth.revenue.year_over_year sits beside the notes:93, mdna:37 and mdna:39 quotes. No organic rate appears in the input."
+  },
+  {
+   "id": "growth_deferred_revenue_lagging_revenue",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "quarters-back-0 contract_liabilities_over_revenue is below quarters-back-1 and quarters-back-4, and the nine-month deferred-revenue cash-flow fact is below the prior year. notes:77 shows the assumed deferred revenue."
+  },
+  {
+   "id": "growth_share_count_up_from_stock_consideration",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.shares_outstanding and terms.diluted_shares match the text, and the notes:74 quote resolves. The notes:157 buyback is small against the notes:75 share issue."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_hardware_margin_and_tariffs",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The mdna:95 and mdna:86 quotes resolve, and mdna:94 shows product gross margin down."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_component_shortages",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The mdna:44 quote resolves. Like the reader, the anomaly notes that the prior wording is not in the input."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_israel_and_regional_hostilities",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The mdna:45 quote resolves, and the anomaly claims no harm in the numbers."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_integration_costs_and_workforce_cuts",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The notes:81 and notes:80 quotes resolve, and ratios.growth.operating_income.this_quarter matches the cited path."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_cost_base_expanding_with_acquired_headcount",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The mdna:103 and mdna:107 quotes resolve. Against the year-ago quarter the GrossProfit fact is up and the OperatingExpenses fact is up by more."
+  }
+ ],
+ "coverage": {
+  "answer": "yes",
+  "why": "All seven accounting areas and industry_lens have a finding and a verdict, and the financial reading answers profitability, efficiency, liquidity, solvency, growth and free_cash_flow. The one gate drop removed a single sentence (the 2030 Notes conversion window) from cross_document_reconciliation, so that point is unanswered but the area is not."
+ },
+ "calibration": {
+  "answer": "yes",
+  "why": "Each area verdict matches its anomalies; for example, cross_document_reconciliation names the Koi, commitments, capped-call and two pipeline points it lists. There are slips: the fair-value-option anomaly calls the loss's location open while cost_deferral places it in other income, and the controls finding calls in-quarter 8-Ks 'other events' though input_8k.md lists '1.01, 2.03, 9.01' on 2026-04-13."
+ },
+ "valuation_reading": {
+  "answer": "no",
+  "why": "price_position and market_implied_growth correctly report market.missing and implied_growth_beside_history.implied_ten_year_revenue_growth as missing. most_sensitive picks year-ten margin and year-one growth from the spread of assumptions.json scenarios, not from the calculator, because valuation.missing means no sensitivity grid exists."
+ },
+ "score": 0.948,
+ "grader": {
+  "model_requested": "opus",
+  "model_served": "claude-opus-5-5",
+  "input_tokens": 50,
+  "output_tokens": 75810,
+  "cost_usd": 6.327776600000001,
+  "seconds": 642.4
+ }
+}
