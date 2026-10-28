@@ -551,7 +551,20 @@ LEFT_OUT = "[a sentence the gate could not verify is left out here]"
 LEFT_OUT_KO = "[검증하지 못한 문장 하나를 여기서 뺐습니다]"
 
 
-def kept_sentences(text: str, check, *, marker: str = LEFT_OUT) -> tuple[str, list[str]] | None:
+def ruled_out(forbidden: tuple[str, ...], *, recommendation: bool = False):
+    """Whether a sentence carries a ruled-out word, read on its own and never
+    behind another problem: the kind's list, the owner's accusation words, and in a
+    summary the owner's recommendation words too (`owner_problems`)."""
+    def check(part: str) -> bool:
+        lowered = part.lower()
+        return bool(any(re.search(pattern, lowered) for pattern in forbidden)
+                    or ACCUSATION.search(part)
+                    or (recommendation and RECOMMENDATION.search(part)))
+    return check
+
+
+def kept_sentences(text: str, check, *, marker: str = LEFT_OUT,
+                   forbidden_in=lambda part: False) -> tuple[str, list[str]] | None:
     """The text with each failing sentence replaced by `marker`, and why each
     went; None when the text must fall whole instead: nothing failed, half or
     more of its sentences failed, or what is left carries fewer than eight words."""
@@ -561,8 +574,9 @@ def kept_sentences(text: str, check, *, marker: str = LEFT_OUT) -> tuple[str, li
     if not failed or failed * 2 >= len(parts):
         return None
     # a ruled-out word -- an accusation, a recommendation to trade -- is never cut out
-    # of the sentences that build the case for it: the unit falls whole, as before
-    if any(problem and "a ruled-out word" in problem for problem in problems):
+    # of the sentences that build the case for it: the unit falls whole, as before,
+    # whatever else the sentence carries (a digit is found first by `words_problem`)
+    if any(forbidden_in(part) for part in parts):
         return None
     kept = [part for part, problem in zip(parts, problems) if not problem]
     if len(re.findall(r"\w{2,}", "".join(kept))) < 8:
@@ -590,7 +604,8 @@ def trimmed(item, fields: dict, sources, *, forbidden, filing=None,
         if not isinstance(text, str) or not text:
             continue
         result = kept_sentences(text, lambda part: words_problem(
-            part, fields, forbidden=forbidden, sources=sources, filing=filing, fallen=fallen))
+            part, fields, forbidden=forbidden, sources=sources, filing=filing, fallen=fallen),
+            forbidden_in=ruled_out(forbidden))
         if result is None:
             continue
         item[key], problems = result
@@ -774,7 +789,7 @@ def _check_summary(payload: dict, fields, dropped, *, forbidden) -> None:
         if isinstance(text, str) and text:
             result = kept_sentences(
                 text, lambda part: words_problem(part, fields, forbidden=forbidden),
-                marker=LEFT_OUT_KO)
+                marker=LEFT_OUT_KO, forbidden_in=ruled_out(forbidden, recommendation=True))
             # kept only when the trimmed text then stands; the rows hold the text
             # itself, so a summary the owner's rules empty afterwards is recorded once
             if result is not None and words_problem(result[0], fields,

@@ -2257,3 +2257,21 @@ def test_a_notes_reader_quote_of_the_notes_history_is_not_the_filers():
             f'The note says "{words}" plainly.', FIELDS, forbidden=(),
             sources={"report_notes_text.md": notes})
         assert (problem is None) == standing, (paragraph, problem)
+
+
+def test_a_ruled_out_word_beside_a_digit_still_drops_the_whole_unit():
+    """The second lens's ninth reading: `words_problem` finds the digit first, and the
+    ruled-out word in the same sentence must still drop the unit."""
+    payload = accounting()
+    payload["areas"]["earnings_versus_cash"]["finding"] = (
+        "Receivables outran revenue across the last two quarters. The 61-day jump looks "
+        "like fraud. The notes name no customer and no change of terms behind it.")
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+    assert "dropped" in out["areas"]["earnings_versus_cash"]
+    payload = accounting()
+    good = "영업현금흐름이 최근 네 분기 동안 순이익을 넘었고 발생액 비율도 회사의 과거보다 낮다."
+    payload["summary_ko"]["earnings_versus_cash"] = (
+        good + " 회수일수가 61일이니 매수 추천이다. 매입채무 증가가 현금의 일부를 공급했다는 점은 남는다.")
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+    assert out["summary_ko"]["earnings_versus_cash"] is None
+    assert [d["where"] for d in out["dropped_items"]].count("summary_ko.earnings_versus_cash") == 1
