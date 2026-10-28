@@ -36,9 +36,15 @@ assumptions and the one place a number of yours belongs. When a sentence needs a
 number, write the calculator's field path in braces —
 `{valuation.value_range_per_share.low}`, `{valuation.reverse_dcf.value|pct}`,
 `{earnings_versus_cash.history.revenue_growth_three_year_compound|pct}` — and
-Python puts the value there. A path that does not resolve drops the item it is
-in. Digits may otherwise appear only inside a verbatim quote, an id, a form name
-or a four-digit year.
+Python puts the value there. A path that does not resolve drops the sentence it
+is in. Digits may otherwise appear only inside quotation marks around three or more
+words copied character for character from the MD&A or the earnings release you
+read (never from an analysis, whose quotations are not yours to repeat), opening
+and closing on a word; inside an id; as a form name
+(10-K, 10-Q, 8-K, or their plurals); or as a year written after "fiscal" or
+"calendar" (fiscal 2025) or in a date (2026-06-30). A sentence that breaks this
+is left out where it stood, marked, and counted; an item whose sentences mostly
+break it is dropped whole, and so is the scenario it belongs to.
 
 ## First pass — `assumptions.json`
 

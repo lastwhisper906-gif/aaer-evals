@@ -29,11 +29,17 @@ braces — `{earnings_versus_cash.operating_cash_flow_over_net_income}`,
 `{earnings_versus_cash.history.years.1.operating_margin}` — and Python puts the
 value there. Add `|pct` to show a ratio as a percentage:
 `{ratios.profitability.gross_margin|pct}`. A path that does not resolve to a
-number drops the item it is in, and the drop is counted. If the number you want
+number drops the sentence it is in, and the drop is counted. If the number you want
 is not in `calculator_filings_only.json`, say it is not there; never work it out.
 
-Digits may appear only inside a verbatim quote, inside an id you cite, or as a
-form name (10-K, 10-Q, 8-K) or a four-digit year.
+Digits may appear only inside quotation marks around three or more words copied
+character for character from the `quote` of an item in the notes reader's report
+(never its `what_changed`, and never the numbers reader's, whose quotes are
+Python's tables), opening and closing on a word; inside an id you cite; as a
+form name (10-K, 10-Q, 8-K, or their plurals); or as a year written after
+"fiscal" or "calendar" (fiscal 2025) or in a date (2026-06-30). A sentence that
+breaks this is left out where it stood, marked, and counted; an item whose
+sentences mostly break it is dropped whole.
 
 ## Seven areas, in this order, and every one of them answered
 

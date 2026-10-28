@@ -54,6 +54,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import functools
 from collections.abc import Mapping
 import json
 import math
@@ -252,7 +253,9 @@ YEAR_TERMINATOR = (r"(?=\s*(?:$|[^\sA-Za-z0-9]|" + YEAR + r"|(?i:" + CONNECTOR +
                    + AFTER_A_HYPHENATED_ADJECTIVE + r"))")
 ALLOWED_DIGITS = re.compile(
     r"(?<![A-Za-z0-9])(?:"
-    r"10-K|10-Q|8-K|COVID-19"
+    # a form's name, its plural or its possessive: "the 10-Q", "the two 10-Qs", "the
+    # 10-K's note" (ANET, FTNT and LFUS of 2026-10-08 lost areas over "10-Qs")
+    r"(?:10-K|10-Q|8-K)(?:['’]?s)?|COVID-19"
     r"|(?:19|20)\d{2}-\d{2}-\d{2}"
     # A fiscal year, or a range or list of years opening with one and followed by a
     # year-terminator: "fiscal 2025", "the flat stretch of fiscal 2022 to 2025," (AAPL's
@@ -396,8 +399,225 @@ def placeholder_problem(fields: dict, path: str) -> str | None:
 
 # --- one string -----------------------------------------------------------------------
 
-def words_problem(text, fields: dict, *, forbidden: tuple[str, ...]) -> str | None:
-    """Why these words cannot stand, or None."""
+# A quotation in an analyst's own words: double quotes, curly quotes, or single
+# quotes that open after a space or a bracket and close before one (an
+# apostrophe inside a word is not a quote). It stands for the filer's words only
+# when it is the filer's words: it matches, folded and on word boundaries, either
+# the `quote` of an item in the notes reader's report (each one the quote gate held
+# to the filing; `FILING_QUOTES`) or a filing prose file the analyst read (`FILING_PROSE`), and it carries at
+# least three words of letters, so a bare "61" or '4,989' is never the filer's by
+# accident. A reader's own prose (`what_changed`) and another analyst's analysis
+# are not the filer's words. Then its digits are the filer's, not the analyst's
+# (148 of the 339 digits that dropped an area or a section over the nineteen runs
+# read on 2026-10-27 sat inside a quotation).
+QUOTATION = re.compile(r'"([^"\n]{2,800})"|“([^”\n]{2,800})”|‘([^’\n]{2,800})’'
+                       r"|(?<![A-Za-z0-9])'([^'\n]{2,800})'(?![A-Za-z0-9])")
+
+
+WORDS_OF_LETTERS = re.compile(r"[A-Za-z]{2,}")
+# The files that are the filing's own prose. The other `input_*` files are not the
+# filer's words: the prior predictions are an earlier run's output, and the numbers
+# and trends tables are Python's (the second lens's fifth reading: the single-agent
+# control is handed all of them).
+FILING_PROSE = frozenset({"input_mdna.md", "input_8k.md", "input_notes.md",
+                          "input_controls.md"})
+# The reader reports whose quotes are the filing's prose: the notes reader quotes the
+# notes, the MD&A, the controls and the 8-Ks. The numbers reader quotes Python's
+# numbers and trends tables, which are not the filer's words (the second lens's
+# seventh reading: "lowest of the 5 filled years" is Python's).
+FILING_QUOTES = frozenset({"report_notes_text.md"})
+# A notes reader item is the filer's words only when its paragraph is one of the
+# filing's own: the notes, the MD&A, a controls item or an 8-K item. The notes
+# history carries Python's lines among the filer's ("similarity 0.9921"), so a quote
+# of it is not (the second lens's eighth reading).
+FILING_PARAGRAPH = re.compile(r"\d{10}-\d{2}-\d{6}:(?:notes|mdna|item_\w+|8k_\w+):")
+
+
+@functools.lru_cache(maxsize=16)
+def _filer_texts(sources: tuple[tuple[str, str], ...], filing: tuple[tuple[str, str], ...],
+                 fallen: frozenset) -> tuple[tuple[str, str | None], ...]:
+    """The filer's words among the files an analyst saw, folded, each with the
+    full filing text it must also match (or None): the `quote` of each fenced
+    item of the notes reader's report that stood (one id, once, not dropped by
+    the quote gate), and each filing prose file the analyst read (`FILING_PROSE`), held to the
+    run's full file too when the analyst's copy was trimmed, so a quotation across
+    the seam between two paragraphs that were not adjacent is not the filer's."""
+    full = dict(filing)
+    out = []
+    for name, text in sources:
+        if name in FILING_PROSE:
+            out.append((fold(text), fold(full[name]) if name in full else None))
+        elif name in FILING_QUOTES:
+            items = _items_of(text)
+            ids = [item.get("id") for item in items]
+            for item in items:
+                identifier, quote = item.get("id"), item.get("quote")
+                paragraph = item.get("paragraph_id")
+                if isinstance(identifier, str) and ids.count(identifier) == 1 \
+                        and identifier not in fallen and isinstance(quote, str) and quote \
+                        and isinstance(paragraph, str) and FILING_PARAGRAPH.match(paragraph):
+                    out.append((fold(quote), None))
+    return tuple(out)
+
+
+def _folded_sources(sources, filing=None, fallen=frozenset()):
+    def key(files):
+        return tuple(sorted((name, text) for name, text in (files or {}).items()
+                            if isinstance(text, str)))
+    return _filer_texts(key(sources), key(filing), frozenset(fallen or ()))
+
+
+def _on_word_boundaries(needle: str, haystack: str) -> bool:
+    start = haystack.find(needle)
+    while start != -1:
+        end = start + len(needle)
+        before = haystack[max(0, start - 2):start].rjust(2)
+        after = haystack[end:end + 2].ljust(2)
+        # a word, or a number, is never cut: "13" is not quoted out of "$13.1"
+        cut_before = (before[1].isalnum() and needle[0].isalnum()) or \
+            (needle[0].isdigit() and before[1] in ".," and before[0].isdigit())
+        cut_after = (after[0].isalnum() and needle[-1].isalnum()) or \
+            (needle[-1].isdigit() and after[0] in ".," and after[1].isdigit())
+        if not cut_before and not cut_after:
+            return True
+        start = haystack.find(needle, start + 1)
+    return False
+
+
+def without_verified_quotations(text: str, sources, filing=None, fallen=frozenset()) -> str:
+    """The text with every quotation that string-matches a file the analyst saw
+    blanked out, so its digits are not read as the analyst's numbers. A quotation
+    that matches nothing is left in place, and its digits are the analyst's."""
+    folded = _folded_sources(sources, filing, fallen)
+    if not folded:
+        return text
+
+    def blank(match: re.Match) -> str:
+        inner = next(group for group in match.groups() if group is not None)
+        needle = fold(inner).strip()
+        # its first and last word are words of letters: a reader's quote may itself
+        # open or close inside a number ("3.1 million" cut from "$13.1 million"), and
+        # a quotation that does the same would carry a number the filing never printed
+        ends = needle.strip(" .,;:!?()[]—–-\"'‘’“”")
+        if ends and ends[0].isalpha() and ends[-1].isalpha() and \
+                len(WORDS_OF_LETTERS.findall(needle)) >= 3 and any(
+                _on_word_boundaries(needle, seen)
+                and (full is None or _on_word_boundaries(needle, full))
+                for seen, full in folded):
+            return " " * len(match.group(0))
+        return match.group(0)
+
+    return QUOTATION.sub(blank, text)
+
+
+# The keys that hold an analyst's running prose: a failing sentence in one of
+# them is dropped and the rest of the text stands. Short keys (an anomaly's
+# `name`, `name_ko`) stand or fall whole.
+SENTENCE_KEYS = ("finding", "verdict", "why", "what", "reading", "reason", "history",
+                 "assumption")
+# A sentence ends at ".", "!", "?" or "。" before whitespace, outside a quotation
+# and outside a {path} placeholder, and not after a common abbreviation.
+ABBREVIATIONS = re.compile(r"(?:\b(?:U\.S|e\.g|i\.e|Inc|Corp|Co|Ltd|No|vs|approx|"
+                           r"Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec|"
+                           r"Mr|Ms|Dr|St|Nos|Fig|est)\.)$")
+
+
+def sentences(text: str) -> list[str]:
+    """The text cut into sentences, each with the whitespace that followed it, so
+    joining them gives the text back character for character."""
+    shielded = list(text)
+    for pattern in (PLACEHOLDER, QUOTATION):
+        for match in pattern.finditer(text):
+            for i in range(match.start(), match.end()):
+                if shielded[i] in ".!?。":
+                    shielded[i] = "\0"
+    flat = "".join(shielded)
+    out, start = [], 0
+    # a sentence that ends inside a closing quotation mark ends there too
+    for match in re.finditer(r"(?:[.!?。]+|\0[\"”’'])\s+", flat):
+        if ABBREVIATIONS.search(flat[start:match.start() + 1]):
+            continue
+        out.append(text[start:match.end()])
+        start = match.end()
+    if start < len(text):
+        out.append(text[start:])
+    return out
+
+
+# Where a sentence went, the text says so, so a finding whose adverse sentences
+# were cut never reads clean (the refute-check's reading of 2026-10-28: FTNT's
+# controls finding lost every open signal and read "controls are effective").
+LEFT_OUT = "[a sentence the gate could not verify is left out here]"
+LEFT_OUT_KO = "[검증하지 못한 문장 하나를 여기서 뺐습니다]"
+
+
+def ruled_out(forbidden: tuple[str, ...], *, recommendation: bool = False):
+    """Whether a sentence carries a ruled-out word, read on its own and never
+    behind another problem: the kind's list, the owner's accusation words, and in a
+    summary the owner's recommendation words too (`owner_problems`)."""
+    def check(part: str) -> bool:
+        lowered = part.lower()
+        return bool(any(re.search(pattern, lowered) for pattern in forbidden)
+                    or ACCUSATION.search(part)
+                    or (recommendation and RECOMMENDATION.search(part)))
+    return check
+
+
+def kept_sentences(text: str, check, *, marker: str = LEFT_OUT,
+                   forbidden_in=lambda part: False) -> tuple[str, list[str]] | None:
+    """The text with each failing sentence replaced by `marker`, and why each
+    went; None when the text must fall whole instead: nothing failed, half or
+    more of its sentences failed, or what is left carries fewer than eight words."""
+    parts = sentences(text)
+    problems = [check(part) for part in parts]
+    failed = sum(1 for problem in problems if problem)
+    if not failed or failed * 2 >= len(parts):
+        return None
+    # a ruled-out word -- an accusation, a recommendation to trade -- is never cut out
+    # of the sentences that build the case for it: the unit falls whole, as before,
+    # whatever else the sentence carries (a digit is found first by `words_problem`)
+    if any(forbidden_in(part) for part in parts):
+        return None
+    kept = [part for part, problem in zip(parts, problems) if not problem]
+    if len(re.findall(r"\w{2,}", "".join(kept))) < 8:
+        return None
+    out = []
+    for part, problem in zip(parts, problems):
+        if not problem:
+            out.append(part)
+        elif not out or not out[-1].startswith(marker):
+            out.append(marker + (" " if part.endswith((" ", "\n")) else ""))
+    return "".join(out).rstrip(), [problem for problem in problems if problem]
+
+
+def trimmed(item, fields: dict, sources, *, forbidden, filing=None,
+            fallen=frozenset()) -> tuple[dict, list[str]]:
+    """A copy of the item with each failing sentence of its running prose left
+    out where it stood, and why each one went. The caller keeps the copy only when
+    it then stands; an item that falls whole is recorded once, for its own reason."""
+    if not isinstance(item, dict):
+        return item, []
+    item = copy.deepcopy(item)
+    reasons = []
+    for key in SENTENCE_KEYS:
+        text = item.get(key)
+        if not isinstance(text, str) or not text:
+            continue
+        result = kept_sentences(text, lambda part: words_problem(
+            part, fields, forbidden=forbidden, sources=sources, filing=filing, fallen=fallen),
+            forbidden_in=ruled_out(forbidden))
+        if result is None:
+            continue
+        item[key], problems = result
+        reasons += [f"{key}: one sentence left out: {problem}" for problem in problems]
+    return item, reasons
+
+
+def words_problem(text, fields: dict, *, forbidden: tuple[str, ...],
+                  sources=None, filing=None, fallen=frozenset()) -> str | None:
+    """Why these words cannot stand, or None. `sources` is the files the analyst
+    saw: a quotation that string-matches one of them is the filer's words, and its
+    digits are not read as the analyst's (`without_verified_quotations`)."""
     if text is None or text == "":
         return None
     if not isinstance(text, str):
@@ -406,7 +626,7 @@ def words_problem(text, fields: dict, *, forbidden: tuple[str, ...]) -> str | No
         problem = placeholder_problem(fields, path)
         if problem:
             return problem
-    bare = PLACEHOLDER.sub(" ", text)
+    bare = PLACEHOLDER.sub(" ", without_verified_quotations(text, sources, filing, fallen))
     if BRACE.search(bare):
         return "a brace that is not a whole {path} placeholder"
     bare = ALLOWED_DIGITS.sub(" ", bare)
@@ -486,7 +706,8 @@ def item_problem(item, fields: dict, sources: dict[str, str], upstream: set[str]
     if not isinstance(item, dict):
         return "the item is not an object"
     for key in PROSE_KEYS:
-        problem = words_problem(item.get(key), fields, forbidden=forbidden)
+        problem = words_problem(item.get(key), fields, forbidden=forbidden, sources=sources,
+                                filing=filing, fallen=fallen)
         if problem:
             return f"{key}: {problem}"
     for path in item.get("fields") or []:
@@ -519,6 +740,13 @@ def _check_block(payload: dict, key: str, names, fields, sources, upstream, drop
                 block[name] = {"dropped": "the analyst wrote nothing for it"}
                 dropped.append({"where": f"{key}.{name}", "reason": "missing"})
             continue
+        cut, reasons = trimmed(entry, fields, sources, forbidden=forbidden, filing=filing,
+                               fallen=fallen)
+        if reasons and item_problem(cut, fields, sources, upstream, forbidden=forbidden,
+                                    filing=filing, fallen=fallen) is None:
+            block[name] = entry = cut
+            dropped.extend({"where": f"{key}.{name}", "reason": reason, HELD: cut}
+                           for reason in reasons)
         problem = item_problem(entry, fields, sources, upstream, forbidden=forbidden,
                                filing=filing, fallen=fallen)
         if problem:
@@ -531,6 +759,14 @@ def _check_list(payload: dict, key: str, fields, sources, upstream, dropped, *, 
                 extra=None, filing=None, fallen=frozenset()) -> None:
     kept = []
     for position, item in enumerate(payload.get(key) or []):
+        cut, reasons = trimmed(item, fields, sources, forbidden=forbidden, filing=filing,
+                               fallen=fallen)
+        if reasons and item_problem(cut, fields, sources, upstream, forbidden=forbidden,
+                                    filing=filing, fallen=fallen) is None \
+                and (extra is None or extra(cut) is None):
+            item = cut
+            dropped.extend({"where": f"{key}[{position}]", "id": item.get("id"),
+                            "reason": reason, HELD: cut} for reason in reasons)
         problem = item_problem(item, fields, sources, upstream, forbidden=forbidden,
                                filing=filing, fallen=fallen)
         if problem is None and extra is not None:
@@ -550,6 +786,18 @@ def _check_summary(payload: dict, fields, dropped, *, forbidden) -> None:
         payload["summary_ko"] = {}
         return
     for name, text in list(summary.items()):
+        if isinstance(text, str) and text:
+            result = kept_sentences(
+                text, lambda part: words_problem(part, fields, forbidden=forbidden),
+                marker=LEFT_OUT_KO, forbidden_in=ruled_out(forbidden, recommendation=True))
+            # kept only when the trimmed text then stands; the rows hold the text
+            # itself, so a summary the owner's rules empty afterwards is recorded once
+            if result is not None and words_problem(result[0], fields,
+                                                    forbidden=forbidden) is None:
+                summary[name] = text = result[0]
+                dropped += [{"where": f"summary_ko.{name}",
+                             "reason": f"one sentence left out: {problem}", HELD: text}
+                            for problem in result[1]]
         problem = words_problem(text, fields, forbidden=forbidden)
         if problem:
             summary[name] = None
@@ -903,6 +1151,23 @@ def _where(path: tuple) -> str:
     return out
 
 
+HELD = "_trimmed_unit"
+
+
+def settle_trims(payload: dict, dropped: list) -> None:
+    """Keep a unit's "one sentence left out" rows only while the unit still stands:
+    one the owner's departures dropped afterwards is recorded once, for its fall."""
+    standing = set()
+    for value in payload.values():
+        children = value.values() if isinstance(value, dict) else (
+            value if isinstance(value, list) else ())
+        standing.add(id(value))
+        standing.update(id(child) for child in children)
+    dropped[:] = [row for row in dropped if HELD not in row or id(row[HELD]) in standing]
+    for row in dropped:
+        row.pop(HELD, None)
+
+
 def drop_departures(payload: dict, problems: list[tuple[tuple, str]], dropped: list) -> None:
     """Drop the unit that holds each departure, once, and record why."""
     units: dict[tuple, str] = {}
@@ -1038,6 +1303,14 @@ def check(kind: str, payload: dict, *, fields: dict, sources: dict[str, str],
                      dropped, forbidden=forbidden, fallen=fallen, required=True, filing=filing)
         for key in ("dupont", "path_to_distress"):
             entry = payload.get(key)
+            if entry is not None:
+                cut, reasons = trimmed(entry, fields, sources, forbidden=forbidden,
+                                       filing=filing, fallen=fallen)
+                if reasons and item_problem(cut, fields, sources, upstream, forbidden=forbidden,
+                                            fallen=fallen, filing=filing) is None:
+                    payload[key] = entry = cut
+                    dropped.extend({"where": key, "reason": reason, HELD: cut}
+                                   for reason in reasons)
             problem = ("the analyst wrote nothing for it" if entry is None else
                        item_problem(entry, fields, sources, upstream, forbidden=forbidden, fallen=fallen,
                                     filing=filing))
@@ -1052,6 +1325,14 @@ def check(kind: str, payload: dict, *, fields: dict, sources: dict[str, str],
         payload.pop("readings", None)
         for key in VALUATION_KEYS:
             entry = payload.get(key)
+            if entry is not None:
+                cut, reasons = trimmed(entry, fields, sources, forbidden=forbidden,
+                                       filing=filing, fallen=fallen)
+                if reasons and item_problem(cut, fields, sources, upstream, forbidden=forbidden,
+                                            fallen=fallen, filing=filing) is None:
+                    payload[key] = entry = cut
+                    dropped.extend({"where": key, "reason": reason, HELD: cut}
+                                   for reason in reasons)
             problem = ("the analyst wrote nothing for it" if entry is None else
                        item_problem(entry, fields, sources, upstream, forbidden=forbidden, fallen=fallen,
                                     filing=filing))
@@ -1070,6 +1351,9 @@ def check(kind: str, payload: dict, *, fields: dict, sources: dict[str, str],
         payload, kind=kind, fields=fields, sources=sources, filing=filing,
         kept=kept, citable=citable), dropped)
     unanswered(payload, kind, dropped)
+    # after every step that replaces a unit: a trimmed unit that fell after all is
+    # recorded once, for its fall (the second lens's tenth reading)
+    settle_trims(payload, dropped)
     _limits(payload, kind, dropped)
     payload["normalized_quotes"] = normalized_quotes(payload, sources)
     payload["dropped_items"] = dropped
@@ -1096,6 +1380,7 @@ def check_assumptions(payload: dict, *, fields: dict, sources: dict[str, str],
     for name in calculator.SCENARIOS:
         scenario = scenarios.get(name)
         problem = None
+        left_out = []
         if not isinstance(scenario, dict):
             problem = "no such scenario"
         else:
@@ -1113,6 +1398,13 @@ def check_assumptions(payload: dict, *, fields: dict, sources: dict[str, str],
                 if not reason.get("quote") and not reason.get("fields"):
                     problem = f"{driver} carries neither a quote nor a calculator field"
                     break
+                forbidden = FORBIDDEN_EVERYWHERE + FORBIDDEN_IN_VALUATION
+                cut, why = trimmed(reason, fields, sources, forbidden=forbidden, filing=filing)
+                if why and item_problem(cut, fields, sources, set(), forbidden=forbidden,
+                                        filing=filing) is None:
+                    reasons[driver] = reason = cut
+                    left_out += [{"where": f"scenarios.{name}.reasons.{driver}", "reason": one,
+                                  HELD: scenario} for one in why]
                 problem = item_problem(reason, fields, sources, set(),
                                        forbidden=FORBIDDEN_EVERYWHERE + FORBIDDEN_IN_VALUATION,
                                        filing=filing)
@@ -1122,6 +1414,8 @@ def check_assumptions(payload: dict, *, fields: dict, sources: dict[str, str],
         if problem:
             dropped.append({"where": f"scenarios.{name}", "reason": problem})
             scenarios.pop(name, None)
+        else:
+            dropped += left_out
     payload["scenarios"] = scenarios
     overrides = payload.get("wacc_overrides") or {}
     for name, chosen in list(overrides.items()):
@@ -1148,6 +1442,7 @@ def check_assumptions(payload: dict, *, fields: dict, sources: dict[str, str],
     drop_departures(payload, owner_problems(
         payload, kind="assumptions", fields=fields, sources=sources, filing=filing,
         kept=None, citable=None), dropped)
+    settle_trims(payload, dropped)
     payload["dropped_items"] = dropped
     payload["dropped_count"] = len(dropped)
     return payload
