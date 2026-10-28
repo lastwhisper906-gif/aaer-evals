@@ -1929,17 +1929,24 @@ def test_a_quarter_of_a_year_stands_and_a_labelled_quantity_does_not():
 # goes alone, and the rest of the area stands.
 
 
-def test_a_number_in_one_sentence_drops_that_sentence_and_the_area_stands():
+MARK = analysis_check.LEFT_OUT
+
+
+def test_a_number_in_one_sentence_leaves_that_sentence_out_where_it_stood():
     payload = accounting()
     first = payload["areas"]["earnings_versus_cash"]["finding"]
-    payload["areas"]["earnings_versus_cash"]["finding"] = first + " Receivables rose by 61 days."
+    payload["areas"]["earnings_versus_cash"]["finding"] = (
+        first + " Receivables rose by 61 days. Payables stretched as the quarter closed, "
+        "and the cash-flow statement shows the working capital the balance sheet shows.")
     out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
     area = out["areas"]["earnings_versus_cash"]
     assert "dropped" not in area
-    assert area["finding"] == first.rstrip()
+    assert area["finding"] == (first + " " + MARK + " Payables stretched as the quarter closed, "
+                               "and the cash-flow statement shows the working capital the "
+                               "balance sheet shows.")
     rows = [d for d in out["dropped_items"] if d["where"] == "areas.earnings_versus_cash"]
     assert len(rows) == 1
-    assert rows[0]["reason"].startswith("finding: one sentence dropped: a number written in "
+    assert rows[0]["reason"].startswith("finding: one sentence left out: a number written in "
                                         "the analyst's own words")
 
 
@@ -1948,14 +1955,44 @@ def test_an_area_whose_every_sentence_fails_falls_whole_as_before():
     payload["areas"]["earnings_versus_cash"]["finding"] = "DSO rose to 61 days. Margin was 12."
     out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
     assert "dropped" in out["areas"]["earnings_versus_cash"]
+    assert [d["where"] for d in out["dropped_items"]].count("areas.earnings_versus_cash") == 1
 
 
-def test_an_anomaly_keeps_its_good_sentences():
+def test_half_the_sentences_failing_or_too_little_left_falls_whole():
+    """The refute-check's cases of 2026-10-28: "Nothing else." and "..." left over."""
+    for text in ("Receivables rose 61 days. Margin fell 12 points. Nothing else.",
+                 "Receivables rose 61 days. ... Margin fell 12 points.",
+                 "Receivables outran revenue in the quarter. DSO rose to 61 days."):
+        payload = accounting()
+        payload["areas"]["earnings_versus_cash"]["finding"] = text
+        out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+        assert "dropped" in out["areas"]["earnings_versus_cash"], text
+        assert [d["where"] for d in out["dropped_items"]].count(
+            "areas.earnings_versus_cash") == 1, text
+
+
+def test_an_anomaly_keeps_its_good_sentences_and_marks_the_one_left_out():
     payload = accounting()
-    payload["anomalies"][0]["what"] = "Receivables outran revenue. DSO rose to 61 days."
+    payload["anomalies"][0]["what"] = (
+        "Receivables outran revenue across the last two quarters. DSO rose to 61 days. "
+        "The notes name no customer and no change of terms behind it.")
     out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
-    assert [a["what"] for a in out["anomalies"]] == ["Receivables outran revenue."]
-    assert out["dropped_items"][0]["where"] == "anomalies[0]"
+    assert [a["what"] for a in out["anomalies"]] == [
+        "Receivables outran revenue across the last two quarters. " + MARK + " The notes "
+        "name no customer and no change of terms behind it."]
+    assert [d["where"] for d in out["dropped_items"]] == ["anomalies[0]"]
+
+
+def test_an_item_that_falls_whole_after_a_trim_is_recorded_once():
+    payload = accounting()
+    payload["anomalies"][0]["what"] = (
+        "Receivables outran revenue across the last two quarters. DSO rose to 61 days. "
+        "The notes name no customer and no change of terms behind it.")
+    payload["anomalies"][0]["evidence"] = ["no_such_item_in_any_report"]
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+    assert out["anomalies"] == []
+    assert [d["where"] for d in out["dropped_items"]] == ["anomalies[0]"]
+    assert "one sentence left out" not in out["dropped_items"][0]["reason"]
 
 
 PLANTED_QUOTE = "the Company recognized impairment charges of $13.1 million at two sites"
@@ -2033,21 +2070,11 @@ def test_sentences_give_the_text_back_and_do_not_cut_inside_a_quote_or_a_path():
                      'U.S. sales fell! ', '매출이 줄었다. ', '끝']
 
 
-def test_a_korean_summary_loses_only_its_failing_sentence():
+def test_a_korean_summary_marks_its_left_out_sentence():
     payload = accounting()
-    good = "영업현금흐름이 순이익을 넘었다."
-    payload["summary_ko"]["earnings_versus_cash"] = good + " 매출채권 회수일수는 61일이다."
+    good = "영업현금흐름이 최근 네 분기 동안 순이익을 넘었고 발생액 비율도 회사의 과거보다 낮다."
+    tail = " 매입채무 증가가 현금의 일부를 공급했다는 점은 남는다."
+    payload["summary_ko"]["earnings_versus_cash"] = good + " 매출채권 회수일수는 61일이다." + tail
     out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
-    assert out["summary_ko"]["earnings_versus_cash"] == good
-
-
-def test_a_fields_citation_that_names_nothing_is_dropped_alone():
-    payload = accounting()
-    area = payload["areas"]["earnings_versus_cash"]
-    good = list(area.get("fields") or [])
-    area["fields"] = good + ["growth.revenue.year_over_year"]
-    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
-    assert "dropped" not in out["areas"]["earnings_versus_cash"]
-    assert out["areas"]["earnings_versus_cash"]["fields"] == good
-    assert any("'growth.revenue.year_over_year' is not a field of calculator.json; the "
-               "citation is dropped" in d["reason"] for d in out["dropped_items"])
+    assert out["summary_ko"]["earnings_versus_cash"] == (
+        good + " " + analysis_check.LEFT_OUT_KO + tail)

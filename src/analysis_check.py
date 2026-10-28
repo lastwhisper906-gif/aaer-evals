@@ -512,40 +512,53 @@ def sentences(text: str) -> list[str]:
     return out
 
 
-def trim_sentences(item, fields: dict, sources, *, forbidden) -> list[str]:
-    """Drop, in place, each sentence of the item's running prose that cannot
-    stand, and each `fields` citation that names nothing, and return why each one
-    went. A key whose every sentence fails is left as written, so the item falls
-    whole for the reason the first sentence gives."""
-    reasons = []
+# Where a sentence went, the text says so, so a finding whose adverse sentences
+# were cut never reads clean (the refute-check's reading of 2026-10-28: FTNT's
+# controls finding lost every open signal and read "controls are effective").
+LEFT_OUT = "[a sentence the gate could not verify is left out here]"
+LEFT_OUT_KO = "[검증하지 못한 문장 하나를 여기서 뺐습니다]"
+
+
+def kept_sentences(text: str, check, *, marker: str = LEFT_OUT) -> tuple[str, list[str]] | None:
+    """The text with each failing sentence replaced by `marker`, and why each
+    went; None when the text must fall whole instead: nothing failed, half or
+    more of its sentences failed, or what is left carries fewer than eight words."""
+    parts = sentences(text)
+    problems = [check(part) for part in parts]
+    failed = sum(1 for problem in problems if problem)
+    if not failed or failed * 2 >= len(parts):
+        return None
+    kept = [part for part, problem in zip(parts, problems) if not problem]
+    if len(re.findall(r"\w{2,}", "".join(kept))) < 8:
+        return None
+    out = []
+    for part, problem in zip(parts, problems):
+        if not problem:
+            out.append(part)
+        elif not out or not out[-1].startswith(marker):
+            out.append(marker + (" " if part.endswith((" ", "\n")) else ""))
+    return "".join(out).rstrip(), [problem for problem in problems if problem]
+
+
+def trimmed(item, fields: dict, sources, *, forbidden) -> tuple[dict, list[str]]:
+    """A copy of the item with each failing sentence of its running prose left
+    out where it stood, and why each one went. The caller keeps the copy only when
+    it then stands; an item that falls whole is recorded once, for its own reason."""
     if not isinstance(item, dict):
-        return reasons
-    # a `fields` citation that names nothing in the calculator is dropped alone, as a
-    # sentence is: AAPL's, FTNT's and WDC's areas of 2026-10-08 fell whole for citing
-    # `growth.revenue.year_over_year` where the calculator has `ratios.growth.…`
-    cited = item.get("fields")
-    if isinstance(cited, list) and cited:
-        kept = [path for path in cited if field_cited(fields, path)]
-        # an item left citing nothing at all is not trimmed: it falls whole, as before
-        if len(kept) < len(cited) and (kept or item.get("evidence")):
-            reasons += [f"fields: {path!r} is not a field of calculator.json; the citation "
-                        "is dropped" for path in cited if not field_cited(fields, path)]
-            item["fields"] = kept
+        return item, []
+    item = copy.deepcopy(item)
+    reasons = []
     for key in SENTENCE_KEYS:
         text = item.get(key)
         if not isinstance(text, str) or not text:
             continue
-        parts = sentences(text)
-        problems = [words_problem(part, fields, forbidden=forbidden, sources=sources)
-                    for part in parts]
-        if not any(problems) or all(problems):
+        result = kept_sentences(text, lambda part: words_problem(
+            part, fields, forbidden=forbidden, sources=sources))
+        if result is None:
             continue
-        item[key] = "".join(part for part, problem in zip(parts, problems)
-                            if not problem).rstrip()
-        reasons += [f"{key}: one sentence dropped: {problem}"
-                    for problem in problems if problem]
-    return reasons
-
+        item[key], problems = result
+        reasons += [f"{key}: one sentence left out: {problem}" for problem in problems]
+    return item, reasons
 
 
 def words_problem(text, fields: dict, *, forbidden: tuple[str, ...],
@@ -674,8 +687,11 @@ def _check_block(payload: dict, key: str, names, fields, sources, upstream, drop
                 block[name] = {"dropped": "the analyst wrote nothing for it"}
                 dropped.append({"where": f"{key}.{name}", "reason": "missing"})
             continue
-        for reason in trim_sentences(entry, fields, sources, forbidden=forbidden):
-            dropped.append({"where": f"{key}.{name}", "reason": reason})
+        cut, reasons = trimmed(entry, fields, sources, forbidden=forbidden)
+        if reasons and item_problem(cut, fields, sources, upstream, forbidden=forbidden,
+                                    filing=filing, fallen=fallen) is None:
+            block[name] = entry = cut
+            dropped.extend({"where": f"{key}.{name}", "reason": reason} for reason in reasons)
         problem = item_problem(entry, fields, sources, upstream, forbidden=forbidden,
                                filing=filing, fallen=fallen)
         if problem:
@@ -688,10 +704,13 @@ def _check_list(payload: dict, key: str, fields, sources, upstream, dropped, *, 
                 extra=None, filing=None, fallen=frozenset()) -> None:
     kept = []
     for position, item in enumerate(payload.get(key) or []):
-        for reason in trim_sentences(item, fields, sources, forbidden=forbidden):
-            dropped.append({"where": f"{key}[{position}]",
-                            "id": item.get("id") if isinstance(item, dict) else None,
-                            "reason": reason})
+        cut, reasons = trimmed(item, fields, sources, forbidden=forbidden)
+        if reasons and item_problem(cut, fields, sources, upstream, forbidden=forbidden,
+                                    filing=filing, fallen=fallen) is None \
+                and (extra is None or extra(cut) is None):
+            item = cut
+            dropped.extend({"where": f"{key}[{position}]", "id": item.get("id"),
+                            "reason": reason} for reason in reasons)
         problem = item_problem(item, fields, sources, upstream, forbidden=forbidden,
                                filing=filing, fallen=fallen)
         if problem is None and extra is not None:
@@ -712,14 +731,14 @@ def _check_summary(payload: dict, fields, dropped, *, forbidden) -> None:
         return
     for name, text in list(summary.items()):
         if isinstance(text, str) and text:
-            parts = sentences(text)
-            problems = [words_problem(part, fields, forbidden=forbidden) for part in parts]
-            if any(problems) and not all(problems):
-                summary[name] = text = "".join(
-                    part for part, problem in zip(parts, problems) if not problem).rstrip()
+            result = kept_sentences(
+                text, lambda part: words_problem(part, fields, forbidden=forbidden),
+                marker=LEFT_OUT_KO)
+            if result is not None:
+                summary[name] = text = result[0]
                 dropped += [{"where": f"summary_ko.{name}",
-                             "reason": f"one sentence dropped: {problem}"}
-                            for problem in problems if problem]
+                             "reason": f"one sentence left out: {problem}"}
+                            for problem in result[1]]
         problem = words_problem(text, fields, forbidden=forbidden)
         if problem:
             summary[name] = None
@@ -1208,8 +1227,12 @@ def check(kind: str, payload: dict, *, fields: dict, sources: dict[str, str],
                      dropped, forbidden=forbidden, fallen=fallen, required=True, filing=filing)
         for key in ("dupont", "path_to_distress"):
             entry = payload.get(key)
-            for reason in trim_sentences(entry, fields, sources, forbidden=forbidden):
-                dropped.append({"where": key, "reason": reason})
+            if entry is not None:
+                cut, reasons = trimmed(entry, fields, sources, forbidden=forbidden)
+                if reasons and item_problem(cut, fields, sources, upstream, forbidden=forbidden,
+                                            fallen=fallen, filing=filing) is None:
+                    payload[key] = entry = cut
+                    dropped.extend({"where": key, "reason": reason} for reason in reasons)
             problem = ("the analyst wrote nothing for it" if entry is None else
                        item_problem(entry, fields, sources, upstream, forbidden=forbidden, fallen=fallen,
                                     filing=filing))
@@ -1224,8 +1247,12 @@ def check(kind: str, payload: dict, *, fields: dict, sources: dict[str, str],
         payload.pop("readings", None)
         for key in VALUATION_KEYS:
             entry = payload.get(key)
-            for reason in trim_sentences(entry, fields, sources, forbidden=forbidden):
-                dropped.append({"where": key, "reason": reason})
+            if entry is not None:
+                cut, reasons = trimmed(entry, fields, sources, forbidden=forbidden)
+                if reasons and item_problem(cut, fields, sources, upstream, forbidden=forbidden,
+                                            fallen=fallen, filing=filing) is None:
+                    payload[key] = entry = cut
+                    dropped.extend({"where": key, "reason": reason} for reason in reasons)
             problem = ("the analyst wrote nothing for it" if entry is None else
                        item_problem(entry, fields, sources, upstream, forbidden=forbidden, fallen=fallen,
                                     filing=filing))
