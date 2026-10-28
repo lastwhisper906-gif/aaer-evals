@@ -1449,9 +1449,11 @@ def split_total(record: Record, current: str, noncurrent: str, total: str, dates
                 line: str) -> list[dict]:
     """A balance stated as a current and a noncurrent line, summed, at each date.
 
-    The noncurrent line is none where the company never states it. Where the
-    current line is not on record at a date, the total tag is read instead and
-    the cell says so; where neither is, the balance is missing.
+    Both lines tagged: their sum. Otherwise the total tag, where the record
+    carries it at the date -- Broadcom tags current contract assets and their
+    total and no noncurrent line, and the total is the larger. With neither, the
+    current line alone where the company never states a noncurrent one, which
+    is then none; and else the balance is missing.
     """
     now = like_for_like(record, current, dates)
     later = [_or_absent(cell) for cell in like_for_like(record, noncurrent, dates)]
@@ -1459,13 +1461,16 @@ def split_total(record: Record, current: str, noncurrent: str, total: str, dates
     out = []
     for position, date in enumerate(dates):
         here, there = now[position], later[position]
-        if "missing" not in here and "missing" not in there:
-            out.append({"value": here["value"] + there["value"], "unit": "USD", "period": date,
-                        "formula": "current + noncurrent",
-                        "parts": {"current": here, "noncurrent": there}})
+        summed = {"value": here.get("value", 0.0) + there.get("value", 0.0), "unit": "USD",
+                  "period": date, "formula": "current + noncurrent",
+                  "parts": {"current": here, "noncurrent": there}}
+        if "missing" not in here and "tag" in there:
+            out.append(summed)
         elif "missing" not in whole[position]:
             out.append(dict(whole[position], note=f"the record states no current and noncurrent "
                                                   f"{line} at {date}; its total line is read"))
+        elif "missing" not in here and "missing" not in there:
+            out.append(summed)
         else:
             out.append(_missing(f"{line} at {date}: {here.get('missing') or there.get('missing')}"))
     return out
