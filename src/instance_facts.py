@@ -34,10 +34,9 @@ import re
 import xml.etree.ElementTree as ET
 
 from src import cutoff_guard
-from src.edgar_client import EdgarClient, EdgarError
+from src.edgar_client import EdgarClient, EdgarError, archive_url  # noqa: F401 (archive_url is read through this module too)
 from src.extract_numbers import XBRLI, XSI, _context, _number, _qname, _unit
 
-ARCHIVES = "https://www.sec.gov/Archives/edgar/data/"
 # the hosts the standard taxonomies are published under: FASB (us-gaap, srt),
 # the SEC (dei, country, currency, exch, ecd and the rest), XBRL US (the us-gaap
 # and dei taxonomies of 2009 and 2010, `http://xbrl.us/us-gaap/2009-01-31`),
@@ -47,10 +46,6 @@ STANDARD = re.compile(r"https?://(?:[\w.-]*\.)?(?:fasb\.org|xbrl\.sec\.gov|xbrl\
                       r"xbrl\.org|xbrl\.ifrs\.org|w3\.org)/")
 # XML Schema's two spellings of true
 NIL = ("true", "1")
-
-
-def archive_url(cik, accession: str, name: str, base: str = ARCHIVES) -> str:
-    return f"{base}{int(cik)}/{accession.replace('-', '')}/{name}"
 
 
 def instance_name(primary_document: str) -> str:
@@ -118,7 +113,7 @@ def members(fact: dict) -> dict[str, str]:
 
 
 def fetch(client: EdgarClient, cik, filing: dict, name: str, *, cutoff,
-          expected_sha256: str | None = None, base: str = ARCHIVES) -> list[dict]:
+          expected_sha256: str | None = None) -> list[dict]:
     """One filing's instance, through the cache, as fact records.
 
     `filing` is the filing's submissions row (`src/submissions.py`), whose
@@ -131,6 +126,6 @@ def fetch(client: EdgarClient, cik, filing: dict, name: str, *, cutoff,
             f"{filing.get('accession')} was filed {filed.isoformat()}, after the cutoff "
             f"{limit.isoformat()}; nothing filed later enters the input")
     accession = filing["accession"]
-    path = client.document(archive_url(cik, accession, name, base), cik=str(int(cik)),
-                           accession=accession, name=name, expected_sha256=expected_sha256)
+    path = client.document(cik=str(int(cik)), accession=accession, name=name,
+                           expected_sha256=expected_sha256)
     return facts(path.read_bytes(), accession=accession)

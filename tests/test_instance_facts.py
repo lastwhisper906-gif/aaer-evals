@@ -43,18 +43,18 @@ def server():
         yield planted
 
 
-def client(tmp_path):
+def client(tmp_path, server):
     return EdgarClient(environ={"EDGAR_USER_AGENT": SAMPLE_CONTACT, "AAER_CACHE": str(tmp_path)},
-                       opener=DIRECT, sleep=lambda seconds: None)
+                       opener=DIRECT, sleep=lambda seconds: None, archives=server.url + "/")
 
 
 def read(tmp_path, server, ticker, *, cutoff=None, expected=True, fetcher=None):
     cik, row = FILINGS[ticker]
     filing = {"accession": row["accession"], "filing_date": row["filing_date"]}
     return instance_facts.fetch(
-        fetcher or client(tmp_path), cik, filing, row["path"].rsplit("/", 1)[1],
+        fetcher or client(tmp_path, server), cik, filing, row["path"].rsplit("/", 1)[1],
         cutoff=cutoff or row["filing_date"],
-        expected_sha256=row["sha256"] if expected else None, base=server.url + "/")
+        expected_sha256=row["sha256"] if expected else None)
 
 
 def test_the_archive_address_is_edgars():
@@ -136,7 +136,7 @@ def test_every_element_with_a_context_is_a_fact(tmp_path, server):
 
 
 def test_the_instance_is_fetched_once(tmp_path, server):
-    fetcher = client(tmp_path)
+    fetcher = client(tmp_path, server)
     first = read(tmp_path, server, "AAPL", fetcher=fetcher)
     second = read(tmp_path, server, "AAPL", fetcher=fetcher)
     assert first == second
