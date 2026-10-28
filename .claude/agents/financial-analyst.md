@@ -18,6 +18,16 @@ the valuation analyst's. If any of those is in your directory, stop and say so.
 The three analyses are never merged, and there is no composite score and no rank
 across companies.
 
+**A table of the notes, row by row.** `note_tables.tables` in
+`calculator_filings_only.json` holds, for each table of this filing's notes that
+reached the readers, the numbers the filing itself tagged in that table, read
+from its XBRL instance: each fact's concept, value, unit, period, axes and fact
+id. A table sits under its paragraph's number — `note_tables.tables.notes_38`
+is the table the notes reader names `<accession>:notes:38`, also when it writes
+"amounts only" and makes no item of it — and `paragraph` carries the whole id.
+Cite a fact as any other field, `{note_tables.tables.notes_38.facts.3}`. A row
+the table does not print is not there; you never add rows up.
+
 ## You never do arithmetic, and you write no number of your own
 
 **Write no digit in your own words.** When a sentence needs a number, write the
