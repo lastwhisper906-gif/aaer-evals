@@ -165,3 +165,42 @@ def test_a_run_with_no_bundle_or_no_document_of_its_filing_says_what_is_missing(
     missing = note_tables.from_run("ZZZZ", ACCESSION, "2026-07-31",
                                    fixtures_root=tmp_path / "store", bundle=run)
     assert "no inline document and instance" in missing["missing"]
+
+
+def planted_store(tmp_path: Path, inline: bytes) -> tuple[Path, Path]:
+    """A store holding the planted filing's two documents, and a bundle."""
+    store = tmp_path / "store"
+    (store / "ZZZZ" / "10-Q").mkdir(parents=True)
+    (store / "ZZZZ" / "10-Q" / "zzzz.htm").write_bytes(inline)
+    (store / "ZZZZ" / "10-Q" / "zzzz_htm.xml").write_bytes(INSTANCE)
+    documents = [{"form": "10-Q", "role": role, "accession": ACCESSION,
+                  "filing_date": "2026-07-30", "path": f"10-Q/{name}", "stored": "raw"}
+                 for role, name in (("primary_html", "zzzz.htm"),
+                                    ("xbrl_instance", "zzzz_htm.xml"))]
+    (store / "ZZZZ" / "manifest.json").write_text(json.dumps(
+        {"ticker": "ZZZZ", "cik": "0000000000", "as_of": "2026-07-30",
+         "documents": documents}), encoding="utf-8")
+    run = tmp_path / "run"
+    run.mkdir()
+    (run / "input_notes.md").write_text(
+        "".join(f"[{paragraph}]\n{text}\n\n" for paragraph, text in PARAGRAPHS),
+        encoding="utf-8")
+    return store, run
+
+
+def test_a_run_reads_its_filing_through_the_gate(tmp_path):
+    store, run = planted_store(tmp_path, INLINE)
+    found = note_tables.from_run("ZZZZ", ACCESSION, "2026-07-31", fixtures_root=store,
+                                 bundle=run)
+    assert sorted(found["tables"]) == ["notes_2", "notes_3", "notes_4"]
+    # a cutoff before the filing's date is refused by the gate, not read around
+    refused = note_tables.from_run("ZZZZ", ACCESSION, "2026-07-29", fixtures_root=store,
+                                   bundle=run)
+    assert "tables" not in refused and "2026-07-30" in refused["missing"]
+
+
+def test_an_inline_document_that_is_not_xml_is_named_not_raised(tmp_path):
+    store, run = planted_store(tmp_path, INLINE.replace(b"</body>", b"<br></body>"))
+    found = note_tables.from_run("ZZZZ", ACCESSION, "2026-07-31", fixtures_root=store,
+                                 bundle=run)
+    assert "not well-formed XML" in found["missing"]

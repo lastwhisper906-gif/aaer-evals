@@ -1240,35 +1240,46 @@ def test_a_prose_file_that_is_not_utf8_is_refused_and_not_replaced(tmp_path):
 NOTE_TABLE_RUNS = {
     # Apple's intangible assets, in millions. The non-current line is the
     # release's "Intangible assets, net" of 20,342 and 11,093, an Apple
-    # extension the numbers reader's input does not carry.
+    # extension the numbers reader's input does not carry. Instants, so no start.
+    # Each row: fact id, concept, start, end or instant, value.
     "AAPL": ("runs/AAPL/0000320193-26-000020-rerun-2026-10-28",
              "0000320193-26-000020:notes:38", [
-                 ("us-gaap:IntangibleAssetsGrossExcludingGoodwill", "2026-06-27", 38_220e6),
-                 ("us-gaap:IntangibleAssetsGrossExcludingGoodwill", "2025-09-27", 24_950e6),
-                 ("us-gaap:FiniteLivedIntangibleAssetsAccumulatedAmortization", "2026-06-27",
-                  12_803e6),
-                 ("aapl:IntangibleAssetsNetExcludingGoodwillNoncurrent", "2026-06-27", 20_342e6),
-                 ("aapl:IntangibleAssetsNetExcludingGoodwillNoncurrent", "2025-09-27", 11_093e6),
+                 ("f-656", "us-gaap:IntangibleAssetsGrossExcludingGoodwill", None, "2026-06-27",
+                  38_220e6),
+                 ("f-657", "us-gaap:IntangibleAssetsGrossExcludingGoodwill", None, "2025-09-27",
+                  24_950e6),
+                 ("f-658", "us-gaap:FiniteLivedIntangibleAssetsAccumulatedAmortization", None,
+                  "2026-06-27", 12_803e6),
+                 ("f-664", "aapl:IntangibleAssetsNetExcludingGoodwillNoncurrent", None,
+                  "2026-06-27", 20_342e6),
+                 ("f-665", "aapl:IntangibleAssetsNetExcludingGoodwillNoncurrent", None,
+                  "2025-09-27", 11_093e6),
              ]),
     # Ciena's share-based compensation capitalized in inventory, in thousands:
-    # "—" this quarter, "(64)" in the quarter ended May 3, 2025.
+    # "—" this quarter and "(64)" in the quarter ended May 3, 2025. The quarter's
+    # first day is the instance's: contexts c-11 (2026-02-01 to 2026-05-02) and
+    # c-12 (2025-02-02 to 2025-05-03); the six months to 2026-05-02 (c-1, f-1160)
+    # also print "—", so the start is what tells the quarter's cell apart.
     "CIEN": ("runs/CIEN/0001628280-26-040767-rerun-2026-10-28",
              "0001628280-26-040767:notes:132", [
-                 ("us-gaap:EmployeeServiceShareBasedCompensationAllocationOfRecognizedPeriod"
-                  "CostsCapitalizedAmount", "2025-05-03", -64e3),
-                 ("us-gaap:EmployeeServiceShareBasedCompensationAllocationOfRecognizedPeriod"
-                  "CostsCapitalizedAmount", "2026-05-02", 0.0),
+                 ("f-1158", "us-gaap:EmployeeServiceShareBasedCompensationAllocationOfRecognized"
+                  "PeriodCostsCapitalizedAmount", "2026-02-01", "2026-05-02", 0.0),
+                 ("f-1159", "us-gaap:EmployeeServiceShareBasedCompensationAllocationOfRecognized"
+                  "PeriodCostsCapitalizedAmount", "2025-02-02", "2025-05-03", -64e3),
+                 ("f-1160", "us-gaap:EmployeeServiceShareBasedCompensationAllocationOfRecognized"
+                  "PeriodCostsCapitalizedAmount", "2025-11-02", "2026-05-02", 0.0),
              ]),
     # Littelfuse's Basler acquisition, in thousands: receivables 14,739,
-    # inventories 20,703, current liabilities (15,380).
+    # inventories 20,703, current liabilities (15,380), tagged f-516, f-517 and
+    # f-523 at context c-178 in the instance (stored gzipped).
     "LFUS": ("runs/LFUS/0001628280-26-050481-rerun-2026-10-28",
              "0001628280-26-050481:notes:37", [
-                 ("us-gaap:BusinessCombinationRecognizedIdentifiableAssetsAcquiredAndLiabilities"
-                  "AssumedCurrentAssetsReceivables", "2025-12-11", 14_739e3),
-                 ("us-gaap:BusinessCombinationRecognizedIdentifiableAssetsAcquiredAndLiabilities"
-                  "AssumedInventory", "2025-12-11", 20_703e3),
-                 ("us-gaap:BusinessCombinationRecognizedIdentifiableAssetsAcquiredAndLiabilities"
-                  "AssumedCurrentLiabilities", "2025-12-11", 15_380e3),
+                 ("f-516", "us-gaap:BusinessCombinationRecognizedIdentifiableAssetsAcquiredAnd"
+                  "LiabilitiesAssumedCurrentAssetsReceivables", None, "2025-12-11", 14_739e3),
+                 ("f-517", "us-gaap:BusinessCombinationRecognizedIdentifiableAssetsAcquiredAnd"
+                  "LiabilitiesAssumedInventory", None, "2025-12-11", 20_703e3),
+                 ("f-523", "us-gaap:BusinessCombinationRecognizedIdentifiableAssetsAcquiredAnd"
+                  "LiabilitiesAssumedCurrentLiabilities", None, "2025-12-11", 15_380e3),
              ]),
 }
 REPO = Path(__file__).resolve().parent.parent
@@ -1307,8 +1318,9 @@ def test_the_rows_of_a_note_table_reach_the_accounting_analyst(tmp_path, ticker)
     held = json.loads((seen / "calculator_filings_only.json").read_text(encoding="utf-8"))
     table = held["note_tables"]["tables"]["notes_" + paragraph.rsplit(":", 1)[1]]
     assert table["paragraph"] == paragraph
-    got = {(fact["concept"], fact.get("instant") or fact.get("end"), fact["value"])
-           for fact in table["facts"]}
+    accession = paragraph.split(":")[0]
+    got = {(fact["fact"].removeprefix(accession + ":"), fact["concept"], fact.get("start"),
+            fact.get("instant") or fact.get("end"), fact["value"]) for fact in table["facts"]}
     for row in rows:
         assert row in got, row
     # every fact of the table is the filing's own, named by its accession
@@ -1336,3 +1348,23 @@ def test_a_note_table_fact_is_cited_by_its_path_and_read_as_a_number(tmp_path):
     # written in braces in a sentence, as the analyst writes it
     assert analysis_check.PLACEHOLDER.fullmatch("{" + path + "}")
     assert analysis_check.placeholder_value(held, path) == 20_342e6
+
+
+def test_a_run_whose_note_tables_cannot_be_read_says_so_where_the_run_is_checked(tmp_path):
+    """No `input_notes.md` in the bundle: the reason is in the section and in the
+    file's own `missing` list, which the analyst's view keeps."""
+    from src import calculator
+
+    committed = REPO / NOTE_TABLE_RUNS["AAPL"][0]
+    run = tmp_path / "runs" / "AAPL" / committed.name
+    run.mkdir(parents=True)
+    (run / "input_numbers.json").write_bytes((committed / "input_numbers.json").read_bytes())
+    old = json.loads((committed / "calculator_filings_only.json").read_text(encoding="utf-8"))
+    payload = calculator.calculate(ticker="AAPL", cutoff=old["cutoff"],
+                                   period_end=old["period_end"], form="10-Q",
+                                   accession=old["accession"],
+                                   fixtures_root=REPO / "tests" / "fixtures", bundle=run)
+    assert "input_notes.md is not in the bundle" in payload["note_tables"]["missing"]
+    line = next(line for line in payload["missing"] if line.startswith("note_tables: "))
+    assert "input_notes.md" in line
+    assert line in calculator.filings_only(payload)["missing"]

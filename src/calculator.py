@@ -2307,6 +2307,10 @@ def calculate(*, ticker: str, cutoff, period_end: str, form: str, accession: str
         missing.append(f"wacc: {capital.get('missing')}")
     if "missing" in value:
         missing.append(f"valuation: {value['missing']}")
+    tables = note_tables.from_run(ticker, accession, cutoff, fixtures_root=fixtures_root,
+                                  bundle=bundle)
+    if "missing" in tables:
+        missing.append(f"note_tables: {tables['missing']}")
 
     return {
         "ticker": ticker, "accession": accession, "form": form,
@@ -2327,8 +2331,7 @@ def calculate(*, ticker: str, cutoff, period_end: str, form: str, accession: str
         "earnings_versus_cash": earnings,
         "free_cash_flow": free,
         "concentration": concentration(bundle),
-        "note_tables": note_tables.from_run(ticker, accession, cutoff,
-                                            fixtures_root=fixtures_root, bundle=bundle),
+        "note_tables": tables,
         "trend_table": trend_values(document, cutoff, period_end),
         "trend_table_note": ("computed on the same record as every figure above, which for "
                              "an accession listed under "
