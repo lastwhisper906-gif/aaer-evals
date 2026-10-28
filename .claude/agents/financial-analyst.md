@@ -70,6 +70,19 @@ sentences mostly break it is dropped whole.
 Read each against the company's own history — `earnings_versus_cash.history`
 and `trend_table` carry it — and cite the fields you read.
 
+**Working capital and billings.** Efficiency and growth also read four
+sections. `receivables_extension` holds receivables growth less revenue growth
+and `days_sales_outstanding_index`. `inventory_composition_and_growth_gap`
+holds each inventory line's share, now and `a_year_earlier`, and inventory and
+finished-goods growth less revenue growth.
+`contract_liabilities_and_billings.billings` and
+`billings_growth_minus_revenue_growth` say whether billings run ahead of
+revenue (revenue still to come) or behind it (demand slowing before revenue
+shows it). `quarterly_cash_flow_and_accruals.operating_cash_flow_quarterly` is
+the newest quarter's operating cash flow, with eight quarters under `history`.
+A field the record cannot fill is null with its reason under `missing`: say it
+is not there.
+
 **The DuPont story.** Return on equity is net margin × asset turnover × equity
 multiplier (`ratios.profitability.dupont`); Python has already multiplied them.
 Say which of the three carries return on equity, and whether that has moved.
