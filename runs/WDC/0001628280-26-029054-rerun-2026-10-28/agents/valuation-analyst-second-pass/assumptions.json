@@ -1,0 +1,250 @@
+{
+ "scenarios": {
+  "bear": {
+   "revenue_growth_year_one": 0.03,
+   "terminal_growth": 0.02,
+   "operating_margin_year_one": 0.26,
+   "operating_margin_year_ten": 0.12,
+   "reinvestment_rate_year_one": 0.2,
+   "reinvestment_rate_year_ten": 0.25,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "The bear reading is that the pricing environment the company credits for its growth reverses within the year and its largest data-center customers pause after a heavy build, so revenue over the next four quarters ends little above the trailing total of {terms.trailing_four_quarters.revenue}. That requires the coming quarters to run below the latest quarter's {ratios.growth.revenue.this_quarter}, which is what a digestion period looks like in a business where the top ten customers took {concentration.facts.27.value|pct} of the quarter's revenue.",
+     "quote": "Growth is strong now, but it rests on market pricing and a short customer list, not on contracted backlog, and no contract-liability balance is on record to show any backlog.",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "terms.trailing_four_quarters.revenue",
+      "ratios.growth.revenue.this_quarter",
+      "concentration.facts.27.value",
+      "ratios.growth.revenue.trailing_four_quarters",
+      "earnings_versus_cash.history.years.0.revenue_growth",
+      "earnings_versus_cash.history.years.1.revenue_growth",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound"
+     ],
+     "history": "Far below the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct} and fiscal 2025's {earnings_versus_cash.history.years.0.revenue_growth|pct}, and close to fiscal 2024, when the recast drive business grew {earnings_versus_cash.history.years.1.revenue_growth|pct} in the trough. The three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} is no guide: it compares the combined company before the Sandisk separation with the business that remains."
+    },
+    "terminal_growth": {
+     "reason": "In the bear case the business settles into a mature hardware market where falling cost per unit of storage passes to customers as lower prices, so revenue grows a little below nominal economic growth. It sits well under the risk-free rate of {cost_of_capital.risk_free_rate|pct}.",
+     "quote": "The company's own history shows how fast this business can turn.",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.years.1.revenue_growth",
+      "earnings_versus_cash.history.revenue_growth_five_year_compound"
+     ],
+     "history": "Near the recast trough-year growth of fiscal 2024, {earnings_versus_cash.history.years.1.revenue_growth|pct}, and above the negative five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, which reflects the separation rather than the drive business."
+    },
+    "operating_margin_year_one": {
+     "reason": "Pricing eases, hedge losses held in other comprehensive income reach cost of revenue, and compensation tied to this year's results stays in the cost base, so the margin falls back from the trailing {ratios.profitability.operating_margin|pct} toward fiscal 2025's level.",
+     "quote": "a cost that will reach cost of revenue",
+     "quote_from": "analysis_accounting.json",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "earnings_versus_cash.history.years.0.operating_margin",
+      "trend_table.quarters-back-0.ratios.gross_margin"
+     ],
+     "history": "Below the trailing operating margin of {ratios.profitability.operating_margin|pct} and slightly above fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}. The latest quarter's gross margin of {trend_table.quarters-back-0.ratios.gross_margin|pct} is the highest of the filled quarters, and the bear case assumes that peak has passed."
+    },
+    "operating_margin_year_ten": {
+     "reason": "The bear case returns the business to old-cycle storage economics, with capacity added across the industry and prices falling with cost, so the through-cycle margin ends near what the combined company earned before the separation and far below today's.",
+     "quote": "the pricing environment MD&A credits would have to reverse",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "earnings_versus_cash.history.years.3.operating_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "earnings_versus_cash.history.years.2.operating_margin",
+      "earnings_versus_cash.history.years.1.operating_margin"
+     ],
+     "history": "Near fiscal 2022's {earnings_versus_cash.history.years.3.operating_margin|pct}, earned by the company before the Sandisk separation, and above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}, which holds the loss years of fiscal 2023 at {earnings_versus_cash.history.years.2.operating_margin|pct} and fiscal 2024 at {earnings_versus_cash.history.years.1.operating_margin|pct}. The bear case takes a through-cycle average, not a permanent repeat of those losses."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "In the bear case the company keeps capital spending inside its guided share of revenue while operating income shrinks, and receivables concentrated in a few customers tie up working capital, so a larger share of a smaller after-tax operating income goes back into the business.",
+     "quote": "We expect our capital expenditures generally to be approximately 4% to 6% of our net revenue.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters.depreciation_and_amortization",
+      "terms.trailing_four_quarters.revenue",
+      "concentration.facts.35.value"
+     ],
+     "history": "Above the recent record: trailing capital expenditure of {terms.trailing_four_quarters.capital_expenditure} barely exceeds depreciation of {terms.trailing_four_quarters.depreciation_and_amortization} on revenue of {terms.trailing_four_quarters.revenue}, below the low end of the guided share, so the business has recently reinvested little. One customer holds {concentration.facts.35.value|pct} of receivables."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "In a mature, competitive market new capital earns little above its cost, so sustaining even the low bear terminal growth takes a large share of after-tax operating income.",
+     "quote": "",
+     "quote_from": "",
+     "fields": [
+      "ratios.profitability.return_on_invested_capital"
+     ],
+     "history": "Today's return on invested capital of {ratios.profitability.return_on_invested_capital|pct} lets the business grow on a small reinvestment share; the bear case assumes returns on new capital fall toward the cost of capital, as they did when the company lost money in fiscal 2023 and fiscal 2024."
+    }
+   }
+  },
+  "base": {
+   "revenue_growth_year_one": 0.2,
+   "terminal_growth": 0.03,
+   "operating_margin_year_one": 0.34,
+   "operating_margin_year_ten": 0.22,
+   "reinvestment_rate_year_one": 0.15,
+   "reinvestment_rate_year_ten": 0.2,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "Demand across every end market is the stated driver, and the latest quarter's revenue of {ratios.growth.revenue.this_quarter} already runs above a quarter of the trailing total of {terms.trailing_four_quarters.revenue}. The base case holds next-year growth well below the latest quarter's year-over-year {ratios.growth.revenue.year_over_year|pct}, because part of that came from price, which is a market condition and not a contract.",
+     "quote": "both of which were driven by strong demand across all of our end markets",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.growth.revenue.this_quarter",
+      "terms.trailing_four_quarters.revenue",
+      "ratios.growth.revenue.year_over_year",
+      "ratios.growth.revenue.quarter_over_quarter",
+      "ratios.growth.revenue.trailing_four_quarters",
+      "earnings_versus_cash.history.years.0.revenue_growth",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound"
+     ],
+     "history": "Below the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct} and fiscal 2025's {earnings_versus_cash.history.years.0.revenue_growth|pct}, because the base case expects sequential growth, {ratios.growth.revenue.quarter_over_quarter|pct} in the latest quarter, to slow as prices stop rising. It sits far above the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, which measures the Sandisk separation, not the drive business."
+    },
+    "terminal_growth": {
+     "reason": "Data stored keeps growing faster than the economy, but cost and price per unit of storage fall over time, so long-run revenue growth in the base case is close to nominal economic growth and below the risk-free rate of {cost_of_capital.risk_free_rate|pct}.",
+     "quote": "as customers are ramping up data center capacity in these regions",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.years.0.revenue_growth",
+      "earnings_versus_cash.history.years.1.revenue_growth"
+     ],
+     "history": "Between the two recast years on record: below fiscal 2025's {earnings_versus_cash.history.years.0.revenue_growth|pct} and above the trough-year growth of fiscal 2024, {earnings_versus_cash.history.years.1.revenue_growth|pct}. The multi-year compounds are distorted by the separation and do not bear on the terminal rate."
+    },
+    "operating_margin_year_one": {
+     "reason": "The latest quarter's operating income of {ratios.growth.operating_income.this_quarter} on revenue of {ratios.growth.revenue.this_quarter} runs above the trailing margin of {ratios.profitability.operating_margin|pct}, on a gross margin of {trend_table.quarters-back-0.ratios.gross_margin|pct} that the company credits to cost and price. The base case keeps most of that level for the next year, trimmed for hedge losses due to reach cost of revenue and for higher pay and development spending.",
+     "quote": "Gross margin increased by 10 percentage points year over year, primarily due to a lower cost structure on our newer generation products and improved pricing.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.growth.operating_income.this_quarter",
+      "ratios.growth.revenue.this_quarter",
+      "ratios.profitability.operating_margin",
+      "trend_table.quarters-back-0.ratios.gross_margin",
+      "trend_table.quarters-back-4.ratios.gross_margin",
+      "earnings_versus_cash.history.years.0.operating_margin"
+     ],
+     "history": "Above the trailing {ratios.profitability.operating_margin|pct} and above fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}, the highest full year on record, because the latest quarter already runs above both; quarterly gross margin rose from {trend_table.quarters-back-4.ratios.gross_margin|pct} a year earlier."
+    },
+    "operating_margin_year_ten": {
+     "reason": "The base case expects margins to settle below today's peak as pricing normalises across a cycle, but above the old-cycle level, because newer-generation products carry a lower cost structure and demand rests on data-center capacity. Python taxes operating income at the trailing effective rate of {tax_rate|pct}, which the accounting reader finds rests on items that will end, so the terminal margin is set below fiscal 2025's and the terminal year does not stack a peak margin on a low tax rate.",
+     "quote": "The tax-free gain stops once the remaining shares are exchanged and windfall benefits move with the share price, so the low rate is not a stable base",
+     "quote_from": "analysis_accounting.json",
+     "fields": [
+      "tax_rate",
+      "ratios.profitability.operating_margin",
+      "earnings_versus_cash.history.years.0.operating_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "earnings_versus_cash.history.years.3.operating_margin"
+     ],
+     "history": "Below fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct} and the trailing {ratios.profitability.operating_margin|pct}; far above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}, which includes two loss years, and above fiscal 2022's {earnings_versus_cash.history.years.3.operating_margin|pct} for the combined company before the separation."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "Growing revenue in the base case needs more receivables and inventory, and capital spending inside the company's guided share of revenue, above what it has recently spent; against a large after-tax operating income that is still a modest share.",
+     "quote": "We expect our capital expenditures generally to be approximately 4% to 6% of our net revenue.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters_a_year_earlier.capital_expenditure",
+      "terms.trailing_four_quarters.depreciation_and_amortization",
+      "terms.trailing_four_quarters.revenue",
+      "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now"
+     ],
+     "history": "Above the recent record: trailing capital expenditure of {terms.trailing_four_quarters.capital_expenditure} is below the {terms.trailing_four_quarters_a_year_earlier.capital_expenditure} of a year earlier and barely above depreciation of {terms.trailing_four_quarters.depreciation_and_amortization}, even as revenue rose. Trade working capital stands at {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now} and grows with revenue."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "At the base terminal growth, competition pulls returns on new capital down from today's level toward a moderate premium over the cost of capital, so the share reinvested rises over the decade.",
+     "quote": "Even that figure is flattered, because the low tax rate inside it rests partly on the tax-free Sandisk gain and on share-price windfalls.",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "ratios.profitability.return_on_invested_capital",
+      "tax_rate"
+     ],
+     "history": "Above the recent record, where a return on invested capital of {ratios.profitability.return_on_invested_capital|pct} let the company grow on little reinvestment; that return is flattered by the trailing tax rate of {tax_rate|pct} and earned at a cyclical peak, so the base case does not carry it to year ten."
+    }
+   }
+  },
+  "bull": {
+   "revenue_growth_year_one": 0.28,
+   "terminal_growth": 0.035,
+   "operating_margin_year_one": 0.38,
+   "operating_margin_year_ten": 0.3,
+   "reinvestment_rate_year_one": 0.15,
+   "reinvestment_rate_year_ten": 0.12,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "The bull case holds that demand for high-capacity drives from data-center build-outs and firm pricing carry on through the next year, so sequential growth continues for several more quarters, though below the latest quarter's {ratios.growth.revenue.quarter_over_quarter|pct}.",
+     "quote": "The increase in exabytes sold was driven by strong demand for our high-capacity enterprise products.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.growth.revenue.quarter_over_quarter",
+      "ratios.growth.revenue.year_over_year",
+      "ratios.growth.revenue.trailing_four_quarters",
+      "earnings_versus_cash.history.years.0.revenue_growth"
+     ],
+     "history": "Below the latest quarter's year-over-year {ratios.growth.revenue.year_over_year|pct} and fiscal 2025's {earnings_versus_cash.history.years.0.revenue_growth|pct}, and a little below the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct}; even the bull case assumes some slowing from the current pace."
+    },
+    "terminal_growth": {
+     "reason": "In the bull case data-center storage demand keeps growing faster than the economy for longer and pricing holds, so long-run growth sits a little above the base case, still below the risk-free rate of {cost_of_capital.risk_free_rate|pct}.",
+     "quote": "due to an improved pricing environment",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.years.0.revenue_growth",
+      "earnings_versus_cash.history.years.1.revenue_growth"
+     ],
+     "history": "Above the recast trough year of fiscal 2024, {earnings_versus_cash.history.years.1.revenue_growth|pct}, and far below fiscal 2025's {earnings_versus_cash.history.years.0.revenue_growth|pct}; a terminal rate must sit below the risk-free rate whatever the recent record."
+    },
+    "operating_margin_year_one": {
+     "reason": "Gross margin has risen in each recent filled quarter to {trend_table.quarters-back-0.ratios.gross_margin|pct}, and operating income grew {ratios.growth.operating_income.quarter_over_quarter|pct} on the prior quarter against revenue growth of {ratios.growth.revenue.quarter_over_quarter|pct}; the bull case lets that operating leverage carry the next year above the latest quarter's level.",
+     "quote": "Verdict: operating profitability is strong and at the top of the company's own history, and headline net profitability overstates it.",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "trend_table.quarters-back-0.ratios.gross_margin",
+      "ratios.growth.operating_income.quarter_over_quarter",
+      "ratios.growth.revenue.quarter_over_quarter",
+      "ratios.profitability.operating_margin",
+      "earnings_versus_cash.history.years.0.operating_margin"
+     ],
+     "history": "Above every annual margin on record and above the trailing {ratios.profitability.operating_margin|pct} and fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}; the bull case assumes the peak is still ahead."
+    },
+    "operating_margin_year_ten": {
+     "reason": "The bull case treats the current margin as largely structural: newer-generation products with a lower cost structure and data-center demand keep the through-cycle margin near the trailing level rather than the old cycle's.",
+     "quote": "a lower cost structure on our newer generation products and improved pricing",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "earnings_versus_cash.history.years.0.operating_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average"
+     ],
+     "history": "Near the trailing {ratios.profitability.operating_margin|pct} and above fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}; it assumes the loss years behind the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct} do not recur at that depth."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "Faster growth needs more working capital and capital spending in dollars, but on a higher after-tax operating income the share stays near the base case.",
+     "quote": "We expect our capital expenditures generally to be approximately 4% to 6% of our net revenue.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters.revenue",
+      "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now"
+     ],
+     "history": "Above the recent record, in which capital expenditure of {terms.trailing_four_quarters.capital_expenditure} on revenue of {terms.trailing_four_quarters.revenue} sat below the low end of the guided share; the bull case spends inside the guided range to meet demand, and trade working capital of {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now} grows with revenue."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "In the bull case returns on new capital stay high, so the modest terminal growth takes only a small share of after-tax operating income.",
+     "quote": "",
+     "quote_from": "",
+     "fields": [
+      "ratios.profitability.return_on_invested_capital"
+     ],
+     "history": "Closer to the recent record than the base case: a return on invested capital of {ratios.profitability.return_on_invested_capital|pct} has let the company grow while reinvesting little, and the bull case assumes much of that return persists."
+    }
+   }
+  }
+ },
+ "wacc_overrides": {},
+ "dropped_items": [],
+ "dropped_count": 0
+}

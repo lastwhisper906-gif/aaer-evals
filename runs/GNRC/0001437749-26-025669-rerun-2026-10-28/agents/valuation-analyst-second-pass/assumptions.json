@@ -1,0 +1,260 @@
+{
+ "scenarios": {
+  "bear": {
+   "revenue_growth_year_one": 0.03,
+   "terminal_growth": 0.02,
+   "operating_margin_year_one": 0.08,
+   "operating_margin_year_ten": 0.085,
+   "reinvestment_rate_year_one": 0.5,
+   "reinvestment_rate_year_ten": 0.28,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "Residential keeps shrinking as energy storage and portable generator shipments fall and the solar and storage market stays weak after the OBBBA. Data center orders slip or are cancelled under the rights the risk factors name, and the domestic industrial distributor channel keeps contracting, so the little growth left comes mostly from the acquisitions closed in fiscal 2026.",
+     "quote": "This modest sales decrease was primarily driven by lower energy storage system and portable generator shipments compared to the prior year",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.growth.revenue.trailing_four_quarters",
+      "ratios.growth.revenue.year_over_year",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.years.2.revenue_growth",
+      "earnings_versus_cash.history.years.0.revenue_growth"
+     ],
+     "history": "Bear growth sits above the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct} and the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, and well below the second quarter's year-over-year growth of {ratios.growth.revenue.year_over_year|pct}. The record shows a stall is possible: revenue growth was {earnings_versus_cash.history.years.2.revenue_growth|pct} in fiscal 2023 and {earnings_versus_cash.history.years.0.revenue_growth|pct} in fiscal 2025."
+    },
+    "terminal_growth": {
+     "reason": "A business whose residential demand depends on tax credits, housing and outage frequency, and whose newest growth market rests on a few hyperscale customers, settles below nominal economic growth once the data center build-out ends. The rate stays below the risk-free rate of {cost_of_capital.risk_free_rate|pct}.",
+     "quote": "accelerated the phase out of certain investment tax credits, resulting in a negative impact to the residential solar & storage market thereafter",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.revenue_growth_five_year_compound"
+     ],
+     "history": "Above the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and well below the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, which carries the pandemic surge."
+    },
+    "operating_margin_year_one": {
+     "reason": "The tariff refund does not recur, mix and input costs keep pressing gross margin as MD&A says they did beneath the refund, the operating expense added for C&I growth runs ahead of sales that do not arrive, and legal costs of the kind that hit fiscal 2025 continue, with the EPA matter and the Oakland County appeal still open.",
+     "quote": "Net income, adjusted net income, and adjusted EBITDA all include a pre-tax impact of approximately $71 million related to tariff refunds",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "earnings_versus_cash.history.years.0.operating_margin",
+      "trend_table.quarters-back-1.ratios.gross_margin",
+      "trend_table.quarters-back-0.ratios.gross_margin"
+     ],
+     "history": "Below the trailing operating margin of {ratios.profitability.operating_margin|pct} and the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}, above the fiscal 2025 margin of {earnings_versus_cash.history.years.0.operating_margin|pct}. The first quarter's gross margin of {trend_table.quarters-back-1.ratios.gross_margin|pct}, with no refund in it, was the second lowest of the filled quarters."
+    },
+    "operating_margin_year_ten": {
+     "reason": "Contract terms in data center supply, including cancellation rights, delivery requirements and liability exposure, and competition for large megawatt generators cap the margin on the growing C&I share, while Residential storage stays weak and legal charges keep recurring; the margin settles below the company's recent average.",
+     "quote": "increase in contract risk related to terms with certain data center customers, including cancellation rights, delivery requirements, and potential liability exposure",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "earnings_versus_cash.history.years.0.operating_margin",
+      "earnings_versus_cash.history.years.1.operating_margin",
+      "earnings_versus_cash.history.years.4.operating_margin"
+     ],
+     "history": "Below the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct} and the fiscal 2024 margin of {earnings_versus_cash.history.years.1.operating_margin|pct}, above the fiscal 2025 margin of {earnings_versus_cash.history.years.0.operating_margin|pct}, and far below the fiscal 2021 margin of {earnings_versus_cash.history.years.4.operating_margin|pct}."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "Reinvestment counts capital expenditure above depreciation, working capital and acquisition spending. The capacity build, the earnouts falling due within a year and the pending New Way purchase are already committed, so reinvestment stays high even though growth stalls, and in this case the cash put into data center capacity earns little.",
+     "quote": "Together they are a large claim on simple free cash flow",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters.depreciation_and_amortization",
+      "terms.cash_flow_families.acquisitions",
+      "free_cash_flow.free_cash_flow_simple"
+     ],
+     "history": "Well above the trailing organic pace, in which capital expenditure of {terms.trailing_four_quarters.capital_expenditure} ran below depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization}, because acquisition spending of {terms.cash_flow_families.acquisitions} and the announced capacity programme are counted. It sits below the base rate only because slower sales need less new working capital."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "At the bear terminal growth this rate implies a return on new capital below the trailing return on invested capital of {ratios.profitability.return_on_invested_capital|pct}: inventory-heavy growth and capacity built for orders that do not convert keep absorbing cash.",
+     "quote": "our ability to accurately forecast demand for our products and effectively manage inventory levels relative to such forecast",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.profitability.return_on_invested_capital",
+      "trend_table.years-back-0.ratios.days_sales_of_inventory",
+      "earnings_versus_cash.history.years.3.free_cash_flow_simple"
+     ],
+     "history": "Above the base case's year-ten rate. Days sales of inventory of {trend_table.years-back-0.ratios.days_sales_of_inventory} in fiscal 2025 were the highest of the filled years, and fiscal 2022 shows inventory building fast enough to turn simple free cash flow to {earnings_versus_cash.history.years.3.free_cash_flow_simple}."
+    }
+   }
+  },
+  "base": {
+   "revenue_growth_year_one": 0.11,
+   "terminal_growth": 0.03,
+   "operating_margin_year_one": 0.11,
+   "operating_margin_year_ten": 0.12,
+   "reinvestment_rate_year_one": 0.6,
+   "reinvestment_rate_year_ten": 0.25,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "Year one runs from the trailing four quarters into the first half of calendar 2027. The company held its full-year sales guidance on data center demand, with C&I carrying the growth while Residential sales fell in the quarter. I take growth below the guided pace because the guidance needs a second-half Residential turn the filings do not yet show, remaining performance obligations fell at both quarter-ends, and part of the guided growth comes from acquisitions, currency and divestitures rather than the existing business.",
+     "quote": "Total net sales growth is still expected to be in the mid-to-high teens percent range as compared to the prior year",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.growth.revenue.trailing_four_quarters",
+      "ratios.growth.revenue.year_over_year",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.revenue_growth_five_year_compound"
+     ],
+     "history": "Base growth sits above the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct} and the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, close to the second quarter's year-over-year growth of {ratios.growth.revenue.year_over_year|pct}, and near the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}. It assumes the data center ramp that lifted the latest quarter persists, but not that the guided acceleration arrives in full."
+    },
+    "terminal_growth": {
+     "reason": "A generator maker tied to the residential investment cycle and to outage frequency settles at roughly nominal economic growth once the data center build-out matures. The rate is below the risk-free rate of {cost_of_capital.risk_free_rate|pct}, as the calculator requires.",
+     "quote": "The market for our residential products is affected by the residential investment cycle and overall consumer confidence and sentiment",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.revenue_growth_five_year_compound",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.years.4.revenue_growth",
+      "earnings_versus_cash.history.years.3.revenue_growth"
+     ],
+     "history": "Below the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, which carries the surge of fiscal 2021 ({earnings_versus_cash.history.years.4.revenue_growth|pct}) and fiscal 2022 ({earnings_versus_cash.history.years.3.revenue_growth|pct}), and above the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, which covers the contraction after it."
+    },
+    "operating_margin_year_one": {
+     "reason": "The trailing operating margin of {ratios.profitability.operating_margin|pct} is pulled down by the portable-generator product-liability charge in the fourth quarter of fiscal 2025 and lifted by the second-quarter tariff refund and the Ollnova reserve reduction; neither is a run-rate. The full-year net income margin guidance given before the refund already stood above the trailing net margin of {ratios.profitability.net_margin|pct}. But MD&A says mix and input costs ran against price beneath the refund, and the company is adding operating expense and intangible amortization for C&I growth, so year one is set above the trailing margin and below what that earlier guidance implied.",
+     "quote": "Additionally, unfavorable sales mix and higher input costs were partially offset by favorable price realization",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "ratios.profitability.net_margin",
+      "earnings_versus_cash.history.years.0.operating_margin",
+      "earnings_versus_cash.history.years.1.operating_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "trend_table.quarters-back-0.ratios.gross_margin",
+      "trend_table.quarters-back-1.ratios.gross_margin"
+     ],
+     "history": "Above the trailing margin, the fiscal 2025 margin of {earnings_versus_cash.history.years.0.operating_margin|pct}, which carried the product-liability charge, and the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}; below the fiscal 2024 margin of {earnings_versus_cash.history.years.1.operating_margin|pct}. The second quarter's gross margin of {trend_table.quarters-back-0.ratios.gross_margin|pct} includes the refund, against {trend_table.quarters-back-1.ratios.gross_margin|pct} in the first quarter without it, and year one is built on the run-rate without the refund."
+    },
+    "operating_margin_year_ten": {
+     "reason": "As the data center capacity now being built fills and the acquired businesses are absorbed, operating expense added ahead of C&I growth spreads over more sales. The margin stops short of the pandemic peak because Residential solar and storage demand has weakened since the OBBBA, MD&A already names unfavorable sales mix as the C&I share grows, and the company has repeatedly absorbed legal and product-liability charges.",
+     "quote": "increased operating expense investments to support future C&I growth and higher intangible amortization",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "earnings_versus_cash.history.years.1.operating_margin",
+      "earnings_versus_cash.history.years.4.operating_margin",
+      "earnings_versus_cash.history.years.5.operating_margin"
+     ],
+     "history": "Above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}, just below the fiscal 2024 margin of {earnings_versus_cash.history.years.1.operating_margin|pct}, and well below the fiscal 2020 and fiscal 2021 margins of {earnings_versus_cash.history.years.5.operating_margin|pct} and {earnings_versus_cash.history.years.4.operating_margin|pct}, which rode the pandemic home-standby surge."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "Reinvestment counts capital expenditure above depreciation, working capital and acquisition spending, because the revenue path includes acquired revenue. The CEO describes aggressive capacity investment, the current contingent consideration on the Enercon and other earnouts falls due within a year, the New Way purchase is signed, and every extra unit of sales needs inventory in a business that already carries {ratios.efficiency.days_sales_of_inventory} days of it. Base growth therefore takes most of year one's after-tax operating income.",
+     "quote": "we are investing aggressively in incremental production and packaging capacity for large megawatt generators",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters.depreciation_and_amortization",
+      "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital",
+      "terms.cash_flow_families.acquisitions",
+      "ratios.efficiency.days_sales_of_inventory",
+      "earnings_versus_cash.history.years.3.free_cash_flow_simple"
+     ],
+     "history": "Over the trailing four quarters capital expenditure of {terms.trailing_four_quarters.capital_expenditure} ran below depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization} and trade working capital rose by {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital}, so reinvestment before acquisitions was close to nil, while acquisitions took {terms.cash_flow_families.acquisitions}. The base rate is above that trailing organic pace because the release describes a capacity build that has not yet reached the capital expenditure totals. Fiscal 2022 shows how a growth push loads working capital: simple free cash flow that year was {earnings_versus_cash.history.years.3.free_cash_flow_simple}."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "At the base terminal growth this rate funds growth at a return on new capital above the trailing return on invested capital of {ratios.profitability.return_on_invested_capital|pct}, on the view that new capacity earns more than the goodwill-heavy existing base. Reinvestment falls as growth fades and the capacity build ends.",
+     "quote": "Returns on that added capital have yet to show in trailing results",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "ratios.profitability.return_on_invested_capital",
+      "earnings_versus_cash.history.years.2.free_cash_flow_simple",
+      "earnings_versus_cash.history.years.1.free_cash_flow_simple",
+      "earnings_versus_cash.history.years.2.operating_income",
+      "earnings_versus_cash.history.years.1.operating_income"
+     ],
+     "history": "Below the year-one rate. In fiscal 2023 and fiscal 2024, years of little growth, simple free cash flow of {earnings_versus_cash.history.years.2.free_cash_flow_simple} and {earnings_versus_cash.history.years.1.free_cash_flow_simple} exceeded operating income of {earnings_versus_cash.history.years.2.operating_income} and {earnings_versus_cash.history.years.1.operating_income}, so a low steady-state rate is within the company's own record."
+    }
+   }
+  },
+  "bull": {
+   "revenue_growth_year_one": 0.17,
+   "terminal_growth": 0.035,
+   "operating_margin_year_one": 0.125,
+   "operating_margin_year_ten": 0.15,
+   "reinvestment_rate_year_one": 0.65,
+   "reinvestment_rate_year_ten": 0.2,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "The maintained guidance is met, with C&I growing on the data center ramp and Residential turning in the second half. Calendar 2027 then opens with the first hyperscale customer's committed volume and further orders from the second hyperscale agreement and from non-hyperscale customers, and the revenue acquired with Enercon, Allmand and Wolter counts for a full year.",
+     "quote": "product specific terms related to this agreement were recently finalized, which committed nearly $700 million of volume",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.growth.revenue.trailing_four_quarters",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.revenue_growth_five_year_compound",
+      "earnings_versus_cash.history.years.4.revenue_growth",
+      "earnings_versus_cash.history.years.3.revenue_growth"
+     ],
+     "history": "Far above the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct} and the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, above the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, and below the surge years of fiscal 2021 ({earnings_versus_cash.history.years.4.revenue_growth|pct}) and fiscal 2022 ({earnings_versus_cash.history.years.3.revenue_growth|pct}). It matches the guided full-year range carried forward into calendar 2027."
+    },
+    "terminal_growth": {
+     "reason": "Backup power demand from data centers, electrification and outage frequency becomes a durable driver rather than a cycle, so long-run growth sits a little above nominal economic growth while staying below the risk-free rate of {cost_of_capital.risk_free_rate|pct}.",
+     "quote": "frequency and duration of power outages impacting demand for our products",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.revenue_growth_five_year_compound",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound"
+     ],
+     "history": "Well below the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct} and above the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}."
+    },
+    "operating_margin_year_one": {
+     "reason": "Volume from the data center ramp absorbs the operating expense added for C&I growth, price realization keeps pace with input costs, and the part of the tariff refund recorded in inventories lowers cost of goods sold in later quarters; legal costs return to a routine level.",
+     "quote": "favorable sales mix and operational efficiencies resulting in lower operating expenses",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "earnings_versus_cash.history.years.1.operating_margin",
+      "trend_table.quarters-back-0.ratios.gross_margin"
+     ],
+     "history": "Above the trailing margin of {ratios.profitability.operating_margin|pct} and the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}, at the fiscal 2024 margin of {earnings_versus_cash.history.years.1.operating_margin|pct}, without counting on the refund that lifted the second quarter's gross margin to {trend_table.quarters-back-0.ratios.gross_margin|pct}."
+    },
+    "operating_margin_year_ten": {
+     "reason": "Scale in large megawatt generators, a settled hyperscale customer base and a recovered home-standby business lift the margin toward the company's best years, though not to the pandemic peak.",
+     "quote": "Second quarter results reflect continued momentum in our C&I segment driven by strong data center market revenue as we continue to ramp production for large megawatt backup generators",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "earnings_versus_cash.history.years.1.operating_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "earnings_versus_cash.history.years.4.operating_margin",
+      "earnings_versus_cash.history.years.5.operating_margin"
+     ],
+     "history": "Above the fiscal 2024 margin of {earnings_versus_cash.history.years.1.operating_margin|pct} and the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}, below the fiscal 2020 and fiscal 2021 margins of {earnings_versus_cash.history.years.5.operating_margin|pct} and {earnings_versus_cash.history.years.4.operating_margin|pct}."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "Faster growth needs more capacity, inventory and unbilled contract assets, on top of the earnouts and the New Way purchase, and the company says it plans further capacity as its pipeline materializes. Customer deposits on data center orders fund part of the working capital, which keeps the rate from rising further.",
+     "quote": "acquired an additional facility in Belvidere, Illinois, significantly expanding capacity for large megawatt generator packaging",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters.depreciation_and_amortization",
+      "terms.cash_flow_families.acquisitions",
+      "terms.balances_now.contract_liabilities",
+      "terms.balances_a_year_earlier.contract_liabilities"
+     ],
+     "history": "Far above the trailing organic pace, in which capital expenditure of {terms.trailing_four_quarters.capital_expenditure} ran below depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization}, and comparable to the trailing year once acquisition spending of {terms.cash_flow_families.acquisitions} is counted. Contract liabilities of {terms.balances_now.contract_liabilities} against {terms.balances_a_year_earlier.contract_liabilities} a year earlier show deposits already carrying part of the load."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "Once the capacity build is complete, terminal growth is funded at a high return on new capital, well above the trailing return on invested capital of {ratios.profitability.return_on_invested_capital|pct}, as new capacity runs near full use and new orders keep replenishing the customer deposits that fund working capital.",
+     "quote": "deposits remain elevated but are being consumed by recognized revenue",
+     "quote_from": "analysis_accounting.json",
+     "fields": [
+      "ratios.profitability.return_on_invested_capital",
+      "earnings_versus_cash.history.years.2.free_cash_flow_simple",
+      "earnings_versus_cash.history.years.1.free_cash_flow_simple"
+     ],
+     "history": "Below the base and bear year-ten rates. The low-growth years fiscal 2023 and fiscal 2024 show the existing business generating simple free cash flow of {earnings_versus_cash.history.years.2.free_cash_flow_simple} and {earnings_versus_cash.history.years.1.free_cash_flow_simple} without heavy reinvestment."
+    }
+   }
+  }
+ },
+ "wacc_overrides": {},
+ "dropped_items": [],
+ "dropped_count": 0
+}

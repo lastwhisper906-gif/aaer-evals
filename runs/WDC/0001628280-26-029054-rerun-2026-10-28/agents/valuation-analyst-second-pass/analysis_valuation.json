@@ -1,0 +1,90 @@
+{
+ "question": "what is this company worth, and what does the price already assume?",
+ "value_range": {
+  "reading": "Python did not compute a value range, and none is estimated here. Under valuation.missing the calculator prints \"WACC is not computed: the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\", and under cost_of_capital.missing it prints \"the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". So beta, the market value of equity, the cost of equity, the capital weights and the WACC are all missing, and with them every scenario's enterprise value, equity value and value per share. The other inputs to the cost of capital are on record: a risk-free rate of {cost_of_capital.risk_free_rate|pct}, an equity risk premium of {cost_of_capital.equity_risk_premium|pct}, a pre-tax cost of debt of {cost_of_capital.pre_tax_cost_of_debt|pct} and a tax rate of {tax_rate|pct}. The missing piece is the price, and no driver of mine can stand in for it. What can be read is where my drivers sit against the company's own record. The base case starts revenue growth below the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct} and below fiscal 2025's {earnings_versus_cash.history.years.0.revenue_growth|pct}, because part of the latest quarter's growth came from a better price per exabyte, which is a market condition and not a contract. It starts the operating margin above the trailing {ratios.profitability.operating_margin|pct}, which the latest quarter's operating income of {ratios.growth.operating_income.this_quarter} on revenue of {ratios.growth.revenue.this_quarter} already exceeds. By year ten it lets the margin settle below fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct} but well above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}, which includes two loss years. All three terminal growth rates sit below the risk-free rate. Every scenario reinvests more than the recent record shows, where trailing capital expenditure of {terms.trailing_four_quarters.capital_expenditure} barely exceeds depreciation of {terms.trailing_four_quarters.depreciation_and_amortization}. The trailing reinvestment share itself cannot be formed, because free cash flow to the firm is missing: the payables balance a year earlier is not on record.",
+  "fields": [
+   "valuation.missing",
+   "cost_of_capital.missing",
+   "cost_of_capital.risk_free_rate",
+   "cost_of_capital.equity_risk_premium",
+   "cost_of_capital.pre_tax_cost_of_debt",
+   "tax_rate",
+   "ratios.growth.revenue.trailing_four_quarters",
+   "earnings_versus_cash.history.years.0.revenue_growth",
+   "ratios.profitability.operating_margin",
+   "ratios.growth.operating_income.this_quarter",
+   "ratios.growth.revenue.this_quarter",
+   "earnings_versus_cash.history.years.0.operating_margin",
+   "earnings_versus_cash.history.operating_margin_three_year_average",
+   "terms.trailing_four_quarters.capital_expenditure",
+   "terms.trailing_four_quarters.depreciation_and_amortization",
+   "free_cash_flow.free_cash_flow_to_firm.missing"
+  ]
+ },
+ "price_position": {
+  "reading": "Where the price sits in the range cannot be read, because there is no range and no price. Neither market.price nor cost_of_capital.price_at_cutoff is in the calculator. Under market.missing it prints \"no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". The free-cash-flow yield that would cross-check the price is missing for the same reason. The balance-sheet side of the bridge from enterprise value to equity is on record: net debt is {ratios.solvency.net_debt}, so cash exceeds debt, and operating lease liabilities are {ratios.solvency.operating_lease_liability}. That net debt counts cash alone, {terms.cash_and_short_term_investments_now}, with no line for the retained Sandisk shares that the company plans to exchange for its own stock. A value built on operating income would carry that stake nowhere unless it were added. Without a value per share or a price, no position is stated and none is estimated.",
+  "fields": [
+   "market.missing",
+   "free_cash_flow_yield.price_at_cutoff.missing",
+   "ratios.solvency.net_debt",
+   "ratios.solvency.operating_lease_liability",
+   "terms.cash_and_short_term_investments_now"
+  ]
+ },
+ "market_implied_growth": {
+  "reading": "No market-implied growth was computed. Under implied_growth_beside_history the calculator prints \"no reverse DCF: WACC is not computed: the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". The history it would have been read against is on record. Revenue grew {ratios.growth.revenue.trailing_four_quarters|pct} over the trailing four quarters and {ratios.growth.revenue.year_over_year|pct} in the latest quarter against the year-ago quarter. MD&A states \"Net revenue increased by 45% for the three months ended April 3, 2026 from the comparable period in the prior year\" and credits both volume and price. Fiscal 2025 grew {earnings_versus_cash.history.years.0.revenue_growth|pct} and fiscal 2024 grew {earnings_versus_cash.history.years.1.revenue_growth|pct}. The three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct} compare the combined company before the Sandisk separation with the drive business that remains, so they measure the separation, not the business. No guidance can be set beside this history. The 8-K file holds no earnings release body, though its item list names a results filing dated 2026-04-30. The only forward figure in the MD&A paragraphs I read is capital spending of \"approximately 4% to 6% of our net revenue\", not a revenue outlook.",
+  "fields": [
+   "implied_growth_beside_history.implied_ten_year_revenue_growth.missing",
+   "ratios.growth.revenue.trailing_four_quarters",
+   "ratios.growth.revenue.year_over_year",
+   "earnings_versus_cash.history.years.0.revenue_growth",
+   "earnings_versus_cash.history.years.1.revenue_growth",
+   "earnings_versus_cash.history.revenue_growth_three_year_compound",
+   "earnings_versus_cash.history.revenue_growth_five_year_compound"
+  ],
+  "quote": "Net revenue increased by 45% for the three months ended April 3, 2026 from the comparable period in the prior year",
+  "quote_from": "input_mdna.md"
+ },
+ "most_sensitive": [
+  {
+   "assumption": "operating_margin_year_ten",
+   "reading": "Python built no sensitivity grid, because the valuation it varies was not run, so the two assumptions value is most sensitive to cannot be read off it, and no ranking is estimated here. Judged from the drivers alone, one of the two places where the scenarios disagree most is where the operating margin settles. The bear case ends it near fiscal 2022's {earnings_versus_cash.history.years.3.operating_margin|pct}, earned by the combined company before the Sandisk separation. The base case ends it below fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}, and the bull case ends it near the trailing {ratios.profitability.operating_margin|pct}. The record shows the margin can swing across that whole span and beyond: fiscal 2024 ran at {earnings_versus_cash.history.years.1.operating_margin|pct} and fiscal 2023 at {earnings_versus_cash.history.years.2.operating_margin|pct}.",
+   "fields": [
+    "valuation.missing",
+    "earnings_versus_cash.history.years.3.operating_margin",
+    "earnings_versus_cash.history.years.0.operating_margin",
+    "ratios.profitability.operating_margin",
+    "earnings_versus_cash.history.years.1.operating_margin",
+    "earnings_versus_cash.history.years.2.operating_margin"
+   ]
+  },
+  {
+   "assumption": "revenue_growth_year_one",
+   "reading": "Revenue growth in the first year is the other place where the scenarios disagree most. It sets the whole growth path, since Python fades it in a straight line to the terminal rate by year ten. The bear case starts close to fiscal 2024's trough-year growth of {earnings_versus_cash.history.years.1.revenue_growth|pct}, on the reading that a short customer list pauses after a heavy build; the top ten customers took {concentration.facts.27.value|pct} of the quarter's revenue. The base case starts well below the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct}, and the bull case a little below it. No path was valued, so these files do not show how far each one moves value.",
+   "fields": [
+    "earnings_versus_cash.history.years.1.revenue_growth",
+    "concentration.facts.27.value",
+    "ratios.growth.revenue.trailing_four_quarters"
+   ]
+  }
+ ],
+ "accounting_adjustments": {
+  "reading": "The valuation did not run, so valuation.accounting_adjustments was never computed. In any case there were no adjustments to carry: the accounting reader wrote none, and the quality-adjusted free cash flow of {free_cash_flow.free_cash_flow_quality_adjusted} applied none and refused none. The reader gave the reason. The largest item it found, the non-cash, tax-free mark-to-market gain on the retained Sandisk shares, which MD&A describes as \"a gain of $2.73 billion on our retained interest in Sandisk\" in the quarter, has no amount in the calculator. It also sits below operating income, outside the operating income my drivers act on. The timing items that lifted operating cash flow have no amounts on record either. Two of the reader's findings still bear on value through the drivers rather than through an adjustment. First, Python would tax operating income at the trailing effective rate of {tax_rate|pct}, which rests partly on the tax-free Sandisk gain and on windfall benefits that will end. That is why my base terminal margin sits below fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}, so the terminal year does not stack a peak margin on a low tax rate. Second, hedge losses held in other comprehensive income are due to reach cost of revenue within twelve months. That is why the bear case starts the margin below the trailing {ratios.profitability.operating_margin|pct} and the base case trims its first-year margin. The retained Sandisk shares themselves are a non-operating asset that the net debt of {ratios.solvency.net_debt}, built on cash alone, does not count.",
+  "fields": [
+   "valuation.missing",
+   "free_cash_flow.free_cash_flow_quality_adjusted",
+   "tax_rate",
+   "earnings_versus_cash.history.years.0.operating_margin",
+   "ratios.profitability.operating_margin",
+   "ratios.solvency.net_debt"
+  ]
+ },
+ "summary_ko": {
+  "value_range": "주가 자료가 없어 베타, 자기자본비용, 가중평균자본비용(WACC)이 계산되지 않았고, 그래서 Python은 어떤 시나리오의 기업가치, 자기자본가치, 주당가치도 계산하지 않았습니다. 확인할 수 있는 것은 가정과 과거 기록의 비교뿐인데, 기본 시나리오는 첫해 매출 성장률을 최근 네 분기 성장률 {ratios.growth.revenue.trailing_four_quarters|pct}보다 낮게, 장기 영업이익률을 직전 회계연도의 {earnings_versus_cash.history.years.0.operating_margin|pct}보다 낮게 잡았습니다.",
+  "price_position": "계산 파일에 컷오프 시점의 주가가 없어서, 주가가 가치 범위의 어디에 있는지 말할 수 없고 추정하지도 않았습니다. 순차입금은 {ratios.solvency.net_debt}로 현금이 차입금보다 많지만, 이 순차입금에는 회사가 보유한 Sandisk 주식이 들어 있지 않습니다.",
+  "market_implied_growth": "가중평균자본비용이 없어 역DCF를 돌릴 수 없었으므로, 현재 주가가 가정하는 매출 성장률은 계산되지 않았습니다. 비교할 과거 기록은 최근 네 분기 매출 성장률 {ratios.growth.revenue.trailing_four_quarters|pct}와 직전 회계연도 성장률 {earnings_versus_cash.history.years.0.revenue_growth|pct}이고, 입력 자료에는 회사의 매출 전망(가이던스)이 없습니다.",
+  "most_sensitive": "민감도 표가 만들어지지 않아 가치에 가장 큰 영향을 주는 가정을 표에서 읽을 수 없습니다. 가정만 보면 시나리오 사이 차이가 큰 곳은 장기 영업이익률(약세는 분리 전 회사의 {earnings_versus_cash.history.years.3.operating_margin|pct} 근처, 강세는 최근 {ratios.profitability.operating_margin|pct} 근처)과 첫해 매출 성장률입니다.",
+  "accounting_adjustments": "회계 분석가가 작성한 조정이 하나도 없고 가치평가도 실행되지 않아, 회계 조정이 가치를 얼마나 바꿨는지는 계산되지 않았습니다. 다만 Python이 영업이익에 적용할 실효세율 {tax_rate|pct}은 비과세 Sandisk 평가이익처럼 끝날 항목에 기대고 있어서, 기본 시나리오의 장기 영업이익률을 직전 회계연도보다 낮게 잡았습니다."
+ },
+ "limits": "This valuation is a set of stated assumptions run through a stated formula. It states no recommendation to trade, and a different reader choosing different drivers would reach a different value."
+}
