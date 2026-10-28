@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytest
 
-from src import submissions
+from src import cutoff_guard, submissions
 from src.edgar_client import EdgarClient, EdgarError
 from tests.planted_edgar import DIRECT, SAMPLE_CONTACT, serve
 
@@ -153,3 +153,88 @@ def test_an_answer_that_is_not_json_is_refused(tmp_path, server):
     server.bodies[f"/submissions/{INDEX}"] = (b"<html>Request Rate Threshold Exceeded</html>", "")
     with pytest.raises(EdgarError, match="not JSON"):
         read(tmp_path, server, "2026-10-22")
+
+
+def planted_index(edit) -> bytes:
+    index = json.loads((STORE / INDEX).read_bytes())
+    edit(index)
+    return json.dumps(index).encode()
+
+
+def planted_overflow(edit) -> bytes:
+    page = json.loads((STORE / OVERFLOW).read_bytes())
+    edit(page)
+    return json.dumps(page).encode()
+
+
+@pytest.mark.parametrize("cutoff", ["2026-10-99", "2026-13-45",
+                                    "٢٠٢٦-١٠-٢١"])
+def test_a_cutoff_shaped_like_a_date_but_not_one_is_refused(tmp_path, server, cutoff):
+    with pytest.raises(EdgarError, match="a cutoff is a date"):
+        read(tmp_path, server, cutoff)
+    assert server.seen == []
+
+
+@pytest.mark.parametrize("date", ["", None, "2026-10-2", "22 October 2026"])
+def test_a_row_whose_filing_date_is_not_a_date_is_refused(tmp_path, server, date):
+    """Planted: the Form 4 of 2026-10-22 with its date blanked or garbled. A
+    string comparison would put a blank before every cutoff."""
+    def blank(index):
+        recent = index["filings"]["recent"]
+        recent["filingDate"][recent["accessionNumber"].index(FORM_FOUR["accession"])] = date
+    server.bodies[f"/submissions/{INDEX}"] = (planted_index(blank), "")
+    with pytest.raises(cutoff_guard.CutoffGuardError):
+        read(tmp_path, server, "2015-01-01")
+
+
+@pytest.mark.parametrize("page", [b"{}", b'{"message": "Not Found"}'])
+def test_an_overflow_page_with_no_filings_is_refused(tmp_path, server, page):
+    server.bodies[f"/submissions/{OVERFLOW}"] = (page, "")
+    with pytest.raises(EdgarError, match="no accessionNumber and filingDate arrays"):
+        read(tmp_path, server, "2026-10-22")
+
+
+def test_an_overflow_page_short_of_the_count_the_index_promises_is_refused(tmp_path, server):
+    """The index's `files` entry promises 1,268 filings; planted: a page of ten."""
+    server.bodies[f"/submissions/{OVERFLOW}"] = (planted_overflow(
+        lambda page: page.update({k: v[:10] for k, v in page.items()})), "")
+    with pytest.raises(EdgarError, match="10 filings where the index promises 1268"):
+        read(tmp_path, server, "2026-10-22")
+
+
+def test_a_filing_listed_on_two_pages_is_read_once(tmp_path, server):
+    """Planted: the overflow page also lists the newest filing of the recent list,
+    and the index's promise counts it."""
+    recent = json.loads((STORE / INDEX).read_bytes())["filings"]["recent"]
+
+    def repeat(page):
+        for field in page:
+            page[field].append(recent[field][0])
+    server.bodies[f"/submissions/{OVERFLOW}"] = (planted_overflow(repeat), "")
+    server.bodies[f"/submissions/{INDEX}"] = (planted_index(
+        lambda index: index["filings"]["files"][0].update(filingCount=OVERFLOW_COUNT + 1)), "")
+    rows = read(tmp_path, server, "2026-10-22")
+    assert len(rows) == RECENT_COUNT + OVERFLOW_COUNT
+    assert sum(r["accession"] == FORM_FOUR["accession"] for r in rows) == 1
+
+
+def test_an_overflow_page_of_another_company_is_not_fetched(tmp_path, server):
+    server.bodies[f"/submissions/{INDEX}"] = (planted_index(
+        lambda index: index["filings"]["files"][0].update(
+            name="CIK0001045810-submissions-001.json")), "")
+    with pytest.raises(EdgarError, match="not one of this company's"):
+        read(tmp_path, server, "2026-10-22")
+    assert [path for path, _ in server.seen] == [f"/submissions/{INDEX}"]
+
+
+def test_a_filing_later_on_the_triggers_own_day_is_inside_a_date_cutoff(tmp_path, server):
+    """The rule is a date (CLAUDE.md). Read by eye off the recent list: Apple's
+    earnings 8-K 0000320193-20-000050 (items 2.02,9.01) accepted
+    2020-04-30T20:30:41.000Z, 16:30 Eastern, and the Form 4 0000320193-20-000054
+    accepted 2020-05-01T01:30:05.000Z, 21:30 Eastern the same evening, both dated
+    2020-04-30. Both are inside a cutoff of 2020-04-30, and the stamps that tell
+    them apart are on the rows."""
+    rows = {r["accession"]: r for r in read(tmp_path, server, "2020-04-30")}
+    assert rows["0000320193-20-000050"]["acceptance_datetime"] == "2020-04-30T16:30:41-04:00"
+    assert rows["0000320193-20-000054"]["acceptance_datetime"] == "2020-04-30T21:30:05-04:00"
+    assert rows["0000320193-20-000054"]["filing_date"] == "2020-04-30"
