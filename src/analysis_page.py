@@ -49,8 +49,12 @@ FINANCIAL_FIGURES = (
     ("유동비율", "ratios.liquidity.current_ratio"),
     ("부채 ÷ EBITDA", "ratios.solvency.debt_over_ebitda"),
     ("이자보상배율", "ratios.solvency.interest_coverage"),
-    ("잉여현금흐름 (품질 조정)", "free_cash_flow.free_cash_flow_quality_adjusted"),
+    ("잉여현금흐름 (회계 조정 반영)", "free_cash_flow.free_cash_flow_quality_adjusted"),
 )
+# The one figure read from the final calculator, not the analysts' view: the
+# free cash flow Python adjusted with the accounting analyst's adjustments,
+# which the view handed to the analysts holds before any adjustment.
+FROM_THE_FINAL_CALCULATOR = ("free_cash_flow.free_cash_flow_quality_adjusted",)
 OUTCOMES = ("contradicts", "unresolved", "confirms")
 
 
@@ -67,17 +71,24 @@ def figure(fields: dict, path: str) -> str | None:
     return memo.fill("{" + path + "}", fields)
 
 
-def figures(fields: dict, wanted) -> list[dict]:
-    return [{"label": label, "text": figure(fields, path) or "계산되지 않음",
-             "path": path.split("|", 1)[0], "missing": figure(fields, path) is None}
-            for label, path in wanted]
+def figures(seen: dict, wanted, final: dict | None = None) -> list[dict]:
+    out = []
+    for label, path in wanted:
+        bare = path.split("|", 1)[0]
+        source = final if final is not None and bare in FROM_THE_FINAL_CALCULATOR else seen
+        text = figure(source, path)
+        out.append({"label": label, "text": text or "계산되지 않음", "path": bare,
+                    "missing": text is None})
+    return out
 
 
-def original(source, field: str, seen: dict) -> dict:
+def original(source, field: str, seen: dict, text: str) -> dict:
     """The analyst's English reading an entry's Korean sentence summarizes, filled
     as the sentence is, with the area's verdict where it has one; nothing for an
-    entry the gate dropped."""
-    if not isinstance(source, dict) or "dropped" in source or not source.get(field):
+    entry the gate dropped, nor for one whose Korean sentence it dropped: the
+    memo prints the dropped notice alone there, and so does the page."""
+    if text == memo.DROPPED_KO or not isinstance(source, dict) or "dropped" in source \
+            or not source.get(field):
         return {}
     out = {"original": memo.fill(source[field], seen)}
     if source.get("verdict"):
@@ -102,10 +113,11 @@ def accounting(analysis: dict | None, seen: dict, fields: dict) -> dict | None:
     if analysis is None:
         return None
     summary = analysis.get("summary_ko") or {}
-    areas = [{"key": key, "name": name,
-              "text": memo._entry(summary, key, analysis, "areas", seen),
-              **original((analysis.get("areas") or {}).get(key), "finding", seen)}
-             for key, name in memo.ACCOUNTING_KO.items()]
+    areas = []
+    for key, name in memo.ACCOUNTING_KO.items():
+        text = memo._entry(summary, key, analysis, "areas", seen)
+        areas.append({"key": key, "name": name, "text": text,
+                      **original((analysis.get("areas") or {}).get(key), "finding", seen, text)})
     quality = (fields.get("free_cash_flow") or {}).get("free_cash_flow_quality_adjusted") or {}
     adjustments = [{"name": item.get("name"),
                     "text": (f"{memo.korean_number(item['amount'], 'USD')} "
@@ -117,7 +129,7 @@ def accounting(analysis: dict | None, seen: dict, fields: dict) -> dict | None:
             "figures": figures(seen, ACCOUNTING_FIGURES), "limits": memo.LIMITS_KO["accounting"]}
 
 
-def financial(analysis: dict | None, seen: dict) -> dict | None:
+def financial(analysis: dict | None, seen: dict, fields: dict | None = None) -> dict | None:
     if analysis is None:
         return None
     summary = analysis.get("summary_ko") or {}
@@ -125,12 +137,13 @@ def financial(analysis: dict | None, seen: dict) -> dict | None:
     for key, name in memo.FINANCIAL_KO.items():
         block = "sections" if key in memo.analysis_check.FINANCIAL_SECTIONS else None
         source = (analysis.get(block) or {}).get(key) if block else analysis.get(key)
-        sections.append({"key": key, "name": name,
-                         "text": memo._entry(summary, key, analysis, block, seen),
-                         **original(source, "reading", seen)})
+        text = memo._entry(summary, key, analysis, block, seen)
+        sections.append({"key": key, "name": name, "text": text,
+                         **original(source, "reading", seen, text)})
     return {"sections": sections, "anomalies": anomalies(analysis, seen, memo.FINANCIAL_KO),
             "dropped": analysis.get("dropped_count") or 0,
-            "figures": figures(seen, FINANCIAL_FIGURES), "limits": memo.LIMITS_KO["financial"]}
+            "figures": figures(seen, FINANCIAL_FIGURES, fields),
+            "limits": memo.LIMITS_KO["financial"]}
 
 
 def run_entry(run: Path) -> dict | None:
@@ -151,7 +164,7 @@ def run_entry(run: Path) -> dict | None:
         "grade": ({"score": grade.get("score"), "dealbreakers": len(grade.get("dealbreakers") or [])}
                   if grade else None),
         "accounting": accounting(_load(run / "analysis_accounting.json"), seen, fields),
-        "financial": financial(_load(run / "analysis_financial.json"), seen),
+        "financial": financial(_load(run / "analysis_financial.json"), seen, fields),
     }
 
 
@@ -175,7 +188,9 @@ TEMPLATE = Path(__file__).with_name("analysis_page.html")
 
 
 def page(entries: list[dict]) -> str:
-    data = json.dumps(entries, ensure_ascii=False).replace("</", "<\\/")
+    # every "<" written as its escape, so no text in the data -- a "</script>",
+    # a "<!--<script>" -- can end or swallow the element that holds it
+    data = json.dumps(entries, ensure_ascii=False).replace("<", "\\u003c")
     return TEMPLATE.read_text(encoding="utf-8").replace("__RUNS_JSON__", data)
 
 

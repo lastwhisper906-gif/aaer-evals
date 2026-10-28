@@ -256,7 +256,7 @@ details .orig b { color: var(--ink); font-weight: 500; }
     }
     if (!shown.length) return '<p class="none">' + (list.length ? "이 조건에 맞는 항목이 없습니다." : "없음") + "</p>";
     return '<ul class="anoms">' + shown.map(function (a) {
-      var chip = withOutcome && a.outcome ? '<span class="chip ' + a.outcome + '">' + esc(a.outcome_ko) + "</span>" : "";
+      var chip = withOutcome && a.outcome ? '<span class="chip ' + esc(a.outcome) + '">' + esc(a.outcome_ko) + "</span>" : "";
       return '<li class="anom"><div class="anom-line">' + chip + '<span class="anom-name">' + esc(a.name) +
         '</span><span class="anom-area">' + esc(a.area) + "</span></div>" +
         "<details><summary>무엇을 보았나 (원문)</summary><p class=\"orig\">" + esc(a.detail) +
@@ -287,7 +287,7 @@ details .orig b { color: var(--ink); font-weight: 500; }
       '<div class="block"><h3>이상 징후 <span class="mono">' + a.anomalies.length + '건, 기준 없이 모두</span></h3>' +
         filters(a.anomalies) + anomalyList(a.anomalies, true) + "</div>" +
       '<div class="block"><h3>잉여현금흐름에 적용한 회계 조정 <span>금액은 Python이 계산기에서 읽음</span></h3>' + adjust + "</div>" +
-      '<div class="block"><p class="limits">' + (a.dropped ? "검증에서 제외된 항목 " + a.dropped + "건. " : "") + esc(a.limits) + "</p></div>" +
+      '<div class="block"><p class="limits">' + (a.dropped ? "검증에서 제외된 항목 " + esc(a.dropped) + "건. " : "") + esc(a.limits) + "</p></div>" +
       "</section>";
   }
 
@@ -299,7 +299,7 @@ details .orig b { color: var(--ink); font-weight: 500; }
       '<div class="block"><h3>여덟 갈래</h3>' + entries(f.sections) + "</div>" +
       '<div class="block"><h3>재무 압박 징후 <span class="mono">' + f.anomalies.length + "건</span></h3>" +
         anomalyList(f.anomalies, false) + "</div>" +
-      '<div class="block"><p class="limits">' + (f.dropped ? "검증에서 제외된 항목 " + f.dropped + "건. " : "") + esc(f.limits) + "</p></div>" +
+      '<div class="block"><p class="limits">' + (f.dropped ? "검증에서 제외된 항목 " + esc(f.dropped) + "건. " : "") + esc(f.limits) + "</p></div>" +
       "</section>";
   }
 
@@ -316,7 +316,7 @@ details .orig b { color: var(--ink); font-weight: 500; }
     }
     if (fin) tally.push('<span>재무 압박 징후 <b class="n">' + fin.anomalies.length + "</b>건</span>");
     if (run.grade) tally.push("<span>분석 품질 채점 <b class=\"n\">" + esc(run.grade.score) + "</b> · 결격 <b class=\"n\">" +
-      run.grade.dealbreakers + "</b>건 (회사 평가가 아님)</span>");
+      esc(run.grade.dealbreakers) + "</b>건 (회사 평가가 아님)</span>");
     var tabs = runs.length > 1 ? '<div class="runs" role="group" aria-label="공시 고르기">' + runs.map(function (r, i) {
       return '<button type="button" class="run-tab mono" id="run-' + i + '" data-run="' + i + '" aria-pressed="' + (i === state.run) + '">' +
         esc(r.form) + " · " + esc(r.period_end) + (r.rerun ? " · 재실행" : "") + "</button>";
@@ -335,7 +335,9 @@ details .orig b { color: var(--ink); font-weight: 500; }
   function render() { renderRail(); renderMain(); }
 
   function fromHash() {
-    var name = decodeURIComponent((location.hash || "").slice(1)).toUpperCase();
+    var name;
+    try { name = decodeURIComponent((location.hash || "").slice(1)).toUpperCase(); }
+    catch (e) { return; }
     if (byTicker[name] && name !== state.ticker) { state.ticker = name; state.run = 0; state.filter = "all"; }
   }
 

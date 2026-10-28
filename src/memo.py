@@ -89,19 +89,16 @@ def field_node(fields: dict, path: str):
         return None
 
 
-# The last words of a path that say which quarter or which side, not what: a
-# growth cell's `this_quarter`, a series' index (`smoothness.net_income.2`), a
-# ratio input's `before` and `after`. What the number is was named earlier.
-WHEN_WORDS = ("this_quarter", "before", "after")
-
-
 def _unit_by_name(path: str) -> str | None:
     last = path.rsplit(".", 1)[-1]
     if "per_share" in path or last in ("low", "high", "price_at_cutoff"):
         return "USD per share"
     if last.startswith("days") or "days_" in last:
         return "days"
-    if "share_based" in last:   # pay in shares is dollars, not a share of anything
+    # pay in shares is dollars, not a share of anything, unless the name
+    # divides it by something
+    rest = last.replace("share_based", "")
+    if "share_based" in last and not any(word in rest for word in RATIO_WORDS):
         return "USD"
     if any(word in last for word in RATIO_WORDS):
         return "ratio"
@@ -112,20 +109,28 @@ def _unit_by_name(path: str) -> str | None:
 
 def unit_of(path: str, node) -> str:
     """The unit a bare number prints in: the node's own, else the one its name
-    says, else the one the metric it belongs to says (`ratios.growth.revenue`
-    for `ratios.growth.revenue.this_quarter`, and for the `before` amount of
-    `ratios.growth.revenue.year_over_year.inputs`), else a plain ratio."""
+    says, else the one the nearest name above it says -- a quarter, an index,
+    a part or a side says which, not what (`ratios.growth.revenue` for
+    `ratios.growth.revenue.this_quarter`; `earnings_versus_cash.smoothness.net_income`
+    for its `.2`) -- passing over the ratio an input belongs to (`revenue`, not
+    `year_over_year`, for `ratios.growth.revenue.year_over_year.inputs.before`)
+    and never reading the section's own name; else a plain ratio."""
     if isinstance(node, dict) and node.get("unit"):
         return node["unit"]
     named = _unit_by_name(path)
     if named:
         return named
     parts = path.split(".")
-    if "inputs" in parts:   # an input of a ratio is in the unit of what it compares
-        parts = parts[:max(parts.index("inputs") - 1, 1)]
-    while len(parts) > 1 and (parts[-1].isdigit() or parts[-1] in WHEN_WORDS):
+    while len(parts) > 2:
         parts.pop()
-    return _unit_by_name(".".join(parts)) or "ratio"
+        if parts[-1] == "inputs":
+            # an input of a ratio is in the unit of what the ratio compares
+            del parts[-2:]
+        if len(parts) >= 2:
+            named = _unit_by_name(".".join(parts))
+            if named:
+                return named
+    return "ratio"
 
 
 # A filing's own units, as `note_tables` carries a fact's (`iso4217:USD`), read as
@@ -212,8 +217,13 @@ def fill(text: str | None, fields: dict) -> str:
             out.append(text[last:match.start()] + value)
             last = match.end()
             continue
-        node = field_node(fields, path)
-        rendered = korean_number(value, unit_of(path, node), percent=how == "pct")
+        node, named = field_node(fields, path), path
+        if path.endswith(".value"):
+            # a cell's number, in the cell's unit, read off the cell
+            cell = field_node(fields, path[:-len(".value")])
+            if isinstance(cell, dict):
+                node, named = cell, path[:-len(".value")]
+        rendered = korean_number(value, unit_of(named, node), percent=how == "pct")
         at = match.end()
         unit = UNIT_AFTER.match(text, at)
         if unit:
