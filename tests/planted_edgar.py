@@ -4,7 +4,8 @@ It counts and records every request it is sent, with the moment it arrived on
 the machine's monotonic clock, answers with the statuses a test scripts for a
 path (a redirect carries a `Location`), and serves a planted body, compressed as
 the test says, with its length declared, or declared longer than what is sent
-(`short`), or not declared at all (`unframed`); for a path nothing was planted
+(`short`), or not declared at all (`unframed`), at once or half of it, a
+pause, then the rest (`trickle`); for a path nothing was planted
 at, the default body, or 404 when the default is None. Tests reach it through
 `DIRECT`, the client's own opener (no redirects followed) without the session's
 proxy, which is for the outside world.
@@ -58,6 +59,12 @@ class Planted(http.server.BaseHTTPRequestHandler):
         elif self.path not in server.unframed:
             self.send_header("Content-Length", str(len(body)))
         self.end_headers()
+        if self.path in server.trickle:
+            # half the body, a pause, then the rest: a server slow to send
+            self.wfile.write(body[:len(body) // 2])
+            self.wfile.flush()
+            time.sleep(server.trickle[self.path])
+            body = body[len(body) // 2:]
         self.wfile.write(body)
         self.close_connection = True
 
@@ -71,7 +78,7 @@ def serve(default: bytes | None):
     planted.lock = threading.Lock()
     planted.seen, planted.times, planted.hits = [], [], {}
     planted.script, planted.bodies, planted.location = {}, {}, {}
-    planted.short, planted.unframed = {}, set()
+    planted.short, planted.unframed, planted.trickle = {}, set(), {}
     planted.default = default
     thread = threading.Thread(target=planted.serve_forever, kwargs={"poll_interval": 0.05},
                               daemon=True)

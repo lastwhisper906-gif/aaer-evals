@@ -18,8 +18,10 @@ file whose bytes the test alters.
 
 from __future__ import annotations
 
+import fcntl
 import gzip
 import hashlib
+import os
 import random
 import socket
 import subprocess
@@ -148,20 +150,6 @@ def test_the_server_counts_no_more_than_ten_requests_in_any_second(tmp_path, ser
     assert busiest_second(server.times) <= MAX_PER_SECOND
 
 
-def test_a_connection_slow_to_open_does_not_let_the_next_catch_up(tmp_path, server):
-    """Planted: every third connection takes 0.3 seconds to open. Spacing the
-    starts alone would let the requests behind it arrive bunched."""
-    count = [0]
-
-    def delay():
-        count[0] += 1
-        return 0.3 if count[0] % 3 == 1 else 0.0
-    fetcher = client(tmp_path, opener=slow_to_open(DIRECT, delay))
-    for _ in range(24):
-        fetcher.get(server.url + "/filing.htm")
-    assert busiest_second(server.times) <= MAX_PER_SECOND
-
-
 def test_threads_with_slow_connections_keep_one_pace(tmp_path, server):
     """Four threads share a client; each connection takes 0 to 0.3 seconds to open."""
     jitter = random.Random(20261028)
@@ -209,6 +197,90 @@ def test_three_processes_on_one_machine_keep_one_pace(tmp_path, server):
     assert [run.wait(timeout=120) for run in runs] == [0, 0, 0]
     assert sum(server.hits.values()) == 24
     assert busiest_second(server.times) <= MAX_PER_SECOND
+
+
+def test_a_clock_behind_the_recorded_start_waits_the_whole_interval():
+    """A start recorded ahead of the clock (a reboot since) is not a reason to skip."""
+    now = [5.0]
+    slept = []
+    gate = Gate(path=None, clock=lambda: now[0], sleep=slept.append)
+    gate._last = 100.0
+    with gate.slot():
+        pass
+    assert slept == [edgar_client.MIN_INTERVAL]
+
+
+def test_the_gate_is_one_path_whatever_tmpdir_a_process_has(tmp_path):
+    script = "from src import edgar_client; print(edgar_client.GATE_FILE)"
+    seen = {subprocess.run([sys.executable, "-c", script], cwd=REPOSITORY, check=True,
+                           capture_output=True, text=True,
+                           env={"PATH": "/usr/bin:/bin", **({"TMPDIR": str(tmp_path)} if t else {})}
+                           ).stdout.strip() for t in (True, False)}
+    assert seen == {"/tmp/aaer-evals-edgar.gate"}
+
+
+def test_an_unreadable_gate_file_is_rewritten_not_fatal(tmp_path):
+    path = tmp_path / "gate"
+    path.write_bytes(b"\xff\xfe not a time")
+    gate = Gate(path=path, sleep=lambda seconds: None)
+    for _ in range(2):
+        with gate.slot():
+            pass
+    assert float(path.read_text()) > 0
+
+
+def test_the_gate_file_is_writable_by_every_user(tmp_path):
+    path = tmp_path / "gate"
+    path.write_text("")
+    path.chmod(0o644)
+    with Gate(path=path).slot():
+        pass
+    assert path.stat().st_mode & 0o777 == 0o666
+
+
+def test_a_gate_held_too_long_by_another_process_is_reported(tmp_path):
+    path = tmp_path / "gate"
+    path.write_text("")
+    holder = os.open(path, os.O_RDWR)
+    fcntl.flock(holder, fcntl.LOCK_EX)
+    try:
+        with pytest.raises(EdgarError, match="held for over"):
+            with Gate(path=path, patience=0.3).slot():
+                pass
+    finally:
+        fcntl.flock(holder, fcntl.LOCK_UN)
+        os.close(holder)
+
+
+def test_a_body_slow_to_arrive_does_not_hold_the_gate(tmp_path, server):
+    """Planted: one document sends half, pauses two seconds, then the rest. A
+    second request made meanwhile is answered before the slow one ends."""
+    server.bodies["/slow.htm"] = (FILED * 1000, "")
+    server.trickle["/slow.htm"] = 2.0
+    done = {}
+
+    def slow():
+        client(tmp_path).get(server.url + "/slow.htm")
+        done["slow"] = time.monotonic()
+    worker = threading.Thread(target=slow)
+    worker.start()
+    time.sleep(0.5)
+    client(tmp_path).get(server.url + "/quick.htm")
+    done["quick"] = time.monotonic()
+    worker.join()
+    assert done["quick"] < done["slow"]
+
+
+def test_the_default_opener_refuses_redirects(tmp_path, server, monkeypatch):
+    for name in ("http_proxy", "HTTP_PROXY", "https_proxy", "HTTPS_PROXY",
+                 "all_proxy", "ALL_PROXY"):
+        monkeypatch.delenv(name, raising=False)
+    fetcher = EdgarClient(environ={"EDGAR_USER_AGENT": SAMPLE_CONTACT,
+                                   "AAER_CACHE": str(tmp_path)}, sleep=lambda seconds: None)
+    server.script["/moved.htm"] = [302]
+    with pytest.raises(EdgarError, match="redirected"):
+        fetcher.get(server.url + "/moved.htm")
+    assert [path for path, _ in server.seen] == ["/moved.htm"]
 
 
 def test_every_retry_takes_the_gate(tmp_path, server):
@@ -417,14 +489,39 @@ def test_a_cached_file_without_its_hash_is_refused(tmp_path, server):
     assert server.hits[ARCHIVED] == 1
 
 
-def test_a_hash_without_its_file_is_refused(tmp_path, server):
+def test_a_hash_without_its_file_is_a_stopped_store_finished_against_that_hash(
+        tmp_path, server):
+    """The hash is written first, the bytes second: a hash alone is a store that
+    stopped between the two. The document is fetched again and kept only if it
+    hashes to what was stored."""
     fetcher = client(tmp_path, server)
     path = fetch(fetcher)
     path.unlink()
+    assert fetch(fetcher).read_bytes() == FILED
+    assert server.hits[ARCHIVED] == 2
+
+
+def test_a_hash_without_its_file_refuses_bytes_unlike_it(tmp_path, server):
+    fetcher = client(tmp_path, server)
+    path = fetch(fetcher)
+    path.unlink()
+    server.bodies[ARCHIVED] = (FILED.replace(b"2.02", b"2.03"), "")
     with pytest.raises(CacheMismatch):
         fetch(fetcher)
     assert not path.exists()
-    assert server.hits[ARCHIVED] == 1
+    assert (path.parent / "filing.htm.sha256").read_text().strip() == \
+        hashlib.sha256(FILED).hexdigest()
+
+
+def test_the_stored_file_is_hashed_again_before_it_is_handed_back(tmp_path, server, monkeypatch):
+    """Planted: the write puts other bytes on disk than the ones fetched."""
+    real = edgar_client._write_whole
+
+    def wrong(path, data):
+        real(path, data if path.name.endswith(".sha256") else data + b"x")
+    monkeypatch.setattr(edgar_client, "_write_whole", wrong)
+    with pytest.raises(CacheMismatch):
+        fetch(client(tmp_path, server))
 
 
 def test_a_fetched_document_unlike_the_record_is_refused_and_nothing_is_stored(tmp_path, server):

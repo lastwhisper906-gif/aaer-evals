@@ -20,15 +20,21 @@ sets the terms, quoted:
 **The rate limit.** The SEC counts requests where they arrive, and a client can
 only space what it sends; a connection that is slow to open would let a later
 request catch up with it. So requests go **one at a time**: a request holds the
-gate from before it is sent until its answer is read, and the next may start
-only `MIN_INTERVAL` seconds after the last one started. A request arrives
-before its answer is read, so it arrives before the next one starts, and eleven
-requests in a row arrive across at least the nine gaps between the second and
-the eleventh: 9 × 0.12 = 1.08 seconds, more than one. The gate is one per
-machine, because the SEC counts by address: a thread lock inside the process
-and a locked file (`GATE_FILE`, in the system's temporary directory) across
-processes, so three runs fetching at once keep one pace between them. Every
-attempt, retries included, takes the gate; a backoff waits outside it.
+gate from before it is sent until its answer's status line and headers are
+read, and the next may start only `MIN_INTERVAL` seconds after the last one
+started. A request arrives before its answer begins, so it arrives before the
+next one starts, and eleven requests in a row arrive across at least the nine
+gaps between the second and the eleventh: 9 × 0.12 = 1.08 seconds, more than
+one. The body is read after the gate is let go, so a server that trickles bytes
+holds up nobody else. The gap is measured on the monotonic clock, which the
+processes of one machine share and which does not step; a recorded start ahead
+of it (a reboot since) waits the whole interval rather than none. The gate is
+one per machine, because the SEC counts by address: a thread lock inside the
+process and a locked file at a fixed path (`GATE_FILE`, `/tmp`, whatever
+`TMPDIR` a process has), writable by every user, across processes, so three
+runs fetching at once keep one pace between them. A gate held longer than
+`GATE_PATIENCE` seconds is reported, not waited on for ever. Every attempt,
+retries included, takes the gate; a backoff waits outside it.
 
 **No redirects.** EDGAR's documents and APIs are served where they are asked
 for. A redirect is refused rather than followed: a followed hop would be a
@@ -58,11 +64,13 @@ at `<root>/edgar/<cik>/<accession>/<name>` beside `<name>.sha256`. Its address
 is the cache address: the URL is built from the CIK, the accession and the name,
 never handed in. The root is `AAER_CACHE`, default `~/.cache/aaer-evals`, and a
 root inside the repository is refused. One document is fetched and stored under
-a lock, by one caller at a time; the bytes and the hash are each written whole
-and renamed into place, and the file is hashed again before its path is handed
-back. A cached file is read only when its bytes still hash to what was stored
-with them; one that does not, or a file or a hash standing without the other, is
-refused with `CacheMismatch`, never fetched over and never repaired. When the
+a lock, by one caller at a time; the hash is written first and the bytes second,
+each whole and renamed into place, and the file is hashed again before its path
+is handed back. A cached file is read only when its bytes still hash to what was
+stored with them; one that does not, or a file standing without its hash, is
+refused with `CacheMismatch`, never fetched over and never repaired. A hash
+standing without its file is a store that stopped between the two renames: the
+document is fetched again and kept only if it hashes to that hash. When the
 caller knows the sha256 the record expects (a fixture manifest's row), a fetched
 document that differs is refused and nothing is stored. A body whose length
 nothing vouches for (no `Content-Length`, no chunked framing, no compression) is
@@ -84,6 +92,7 @@ import http.client
 import json
 import os
 import re
+import stat
 import tempfile
 import threading
 import time
@@ -101,9 +110,10 @@ ARCHIVES = "https://www.sec.gov/Archives/edgar/data/"
 # one request at a time, each starting at least this long after the last began:
 # eleven in a row then arrive across at least 9 x 0.12 = 1.08 seconds
 MIN_INTERVAL = 0.12
-GATE_FILE = Path(tempfile.gettempdir()) / "aaer-evals-edgar.gate"
-# a recorded start further ahead of the clock than this is a clock that moved back
-CLOCK_STEP = 1.0
+# a fixed path, not `tempfile.gettempdir()`, which follows each process's TMPDIR
+GATE_FILE = Path("/tmp") / "aaer-evals-edgar.gate"
+# how long a request waits for another process to let the gate go before saying so
+GATE_PATIENCE = 4 * 60
 RETRIED = (403, 429, 500, 502, 503, 504)
 REDIRECTS = (301, 302, 303, 307, 308)
 BACKOFF_SECONDS = (1, 2, 4)
@@ -141,9 +151,11 @@ class Gate:
     """
 
     def __init__(self, interval: float = MIN_INTERVAL, *, path: Path | None = GATE_FILE,
-                 clock=time.time, sleep=time.sleep) -> None:
+                 clock=time.monotonic, sleep=time.sleep,
+                 patience: float = GATE_PATIENCE) -> None:
         self.interval = interval
         self.path = path
+        self.patience = patience
         self._clock = clock
         self._sleep = sleep
         self._last = None
@@ -151,12 +163,14 @@ class Gate:
 
     @contextlib.contextmanager
     def slot(self):
-        """Held for the whole request: from before it is sent until its answer is read."""
+        """Held from before a request is sent until its answer's headers are read."""
         with self._lock, self._shared() as handle:
             last = self._read(handle)
             now = self._clock()
-            if last is not None and last - now <= CLOCK_STEP:
-                gap = last + self.interval - now
+            if last is not None:
+                # a start recorded ahead of the clock is from before a reboot:
+                # the whole interval, never none
+                gap = self.interval if last > now else last + self.interval - now
                 if gap > 0:
                     self._sleep(gap)
                     now = self._clock()
@@ -168,22 +182,38 @@ class Gate:
         if self.path is None:
             yield None
             return
-        with open(self.path, "a+", encoding="ascii") as handle:
-            fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        try:
+            descriptor = os.open(self.path, os.O_RDWR | os.O_CREAT, 0o666)
+        except OSError as error:
+            raise EdgarError(f"the gate {self.path} cannot be opened: {error}") from None
+        with os.fdopen(descriptor, "r+b") as handle:
+            with contextlib.suppress(OSError):
+                # every user of the machine shares one gate; the umask took write away
+                if stat.S_IMODE(os.fstat(descriptor).st_mode) != 0o666:
+                    os.fchmod(descriptor, 0o666)
+            deadline = time.monotonic() + self.patience
+            while True:
+                try:
+                    fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    break
+                except BlockingIOError:
+                    if time.monotonic() > deadline:
+                        raise EdgarError(f"the gate {self.path} has been held for over "
+                                         f"{self.patience} seconds by another process") from None
+                    time.sleep(0.01)
             try:
                 yield handle
             finally:
-                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+                fcntl.flock(descriptor, fcntl.LOCK_UN)
 
     def _read(self, handle):
         if handle is None:
             return self._last
         handle.seek(0)
-        text = handle.read().strip()
         try:
-            return float(text) if text else None
-        except ValueError:
-            return None
+            return float(handle.read(64).decode("ascii").strip())
+        except (UnicodeDecodeError, ValueError):
+            return None      # empty or unreadable: rewritten below
 
     def _write(self, handle, now: float) -> None:
         if handle is None:
@@ -191,7 +221,7 @@ class Gate:
             return
         handle.seek(0)
         handle.truncate()
-        handle.write(repr(now))
+        handle.write(repr(now).encode("ascii"))
         handle.flush()
 
 
@@ -284,17 +314,17 @@ class EdgarClient:
         request = urllib.request.Request(url, headers={
             "User-Agent": self._user_agent, "Accept-Encoding": ACCEPT_ENCODING})
         with self.gate.slot():
-            with self._open(request, timeout=TIMEOUT_SECONDS) as response:
-                headers = response.headers
-                try:
-                    body = response.read()
-                except http.client.IncompleteRead as error:
-                    raise _Short(f"{len(error.partial)} bytes of a body cut short") from None
+            # returns once the status line and headers are in: the request has arrived
+            response = self._open(request, timeout=TIMEOUT_SECONDS)
+        with response:
+            headers = response.headers
+            try:
+                body = response.read()
+            except http.client.IncompleteRead as error:
+                raise _Short(f"{len(error.partial)} bytes of a body cut short") from None
         encoding = (headers.get("Content-Encoding") or "").strip().lower()
-        declared = (headers.get("Content-Length") or "").strip()
-        if declared.isdigit() and len(body) != int(declared):
-            raise _Short(f"{len(body)} bytes where {declared} were declared")
-        framed = declared.isdigit() or encoding in ("gzip", "deflate") \
+        framed = (headers.get("Content-Length") or "").strip().isdigit() \
+            or encoding in ("gzip", "deflate") \
             or "chunked" in (headers.get("Transfer-Encoding") or "").lower()
         return unpacked(body, encoding), framed
 
@@ -348,20 +378,27 @@ class EdgarClient:
         with open(folder / f".{name}.lock", "a", encoding="ascii") as lock:
             fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
             try:
-                if path.exists() or stamp.exists():
+                if path.exists():
                     return self._cached(path, stamp, expected_sha256)
+                # a hash with no file is a store that stopped between its two
+                # renames: what was stored is the hash, and the fetch must match it
+                recorded = stamp.read_text(encoding="ascii").strip() if stamp.exists() else ""
+                if recorded and expected_sha256 and recorded != expected_sha256:
+                    raise CacheMismatch(f"{stamp}: stored as {recorded}, the record expects "
+                                        f"{expected_sha256}")
+                wanted = recorded or expected_sha256
                 url = archive_url(cik, accession, name, self.archives)
                 body, framed = self._get(url)
                 actual = sha256(body)
-                if expected_sha256 and actual != expected_sha256:
+                if wanted and actual != wanted:
                     raise CacheMismatch(f"{url}: EDGAR served {actual}, the record expects "
-                                        f"{expected_sha256}; nothing was stored")
-                if not framed and not expected_sha256:
+                                        f"{wanted}; nothing was stored")
+                if not framed and not wanted:
                     raise EdgarError(f"{url}: nothing vouches for the length of the "
                                      f"{len(body)} bytes served, and no hash was given; "
                                      "not stored")
-                _write_whole(path, body)
                 _write_whole(stamp, (actual + "\n").encode("ascii"))
+                _write_whole(path, body)
                 return self._cached(path, stamp, expected_sha256)
             finally:
                 fcntl.flock(lock.fileno(), fcntl.LOCK_UN)
