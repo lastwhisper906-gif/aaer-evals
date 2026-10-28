@@ -185,16 +185,26 @@ def with_stamp(entry: dict, row: dict) -> dict:
     return entry
 
 
+def with_release(entry: dict, row: dict) -> dict:
+    """`entry` with the day EDGAR made the document public, for a comment letter
+    and its header, whose filing date is the day it was filed in private."""
+    if row.get("released") is not None:
+        entry["released"] = row["released"]
+    return entry
+
+
 def documents_on_record(ticker: str, cutoff, fixtures_root) -> list[dict]:
     """Every fixture document filed at or before the cutoff, as the record has
-    it. A document filed later is not in the bundle and not in the manifest."""
+    it. A document filed later is not in the bundle and not in the manifest, and
+    neither is a comment letter filed in private before it and made public on
+    or after it: at the cutoff it was on nobody's record but the SEC's."""
     rows = []
     for row in cutoff_guard.documents(ticker, fixtures_root=fixtures_root):
-        if row["filing_date"] <= str(cutoff):
-            rows.append(with_stamp(
+        if row["filing_date"] <= str(cutoff) and str(row.get("released") or "") < str(cutoff):
+            rows.append(with_release(with_stamp(
                 {"form": row["form"], "role": row["role"],
                  "accession": row["accession"], "path": row["path"],
-                 "filing_date": row["filing_date"], "sha256": row["sha256"]}, row))
+                 "filing_date": row["filing_date"], "sha256": row["sha256"]}, row), row))
     rows.sort(key=lambda row: (row["filing_date"], row["accession"], row["role"]))
     return rows
 
@@ -260,7 +270,7 @@ def documents_used(opened: dict, cutoff, fixtures_root) -> list[dict]:
             entry["date_basis"] = row.get("date_basis")
             entry["rows_used_through"] = str(cutoff)
         else:
-            with_stamp(entry, row)
+            with_release(with_stamp(entry, row), row)
         rows.append(entry)
     rows.sort(key=lambda row: (row["filing_date"] or "9999-12-31",
                                row["accession"], row["role"]))
@@ -362,14 +372,19 @@ def excluded_paragraphs(ticker: str, form: str, *, cutoff, fixtures_root) -> lis
 
 
 def eight_k_file(ticker: str, form: str, *, cutoff, fixtures_root,
-                 on_record: dict) -> tuple[dict | None, str, str | None]:
+                 on_record: dict, trigger: dict | None = None
+                 ) -> tuple[dict | None, str, str | None]:
     """`input_8k.md`: the parsed payload if there is one, the text, the reason.
 
     The payload is returned so the exclusions can be read out of the same
     cleaning that produced the text, instead of cleaning the exhibit twice.
+    `trigger`, the triggering report's manifest row, draws the window of event
+    filings the file ends with (`parse_8k.event_filings`), with or without an
+    earnings release.
     """
     if ("8-K", "exhibit_99_1") in on_record and ("8-K", "primary_html") in on_record:
-        payload = parse_8k.extract(ticker, cutoff=cutoff, fixtures_root=fixtures_root)
+        payload = parse_8k.extract(ticker, cutoff=cutoff, fixtures_root=fixtures_root,
+                                   trigger=trigger)
         return payload, parse_8k.render(payload), None
 
     # The sentence says what is missing and nothing about what comes later. It
@@ -377,14 +392,17 @@ def eight_k_file(ticker: str, form: str, *, cutoff, fixtures_root,
     # 15 of the 24 bundles. PANW's 10-K stated that an 8-K was filed 2026-09-01
     # under a cutoff of 2025-08-29 — twelve months of look-ahead, plus the fact
     # that the company filed one in the window.
-    note = (f"no 8-K filed at or before {cutoff} is on record, so this bundle "
-            f"has no earnings release and no verbatim item body")
+    note = (f"no 8-K filed at or before {cutoff} is on record with an earnings "
+            f"release, so this bundle has no earnings release and no verbatim item "
+            f"body of one")
     # No exhibit on record does not mean no filing index. The item codes and the
     # late-filing notices come from `submissions.json`, which is stored for
     # every company, and a bundle that says nothing about them cannot answer
-    # `filing_irregularity` either way.
+    # `filing_irregularity` either way. Nor does it mean no event filing: the
+    # window's are carried after the index either way.
     text = (f"# {ticker} 8-K\n\n{note}.\n\n"
-            + parse_8k.render_index(ticker, cutoff=cutoff, fixtures_root=fixtures_root))
+            + parse_8k.render_index(ticker, cutoff=cutoff, fixtures_root=fixtures_root,
+                                    trigger=trigger))
     return None, text, note
 
 
@@ -599,7 +617,7 @@ def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIX
     with phase(opened, "input_8k.md"):
         eight_k, eight_k_text, eight_k_note = eight_k_file(
             ticker, form, cutoff=cutoff, fixtures_root=fixtures_root,
-            on_record=on_record)
+            on_record=on_record, trigger=trigger)
 
     # The history is two consecutive 10-Qs, whatever form triggered the run.
     with phase(opened, "input_notes_history.md"):
