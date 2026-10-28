@@ -426,6 +426,11 @@ FILING_PROSE = frozenset({"input_mdna.md", "input_8k.md", "input_notes.md",
 # numbers and trends tables, which are not the filer's words (the second lens's
 # seventh reading: "lowest of the 5 filled years" is Python's).
 FILING_QUOTES = frozenset({"report_notes_text.md"})
+# A notes reader item is the filer's words only when its paragraph is one of the
+# filing's own: the notes, the MD&A, a controls item or an 8-K item. The notes
+# history carries Python's lines among the filer's ("similarity 0.9921"), so a quote
+# of it is not (the second lens's eighth reading).
+FILING_PARAGRAPH = re.compile(r"\d{10}-\d{2}-\d{6}:(?:notes|mdna|item_\w+|8k_\w+):")
 
 
 @functools.lru_cache(maxsize=16)
@@ -447,8 +452,10 @@ def _filer_texts(sources: tuple[tuple[str, str], ...], filing: tuple[tuple[str, 
             ids = [item.get("id") for item in items]
             for item in items:
                 identifier, quote = item.get("id"), item.get("quote")
+                paragraph = item.get("paragraph_id")
                 if isinstance(identifier, str) and ids.count(identifier) == 1 \
-                        and identifier not in fallen and isinstance(quote, str) and quote:
+                        and identifier not in fallen and isinstance(quote, str) and quote \
+                        and isinstance(paragraph, str) and FILING_PARAGRAPH.match(paragraph):
                     out.append((fold(quote), None))
     return tuple(out)
 
@@ -552,6 +559,10 @@ def kept_sentences(text: str, check, *, marker: str = LEFT_OUT) -> tuple[str, li
     problems = [check(part) for part in parts]
     failed = sum(1 for problem in problems if problem)
     if not failed or failed * 2 >= len(parts):
+        return None
+    # a ruled-out word -- an accusation, a recommendation to trade -- is never cut out
+    # of the sentences that build the case for it: the unit falls whole, as before
+    if any(problem and "a ruled-out word" in problem for problem in problems):
         return None
     kept = [part for part, problem in zip(parts, problems) if not problem]
     if len(re.findall(r"\w{2,}", "".join(kept))) < 8:

@@ -2001,7 +2001,8 @@ PLANTED_QUOTE = "the Company recognized impairment charges of $13.1 million at t
 def planted_sources(**extra):
     """The notes report with one more fenced item, as a reader writes one."""
     notes = SOURCES["report_notes_text.md"] + (
-        '\n```json\n{ "id": "planted_quote_item", "quote": "' + PLANTED_QUOTE + '" }\n```\n')
+        '\n```json\n{ "id": "planted_quote_item", "quote": "' + PLANTED_QUOTE
+        + '", "paragraph_id": "0000000000-26-000001:notes:7" }\n```\n')
     return {**SOURCES, "report_notes_text.md": notes, **extra}
 
 
@@ -2227,3 +2228,32 @@ def test_a_quote_of_the_numbers_reader_is_pythons_not_the_filers():
     text = 'The table says "lowest of the 5 filled years" for the margin.'
     assert "a number written" in (analysis_check.words_problem(
         text, FIELDS, forbidden=(), sources={**SOURCES, "report_numbers.md": numbers}) or "")
+
+
+def test_a_ruled_out_word_in_one_sentence_still_drops_the_whole_unit():
+    """The second lens's eighth reading: the case for an accusation or a trade is never
+    published with only its conclusion cut out."""
+    text = ("Receivables outran revenue across the last two quarters. The pattern looks like "
+            "fraud by the sales team. The notes name no customer and no change of terms.")
+    payload = accounting()
+    payload["areas"]["earnings_versus_cash"]["finding"] = text
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+    assert "dropped" in out["areas"]["earnings_versus_cash"]
+    assert [d["where"] for d in out["dropped_items"]].count("areas.earnings_versus_cash") == 1
+
+
+def test_a_notes_reader_quote_of_the_notes_history_is_not_the_filers():
+    """The second lens's eighth reading: the notes history carries Python's lines."""
+    words = "the revenue note changed with similarity 0.9921 against the prior filing"
+    for paragraph, standing in (("0001628280-26-050481:note_history:4", False),
+                                ("0001628280-26-050481:notes:4", True),
+                                ("0001628280-26-050382:8k_2_02:2", True),
+                                (None, False)):
+        item = {"id": "planted", "quote": words}
+        if paragraph:
+            item["paragraph_id"] = paragraph
+        notes = "```json\n" + json.dumps(item) + "\n```\n"
+        problem = analysis_check.words_problem(
+            f'The note says "{words}" plainly.', FIELDS, forbidden=(),
+            sources={"report_notes_text.md": notes})
+        assert (problem is None) == standing, (paragraph, problem)
