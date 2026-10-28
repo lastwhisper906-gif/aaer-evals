@@ -52,6 +52,8 @@ Two headings, in this order:
    A later version splits this into its own reader, and that split must not have
    to re-derive which findings came from where.
 
+**Plain names in your own words.** Write every period, item and form in words, the way the filing writes it: the third quarter of fiscal 2026, not a tag of letters and digits. A letter-number code may stand only where the filing prints it: in your prose inputs, or inside a member or element name the filer gave a fact, which you copy with its id. Python reads your report for one before an analyst sees it, and a report that carries a code of your own is asked for once more, with the same message.
+
 **Item ids.** `id` is a plain name that says what the item looks at: lowercase
 words joined by underscores, with no digit and no capital. It starts with one of
 these areas, written exactly as here — `estimates_and_discretion`,

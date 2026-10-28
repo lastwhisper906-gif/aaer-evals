@@ -189,11 +189,13 @@ from pathlib import Path
 
 try:
     from src import (agent_inputs, analysis_check, baselines, calculator, cutoff_guard, decide,
-                     interpreter_pin, market_labels, memo, quote_gate, trends)
+                     interpreter_pin, market_labels, memo, plain_name_check, quote_gate,
+                     trends)
 except ImportError:  # invoked as a plain script
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     from src import (agent_inputs, analysis_check, baselines, calculator, cutoff_guard, decide,
-                     interpreter_pin, market_labels, memo, quote_gate, trends)
+                     interpreter_pin, market_labels, memo, plain_name_check, quote_gate,
+                     trends)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFINITIONS = REPO_ROOT / ".claude" / "agents"
@@ -268,6 +270,19 @@ SHARED_FIRST = ("calculator_filings_only.json", "calculator_before_drivers.json"
 INSTRUCTION = ("Your directory holds: {files}. Read every one of them in full, following "
                "your instructions, and write {writes} in your directory. Nothing else, "
                "anywhere.")
+
+# A reader's report is held to the plain-name rule before an analyst reads it, by
+# the rule `src/plain_name_check.py` holds a published run to: a letter-number
+# code the run's prose inputs carry is the filer's and stands; any other is the
+# reader's own. Both readers' definitions say so, and a report that carries one
+# is asked for once more with the same message (nothing here writes a prompt at
+# run time, `docs/HOW_WE_WORK.md`), recorded on the reader's own record under
+# `plain_names`. A record the check would refuse is never published, so a run
+# whose reader still writes one stops before the analysts are paid for, and a
+# coded report is never put on record. DELL's notes-text-reader of 2026-10-08,
+# FN's numbers-reader of 2026-10-27 and PANW's of 2026-10-28 each wrote a fiscal
+# year as a two-letter tag on two digits where the filing writes the year out,
+# and none of the three runs could be published.
 
 CONTROL_DIRNAME = "control-single-agent-analyses"
 CONTROL_WRITES = ("control_analysis_accounting.json", "control_analysis_financial.json",
@@ -716,9 +731,17 @@ def agent_entry(record: dict, earlier=None) -> dict:
         entry[agent_inputs.TRIMMED_KEY] = earlier[agent_inputs.TRIMMED_KEY]
     if isinstance(earlier, dict) and isinstance(earlier.get("attempts"), list):
         prior, own = earlier["attempts"], attempts_of(entry)
-        if own[:len(prior)] != prior and entry is not earlier:
+        # an attempt is the same attempt once the codes its report carried
+        # (`plain_names`) are written onto it, and once `carried_forward` has
+        # numbered it by its place
+        if _bare(own[:len(prior)]) != _bare(prior) and entry is not earlier:
             entry = carried_forward(earlier, entry)
     return entry
+
+
+def _bare(rows: list) -> list:
+    return [{key: value for key, value in row.items() if key not in ("codes", "attempt")}
+            if isinstance(row, dict) else row for row in rows]
 
 
 def recorded_agent(run: Path, name: str) -> dict | None:
@@ -765,6 +788,29 @@ def run_agent(run: Path, name: str, logs: Path, model: str | None = None,
         # not from inside `parallel`: the other call's directory is still being built
         boundary_holds(run, f"after {name} returned")
     return record
+
+
+def reader_codes(run: Path, name: str) -> list[str]:
+    """The letter-number codes a reader's report carries that the run's inputs do not.
+
+    The rule `plain_name_check.occurrences` applies to a published run, to the
+    letter: a code the filing prints anywhere in the run's inputs
+    (`quoted_codes`) is the filer's and stands, so the gate refuses exactly what
+    the published-run check refuses. Held to the reader's own directory
+    instead, it refused WDC's numbers reader for "Term Loan A-3", the filer's
+    name for a loan the notes print and the reader met as the member
+    `wdc:TermLoanA3Member`, a record the published-run check passes (the inbox
+    row of 2026-10-28 holds the choice).
+    """
+    directory = agent_inputs.session_root(run, name)
+    report = directory / agent_inputs.AGENTS[name].writes
+    quoted = plain_name_check.quoted_codes(run)
+    found: list[str] = []
+    for line in report.read_text(encoding="utf-8").splitlines():
+        for code in plain_name_check.codes_in(line):
+            if code not in quoted and code not in found:
+                found.append(code)
+    return found
 
 
 def boundary_holds(run: Path, when: str) -> None:
@@ -815,17 +861,26 @@ def parallel(run: Path, names: tuple[str, ...], logs: Path, model: str | None = 
         futures = {name: pool.submit(run_agent, run, name, logs, model, policy, check=False)
                    for name in names}
         records = {name: future.result() for name, future in futures.items()}
-    broken = boundary_violations(run)
-    if broken:
-        stop = boundary_broken(broken, f"after {', '.join(names)} returned")
-        clean = tuple(name for name in names if records[name].get("result") == "written"
-                      and not any(line.startswith(f"{name}: ") for line in broken))
-        try:
-            put_on_record(run, clean)
-        except STOPS as exc:
-            raise stop from exc
-        raise stop
+    stop_on_a_broken_boundary(run, names, records, f"after {', '.join(names)} returned")
     return records
+
+
+def stop_on_a_broken_boundary(run: Path, names, records: dict, when: str) -> None:
+    """A broken boundary stops the run; first each agent of `names` that wrote,
+    whose directory the check names nothing in, and whose report carries no
+    code of its own, is put on record."""
+    broken = boundary_violations(run)
+    if not broken:
+        return
+    stop = boundary_broken(broken, when)
+    clean = tuple(name for name in names if records[name].get("result") == "written"
+                  and not any(line.startswith(f"{name}: ") for line in broken)
+                  and not (name in READERS and reader_codes(run, name)))
+    try:
+        put_on_record(run, clean)
+    except STOPS as exc:
+        raise stop from exc
+    raise stop
 
 
 def put_on_record(run: Path, names: tuple[str, ...]) -> None:
@@ -1498,10 +1553,37 @@ def _run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: 
     readers = pending("numbers-reader", "notes-text-reader")
     if readers:
         agents.update(parallel(run, readers, logs, model, policy))
+        # a second ask only on a run that can still go on: no limit, and every
+        # reader written; and none after a reader whose code outlived its own
+        ending = limit_hit(agents) or any(agents[name].get("result") != "written"
+                                          for name in readers)
+        for name in () if ending else readers:
+            codes = reader_codes(run, name)
+            if not codes:
+                continue
+            # the codes ride on the attempt that wrote them, so a resume that
+            # carries the attempts forward carries what each one wrote
+            first = dict(agents[name], attempts=attempts_of(agents[name]))
+            first["attempts"][-1] = dict(first["attempts"][-1], codes=codes)
+            record_agent(run, name, first)
+            again = run_agent(run, name, logs, model, policy, check=False)
+            written = again.get("result") == "written"
+            left = reader_codes(run, name) if written else None
+            again = dict(again, attempts=attempts_of(again),
+                         plain_names={"codes": codes, "asked_again": True, "left": left})
+            if written:
+                again["attempts"][-1] = dict(again["attempts"][-1], codes=left)
+            agents[name] = again
+            record_agent(run, name, again)
+            stop_on_a_broken_boundary(run, readers, agents, f"after {name} was asked again")
+            if left or not written:
+                break
     if limit_hit(agents):
         # what finished is gated into the run root, so it is on record and the
-        # resumed run never calls it again
-        finished = tuple(name for name in readers if agents[name]["result"] == "written")
+        # resumed run never calls it again; a report with a code of its own is
+        # not, so the resumed run asks that reader afresh
+        finished = tuple(name for name in readers if agents[name]["result"] == "written"
+                         and not reader_codes(run, name))
         if finished:
             gate_readers(run, finished)
         return finish(run, agents, stages, "the limit was reached", model, skipped=skipped,
@@ -1510,6 +1592,16 @@ def _run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: 
         return finish(run, agents, stages, "a reader failed twice", model, skipped=skipped,
                       resumed_from=resumed,
                       fallback=policy.fallback)
+    # the readers this invocation called, and no other: a record restored from a
+    # stopped night says nothing about the report the reader wrote tonight
+    still = {name: agents[name]["plain_names"]["left"] for name in readers
+             if (agents[name].get("plain_names") or {}).get("left")}
+    if still:
+        return finish(run, agents, stages,
+                      "a reader's report still carries a letter-number code of its own after "
+                      "it was asked again: " + "; ".join(f"{name}: {', '.join(codes)}"
+                                                        for name, codes in still.items()),
+                      model, skipped=skipped, resumed_from=resumed, fallback=policy.fallback)
     if readers:
         # the readers this invocation called, and no other: a report gated on
         # the night the limit hit stays as the run root holds it
