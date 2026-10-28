@@ -1223,3 +1223,160 @@ def test_a_prose_file_that_is_not_utf8_is_refused_and_not_replaced(tmp_path):
     (run / "input_mdna.md").write_bytes(MDNA.encode("utf-8").replace(b"Second", b"Sec\xffond"))
     with pytest.raises(AgentInputError, match="is not UTF-8"):
         agent_inputs.build(run, "valuation-analyst")
+
+
+# --- the rows of a note's table reach the accounting analyst -------------------------
+#
+# The notes reader marks a table whose change is its amounts "amounts only" and
+# makes no item of it, and the numbers reader's input holds no fact the filer
+# tagged in its own namespace, so the row that settles a difference between the
+# release and the 10-Q never reached the analyst: 6 of the analysis-grader's 10
+# contradictions left unresolved over the nine reruns of 2026-10-28. The
+# calculator now carries each table's facts (`src/note_tables.py`). Expected
+# values: each row's printed amount, read by eye in the table as the filing
+# prints it (`input_notes.md` of the committed rerun, the unit the table's
+# heading states), and the concept the committed instance tags it with, read
+# by eye in the instance.
+NOTE_TABLE_RUNS = {
+    # Apple's intangible assets, in millions. The non-current line is the
+    # release's "Intangible assets, net" of 20,342 and 11,093, an Apple
+    # extension the numbers reader's input does not carry. Instants, so no start.
+    # Each row: fact id, concept, start, end or instant, value.
+    "AAPL": ("runs/AAPL/0000320193-26-000020-rerun-2026-10-28",
+             "0000320193-26-000020:notes:38", [
+                 ("f-656", "us-gaap:IntangibleAssetsGrossExcludingGoodwill", None, "2026-06-27",
+                  38_220e6),
+                 ("f-657", "us-gaap:IntangibleAssetsGrossExcludingGoodwill", None, "2025-09-27",
+                  24_950e6),
+                 ("f-658", "us-gaap:FiniteLivedIntangibleAssetsAccumulatedAmortization", None,
+                  "2026-06-27", 12_803e6),
+                 ("f-664", "aapl:IntangibleAssetsNetExcludingGoodwillNoncurrent", None,
+                  "2026-06-27", 20_342e6),
+                 ("f-665", "aapl:IntangibleAssetsNetExcludingGoodwillNoncurrent", None,
+                  "2025-09-27", 11_093e6),
+             ]),
+    # Ciena's share-based compensation capitalized in inventory, in thousands:
+    # "—" this quarter and "(64)" in the quarter ended May 3, 2025. The quarter's
+    # first day is the instance's: contexts c-11 (2026-02-01 to 2026-05-02) and
+    # c-12 (2025-02-02 to 2025-05-03); the six months to 2026-05-02 (c-1, f-1160)
+    # also print "—", so the start is what tells the quarter's cell apart.
+    "CIEN": ("runs/CIEN/0001628280-26-040767-rerun-2026-10-28",
+             "0001628280-26-040767:notes:132", [
+                 ("f-1158", "us-gaap:EmployeeServiceShareBasedCompensationAllocationOfRecognized"
+                  "PeriodCostsCapitalizedAmount", "2026-02-01", "2026-05-02", 0.0),
+                 ("f-1159", "us-gaap:EmployeeServiceShareBasedCompensationAllocationOfRecognized"
+                  "PeriodCostsCapitalizedAmount", "2025-02-02", "2025-05-03", -64e3),
+                 ("f-1160", "us-gaap:EmployeeServiceShareBasedCompensationAllocationOfRecognized"
+                  "PeriodCostsCapitalizedAmount", "2025-11-02", "2026-05-02", 0.0),
+             ]),
+    # Littelfuse's Basler acquisition, in thousands: receivables 14,739,
+    # inventories 20,703, current liabilities (15,380), tagged f-516, f-517 and
+    # f-523 at context c-178 in the instance (stored gzipped).
+    "LFUS": ("runs/LFUS/0001628280-26-050481-rerun-2026-10-28",
+             "0001628280-26-050481:notes:37", [
+                 ("f-516", "us-gaap:BusinessCombinationRecognizedIdentifiableAssetsAcquiredAnd"
+                  "LiabilitiesAssumedCurrentAssetsReceivables", None, "2025-12-11", 14_739e3),
+                 ("f-517", "us-gaap:BusinessCombinationRecognizedIdentifiableAssetsAcquiredAnd"
+                  "LiabilitiesAssumedInventory", None, "2025-12-11", 20_703e3),
+                 ("f-523", "us-gaap:BusinessCombinationRecognizedIdentifiableAssetsAcquiredAnd"
+                  "LiabilitiesAssumedCurrentLiabilities", None, "2025-12-11", 15_380e3),
+             ]),
+}
+REPO = Path(__file__).resolve().parent.parent
+
+
+def _analyst_directory_of(tmp_path: Path, ticker: str) -> Path:
+    """A run holding the committed rerun's bundle and reports, with its calculator
+    computed now over the committed fixture store, and the accounting analyst's
+    directory built from it."""
+    from src import calculator
+
+    committed = REPO / NOTE_TABLE_RUNS[ticker][0]
+    run = tmp_path / "runs" / ticker / committed.name
+    run.mkdir(parents=True)
+    # input_numbers.json too: the calculator reads the filing's own facts from it
+    # where companyfacts lagged the filing (Littelfuse's quarter)
+    for name in ("input_manifest.json", "input_notes.md", "input_numbers.json",
+                 "report_numbers.md", "report_notes_text.md"):
+        (run / name).write_bytes((committed / name).read_bytes())
+    manifest = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
+    old = json.loads((committed / "calculator_filings_only.json").read_text(encoding="utf-8"))
+    payload = calculator.calculate(ticker=ticker, cutoff=manifest["cutoff"],
+                                   period_end=old["period_end"], form=manifest["form"],
+                                   accession=manifest["accession"],
+                                   fixtures_root=REPO / "tests" / "fixtures", bundle=run)
+    (run / "calculator_filings_only.json").write_text(
+        json.dumps(calculator.filings_only(payload), indent=1), encoding="utf-8")
+    agent_inputs.build(run, "accounting-analyst")
+    return agent_inputs.session_root(run, "accounting-analyst")
+
+
+@pytest.mark.parametrize("ticker", sorted(NOTE_TABLE_RUNS))
+def test_the_rows_of_a_note_table_reach_the_accounting_analyst(tmp_path, ticker):
+    _, paragraph, rows = NOTE_TABLE_RUNS[ticker]
+    seen = _analyst_directory_of(tmp_path, ticker)
+    held = json.loads((seen / "calculator_filings_only.json").read_text(encoding="utf-8"))
+    table = held["note_tables"]["tables"]["notes_" + paragraph.rsplit(":", 1)[1]]
+    assert table["paragraph"] == paragraph
+    accession = paragraph.split(":")[0]
+    got = {(fact["fact"].removeprefix(accession + ":"), fact["concept"], fact.get("start"),
+            fact.get("instant") or fact.get("end"), fact["value"]) for fact in table["facts"]}
+    for row in rows:
+        assert row in got, row
+    # every fact of the table is the filing's own, named by its accession
+    assert all(fact["fact"].startswith(paragraph.split(":")[0] + ":")
+               for fact in table["facts"])
+    assert held["note_tables"]["unmatched"] == []
+    if ticker == "AAPL":
+        # the weighted-average grant-date fair value of the units granted, 258.16
+        # dollars a unit (`aapl-20260627_htm.xml`, unit usdPerShare), is a price
+        # and never reaches the analyst
+        assert not any("GrantDateFairValue" in fact["concept"] or fact["value"] == 258.16
+                       for entry in held["note_tables"]["tables"].values()
+                       for fact in entry["facts"])
+        assert held["note_tables"]["left_out_as_a_price"].get("notes_48")
+        # the table prints five rows in two columns, and those ten numbers are
+        # all it holds: f-656 to f-665, read by eye in the inline document
+        assert sorted(fact["fact"] for fact in table["facts"]) == \
+            [f"{paragraph.split(':')[0]}:f-{n}" for n in range(656, 666)]
+    # and the directory is still the layer's: no price, no filing
+    assert "market" not in held and "valuation" not in held
+    assert not any(name.startswith("input_") and name.endswith((".md", ".htm"))
+                   for name in _names(seen))
+
+
+def test_a_note_table_fact_is_cited_by_its_path_and_read_as_a_number(tmp_path):
+    """The path the analyst writes resolves in its file, and the number at it is
+    the one the gate and the memo read (`analysis_check.placeholder_value`)."""
+    from src import analysis_check
+
+    seen = _analyst_directory_of(tmp_path, "AAPL")
+    held = json.loads((seen / "calculator_filings_only.json").read_text(encoding="utf-8"))
+    facts = held["note_tables"]["tables"]["notes_38"]["facts"]
+    at = next(i for i, fact in enumerate(facts)
+              if fact["concept"] == "aapl:IntangibleAssetsNetExcludingGoodwillNoncurrent"
+              and fact["instant"] == "2026-06-27")
+    path = f"note_tables.tables.notes_38.facts.{at}"
+    # written in braces in a sentence, as the analyst writes it
+    assert analysis_check.PLACEHOLDER.fullmatch("{" + path + "}")
+    assert analysis_check.placeholder_value(held, path) == 20_342e6
+
+
+def test_a_run_whose_note_tables_cannot_be_read_says_so_where_the_run_is_checked(tmp_path):
+    """No `input_notes.md` in the bundle: the reason is in the section and in the
+    file's own `missing` list, which the analyst's view keeps."""
+    from src import calculator
+
+    committed = REPO / NOTE_TABLE_RUNS["AAPL"][0]
+    run = tmp_path / "runs" / "AAPL" / committed.name
+    run.mkdir(parents=True)
+    (run / "input_numbers.json").write_bytes((committed / "input_numbers.json").read_bytes())
+    old = json.loads((committed / "calculator_filings_only.json").read_text(encoding="utf-8"))
+    payload = calculator.calculate(ticker="AAPL", cutoff=old["cutoff"],
+                                   period_end=old["period_end"], form="10-Q",
+                                   accession=old["accession"],
+                                   fixtures_root=REPO / "tests" / "fixtures", bundle=run)
+    assert "input_notes.md is not in the bundle" in payload["note_tables"]["missing"]
+    line = next(line for line in payload["missing"] if line.startswith("note_tables: "))
+    assert "input_notes.md" in line
+    assert line in calculator.filings_only(payload)["missing"]

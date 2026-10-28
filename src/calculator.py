@@ -103,10 +103,10 @@ import zipfile
 from pathlib import Path
 
 try:
-    from src import cutoff_guard, interpreter_pin, market, trends
+    from src import cutoff_guard, interpreter_pin, market, note_tables, trends
 except ImportError:  # invoked as a plain script
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from src import cutoff_guard, interpreter_pin, market, trends
+    from src import cutoff_guard, interpreter_pin, market, note_tables, trends
 
 BAD_INPUT = 2
 INCOMPLETE = 4
@@ -2307,6 +2307,12 @@ def calculate(*, ticker: str, cutoff, period_end: str, form: str, accession: str
         missing.append(f"wacc: {capital.get('missing')}")
     if "missing" in value:
         missing.append(f"valuation: {value['missing']}")
+    tables = note_tables.from_run(ticker, accession, cutoff, fixtures_root=fixtures_root,
+                                  bundle=bundle)
+    if bundle is not None and "missing" in tables:
+        # a run's bundle whose tables cannot be read; a call with no bundle at
+        # all (the command line's default) never had any to read
+        missing.append(f"note_tables: {tables['missing']}")
 
     return {
         "ticker": ticker, "accession": accession, "form": form,
@@ -2327,6 +2333,7 @@ def calculate(*, ticker: str, cutoff, period_end: str, form: str, accession: str
         "earnings_versus_cash": earnings,
         "free_cash_flow": free,
         "concentration": concentration(bundle),
+        "note_tables": tables,
         "trend_table": trend_values(document, cutoff, period_end),
         "trend_table_note": ("computed on the same record as every figure above, which for "
                              "an accession listed under "
