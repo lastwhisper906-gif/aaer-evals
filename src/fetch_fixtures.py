@@ -362,19 +362,34 @@ def document_types(fetcher: Fetcher, cik: str, accession: str) -> list[tuple[str
     return [(t.upper(), name) for t, name in DOCUMENT_TYPE.findall(header)]
 
 
+def inline_instance(filing: dict, names: list[str]) -> str:
+    """The instance EDGAR extracts from an inline-XBRL primary document and
+    publishes beside it as {stem}_htm.xml, or "" for a filing that has none."""
+    instance = f"{filing['primaryDocument'].rsplit('.', 1)[0]}_htm.xml"
+    if instance not in names:
+        candidates = [n for n in names if n.endswith("_htm.xml")]
+        instance = candidates[0] if candidates else ""
+    return instance
+
+
+def needs_types(form: str, filing: dict, names: list[str]) -> bool:
+    """Whether the submission header must be read to find a document: an
+    8-K's exhibit 99.1, and the instance of a report filed before inline XBRL,
+    which only the header's EX-101.INS names."""
+    return form == "8-K" or (form in ("10-K", "10-Q") and not inline_instance(filing, names))
+
+
 def wanted_documents(form: str, filing: dict, names: list[str],
                      types: list[tuple[str, str]]) -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
     """(role, filename) pairs to fetch, plus (role, reason) for anything not found."""
     primary = filing["primaryDocument"]
     wanted, missing = [("primary_html", primary)], []
     if form in ("10-K", "10-Q"):
-        # EDGAR extracts the instance from an inline-XBRL primary document and
-        # publishes it beside it as {stem}_htm.xml.
-        stem = primary.rsplit(".", 1)[0]
-        instance = f"{stem}_htm.xml"
-        if instance not in names:
-            candidates = [n for n in names if n.endswith("_htm.xml")]
-            instance = candidates[0] if candidates else ""
+        # A report filed before inline XBRL (large filers before mid-2019,
+        # the rest by 2021) carries its instance as a document of its own,
+        # typed EX-101.INS in the submission header.
+        instance = inline_instance(filing, names) \
+            or next((name for kind, name in types if kind == "EX-101.INS"), "")
         if instance:
             wanted.append(("xbrl_instance", instance))
         else:
@@ -479,7 +494,8 @@ def fetch_company(fetcher: Fetcher, ticker: str, cik: str, as_of: str,
             continue
         accession = filing["accessionNumber"]
         names = directory(fetcher, cik, accession)
-        types = document_types(fetcher, cik, accession) if form == "8-K" else []
+        types = document_types(fetcher, cik, accession) \
+            if needs_types(form, filing, names) else []
         wanted, unfound = wanted_documents(form, filing, names, types)
         # A document already on record is never reported missing: the fixture is
         # the record, and a hiccup in one directory listing does not unmake it.
@@ -518,7 +534,9 @@ def fetch_company(fetcher: Fetcher, ticker: str, cik: str, as_of: str,
     else:
         accession = previous["accessionNumber"]
         names = directory(fetcher, cik, accession)
-        wanted, unfound = wanted_documents("10-Q", previous, names, [])
+        types = document_types(fetcher, cik, accession) \
+            if needs_types("10-Q", previous, names) else []
+        wanted, unfound = wanted_documents("10-Q", previous, names, types)
         prior_roles = {"primary_html": "prior_period",
                        "xbrl_instance": "prior_period_xbrl_instance"}
         problems.extend(f"{ticker}: prior period {line}" for role, line in unfound

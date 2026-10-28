@@ -28,6 +28,7 @@ then the bundle, then, when asked, the run.
 
     python -m src.on_demand --ticker MSFT --form 10-Q
     python -m src.on_demand --ticker MSFT --accession 0001193125-26-191507 --run
+    python -m src.on_demand --ticker SOMEONE --cik 1234567 --accession <accession> --run
 
 A run directory that already exists is refused, and the one named is claimed
 by creating it before anything is built: `runs/` is append-only, so a published
@@ -99,10 +100,20 @@ def the_filing(rows: list[dict], form: str, accession: str | None) -> dict:
 
 
 def fetch_store(client, ticker: str, *, form: str = "10-Q", accession: str | None = None,
-                root: Path | None = None, ticker_map: str = TICKER_MAP) -> dict:
-    """The filing's store in the cache, fetched or found, and what it holds."""
+                root: Path | None = None, ticker_map: str = TICKER_MAP,
+                cik: str | None = None) -> dict:
+    """The filing's store in the cache, fetched or found, and what it holds.
+
+    `cik`, when given, names the registrant and `ticker` is only the name the
+    store and the run go under: a company whose shares no longer trade is in
+    no ticker map, and a ticker once its own may name another registrant now."""
     ticker = ticker.upper()
-    cik, cik_from = cik_of(client, ticker, ticker_map=ticker_map)
+    if cik is not None:
+        if not str(cik).strip().isdigit():
+            raise OnDemandError(f"--cik {cik!r} is not a number")
+        cik, cik_from = f"{int(cik):010d}", "--cik"
+    else:
+        cik, cik_from = cik_of(client, ticker, ticker_map=ticker_map)
     rows = fetch_fixtures.every_filing(client, cik)
     filing = the_filing(rows, form, accession)
     accession, as_of = filing["accessionNumber"], filing["filingDate"]
@@ -122,6 +133,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--ticker", required=True)
     parser.add_argument("--form", default="10-Q", choices=FORMS)
     parser.add_argument("--accession", default=None)
+    parser.add_argument("--cik", default=None,
+                        help="the registrant, when the ticker is not in EDGAR's ticker map "
+                             "or names another company now; --ticker is then only the name "
+                             "the run goes under")
     parser.add_argument("--out", default=None,
                         help="the run directory; default runs/<ticker>/<accession>/")
     parser.add_argument("--run", action="store_true",
@@ -129,7 +144,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         client = edgar_client.EdgarClient()
-        held = fetch_store(client, args.ticker, form=args.form, accession=args.accession)
+        held = fetch_store(client, args.ticker, form=args.form, accession=args.accession,
+                           cik=args.cik)
     except (OnDemandError, edgar_client.EdgarError) as exc:
         print(f"on_demand: {exc}", file=sys.stderr)
         return BAD_INPUT
