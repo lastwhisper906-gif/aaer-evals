@@ -356,8 +356,18 @@ class EdgarClient:
         raise EdgarError(f"{url}: no answer")    # not reached
 
     def get(self, url: str) -> bytes:
-        """The body EDGAR serves at `url`, unpacked, after at most three retries."""
-        return self._get(url)[0]
+        """The body EDGAR serves at `url`, unpacked, after at most three retries.
+
+        A body nothing vouches for the length of (no `Content-Length`, no chunked
+        framing, no compression) is refused: a connection's close is its only
+        end, and a close can come early. `document` alone takes one, and only
+        against the hash its record expects.
+        """
+        body, framed = self._get(url)
+        if not framed:
+            raise EdgarError(f"{url}: nothing vouches for the length of the {len(body)} "
+                             "bytes served")
+        return body
 
     def get_json(self, url: str):
         try:

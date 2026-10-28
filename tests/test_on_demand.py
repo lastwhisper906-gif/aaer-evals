@@ -208,3 +208,104 @@ def test_the_bundle_from_the_store_on_demand_is_the_bundle_from_the_committed_on
     for name in ("input_notes.md", "input_mdna.md", "input_controls.md", "input_8k.md",
                  "input_numbers.json", "input_trends.json"):
         assert (on_demand_run / name).read_bytes() == (committed_run / name).read_bytes(), name
+
+
+def test_a_run_directory_that_holds_anything_is_never_written_over(tmp_path, server, monkeypatch):
+    """`runs/` is append-only: a published run of the same filing stands as it is."""
+    fetcher = client(tmp_path, server)
+    monkeypatch.setattr(on_demand.edgar_client, "EdgarClient", lambda: fetcher)
+    published = tmp_path / "runs" / TICKER / ACCESSION
+    published.mkdir(parents=True)
+    (published / "input_manifest.json").write_text('{"analysed_utc": "2026-10-08"}\n')
+    assert on_demand.main(["--ticker", TICKER, "--accession", ACCESSION,
+                           "--out", str(published)]) == on_demand.BAD_INPUT
+    assert [p.name for p in published.iterdir()] == ["input_manifest.json"]
+    assert (published / "input_manifest.json").read_text() == '{"analysed_utc": "2026-10-08"}\n'
+
+
+# Planted stamps on the cutoff day, in the index's own universal time: NVIDIA's
+# 10-Q at 20:36:00Z (EDGAR's stamp for it, read 2026-10-06; tests/test_run_analysis.py
+# carries it as NVDA_ACCEPTED), and four rows the test plants around it.
+STAMPS = {ACCESSION: "2026-08-26T20:36:00.000Z"}
+ROWS = [
+    {"accessionNumber": "a", "filingDate": "2026-08-26", "acceptanceDateTime": "2026-08-26T20:21:00.000Z"},
+    {"accessionNumber": "b", "filingDate": "2026-08-26", "acceptanceDateTime": "2026-08-26T20:50:00.000Z"},
+    {"accessionNumber": "c", "filingDate": "2026-08-26", "acceptanceDateTime": ""},
+    {"accessionNumber": "d", "filingDate": "2026-08-27", "acceptanceDateTime": "2026-08-27T13:00:00.000Z"},
+    {"accessionNumber": "e", "filingDate": "2026-08-25", "acceptanceDateTime": "2026-08-25T23:00:00.000Z"},
+]
+
+
+def test_a_filing_made_later_on_the_triggers_day_is_not_known_at_it():
+    trigger = {"accessionNumber": ACCESSION, "filingDate": "2026-08-26",
+               "acceptanceDateTime": STAMPS[ACCESSION]}
+    kept = [row["accessionNumber"] for row in on_demand.known_at(ROWS, trigger)]
+    assert kept == ["a", "c", "e"]
+
+
+def test_a_filing_made_later_on_the_triggers_day_never_reaches_the_store(tmp_path, server):
+    """Planted: the release 8-K stamped at 20:21Z, before the 10-Q, and an 8-K
+    with item 5.02 stamped at 21:30Z the same day, after it."""
+    index = json.loads(raw_index())
+    recent = index["filings"]["recent"]
+    for i, accession in enumerate(recent["accessionNumber"]):
+        if accession == ACCESSION:
+            recent["acceptanceDateTime"][i] = STAMPS[ACCESSION]
+        elif accession == "0001045810-26-000073":
+            recent["acceptanceDateTime"][i] = "2026-08-26T20:21:00.000Z"
+    late = {"accessionNumber": "0001045810-26-000076", "filingDate": "2026-08-26",
+            "reportDate": "2026-08-26", "form": "8-K", "items": "5.02",
+            "primaryDocument": "nvda-20260826b.htm", "primaryDocDescription": "8-K",
+            "isXBRL": 0, "acceptanceDateTime": "2026-08-26T21:30:00.000Z"}
+    for key, value in late.items():
+        recent[key].insert(0, value)
+    server.bodies[f"/submissions/CIK{CIK}.json"] = (json.dumps(index).encode(), "")
+    held = on_demand.fetch_store(client(tmp_path, server), TICKER, accession=ACCESSION)
+    rows = json.loads((held["store"] / TICKER / "submissions.json").read_text())["filings"]
+    accessions = {row["accession"] for row in rows}
+    assert "0001045810-26-000076" not in accessions
+    assert "0001045810-26-000073" in accessions
+
+
+def test_a_companyfacts_row_filed_after_the_filing_never_reaches_the_store(tmp_path, server):
+    """Planted: a row of revenue filed 2026-08-31, after the 10-Q of 2026-08-26."""
+    path = f"/api/xbrl/companyfacts/CIK{CIK}.json"
+    served = json.loads(server.bodies[path][0])
+    concept = served["facts"]["us-gaap"]["Revenues"]["units"]["USD"]
+    concept.append({"start": "2026-04-27", "end": "2026-07-26", "val": 1, "accn": "x",
+                    "form": "10-Q/A", "filed": "2026-08-31"})
+    server.bodies[path] = (json.dumps(served).encode(), "")
+    held = on_demand.fetch_store(client(tmp_path, server), TICKER, accession=ACCESSION)
+    facts = json.loads(gzip.decompress(
+        (held["store"] / TICKER / "companyfacts.json.gz").read_bytes()))
+    assert not any(row.get("filed") == "2026-08-31" for row in
+                   facts["facts"]["us-gaap"]["Revenues"]["units"]["USD"])
+
+
+def test_edgars_map_must_name_one_registrant(tmp_path, server):
+    def plant(rows):
+        server.bodies["/files/company_tickers.json"] = (json.dumps(
+            {str(i): row for i, row in enumerate(rows)}).encode(), "")
+    fetcher = client(tmp_path, server)
+    plant([{"cik_str": 789019, "ticker": "MSFT"}, {"cik_str": 789019, "ticker": "msft"}])
+    assert on_demand.cik_of(fetcher, "MSFT")[0] == "0000789019"
+    plant([{"cik_str": 789019, "ticker": "MSFT"}, {"cik_str": 1, "ticker": "MSFT"}])
+    with pytest.raises(on_demand.OnDemandError, match="names 2 registrants"):
+        on_demand.cik_of(fetcher, "MSFT")
+
+
+def test_a_universe_file_that_cannot_be_read_is_refused_not_passed_over(tmp_path, server,
+                                                                      monkeypatch):
+    def broken(path=None):
+        raise on_demand.universe.UniverseError("NVDA is listed twice")
+    monkeypatch.setattr(on_demand.universe, "tickers", broken)
+    with pytest.raises(on_demand.OnDemandError, match="universe.json cannot be read"):
+        on_demand.cik_of(client(tmp_path, server), "NVDA")
+
+
+def test_the_latest_of_two_reports_of_one_day_is_the_higher_accession():
+    rows = [{"accessionNumber": "0001045810-26-000075", "filingDate": "2026-08-26",
+             "form": "10-Q"},
+            {"accessionNumber": "0001045810-26-000076", "filingDate": "2026-08-26",
+             "form": "10-Q"}]
+    assert on_demand.the_filing(rows, "10-Q", None)["accessionNumber"] == "0001045810-26-000076"

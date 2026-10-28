@@ -13,7 +13,9 @@ then the bundle, then, when asked, the run.
    map, `company_tickers.json`, and must name exactly one registrant; the
    answer and where it came from are printed and returned.
 2. **The filing.** The accession given, or the company's latest filing of the
-   form, read off the submissions index with every overflow page.
+   form, read off the submissions index with every overflow page. Only the
+   filings that stood when it was accepted are picked from: a filing made later
+   on its own day is not (`known_at`).
 3. **The store**, under `$AAER_CACHE/stores/<ticker>-<accession>/`: the
    filing, the documents the bundle reads around it (the latest 10-K, the
    10-Q before, the latest earnings 8-K), the submissions index and the
@@ -25,7 +27,12 @@ then the bundle, then, when asked, the run.
 5. **The run**, by `src/run_analysis.py`, when `--run` is given.
 
     python -m src.on_demand --ticker MSFT --form 10-Q
-    python -m src.on_demand --ticker AAPL --accession 0000320193-26-000020 --run
+    python -m src.on_demand --ticker MSFT --accession 0001193125-26-191507 --run
+
+A run directory that already holds anything is refused: `runs/` is
+append-only, so a published run is never written over. "Any company" still
+needs what the bundle is built from: a 10-K, two 10-Qs and an earnings 8-K on
+or before the filing; a company without them is refused with what is missing.
 """
 
 from __future__ import annotations
@@ -50,11 +57,15 @@ class OnDemandError(Exception):
 
 
 def cik_of(client, ticker: str, *, ticker_map: str = TICKER_MAP) -> tuple[str, str]:
-    """The ten-digit CIK for a ticker, and where the answer came from."""
+    """The ten-digit CIK for a ticker, and where the answer came from.
+
+    A universe file that cannot be read is an error, not a ticker outside it.
+    """
     try:
-        return universe.cik(ticker), "universe.json"
-    except universe.UniverseError:
-        pass
+        if ticker.strip().upper() in universe.tickers():
+            return universe.cik(ticker), "universe.json"
+    except universe.UniverseError as exc:
+        raise OnDemandError(f"universe.json cannot be read: {exc}") from None
     rows = client.get_json(ticker_map)
     found = sorted({int(row["cik_str"]) for row in (rows or {}).values()
                     if isinstance(row, dict) and str(row.get("ticker", "")).upper()
@@ -82,6 +93,28 @@ def the_filing(rows: list[dict], form: str, accession: str | None) -> dict:
     return latest
 
 
+def known_at(rows: list[dict], filing: dict) -> list[dict]:
+    """The filings that stood when `filing` was accepted.
+
+    The cutoff is the filing's own date, and a filing made later that same day
+    is not one its reader could have seen: the owner's grader refuses a
+    document accepted after the triggering report on the cutoff day
+    (`evals/regression/mechanical.py`, `nothing_after_cutoff`). A row of that
+    day is kept when it was accepted no later than the filing, or when either
+    stamp is missing, which this cannot judge and the grader then reads.
+    """
+    day, stamp = filing["filingDate"], filing.get("acceptanceDateTime") or ""
+    kept = []
+    for row in rows:
+        if row["filingDate"] > day:
+            continue
+        theirs = row.get("acceptanceDateTime") or ""
+        if row["filingDate"] == day and stamp and theirs and theirs > stamp:
+            continue
+        kept.append(row)
+    return kept
+
+
 def fetch_store(client, ticker: str, *, form: str = "10-Q", accession: str | None = None,
                 root: Path | None = None, ticker_map: str = TICKER_MAP) -> dict:
     """The filing's store in the cache, fetched or found, and what it holds."""
@@ -91,7 +124,8 @@ def fetch_store(client, ticker: str, *, form: str = "10-Q", accession: str | Non
     filing = the_filing(rows, form, accession)
     accession, as_of = filing["accessionNumber"], filing["filingDate"]
     store = (root or client.root / "stores") / f"{ticker}-{accession}"
-    problems = fetch_fixtures.store_up_to(client, ticker, cik, filing, store, filings=rows)
+    problems = fetch_fixtures.store_up_to(client, ticker, cik, filing, store,
+                                          filings=known_at(rows, filing))
     if problems:
         raise OnDemandError(f"{ticker} {accession}: " + "; ".join(problems))
     return {"ticker": ticker, "cik": cik, "cik_from": cik_from, "form": filing["form"],
@@ -119,6 +153,12 @@ def main(argv: list[str] | None = None) -> int:
     print(f"{held['ticker']} CIK {held['cik']} (from {held['cik_from']}): {held['form']} "
           f"{held['accession']} filed {held['filing_date']}, store {held['store']}")
     run = args.out or str(assemble_bundle.default_out(held["ticker"], held["accession"]))
+    if Path(run).exists() and any(Path(run).iterdir()):
+        # `runs/` is append-only (CLAUDE.md): a published run is never written
+        # over, and a new run of the same filing goes in a directory of its own
+        print(f"on_demand: {run} already holds a run; name a new directory with --out",
+              file=sys.stderr)
+        return BAD_INPUT
     status = assemble_bundle.main(["--ticker", held["ticker"], "--form", held["form"],
                                    "--accession", held["accession"],
                                    "--fixtures", str(held["store"]), "--out", run])

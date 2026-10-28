@@ -368,6 +368,20 @@ def test_a_body_nothing_vouches_for_is_stored_only_against_a_known_hash(tmp_path
     assert path.read_bytes() == FILED
 
 
+
+def test_an_index_or_record_nothing_vouches_for_is_refused(tmp_path, server):
+    """`get` and `get_json` read indexes and records no hash is kept for, so a
+    body whose only end is the connection's close is never taken from them."""
+    server.unframed.add("/index.json")
+    server.bodies["/index.json"] = (b'{"directory": {"item": []}}', "")
+    with pytest.raises(EdgarError, match="nothing vouches for the length"):
+        client(tmp_path, server).get(server.url + "/index.json")
+    with pytest.raises(EdgarError, match="nothing vouches for the length"):
+        client(tmp_path, server).get_json(server.url + "/index.json")
+    server.unframed.discard("/index.json")
+    assert client(tmp_path, server).get_json(server.url + "/index.json") == \
+        {"directory": {"item": []}}
+
 # --- retries --------------------------------------------------------------------
 
 
