@@ -374,7 +374,8 @@ def _eight_k(row: dict, documents: list[dict], cutoff: str, fixtures_root) -> li
                     f"{'s' if len(shown) > 1 else ''} {', '.join(shown)}, verbatim")
         out.append(dict(base, role=fetch_fixtures.EVENT_BODY, order=0, document=name,
                         heading=(f"{row['form']} {row['accessionNumber']} filed "
-                                 f"{row['filingDate']}, items {', '.join(codes)}: {what}"),
+                                 f"{row['filingDate']}, item{'s' if len(codes) > 1 else ''} "
+                                 f"{', '.join(codes)}: {what}"),
                         paragraphs=paragraphs,
                         paragraph_ids=_ids(row["accessionNumber"], fetch_fixtures.EVENT_BODY,
                                            len(paragraphs))))
@@ -409,7 +410,7 @@ def _notice(row: dict, documents: list[dict], known: list[dict], cutoff: str,
     paragraphs = document_paragraphs(name, raw)
     late = _late_report(row, known)
     noticed = row["form"].removeprefix("NT ").removesuffix("/A")
-    period = f", for the period ended {row['reportDate']}" if row.get("reportDate") else ""
+    period = f", report date {row['reportDate']} in the index" if row.get("reportDate") else ""
     filed = (f"the {late['form']} {late['accessionNumber']} filed {late['filingDate']}"
              if late is not None else f"no {noticed} filed after it on or before {cutoff}")
     return [{"form": row["form"], "accession": row["accessionNumber"],
@@ -418,7 +419,7 @@ def _notice(row: dict, documents: list[dict], known: list[dict], cutoff: str,
              "late_report": _summary(late) if late is not None else None,
              "heading": (f"{row['form']} {row['accessionNumber']} filed {row['filingDate']}"
                          f"{period}, a notification of late filing; the report it gives "
-                         f"notice of: {filed}. Verbatim"),
+                         f"notice of: {filed}; verbatim"),
              "paragraphs": paragraphs,
              "paragraph_ids": _ids(row["accessionNumber"], fetch_fixtures.LATE_NOTICE,
                                    len(paragraphs))}]
@@ -479,7 +480,8 @@ def render_event_filings(events: dict) -> list[str]:
         for paragraph_id, paragraph in zip(entry["paragraph_ids"], entry["paragraphs"]):
             out.extend([f"[{paragraph_id}]", paragraph, ""])
     for row in events["listed"]:
-        items = f", items {', '.join(row['items'])}" if row["items"] else ""
+        items = (f", item{'s' if len(row['items']) > 1 else ''} {', '.join(row['items'])}"
+                 if row["items"] else "")
         out.extend([f"### listed by the index, its text not in the store: {row['form']} "
                     f"{row['accession']} filed {row['filing_date']}{items}", ""])
     for row in events["not_carried"]:
