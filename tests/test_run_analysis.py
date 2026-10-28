@@ -3169,10 +3169,12 @@ def test_a_memo_line_carrying_a_ruled_out_word_stops_the_run_before_it_is_finish
 # --- a reader's report held to the plain-name rule (src/plain_name_check.py) ----------------
 #
 # Planted: a reader's report says "Q3 FY25" outside its items. The rule exempts Q3
-# (a fiscal quarter is a word this project writes) and refuses FY25, which
-# NVDA's prose inputs never print; they do print FY27 (read by
-# `plain_name_check.quoted_codes` over the bundle, and asserted below), so FY27 is
-# the filer's and stands. The second ask carries the same message as the first:
+# (a fiscal quarter is a word this project writes) and refuses FY25, which no
+# input of NVDA's bundle prints. FY27 is printed by the earnings release the
+# numbers reader is handed: `input_8k.md` line 109, "| Q2 FY27 | Q1 FY27 | Q2
+# FY26 |", read by eye and asserted below with a plain string search, so FY27 is
+# the filer's and stands. H200 is printed by the MD&A alone, which the notes
+# reader is handed and the numbers reader is not. The second ask carries the same message as the first:
 # the rule is in both readers' definitions, and nothing writes a prompt at run
 # time (`docs/HOW_WE_WORK.md`).
 
@@ -3255,7 +3257,9 @@ def test_plain_name_a_code_left_after_the_second_ask_stops_the_run_before_the_an
 def test_plain_name_a_code_the_filing_prints_is_the_filers_and_is_not_named(
         tmp_path, monkeypatch):
     run = _nvda_run(tmp_path)
-    assert "FY27" in run_analysis.plain_name_check.quoted_codes(run)
+    inputs = {path.name: path.read_text(encoding="utf-8") for path in run.glob("input_*.md")}
+    assert "| Q2 FY27 | Q1 FY27 | Q2 FY26 |" in inputs["input_8k.md"]
+    assert not any("FY25" in text for text in inputs.values())
     messages: dict = {}
     monkeypatch.setattr(run_analysis, "ask", _reports_in_turn({"report_numbers.md": [FILERS]},
                                                               messages))
@@ -3379,10 +3383,25 @@ def test_plain_name_no_second_ask_on_a_run_that_is_already_ending(tmp_path, monk
     assert "numbers-reader: FY25" in manifest["analysis_failure"]
 
 
+def test_plain_name_a_code_only_another_readers_input_prints_is_the_readers_own(tmp_path):
+    """H200 stands in a notes report (the MD&A is the notes reader's) and is named
+    in a numbers report (the numbers reader is never handed the MD&A)."""
+    run = _nvda_run(tmp_path)
+    inputs = {path.name: path.read_text(encoding="utf-8") for path in run.glob("input_*.md")}
+    assert [name for name, text in sorted(inputs.items())
+            if any(word.strip(".,;:()'\"") == "H200" for word in text.split())] == ["input_mdna.md"]
+    for reader, expected in (("notes-text-reader", []), ("numbers-reader", ["H200"])):
+        agent_inputs.build(run, reader)
+        report = agent_inputs.session_root(run, reader) / agent_inputs.AGENTS[reader].writes
+        report.write_text("The H200 inventory charge.\n", encoding="utf-8")
+        assert run_analysis.reader_codes(run, reader) == expected, reader
+
+
 def test_plain_name_a_member_the_filer_names_in_its_facts_is_the_filers(tmp_path):
-    """DELL's numbers input prints, read by eye, the fact id
-    `0001571996-26-000008:facts:ProceedsFromIssuanceOfDebt:2025-02-01..2026-01-30:us-gaap:DebtInstrumentAxis=dell:A4.75DueApril2028Member,us-gaap:LongtermDebtTypeAxis=us-gaap:UnsecuredDebtMember`
-    four times; a report that copies it, as the reader is told to, carries the
+    """DELL's numbers input of its 10-Q filed 2026-09-08 prints the fact id below
+    once and the member `dell:A4.75DueApril2028Member` four times (counted by grep
+    in `input_numbers.json` of the run of 2026-10-08, which was built from the same
+    fixtures); a report that copies the id, as the reader is told to, carries the
     filer's name for a note due April 2028, not a code of its own."""
     fact_id = ("0001571996-26-000008:facts:ProceedsFromIssuanceOfDebt:2025-02-01..2026-01-30:"
                "us-gaap:DebtInstrumentAxis=dell:A4.75DueApril2028Member,"

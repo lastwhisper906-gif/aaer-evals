@@ -791,13 +791,16 @@ def run_agent(run: Path, name: str, logs: Path, model: str | None = None,
 
 
 def reader_codes(run: Path, name: str) -> list[str]:
-    """The letter-number codes a reader's report carries that the run's prose inputs do not.
+    """The letter-number codes a reader's report carries that its own inputs do not.
 
-    The rule `plain_name_check.occurrences` applies to a published run: a code
-    the filing prints (`quoted_codes`) is the filer's and stands.
+    The rule `plain_name_check.occurrences` applies to a published run, held to
+    the reader's own directory: a code the filing prints (`quoted_codes`) is the
+    filer's and stands only where the reader was handed it. The published-run
+    check reads every input of the run, so a report this passes, it passes.
     """
-    report = agent_inputs.session_root(run, name) / agent_inputs.AGENTS[name].writes
-    quoted = plain_name_check.quoted_codes(run)
+    directory = agent_inputs.session_root(run, name)
+    report = directory / agent_inputs.AGENTS[name].writes
+    quoted = plain_name_check.quoted_codes(directory)
     found: list[str] = []
     for line in report.read_text(encoding="utf-8").splitlines():
         for code in plain_name_check.codes_in(line):
