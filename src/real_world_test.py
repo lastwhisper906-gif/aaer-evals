@@ -73,10 +73,10 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 try:
-    from src import edgar_client, fetch_fixtures, interpreter_pin
+    from src import cutoff_guard, edgar_client, fetch_fixtures, interpreter_pin
 except ImportError:  # invoked as a plain script
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from src import edgar_client, fetch_fixtures, interpreter_pin
+    from src import cutoff_guard, edgar_client, fetch_fixtures, interpreter_pin
 
 BAD_INPUT = 2
 ROOT = Path(__file__).resolve().parent.parent
@@ -396,8 +396,14 @@ def score(directory: Path, cases: list[dict], runs: list[dict],
     rows = []
     for row in runs:
         case = by_pair[row["pair"]]
-        path = run_dir(directory, row) / "analysis_accounting.json"
-        analysis = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else None
+        # a run's own output, read the way every file of a run directory is
+        # read (`cutoff_guard.load_bundle_file`); a run that wrote none is a
+        # run that did not finish
+        try:
+            analysis = json.loads(cutoff_guard.load_bundle_file(run_dir(directory, row),
+                                                                "analysis_accounting.json"))
+        except cutoff_guard.CutoffGuardError:
+            analysis = None
         rows.append({**row, "areas": list(areas_for(case)),
                      "accounts": [a.get("account") for a in case.get("accounts") or []],
                      "remembers_a_problem": (probes.get(int(row["cik"])) or {}).get(
