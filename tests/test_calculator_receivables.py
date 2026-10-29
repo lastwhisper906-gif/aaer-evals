@@ -210,6 +210,14 @@ def test_a_total_tag_stands_in_where_no_split_is_tagged_and_long_term_receivable
 
 
 def test_a_ratio_whose_numerator_the_record_never_tags_is_null_not_zero(nvidia):
+    """The independent reader finds no us-gaap concept named for contract assets in
+    NVIDIA's record, and no noncurrent accounts receivable under any name (its one
+    noncurrent receivable concept is income taxes receivable), so both ratios are
+    null with the reason, never zero."""
+    concepts = source.record("NVDA")["facts"]["us-gaap"]
+    assert [tag for tag in concepts if tag.startswith("ContractWithCustomerAsset")] == []
+    assert [tag for tag in concepts if "AccountsReceivable" in tag and "Noncurrent" in tag
+            and source.rows("NVDA", tag)] == []
     for name in ("contract_assets_over_revenue", "long_term_receivables_over_revenue"):
         cell = nvidia[SECTION][name]
         assert cell["value"] is None, name

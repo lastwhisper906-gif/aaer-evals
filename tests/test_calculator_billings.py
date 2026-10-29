@@ -182,3 +182,28 @@ def test_a_planted_product_deferred_revenue_is_divided_into_deferred_cost(tmp_pa
 def test_the_section_reaches_the_filings_only_view(fortinet):
     view = calculator.filings_only(fortinet)
     assert view[SECTION]["billings"]["value"] == fortinet[SECTION]["billings"]["value"]
+
+
+def test_a_noncurrent_line_never_tagged_leaves_billings_null_not_current_alone():
+    """Planted: current deferred revenue at three year ends and no noncurrent or
+    total line in any filing. The noncurrent line is not read as a zero, so the
+    balance, the change and billings are null with the reason."""
+    def instant(end: str, value: float) -> dict:
+        return {"end": end, "val": value, "accn": "P-1", "form": "10-K", "filed": "2026-02-01"}
+
+    def year(start: str, end: str, value: float) -> dict:
+        return {"start": start, "end": end, "val": value, "accn": "P-1", "form": "10-K",
+                "filed": "2026-02-01"}
+    record = calculator.Record({"ticker": "TEST", "facts": {"us-gaap": {
+        "Revenues": {"units": {"USD": [year("2025-01-01", "2025-12-31", 1_000.0),
+                                       year("2024-01-01", "2024-12-31", 900.0),
+                                       year("2023-01-01", "2023-12-31", 800.0)]}},
+        "DeferredRevenueCurrent": {"units": {"USD": [instant("2025-12-31", 300.0),
+                                                     instant("2024-12-31", 250.0),
+                                                     instant("2023-12-31", 200.0)]}}}}})
+    periods = calculator.trigger_periods(record.usd, "2025-12-31", "10-K")
+    terms = calculator.gather(record, periods)
+    section = calculator.contract_liabilities_and_billings(record, terms, periods, [])
+    assert section["billings"]["value"] is None
+    assert "contract_liabilities_noncurrent" in section["billings"]["missing"]
+    assert section["balances"]["contract_liabilities_now"]["value"] is None

@@ -732,6 +732,29 @@ def quarter(record: Record, term: str, spans: list, end: dt.date) -> dict:
     for found in (whole, part):
         if "missing" in found:
             return {"missing": found["missing"]}
+    if whole.get("tag") != part.get("tag"):
+        # A difference of two concepts is not a quarter. Johnson Controls' record
+        # holds fiscal 2024 only under the continuing-operations tag (1,568
+        # million, restated in the 10-K filed 2025-11-14) and its nine months
+        # under both: 572 million total, 216 million continuing. Subtracting
+        # across the two gave 996; under one tag the quarter is 1,352. The first
+        # tag of the chain that carries both spans is read, and with none the
+        # quarter is missing, never mixed.
+        kind, tags = TERMS[term]
+        shared = next((tag for tag in tags if record.usd.get(tag, {}).get(to_date)
+                       and record.usd.get(tag, {}).get(before)), None)
+        if shared is None:
+            return {"missing": f"no {term} for the quarter ending {to_date[1]}: the year to "
+                               f"date is on record under us-gaap:{whole.get('tag')} and the "
+                               f"one a quarter shorter under us-gaap:{part.get('tag')}, and no "
+                               f"tag carries both, so the difference would be of two concepts"}
+        single = {term: (kind, (shared,))}
+        whole, part = (trends.term_source(record.document, record.usd, term,
+                                          {"start": span[0], "end": span[1]}, single)
+                       for span in (to_date, before))
+        for found in (whole, part):
+            if "missing" in found:
+                return {"missing": found["missing"]}
     return {"value": whole["value"] - part["value"],
             "formula": f"{to_date[0]}..{to_date[1]} less {before[0]}..{before[1]}",
             "parts": [whole, part], "end": to_date[1]}
@@ -1340,11 +1363,14 @@ def fiscal_year_gap(rows: list) -> str | None:
 #   `ContractWithCustomerLiabilityCurrent`) does not change the concept under
 #   the subtraction. Where no tag spans both, each date's own first tag is read
 #   and the cell lists the tags under `tags_differ`.
-# - **A line inside a total is none when the company never states it**, the
-#   rule `_or_absent` already applies to trade working capital: a company that
-#   prints no noncurrent deferred revenue in any filing has none to add. The
-#   same line as the numerator of a ratio is never read as none: the ratio is
-#   missing, with the reason.
+# - **A line the record does not carry is never a zero.** Not as a numerator,
+#   not inside a sum: the field is missing with the reason. (`_or_absent`, which
+#   trade working capital applies to inventory, and the debt family's "no line
+#   on record" are the calculator's older rules and are left as they are; the
+#   change in debt in current liabilities below reads that family.) Where a
+#   company tags no discontinued operations at all, income and operating cash
+#   flow of continuing operations are the totals themselves, and the cell says
+#   so -- an identity, not a zero.
 #
 # Two inputs come from the triggering filing's own instance (`input_numbers.json`
 # in the run bundle, through `cutoff_guard.load_bundle_file`, each fact held to
@@ -1449,67 +1475,48 @@ def split_total(record: Record, current: str, noncurrent: str, total: str, dates
                 line: str) -> list[dict]:
     """A balance stated as a current and a noncurrent line, summed, at each date.
 
-    Both lines tagged: their sum. Otherwise the total tag, where the record
+    Both lines on record: their sum. Otherwise the total tag, where the record
     carries it at the date -- Broadcom tags current contract assets and their
-    total and no noncurrent line, and the total is the larger. With neither, the
-    current line alone where the company never states a noncurrent one, which
-    is then none; and else the balance is missing.
+    total and no noncurrent line, and the total is the larger. With neither,
+    the balance is missing with the reason: a line the record does not carry
+    is never read as a zero.
     """
     now = like_for_like(record, current, dates)
-    later = [_or_absent(cell) for cell in like_for_like(record, noncurrent, dates)]
+    later = like_for_like(record, noncurrent, dates)
     whole = like_for_like(record, total, dates)
     out = []
     for position, date in enumerate(dates):
         here, there = now[position], later[position]
-        summed = {"value": here.get("value", 0.0) + there.get("value", 0.0), "unit": "USD",
-                  "period": date, "formula": "current + noncurrent",
-                  "parts": {"current": here, "noncurrent": there}}
-        if "missing" not in here and "tag" in there:
-            out.append(summed)
+        if "missing" not in here and "missing" not in there:
+            out.append({"value": here["value"] + there["value"], "unit": "USD",
+                        "period": date, "formula": "current + noncurrent",
+                        "parts": {"current": here, "noncurrent": there}})
         elif "missing" not in whole[position]:
             out.append(dict(whole[position], note=f"the record states no current and noncurrent "
                                                   f"{line} at {date}; its total line is read"))
-        elif "missing" not in here and "missing" not in there:
-            out.append(summed)
         else:
             out.append(_missing(f"{line} at {date}: {here.get('missing') or there.get('missing')}"))
     return out
 
 
-def trailing_line(record: Record, term: str, periods: dict) -> tuple[dict, bool]:
-    """A flow a statement prints only when there is one, over the trailing four quarters.
+def spans_carrying(record: Record, term: str, periods: dict) -> tuple[list, list]:
+    """Which spans of the trailing four quarters carry a row of `term`, and which do not.
 
-    A span with no row under any of the term's tags is none, and named; a span
-    whose filing states two values is refused, as everywhere. The second value
-    returned says whether any span carried a line at all.
+    A line a statement prints only when there is one -- discontinued
+    operations -- is read for presence here, never filled: a span without it is
+    named, not read as a zero. A span whose filing states two values counts as
+    carrying it, so the read that follows refuses it as everywhere.
     """
-    def read(span) -> dict:
-        if span is None:
-            return {"missing": f"no {term}: the period it would be read for is not in the record"}
-        found = record.term(term, span)
+    spans = ([periods["current_to_date"]] if periods["annual_trigger"] else
+             [periods["prior_year"], periods["current_to_date"], periods["prior_to_date"]])
+    carrying, lacking = [], []
+    for span in spans:
+        found = record.term(term, span) if span else {"missing": "no span"}
         if "missing" in found and trends.TWO_VALUES not in found["missing"]:
-            return {"value": 0.0, "absent": True,
-                    "note": f"no line on record for {span[0]}..{span[1]}: {found['missing']}"}
-        return found
-
-    if periods["annual_trigger"]:
-        parts = {"the_fiscal_year": read(periods["current_to_date"])}
-        formula = "the fiscal year"
-    else:
-        parts = {"prior_fiscal_year": read(periods["prior_year"]),
-                 "this_year_to_date": read(periods["current_to_date"]),
-                 "prior_year_to_date": read(periods["prior_to_date"])}
-        formula = "prior_fiscal_year + this_year_to_date - prior_year_to_date"
-    for name, part in parts.items():
-        if "missing" in part:
-            return {"missing": f"{term} over the trailing four quarters needs the "
-                               f"{name.replace('_', ' ')}: {part['missing']}"}, False
-    on_record = any(not part.get("absent") for part in parts.values())
-    for part in parts.values():
-        part.pop("absent", None)
-    values = [part["value"] for part in parts.values()]
-    value = values[0] if len(values) == 1 else values[0] + values[1] - values[2]
-    return {"value": value, "formula": formula, "parts": parts, "unit": "USD"}, on_record
+            lacking.append(f"{span[0]}..{span[1]}" if span else "a span not in the record")
+        else:
+            carrying.append(f"{span[0]}..{span[1]}")
+    return carrying, lacking
 
 
 def _cash_flow_tags(cell: dict) -> set:
@@ -1529,10 +1536,8 @@ def continuing_income(record: Record, terms: dict, periods: dict) -> dict:
     found = trailing(record, "income_from_continuing_operations", periods)
     if "missing" not in found:
         return dict(found, basis="income from continuing operations, as tagged")
-    discontinued, on_record = trailing_line(record, "income_from_discontinued_operations", periods)
-    if "missing" in discontinued:
-        return {"missing": discontinued["missing"]}
-    if on_record:
+    carrying, _ = spans_carrying(record, "income_from_discontinued_operations", periods)
+    if carrying:
         return {"missing": f"the record carries a discontinued-operations line for the period "
                            f"and no income from continuing operations: {found['missing']}"}
     net = terms["trailing_four_quarters"]["net_income"]
@@ -1573,7 +1578,7 @@ def quarterly_cash_flow_and_accruals(record: Record, terms: dict, periods: dict)
                      lambda v: v["now"] - v["a_year_earlier"], unit="USD")
 
     cash = like_for_like(record, "cash", [now, ago])
-    taxes = [_or_absent(cell) for cell in like_for_like(record, "income_taxes_payable", [now, ago])]
+    taxes = like_for_like(record, "income_taxes_payable", [now, ago])
     debt = [record.family("debt_current", date) for date in (now, ago)]
     changes = {
         "change_in_current_assets": change("current_assets", balances_now["current_assets"],
@@ -1608,11 +1613,25 @@ def quarterly_cash_flow_and_accruals(record: Record, terms: dict, periods: dict)
         continuing_cash = dict(cash_flow, basis="operating cash flow of continuing operations, "
                                                 "as tagged")
     else:
-        discontinued, _ = trailing_line(record, "operating_cash_flow_discontinued", periods)
-        continuing_cash = field(
-            "operating_cash_flow - operating_cash_flow_discontinued",
-            {"operating_cash_flow": cash_flow, "operating_cash_flow_discontinued": discontinued},
-            lambda v: v["operating_cash_flow"] - v["operating_cash_flow_discontinued"], unit="USD")
+        carrying, lacking = spans_carrying(record, "operating_cash_flow_discontinued", periods)
+        if not carrying:
+            continuing_cash = cash_flow if "missing" in cash_flow else dict(
+                cash_flow, basis="operating cash flow: the record tags no operating cash flow of "
+                                 "discontinued operations for any span of the period, so the "
+                                 "two are one figure")
+        elif lacking:
+            continuing_cash = {"missing": f"operating cash flow of discontinued operations is "
+                                          f"on record for {', '.join(carrying)} and not for "
+                                          f"{', '.join(lacking)}; a span without it is not "
+                                          f"read as a zero"}
+        else:
+            continuing_cash = field(
+                "operating_cash_flow - operating_cash_flow_discontinued",
+                {"operating_cash_flow": cash_flow,
+                 "operating_cash_flow_discontinued": trailing(
+                     record, "operating_cash_flow_discontinued", periods)},
+                lambda v: v["operating_cash_flow"] - v["operating_cash_flow_discontinued"],
+                unit="USD")
     cash_flow_accruals = field(
         "(income_from_continuing_operations - operating_cash_flow_of_continuing_operations) "
         "/ average assets",
@@ -1764,8 +1783,8 @@ def past_due_share(record: Record, facts: list | dict, through: str) -> dict:
                  {"past_due_over_ninety_days": over, "receivables": receivables},
                  lambda v: v["past_due_over_ninety_days"] / v["receivables"],
                  denominator="receivables")
+    cell["as_of"] = over.get("period")
     if "period" in over:
-        cell["as_of"] = over["period"]
         if over["period"] != through:
             cell["note"] = (f"the newest date at or before {through} on which the filing states "
                             f"receivables past due, which a quarterly report seldom restates")
@@ -1790,13 +1809,17 @@ def receivables_extension(record: Record, terms: dict, periods: dict, facts: lis
                                   "contract_assets_total", [now], "contract assets")[0]
     long_term = record.term("long_term_receivables", now)
     past_due = past_due_share(record, facts, now)
-    if "as_of" in past_due:
+    if past_due["as_of"]:
         target = _date(past_due["as_of"]) - dt.timedelta(days=YEAR_STEP)
         earlier = past_due_share(record, facts, (target + dt.timedelta(days=TOLERANCE)).isoformat())
         past_due["a_year_earlier"] = earlier if (
-            "as_of" in earlier and abs((_date(earlier["as_of"]) - target).days) <= TOLERANCE) \
+            earlier["as_of"] and abs((_date(earlier["as_of"]) - target).days) <= TOLERANCE) \
             else _missing(f"the filing states no receivables past due more than ninety days "
                           f"within {TOLERANCE} days of {target}")
+    else:
+        past_due["a_year_earlier"] = _missing(
+            "no receivables past due more than ninety days are read at the period end, so "
+            "there is no date a year before it to read them at")
     return {
         "receivables_growth_minus_revenue_growth": growth_gap(
             "receivables_growth", receivables_growth, revenue_growth),
@@ -1921,31 +1944,20 @@ def inventory_composition_and_growth_gap(record: Record, terms: dict, periods: d
     """Row 20: the shares of raw materials, work in process and finished goods, and how
     inventory and finished goods grew against revenue.
 
-    A share is its line over the three lines' sum, so the shares of one date add
-    to one; a line the company never states is none in that sum, and its own
-    share is missing.
+    A share is its line over the balance sheet's inventory line (`InventoryNet`)
+    at the same date. A line the company does not state is missing, never a
+    zero, and the shares of the lines it does state need not add to one where a
+    reserve or another line sits between them and the total.
     """
     dates = [periods["balance_now"], periods["balance_year_ago"]]
     lines = {name: like_for_like(record, term, dates) for name, term in INVENTORY_LINES}
-    totals = []
-    for position, date in enumerate(dates):
-        read = {name: _or_absent(cells[position]) for name, cells in lines.items()}
-        stated = [cell for cell in read.values() if "missing" not in cell and "tag" in cell]
-        gaps = [cell["missing"] for cell in read.values() if "missing" in cell]
-        if gaps or not stated:
-            totals.append({"missing": f"inventory lines at {date}: "
-                                      f"{'; '.join(gaps) or 'none of the three is on record'}"})
-        else:
-            totals.append({"value": sum(cell["value"] for cell in read.values()), "unit": "USD",
-                           "period": date,
-                           "formula": "raw_materials + work_in_process + finished_goods",
-                           "parts": read})
+    inventory = [terms["balances_now"]["inventory"], terms["balances_a_year_earlier"]["inventory"]]
     out = {}
     for name, cells in lines.items():
-        shares = [field(f"{name} / (raw_materials + work_in_process + finished_goods)",
-                        {name: cells[position], "inventory_lines_total": totals[position]},
-                        lambda v, name=name: v[name] / v["inventory_lines_total"],
-                        denominator="inventory_lines_total") for position in range(2)]
+        shares = [field(f"{name} / inventory",
+                        {name: cells[position], "inventory": inventory[position]},
+                        lambda v, name=name: v[name] / v["inventory"],
+                        denominator="inventory") for position in range(2)]
         out[f"inventory_{name}_share"] = dict(shares[0], a_year_earlier=shares[1])
     revenue_growth = growth_rate(terms["trailing_four_quarters"]["revenue"],
                                  terms["trailing_four_quarters_a_year_earlier"]["revenue"])

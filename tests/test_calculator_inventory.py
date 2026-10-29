@@ -55,8 +55,9 @@ def test_nvidias_rows_are_the_inventory_notes_figures():
     assert 3_807 + 8_822 + 8_774 == 21_403 and 3_408 + 3_399 + 3_273 == 10_080
 
 
-def test_each_share_is_its_line_over_the_three_now_and_a_year_earlier(nvidia):
-    """Raw 3,807 / 21,403 and 3,408 / 10,080; work in process 8,822 / 21,403 and
+def test_each_share_is_its_line_over_inventory_now_and_a_year_earlier(nvidia):
+    """Each line over total inventories (InventoryNet), 21,403 and 10,080: raw
+    3,807 / 21,403 and 3,408 / 10,080; work in process 8,822 / 21,403 and
     3,399 / 10,080; finished goods 8,774 / 21,403 and 3,273 / 10,080."""
     for name, (tag, now, ago) in NVIDIA_LINES.items():
         cell = nvidia[SECTION][f"inventory_{name}_share"]
@@ -85,10 +86,16 @@ def test_inventory_growth_less_revenue_growth_is_worked_by_hand(nvidia):
     assert revenue["value"] == 215_938 * MILLION
 
 
-def test_a_line_the_company_never_states_is_null_and_out_of_the_sum(arista):
-    """Arista prints no work in process: its share is null with the reason, never
-    zero, and the other two are each over raw materials plus finished goods,
-    611.2 / 2,247.1 and 1,635.9 / 2,247.1, which add to one."""
+def test_a_line_the_company_never_states_is_null_not_zero(arista):
+    """Arista prints no work in process, and the independent reader finds no us-gaap
+    concept naming work in process in its record: the share is null with the
+    reason, never zero. The other two are each over total inventories,
+    611.2 / 2,247.1 and 1,635.9 / 2,247.1, which add to one because the note's
+    two lines are its whole total."""
+    concepts = source.record("ANET")["facts"]["us-gaap"]
+    assert [tag for tag in concepts if "WorkInProcess" in tag] == []
+    cut = ANET["cutoff"]
+    assert source.one_value("ANET", "InventoryNet", "2025-12-31", cut) == 2_247_100_000
     section = arista[SECTION]
     missing = section["inventory_work_in_process_share"]
     assert missing["value"] is None and "in any period" in missing["missing"]

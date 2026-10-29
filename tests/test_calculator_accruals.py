@@ -22,9 +22,12 @@ against the figure the filing prints, read by eye from the committed fixture:
 
 from __future__ import annotations
 
+import json
+import re
+
 import pytest
 
-from src import calculator
+from src import analysis_check, calculator
 from tests import companyfacts_source as source
 
 MILLION = 1_000_000
@@ -97,9 +100,68 @@ def test_a_differenced_quarter_names_both_rows_with_accession_and_filing_date(ci
     assert set(stated["inputs"]) == {"stated_quarter"}
 
 
-def test_eight_quarters_are_carried(cisco):
+def test_cisco_quarters_five_to_seven_are_the_years_to_date_differenced(cisco):
+    """The three oldest of the eight, worked by hand, in millions:
+
+      quarter ended 2025-01-25   5,902 (six months)  - 3,661 (three months) = 2,241
+      quarter ended 2024-10-26   3,661, stated as a quarter
+      quarter ended 2024-07-27  10,880 (fiscal 2024) - 7,150 (nine months)  = 3,730
+    """
+    cutoff = CSCO["cutoff"]
+    six = cfo("CSCO", "2024-07-28..2025-01-25", cutoff)
+    three = cfo("CSCO", "2024-07-28..2024-10-26", cutoff)
+    year = cfo("CSCO", "2023-07-30..2024-07-27", cutoff)
+    nine = cfo("CSCO", "2023-07-30..2024-04-27", cutoff)
+    assert (six, three, year, nine) == (5_902 * MILLION, 3_661 * MILLION, 10_880 * MILLION,
+                                        7_150 * MILLION)
+    assert (six - three, year - nine) == (2_241 * MILLION, 3_730 * MILLION)
     history = cisco[SECTION]["operating_cash_flow_quarterly"]["history"]
     assert [row["quarters_back"] for row in history] == list(range(8))
+    assert [(row["end"], row["value"]) for row in history[5:]] == [
+        ("2025-01-25", six - three), ("2024-10-26", three), ("2024-07-27", year - nine)]
+    assert history[6]["formula"] == "the quarter as stated"
+
+
+def test_a_quarter_is_never_one_tag_less_another():
+    """Johnson Controls' record, through the independent reader: fiscal 2024
+    (2023-10-01..2024-09-30) only under the continuing-operations tag, 1,568
+    million (the 10-K filed 2025-11-14); its nine months under both, 572 million
+    total (the 10-Q filed 2024-07-31) and 216 million continuing (the 10-Q filed
+    2025-08-06). The fourth quarter is 1,568 - 216 = 1,352 under one tag, never
+    1,568 - 572 = 996 across two."""
+    cut, continuing = "2026-07-29", "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations"
+    year, nine = "2023-10-01..2024-09-30", "2023-10-01..2024-06-30"
+    assert source.one_value("JCI", continuing, year, cut) == 1_568 * MILLION
+    assert source.one_value("JCI", continuing, nine, cut) == 216 * MILLION
+    assert cfo("JCI", nine, cut) == 572 * MILLION
+    assert source.reported("JCI", "NetCashProvidedByUsedInOperatingActivities", year, cut) == []
+    # companyfacts was fetched before the 10-Q; the run's committed bundle carries it
+    bundle = source.FIXTURES.parent.parent / "runs" / "JCI" / "0000833444-26-000087"
+    out = calculator.calculate(ticker="JCI", cutoff=cut, period_end="2026-06-30", form="10-Q",
+                               bundle=bundle)
+    oldest = out[SECTION]["operating_cash_flow_quarterly"]["history"][7]
+    assert (oldest["end"], oldest["value"]) == ("2024-09-30", 1_352 * MILLION)
+    assert oldest["inputs"]["year_to_date"]["tag"] == continuing
+    assert oldest["inputs"]["year_to_date_one_quarter_shorter"]["tag"] == continuing
+    assert oldest["inputs"]["year_to_date_one_quarter_shorter"]["filed"] == "2025-08-06"
+
+
+def test_with_no_tag_carrying_both_spans_the_quarter_is_missing():
+    """Planted: the year under one tag, the nine months under the other only."""
+    def row(start, end, value):
+        return {"start": start, "end": end, "val": value, "accn": "P-1", "form": "10-K",
+                "filed": "2026-02-01"}
+    record = calculator.Record({"ticker": "TEST", "facts": {"us-gaap": {
+        "Revenues": {"units": {"USD": [row("2025-01-01", "2025-12-31", 1_000.0),
+                                       row("2025-01-01", "2025-09-30", 700.0)]}},
+        "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations": {
+            "units": {"USD": [row("2025-01-01", "2025-12-31", 400.0)]}},
+        "NetCashProvidedByUsedInOperatingActivities": {
+            "units": {"USD": [row("2025-01-01", "2025-09-30", 250.0)]}}}}})
+    spans = calculator.durations(record.usd)
+    found = calculator.quarter(record, "operating_cash_flow", spans,
+                               calculator.dt.date(2025, 12, 31))
+    assert "value" not in found and "no tag carries both" in found["missing"]
 
 
 # --- the three accrual measures, side by side -----------------------------------------------
@@ -202,9 +264,18 @@ def test_free_cash_flow_accruals_are_the_sec_models_in_dollars(nvidia):
 
 
 def test_a_measure_whose_input_the_record_lacks_is_null_with_the_reason(cisco):
-    """Cisco's record tags no depreciation and amortization for fiscal 2026 to date
-    (the 10-Q prints "Depreciation, amortization, and other", which no tag in the
-    chain carries), so Sloan's measure has nothing to subtract: null, never zero."""
+    """Cisco's 10-Q prints "Depreciation, amortization, and other", and the
+    independent reader finds no us-gaap concept whose name begins with
+    Depreciation carrying a row for fiscal 2026 to date (2025-07-27..2026-04-25),
+    where fiscal 2025 has DepreciationDepletionAndAmortization. So Sloan's
+    measure has nothing to subtract: null, never zero."""
+    cut = CSCO["cutoff"]
+    concepts = source.record("CSCO")["facts"]["us-gaap"]
+    depreciation = [tag for tag in concepts if tag.startswith("Depreciation")]
+    assert [tag for tag in depreciation
+            if source.reported("CSCO", tag, "2025-07-27..2026-04-25", cut)] == []
+    assert source.reported("CSCO", "DepreciationDepletionAndAmortization",
+                           "2024-07-28..2025-07-26", cut)
     cell = cisco[SECTION]["balance_sheet_accruals"]
     assert cell["value"] is None
     assert cell["missing"].startswith("depreciation_and_amortization:")
@@ -249,3 +320,133 @@ def test_tagged_continuing_income_is_read_as_tagged():
                         "IncomeLossFromDiscontinuedOperationsNetOfTax": -30.0})
     assert found["value"] == 130.0
     assert found["basis"] == "income from continuing operations, as tagged"
+
+
+# --- a line the record does not carry is never a zero ------------------------------------------
+
+def test_taxes_payable_never_tagged_leaves_sloans_measure_null():
+    """Generac tags neither income taxes payable nor taxes payable in any filing
+    the independent reader holds, so the change in it is not a zero: Sloan's
+    measure is null and says which line it lacked."""
+    assert [tag for tag in ("AccruedIncomeTaxesCurrent", "TaxesPayableCurrent")
+            if source.rows("GNRC", tag)] == []
+    out = calculator.calculate(ticker="GNRC", cutoff="2026-08-04", period_end="2026-06-30",
+                               form="10-Q")
+    cell = out[SECTION]["balance_sheet_accruals"]
+    assert cell["value"] is None
+    assert cell["missing"].startswith("change_in_income_taxes_payable:")
+
+
+def quarterly_planted(extra: dict) -> tuple:
+    """A made-up quarterly filer: fiscal 2024, and six months of 2025 and of 2024."""
+    spans = {"year": ("2024-01-01", "2024-12-31"), "to_date": ("2025-01-01", "2025-06-30"),
+             "before": ("2024-01-01", "2024-06-30")}
+
+    def rows(values: dict) -> list:
+        return [{"start": spans[name][0], "end": spans[name][1], "val": value, "accn": "P-1",
+                 "form": "10-Q", "filed": "2025-08-01"} for name, value in values.items()]
+    facts = {"Revenues": rows({"year": 1_000.0, "to_date": 600.0, "before": 500.0}),
+             "NetIncomeLoss": rows({"year": 100.0, "to_date": 60.0, "before": 50.0}),
+             "NetCashProvidedByUsedInOperatingActivities":
+                 rows({"year": 90.0, "to_date": 40.0, "before": 30.0})}
+    facts["Assets"] = [{"end": end, "val": value, "accn": "P-1", "form": "10-Q",
+                        "filed": "2025-08-01"}
+                       for end, value in (("2025-06-30", 1_000.0), ("2024-06-30", 800.0))]
+    facts.update({tag: rows(values) for tag, values in extra.items()})
+    record = calculator.Record({"ticker": "TEST", "facts": {"us-gaap": {
+        tag: {"units": {"USD": found}} for tag, found in facts.items()}}})
+    periods = calculator.trigger_periods(record.usd, "2025-06-30", "10-Q")
+    return record, calculator.gather(record, periods), periods
+
+
+def test_discontinued_cash_flow_in_some_spans_only_is_missing_not_zero():
+    """Planted: operating cash flow of discontinued operations in fiscal 2024 alone.
+    The six months without it are not read as zero; the measure is null."""
+    record, terms, periods = quarterly_planted(
+        {"CashProvidedByUsedInOperatingActivitiesDiscontinuedOperations": {"year": 5.0}})
+    carrying, lacking = calculator.spans_carrying(
+        record, "operating_cash_flow_discontinued", periods)
+    assert carrying == ["2024-01-01..2024-12-31"]
+    assert lacking == ["2025-01-01..2025-06-30", "2024-01-01..2024-06-30"]
+    cell = calculator.quarterly_cash_flow_and_accruals(record, terms, periods)["cash_flow_accruals"]
+    assert cell["value"] is None and "not read as a zero" in cell["missing"]
+
+
+def test_no_discontinued_line_anywhere_makes_continuing_cash_flow_the_total():
+    """Planted, hand-worked: no discontinued line in any span, so operating cash
+    flow of continuing operations is the total and the cell says why, rather than
+    subtracting a zero. Trailing four quarters: income 100 + 60 - 50 = 110,
+    operating cash flow 90 + 40 - 30 = 100, average assets (1,000 + 800) / 2 = 900,
+    so cash-flow accruals are (110 - 100) / 900."""
+    record, terms, periods = quarterly_planted({})
+    cell = calculator.quarterly_cash_flow_and_accruals(record, terms, periods)["cash_flow_accruals"]
+    assert cell["value"] == pytest.approx(10 / 900, rel=1e-12)
+    cash = cell["inputs"]["operating_cash_flow_of_continuing_operations"]
+    assert cash["value"] == 100.0 and cash["basis"].startswith("operating cash flow: the record")
+
+
+# --- the analysts' paragraphs name paths that exist ---------------------------------------------
+
+AGENTS = source.FIXTURES.parent.parent / ".claude" / "agents"
+RUNS = source.FIXTURES.parent.parent / "runs"
+PARAGRAPHS = (("accounting-analyst.md", "**Revenue and working capital.**"),
+              ("financial-analyst.md", "**Working capital and billings.**"))
+
+
+def named_paths(name: str, opening: str) -> list[str]:
+    """Every backticked name in one paragraph of an analyst's definition."""
+    text = (AGENTS / name).read_text(encoding="utf-8")
+    paragraph = text[text.index(opening):].split("\n\n", 1)[0]
+    return re.findall(r"`([^`]+)`", " ".join(paragraph.split()))
+
+
+@pytest.fixture(scope="module")
+def committed_views() -> dict:
+    """The filings-only view of every committed run, computed from its own bundle."""
+    views = {}
+    for manifest in sorted(RUNS.glob("*/*/input_manifest.json")):
+        run = manifest.parent
+        if "rerun" in run.name:
+            continue
+        stated = json.loads(manifest.read_text(encoding="utf-8"))
+        trigger, = {(d["form"], d["report_date"]) for d in stated["documents"]
+                    if d.get("accession") == run.name}
+        views[f"{run.parent.name}/{run.name}"] = calculator.filings_only(calculator.calculate(
+            ticker=run.parent.name, cutoff=stated["cutoff"], period_end=trigger[1],
+            form=trigger[0], accession=run.name, bundle=run))
+    return views
+
+
+def test_every_path_the_analysts_are_told_resolves_in_every_committed_run(committed_views):
+    """Each name is a field the analyst may cite: the gate's own `resolve` finds it in
+    every run's calculator_filings_only.json, it is a cell holding `value`, and
+    where that value is a number `placeholder_value` prints that number. A null
+    cell names its reason under `missing`."""
+    assert len(committed_views) >= 12
+    for name, opening in PARAGRAPHS:
+        paths = named_paths(name, opening)
+        assert len(paths) >= 10, name
+        for path in paths:
+            for run, view in committed_views.items():
+                try:
+                    node = analysis_check.resolve(view, path)
+                except KeyError:
+                    pytest.fail(f"{name} names {path}, which {run}'s view does not carry")
+                assert isinstance(node, dict) and "value" in node, (name, path, run)
+                if node["value"] is None:
+                    assert node.get("missing"), (name, path, run)
+                else:
+                    assert analysis_check.placeholder_value(view, path) == node["value"], \
+                        (name, path, run)
+
+
+def test_the_past_due_share_carries_its_year_earlier_when_nothing_is_found(committed_views):
+    """Most runs hold no past-due fact; the year-earlier cell is there anyway, null
+    with its reason, so the path the accounting analyst is told never fails."""
+    nulls = [view["receivables_extension"]["past_due_receivables_share"]
+             for view in committed_views.values()
+             if view["receivables_extension"]["past_due_receivables_share"]["value"] is None]
+    assert nulls
+    for cell in nulls:
+        assert cell["as_of"] is None
+        assert cell["a_year_earlier"]["value"] is None and cell["a_year_earlier"]["missing"]

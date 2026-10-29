@@ -106,25 +106,39 @@ and `trend_table`.
    release match the 10-Q?
 
 **Revenue and working capital.** Four sections feed earnings versus cash,
-revenue recognition and the industry lens.
-`quarterly_cash_flow_and_accruals` holds three accrual measures kept apart —
-`balance_sheet_accruals` (Sloan, from balance-sheet changes),
-`cash_flow_accruals` (Hribar and Collins, income less operating cash flow) and
-`free_cash_flow_accruals` (the SEC model, in dollars). Never compare one's
-level with another's; a wide gap between the first two points to acquisitions
-or disposals. Its `operating_cash_flow_quarterly` is the newest quarter, with
-eight under `history`. `receivables_extension` holds receivables growth less
-revenue growth, contract assets and long-term receivables over revenue,
-`past_due_receivables_share` (dated by `as_of`, beside `a_year_earlier`) and
-`days_sales_outstanding_index`. `contract_liabilities_and_billings` holds
-`billings` (Fortinet's definition; the acquired balances it cannot subtract are
-named), `billings_growth_minus_revenue_growth`, `contract_liability_duration`
-(the noncurrent share), `revenue_from_opening_contract_liabilities` and
-`deferred_cost_over_product_deferred_revenue`.
-`inventory_composition_and_growth_gap` holds each inventory line's share, now
-and `a_year_earlier`, and inventory and finished-goods growth less revenue
-growth. None of these is an adjustment amount. A field the record cannot fill
-is null with its reason under `missing`: say it is not there.
+revenue recognition and the industry lens. Each field named here is a number,
+or null with its reason beside it: when it is null, say it is not there. Three
+accrual measures, kept apart and never compared level for level:
+`quarterly_cash_flow_and_accruals.balance_sheet_accruals` (Sloan, from
+balance-sheet changes), `quarterly_cash_flow_and_accruals.cash_flow_accruals`
+(Hribar and Collins, income less operating cash flow) and
+`quarterly_cash_flow_and_accruals.free_cash_flow_accruals` (the SEC model, in
+dollars); a wide gap between the first two points to acquisitions or
+disposals. Operating cash flow by quarter runs from
+`quarterly_cash_flow_and_accruals.operating_cash_flow_quarterly.history.0`, the
+newest, to
+`quarterly_cash_flow_and_accruals.operating_cash_flow_quarterly.history.7`.
+Receivables: `receivables_extension.receivables_growth_minus_revenue_growth`,
+`receivables_extension.contract_assets_over_revenue`,
+`receivables_extension.long_term_receivables_over_revenue`,
+`receivables_extension.days_sales_outstanding_index`, and
+`receivables_extension.past_due_receivables_share` beside
+`receivables_extension.past_due_receivables_share.a_year_earlier`, each read at
+the date printed with it. Contract liabilities:
+`contract_liabilities_and_billings.billings` (Fortinet's definition; the
+acquired balances it cannot subtract are named),
+`contract_liabilities_and_billings.billings_growth_minus_revenue_growth`,
+`contract_liabilities_and_billings.contract_liability_duration` (the noncurrent
+share), `contract_liabilities_and_billings.revenue_from_opening_contract_liabilities`
+and `contract_liabilities_and_billings.deferred_cost_over_product_deferred_revenue`.
+Inventory: `inventory_composition_and_growth_gap.inventory_raw_materials_share`,
+`inventory_composition_and_growth_gap.inventory_work_in_process_share` and
+`inventory_composition_and_growth_gap.inventory_finished_goods_share`, each with
+its share a year earlier, as
+`inventory_composition_and_growth_gap.inventory_finished_goods_share.a_year_earlier`;
+`inventory_composition_and_growth_gap.finished_goods_growth_minus_revenue_growth`
+and `inventory_composition_and_growth_gap.inventory_growth_minus_revenue_growth`.
+None of these is an adjustment amount.
 
 **Industry lens.** Most of the twelve are semiconductors and hardware. Also
 answer, with a finding or "nothing found" and why: inventory obsolescence;
