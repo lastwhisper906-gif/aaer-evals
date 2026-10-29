@@ -648,3 +648,117 @@ def test_the_store_reads_every_page_of_the_index(tmp_path, server, monkeypatch, 
                                     "--out", str(store)]) == 0
     rows = json.loads((store / TICKER / "submissions.json").read_text())["filings"]
     assert OLDER["accessionNumber"] in {row["accession"] for row in rows}
+
+
+# Apple's 10-Q filed 2016-07-27 (0001628280-16-017809), before inline XBRL: its
+# folder listing and the type lines of its submission header, as EDGAR served
+# them on 2026-10-28 (read from index.json and the -index-headers.html page).
+APPLE_2016_NAMES = ["0001628280-16-017809-index-headers.html", "0001628280-16-017809-index.html",
+                    "0001628280-16-017809.txt", "0001628280-16-017809-xbrl.zip",
+                    "a10-qexhibit3116252016.htm", "a10-qexhibit3126252016.htm",
+                    "a10-qexhibit3216252016.htm", "a10-qq320166252016.htm", "aapl-20160625.xml",
+                    "aapl-20160625.xsd", "aapl-20160625_cal.xml", "aapl-20160625_def.xml",
+                    "aapl-20160625_lab.xml", "aapl-20160625_pre.xml", "FilingSummary.xml",
+                    "Financial_Report.xlsx", "R1.htm", "R2.htm"]
+APPLE_2016_HEADER = ("&lt;TYPE&gt;10-Q\n&lt;FILENAME&gt;a10-qq320166252016.htm\n"
+                     "&lt;TYPE&gt;EX-31.1\n&lt;FILENAME&gt;a10-qexhibit3116252016.htm\n"
+                     "&lt;TYPE&gt;EX-101.INS\n&lt;FILENAME&gt;aapl-20160625.xml\n"
+                     "&lt;TYPE&gt;EX-101.SCH\n&lt;FILENAME&gt;aapl-20160625.xsd\n"
+                     "&lt;TYPE&gt;EX-101.CAL\n&lt;FILENAME&gt;aapl-20160625_cal.xml\n"
+                     "&lt;TYPE&gt;XML\n&lt;FILENAME&gt;R1.htm\n")
+
+
+def test_a_report_filed_before_inline_xbrl_keeps_its_instance_under_its_own_name():
+    filing = {"accessionNumber": "0001628280-16-017809",
+              "primaryDocument": "a10-qq320166252016.htm"}
+    assert fetch_fixtures.needs_types("10-Q", filing, APPLE_2016_NAMES)
+    types = [(kind.upper(), name)
+             for kind, name in fetch_fixtures.DOCUMENT_TYPE.findall(APPLE_2016_HEADER)]
+    wanted, missing = fetch_fixtures.wanted_documents("10-Q", filing, APPLE_2016_NAMES, types)
+    assert wanted == [("primary_html", "a10-qq320166252016.htm"),
+                      ("xbrl_instance", "aapl-20160625.xml")]
+    assert missing == []
+    # without the header's types nothing is guessed from the names
+    _, missing = fetch_fixtures.wanted_documents("10-Q", filing, APPLE_2016_NAMES, [])
+    assert [role for role, _ in missing] == ["xbrl_instance"]
+
+
+def test_an_inline_report_needs_no_header_read():
+    # NVIDIA's 10-Q of 2026-08-26, as the committed manifest names its documents
+    filing = {"accessionNumber": ACCESSION, "primaryDocument": "nvda-20260726.htm"}
+    names = ["nvda-20260726.htm", "nvda-20260726_htm.xml"]
+    assert not fetch_fixtures.needs_types("10-Q", filing, names)
+    assert fetch_fixtures.wanted_documents("10-Q", filing, names, [])[0][1] == (
+        "xbrl_instance", "nvda-20260726_htm.xml")
+
+
+def test_a_cik_names_the_registrant_and_the_ticker_only_the_run(tmp_path, server):
+    held = on_demand.fetch_store(client(tmp_path, server), "someone", accession=ACCESSION,
+                                 cik="1045810")
+    assert (held["ticker"], held["cik"], held["cik_from"]) == ("SOMEONE", CIK, "--cik")
+    assert held["store"] == tmp_path / "cache" / "stores" / f"SOMEONE-{ACCESSION}"
+    assert server.hits.get("/files/company_tickers.json", 0) == 0
+    with pytest.raises(on_demand.OnDemandError, match="not a number"):
+        on_demand.fetch_store(client(tmp_path, server), "SOMEONE", accession=ACCESSION,
+                              cik="NVDA")
+
+
+# Axesstel's 10-K for fiscal 2012 (0001193125-13-084624): EDGAR answered 404 for
+# its -index-headers.html on 2026-10-29, and its -index.htm carries these rows
+# (two of the document table's, two of the data files table's), copied as served.
+AXESSTEL_INDEX = """
+         <tr>
+            <td scope="row">1</td>
+            <td scope="row">FORM 10-K</td>
+            <td scope="row"><a href="/Archives/edgar/data/1092492/000119312513084624/d445189d10k.htm">d445189d10k.htm</a></td>
+            <td scope="row">10-K</td>
+            <td scope="row">1234</td>
+         </tr>
+         <tr class="evenRow">
+            <td scope="row">&nbsp;</td>
+            <td scope="row">Complete submission text file</td>
+            <td scope="row"><a href="/Archives/edgar/data/1092492/000119312513084624/0001193125-13-084624.txt">0001193125-13-084624.txt</a></td>
+            <td scope="row">&nbsp;</td>
+            <td scope="row">4515635</td>
+         </tr>
+         <tr>
+            <td scope="row">7</td>
+            <td scope="row">XBRL INSTANCE DOCUMENT</td>
+            <td scope="row"><a href="/Archives/edgar/data/1092492/000119312513084624/axst-20121231.xml">axst-20121231.xml</a></td>
+            <td scope="row">EX-101.INS</td>
+            <td scope="row">252621</td>
+         </tr>
+         <tr class="evenRow">
+            <td scope="row">8</td>
+            <td scope="row">XBRL TAXONOMY EXTENSION SCHEMA</td>
+            <td scope="row"><a href="/Archives/edgar/data/1092492/000119312513084624/axst-20121231.xsd">axst-20121231.xsd</a></td>
+            <td scope="row">EX-101.SCH</td>
+            <td scope="row">1000</td>
+         </tr>
+"""
+
+
+class _OldFolder:
+    def __init__(self, error):
+        self.error, self.asked = error, []
+
+    def get(self, url):
+        self.asked.append(url.rsplit("/", 1)[1])
+        if url.endswith("-index-headers.html"):
+            raise self.error
+        return AXESSTEL_INDEX.encode()
+
+
+def test_a_filing_older_than_its_header_page_is_read_from_its_index_page():
+    fetcher = _OldFolder(edgar_client.EdgarError("https://www.sec.gov/...: HTTP 404"))
+    types = fetch_fixtures.document_types(fetcher, "0001092492", "0001193125-13-084624")
+    assert types == [("10-K", "d445189d10k.htm"), ("EX-101.INS", "axst-20121231.xml"),
+                     ("EX-101.SCH", "axst-20121231.xsd")]
+    assert fetcher.asked == ["0001193125-13-084624-index-headers.html",
+                             "0001193125-13-084624-index.htm"]
+
+
+def test_a_header_page_that_fails_otherwise_is_not_passed_over():
+    fetcher = _OldFolder(edgar_client.EdgarError("https://www.sec.gov/...: HTTP 503"))
+    with pytest.raises(edgar_client.EdgarError, match="503"):
+        fetch_fixtures.document_types(fetcher, "0001092492", "0001193125-13-084624")

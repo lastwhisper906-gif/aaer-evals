@@ -1,0 +1,357 @@
+<title>aaer-evals 회계·재무 분석</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&family=Noto+Serif+KR:wght@600;700&display=swap">
+<style>
+/* Layout: a ticker rail on the left, then one filing's two frames side by side,
+   accounting (ledger teal) and finance (indigo), each opening with its
+   calculator figures; the rail folds into a chip row and the frames stack on a
+   phone. */
+:root {
+  --paper: #f4f6f8;
+  --sheet: #ffffff;
+  --ink: #18212b;
+  --muted: #5a6572;
+  --rule: #d9dfe6;
+  --ledger: #1d5e58;
+  --ledger-tint: #e3efed;
+  --fin: #3a4a96;
+  --fin-tint: #e7e9f6;
+  --bad: #b42318;
+  --bad-tint: #fbe9e7;
+  --warn: #8a5300;
+  --warn-tint: #fbf0dc;
+  --good: #2b6e2f;
+  --good-tint: #e5f2e5;
+  --focus: #2563c9;
+  --display: "Noto Serif KR", "Nanum Myeongjo", "Apple SD Gothic Neo", serif;
+  --body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --step-0: 0.9375rem;
+  --step-s: 0.8125rem;
+  --step-xs: 0.75rem;
+  --step-1: 1.125rem;
+  --step-2: 1.5rem;
+  --step-3: 2.125rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f1419; --sheet: #161d25; --ink: #e5e9ee; --muted: #9aa5b1; --rule: #2a333e;
+    --ledger: #6fbcb2; --ledger-tint: #18302e; --fin: #9aa6ec; --fin-tint: #1f2440;
+    --bad: #f08a7e; --bad-tint: #3a1d1a; --warn: #e5b45a; --warn-tint: #352a14;
+    --good: #84c98a; --good-tint: #1b3020; --focus: #8ab4ff;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f1419; --sheet: #161d25; --ink: #e5e9ee; --muted: #9aa5b1; --rule: #2a333e;
+  --ledger: #6fbcb2; --ledger-tint: #18302e; --fin: #9aa6ec; --fin-tint: #1f2440;
+  --bad: #f08a7e; --bad-tint: #3a1d1a; --warn: #e5b45a; --warn-tint: #352a14;
+  --good: #84c98a; --good-tint: #1b3020; --focus: #8ab4ff;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--paper); color: var(--ink); font-family: var(--body);
+  font-size: var(--step-0); line-height: 1.6;
+}
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+.app {
+  display: grid; grid-template-columns: 13.5rem minmax(0, 1fr); gap: 1.5rem;
+  max-width: 96rem; margin: 0 auto;
+  padding-block: 1.5rem 3rem;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+/* ticker rail */
+.rail { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 1rem); align-self: start;
+  display: flex; flex-direction: column; gap: 0.75rem; }
+.brand { font-family: var(--display); font-weight: 700; font-size: var(--step-1); line-height: 1.3; }
+.brand small { display: block; font-family: var(--body); font-weight: 400; font-size: var(--step-xs);
+  color: var(--muted); margin-top: 0.25rem; }
+.rail-label { font-size: var(--step-xs); color: var(--muted); letter-spacing: 0.06em; }
+.tickers { display: flex; flex-direction: column; gap: 2px; max-height: calc(100vh - 12rem); overflow-y: auto; }
+.ticker {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem;
+  padding: 0.4rem 0.6rem; border: 0; border-radius: 6px; background: transparent;
+  cursor: pointer; text-align: left;
+}
+.ticker:hover { background: var(--sheet); }
+.ticker[aria-current="true"] { background: var(--ink); color: var(--paper); }
+.ticker .sym { font-family: var(--mono); font-weight: 500; }
+.ticker .when { font-family: var(--mono); font-size: var(--step-xs); opacity: 0.75; }
+
+/* run header */
+.head { display: flex; flex-direction: column; gap: 0.9rem; padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--rule); margin-bottom: 1.25rem; }
+.head-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem 1rem; }
+.head h1 { margin: 0; font-family: var(--mono); font-weight: 500; font-size: var(--step-3);
+  letter-spacing: 0.02em; line-height: 1.1; }
+.facts { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; color: var(--muted); font-size: var(--step-s); }
+.facts b { color: var(--ink); font-weight: 500; }
+.runs { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.run-tab { border: 1px solid var(--rule); background: var(--sheet); border-radius: 999px;
+  padding: 0.2rem 0.75rem; cursor: pointer; font-size: var(--step-s); }
+.run-tab[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.tally { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.tally span { font-size: var(--step-s); padding: 0.2rem 0.6rem; border-radius: 4px; background: var(--sheet);
+  border: 1px solid var(--rule); }
+.tally .n { font-family: var(--mono); font-weight: 500; }
+
+/* the two frames */
+.frames { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; align-items: start; }
+.frame { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; min-width: 0;
+  display: flex; flex-direction: column; }
+.frame > header { padding: 1rem 1.25rem 0.9rem; border-bottom: 1px solid var(--rule);
+  border-top: 4px solid var(--tone); border-radius: 10px 10px 0 0; }
+.frame.accounting { --tone: var(--ledger); --tint: var(--ledger-tint); }
+.frame.financial { --tone: var(--fin); --tint: var(--fin-tint); }
+.frame h2 { margin: 0; font-family: var(--display); font-weight: 700; font-size: var(--step-2);
+  color: var(--tone); text-wrap: balance; }
+.frame .question { margin: 0.2rem 0 0; color: var(--muted); font-size: var(--step-s); }
+.block { padding: 1rem 1.25rem; border-bottom: 1px solid var(--rule); display: flex; flex-direction: column; gap: 0.75rem; }
+.block:last-child { border-bottom: 0; }
+.block h3 { margin: 0; font-size: var(--step-s); font-weight: 600; letter-spacing: 0.04em; color: var(--muted);
+  display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; flex-wrap: wrap; }
+
+/* calculator figures */
+.figures { display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: 0.5rem; }
+.figure { background: var(--tint); border-radius: 6px; padding: 0.55rem 0.7rem; min-width: 0;
+  display: flex; flex-direction: column; gap: 0.1rem; }
+.figure .label { font-size: var(--step-xs); color: var(--muted); line-height: 1.35; }
+.figure .value { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: var(--step-1);
+  font-weight: 500; overflow-wrap: anywhere; }
+.figure.missing .value { font-family: var(--body); font-size: var(--step-s); color: var(--muted); font-weight: 400; }
+.figure .path { font-family: var(--mono); font-size: 0.6875rem; color: var(--muted); overflow-wrap: anywhere; opacity: 0.85; }
+
+/* areas and sections */
+.entries { display: flex; flex-direction: column; gap: 0; margin: 0; }
+.entry { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); gap: 0.75rem;
+  padding: 0.7rem 0; border-top: 1px solid var(--rule); }
+.entry:first-child { border-top: 0; padding-top: 0; }
+.entry dt { font-weight: 600; font-size: var(--step-s); color: var(--tone); line-height: 1.5; }
+.entry dd { margin: 0; min-width: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+.entry dd p { margin: 0; max-width: 65ch; }
+.dropped { color: var(--muted); font-style: italic; font-size: var(--step-s); }
+
+details > summary { cursor: pointer; font-size: var(--step-xs); color: var(--muted); width: fit-content; }
+details > summary:hover { color: var(--ink); }
+details .orig { margin: 0.35rem 0 0; font-size: var(--step-s); color: var(--muted); max-width: 70ch;
+  overflow-wrap: anywhere; }
+details .orig b { color: var(--ink); font-weight: 500; }
+
+/* anomalies */
+.filters { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.filter { border: 1px solid var(--rule); background: transparent; border-radius: 999px;
+  padding: 0.1rem 0.6rem; font-size: var(--step-xs); cursor: pointer; }
+.filter[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.anoms { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.anom { padding: 0.55rem 0; border-top: 1px solid var(--rule); display: flex; flex-direction: column; gap: 0.2rem; }
+.anom:first-child { border-top: 0; padding-top: 0; }
+.anom-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.5rem; }
+.anom-name { font-weight: 500; }
+.anom-area { font-size: var(--step-xs); color: var(--muted); }
+.chip { font-size: var(--step-xs); font-weight: 500; padding: 0.05rem 0.5rem; border-radius: 4px; white-space: nowrap; }
+.chip.contradicts { color: var(--bad); background: var(--bad-tint); }
+.chip.unresolved { color: var(--warn); background: var(--warn-tint); }
+.chip.confirms { color: var(--good); background: var(--good-tint); }
+.none { color: var(--muted); font-size: var(--step-s); margin: 0; }
+
+.adjust { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+.adjust li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.25rem 1rem; }
+.adjust .amt { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.adjust .path { flex-basis: 100%; font-family: var(--mono); font-size: 0.6875rem; color: var(--muted); overflow-wrap: anywhere; }
+.limits { margin: 0; font-size: var(--step-s); color: var(--muted); max-width: 70ch; }
+
+.foot { margin-top: 1.5rem; font-size: var(--step-xs); color: var(--muted); max-width: 80ch; }
+
+@media (max-width: 1100px) {
+  .frames { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 760px) {
+  .app { grid-template-columns: minmax(0, 1fr); gap: 1rem; padding-block: 1rem 2rem; }
+  .rail { position: static; }
+  .tickers { flex-direction: row; flex-wrap: wrap; max-height: none; gap: 0.3rem; }
+  .ticker { border: 1px solid var(--rule); padding: 0.25rem 0.55rem; }
+  .ticker .when { display: none; }
+  .entry { grid-template-columns: minmax(0, 1fr); gap: 0.2rem; }
+  .block, .frame > header { padding-left: 1rem; padding-right: 1rem; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .frame { transition: border-color 0.2s; }
+}
+</style>
+
+<div class="app">
+  <aside class="rail" aria-label="회사 목록">
+    <div class="brand">회계·재무 분석<small>공시만 읽은 두 분석을 회사별로 나란히 봅니다</small></div>
+    <div class="rail-label">회사 (티커순, 순위 아님)</div>
+    <nav class="tickers" id="tickers"></nav>
+  </aside>
+  <main id="main" aria-live="polite"></main>
+</div>
+
+<script id="runs-data" type="application/json">__RUNS_JSON__</script>
+<script>
+(function () {
+  "use strict";
+  var RUNS = JSON.parse(document.getElementById("runs-data").textContent);
+  var OUTCOME_ORDER = { contradicts: 0, unresolved: 1, confirms: 2 };
+  var OUTCOME_SHORT = { contradicts: "모순", unresolved: "판단 불가", confirms: "뒷받침" };
+  var byTicker = {};
+  RUNS.forEach(function (run) { (byTicker[run.ticker] = byTicker[run.ticker] || []).push(run); });
+  var tickers = Object.keys(byTicker).sort();
+  var state = { ticker: tickers[0], run: 0, filter: "all" };
+
+  function esc(text) {
+    return String(text == null ? "" : text).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function isDropped(text) { return /^\(검증을 통과하지 못해/.test(text || ""); }
+
+  function renderRail() {
+    document.getElementById("tickers").innerHTML = tickers.map(function (t) {
+      var latest = byTicker[t][0];
+      return '<button class="ticker" type="button" id="ticker-' + esc(t) + '" data-ticker="' + esc(t) + '"' +
+        (t === state.ticker ? ' aria-current="true"' : "") + '><span class="sym">' + esc(t) +
+        '</span><span class="when">' + esc(latest.filing_date || "") + "</span></button>";
+    }).join("");
+  }
+
+  function figures(list) {
+    return '<div class="figures">' + list.map(function (f) {
+      return '<div class="figure' + (f.missing ? " missing" : "") + '"><span class="label">' + esc(f.label) +
+        '</span><span class="value">' + esc(f.text) + '</span><span class="path">' + esc(f.path) + "</span></div>";
+    }).join("") + "</div>";
+  }
+
+  function original(e) {
+    if (!e.original) return "";
+    return "<details><summary>분석가 원문 (영어)</summary><p class=\"orig\">" +
+      (e.verdict ? "<b>판정:</b> " + esc(e.verdict) + "<br>" : "") + esc(e.original) + "</p></details>";
+  }
+
+  function entries(list) {
+    return '<dl class="entries">' + list.map(function (e) {
+      var text = isDropped(e.text) ? '<p class="dropped">' + esc(e.text) + "</p>" : "<p>" + esc(e.text) + "</p>";
+      return '<div class="entry"><dt>' + esc(e.name) + "</dt><dd>" + text + original(e) + "</dd></div>";
+    }).join("") + "</dl>";
+  }
+
+  function anomalyList(list, withOutcome) {
+    var shown = list.slice();
+    if (withOutcome) {
+      shown = shown.map(function (a, i) { return [a, i]; }).sort(function (x, y) {
+        var ox = x[0].outcome in OUTCOME_ORDER ? OUTCOME_ORDER[x[0].outcome] : 3;
+        var oy = y[0].outcome in OUTCOME_ORDER ? OUTCOME_ORDER[y[0].outcome] : 3;
+        return ox - oy || x[1] - y[1];
+      }).map(function (p) { return p[0]; });
+      if (state.filter !== "all") shown = shown.filter(function (a) { return a.outcome === state.filter; });
+    }
+    if (!shown.length) return '<p class="none">' + (list.length ? "이 조건에 맞는 항목이 없습니다." : "없음") + "</p>";
+    return '<ul class="anoms">' + shown.map(function (a) {
+      var chip = withOutcome && a.outcome ? '<span class="chip ' + esc(a.outcome) + '">' + esc(a.outcome_ko) + "</span>" : "";
+      return '<li class="anom"><div class="anom-line">' + chip + '<span class="anom-name">' + esc(a.name) +
+        '</span><span class="anom-area">' + esc(a.area) + "</span></div>" +
+        "<details><summary>무엇을 보았나 (원문)</summary><p class=\"orig\">" + esc(a.detail) +
+        '<br><span class="mono">' + esc(a.id) + "</span></p></details></li>";
+    }).join("") + "</ul>";
+  }
+
+  function filters(list) {
+    var counts = { all: list.length, contradicts: 0, unresolved: 0, confirms: 0 };
+    list.forEach(function (a) { if (a.outcome in counts) counts[a.outcome] += 1; });
+    var keys = ["all", "contradicts", "unresolved", "confirms"];
+    var names = { all: "전체", contradicts: "숫자가 설명과 모순", unresolved: "숫자로 판단 불가", confirms: "숫자가 설명을 뒷받침" };
+    return '<div class="filters" role="group" aria-label="이상 징후 거르기">' + keys.map(function (k) {
+      return '<button type="button" class="filter" id="filter-' + k + '" data-filter="' + k + '" aria-pressed="' +
+        (state.filter === k) + '">' + names[k] + ' <span class="mono">' + counts[k] + "</span></button>";
+    }).join("") + "</div>";
+  }
+
+  function accountingFrame(a) {
+    var head = '<header><h2>회계</h2><p class="question">보고된 이익과 현금이 경제적 실질을 반영하는가</p></header>';
+    if (!a) return '<section class="frame accounting">' + head + '<div class="block"><p class="none">회계 분석이 실행되지 않았습니다.</p></div></section>';
+    var adjust = a.adjustments.length ? '<ul class="adjust">' + a.adjustments.map(function (j) {
+      return "<li><span>" + esc(j.name) + '</span><span class="amt">' + esc(j.text) + '</span><span class="path">' + esc(j.path) + "</span></li>";
+    }).join("") + "</ul>" : '<p class="none">없음</p>';
+    return '<section class="frame accounting">' + head +
+      '<div class="block"><h3>핵심 숫자 <span>분석가가 받은 계산기 값</span></h3>' + figures(a.figures) + "</div>" +
+      '<div class="block"><h3>여덟 영역</h3>' + entries(a.areas) + "</div>" +
+      '<div class="block"><h3>이상 징후 <span class="mono">' + a.anomalies.length + '건, 기준 없이 모두</span></h3>' +
+        filters(a.anomalies) + anomalyList(a.anomalies, true) + "</div>" +
+      '<div class="block"><h3>잉여현금흐름에 적용한 회계 조정 <span>금액은 Python이 계산기에서 읽음</span></h3>' + adjust + "</div>" +
+      '<div class="block"><p class="limits">' + (a.dropped ? "검증에서 제외된 항목 " + esc(a.dropped) + "건. " : "") + esc(a.limits) + "</p></div>" +
+      "</section>";
+  }
+
+  function financialFrame(f) {
+    var head = '<header><h2>재무</h2><p class="question">이 회사는 얼마나 건강한가</p></header>';
+    if (!f) return '<section class="frame financial">' + head + '<div class="block"><p class="none">재무 분석이 실행되지 않았습니다.</p></div></section>';
+    return '<section class="frame financial">' + head +
+      '<div class="block"><h3>핵심 숫자 <span>분석가가 받은 계산기 값</span></h3>' + figures(f.figures) + "</div>" +
+      '<div class="block"><h3>여덟 갈래</h3>' + entries(f.sections) + "</div>" +
+      '<div class="block"><h3>재무 압박 징후 <span class="mono">' + f.anomalies.length + "건</span></h3>" +
+        anomalyList(f.anomalies, false) + "</div>" +
+      '<div class="block"><p class="limits">' + (f.dropped ? "검증에서 제외된 항목 " + esc(f.dropped) + "건. " : "") + esc(f.limits) + "</p></div>" +
+      "</section>";
+  }
+
+  function renderMain() {
+    var runs = byTicker[state.ticker];
+    var run = runs[Math.min(state.run, runs.length - 1)];
+    var acc = run.accounting, fin = run.financial;
+    var tally = [];
+    if (acc) {
+      var c = { contradicts: 0, unresolved: 0, confirms: 0 };
+      acc.anomalies.forEach(function (a) { if (a.outcome in c) c[a.outcome] += 1; });
+      tally.push('<span>회계 이상 징후 <b class="n">' + acc.anomalies.length + "</b>건 · 모순 <b class=\"n\">" + c.contradicts +
+        "</b> · 판단 불가 <b class=\"n\">" + c.unresolved + "</b> · 뒷받침 <b class=\"n\">" + c.confirms + "</b></span>");
+    }
+    if (fin) tally.push('<span>재무 압박 징후 <b class="n">' + fin.anomalies.length + "</b>건</span>");
+    if (run.grade) tally.push("<span>분석 품질 채점 <b class=\"n\">" + esc(run.grade.score) + "</b> · 결격 <b class=\"n\">" +
+      esc(run.grade.dealbreakers) + "</b>건 (회사 평가가 아님)</span>");
+    var tabs = runs.length > 1 ? '<div class="runs" role="group" aria-label="공시 고르기">' + runs.map(function (r, i) {
+      return '<button type="button" class="run-tab mono" id="run-' + i + '" data-run="' + i + '" aria-pressed="' + (i === state.run) + '">' +
+        esc(r.form) + " · " + esc(r.period_end) + (r.rerun ? " · 재실행" : "") + "</button>";
+    }).join("") + "</div>" : "";
+    document.getElementById("main").innerHTML =
+      '<div class="head"><div class="head-top"><h1>' + esc(run.ticker) + '</h1><div class="facts">' +
+        "<span>서식 <b>" + esc(run.form) + "</b></span><span>기간 종료 <b class=\"mono\">" + esc(run.period_end) +
+        "</b></span><span>제출일 <b class=\"mono\">" + esc(run.filing_date) + "</b></span><span>접수번호 <b class=\"mono\">" +
+        esc(run.accession) + "</b></span></div></div>" + tabs + '<div class="tally">' + tally.join("") + "</div></div>" +
+      '<div class="frames">' + accountingFrame(acc) + financialFrame(fin) + "</div>" +
+      '<p class="foot">두 분석은 따로 적습니다. 둘을 합친 점수나 회사 간 순위는 없습니다. 숫자는 모두 Python이 공시된 값에서 계산했고, ' +
+      "분석가는 숫자를 직접 쓰지 않았습니다. 분석가는 주가를 보지 않았습니다. 실행 폴더: <span class=\"mono\">runs/" + esc(run.run) + "</span>" +
+      (run.models.length ? " · 모델 " + esc(run.models.join(", ")) : "") + "</p>";
+  }
+
+  function render() { renderRail(); renderMain(); }
+
+  function fromHash() {
+    var name;
+    try { name = decodeURIComponent((location.hash || "").slice(1)).toUpperCase(); }
+    catch (e) { return; }
+    if (byTicker[name] && name !== state.ticker) { state.ticker = name; state.run = 0; state.filter = "all"; }
+  }
+
+  document.addEventListener("click", function (ev) {
+    var t = ev.target.closest("[data-ticker]");
+    if (t) { state.ticker = t.dataset.ticker; state.run = 0; state.filter = "all";
+      if (location.hash !== "#" + state.ticker) location.hash = state.ticker; render(); window.scrollTo(0, 0); return; }
+    var r = ev.target.closest("[data-run]");
+    if (r) { state.run = Number(r.dataset.run); state.filter = "all"; renderMain(); return; }
+    var f = ev.target.closest("[data-filter]");
+    if (f) { state.filter = f.dataset.filter; renderMain(); }
+  });
+  window.addEventListener("hashchange", function () { fromHash(); render(); });
+  fromHash();
+  render();
+})();
+</script>
