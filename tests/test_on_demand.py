@@ -701,3 +701,64 @@ def test_a_cik_names_the_registrant_and_the_ticker_only_the_run(tmp_path, server
     with pytest.raises(on_demand.OnDemandError, match="not a number"):
         on_demand.fetch_store(client(tmp_path, server), "SOMEONE", accession=ACCESSION,
                               cik="NVDA")
+
+
+# Axesstel's 10-K for fiscal 2012 (0001193125-13-084624): EDGAR answered 404 for
+# its -index-headers.html on 2026-10-29, and its -index.htm carries these rows
+# (two of the document table's, two of the data files table's), copied as served.
+AXESSTEL_INDEX = """
+         <tr>
+            <td scope="row">1</td>
+            <td scope="row">FORM 10-K</td>
+            <td scope="row"><a href="/Archives/edgar/data/1092492/000119312513084624/d445189d10k.htm">d445189d10k.htm</a></td>
+            <td scope="row">10-K</td>
+            <td scope="row">1234</td>
+         </tr>
+         <tr class="evenRow">
+            <td scope="row">&nbsp;</td>
+            <td scope="row">Complete submission text file</td>
+            <td scope="row"><a href="/Archives/edgar/data/1092492/000119312513084624/0001193125-13-084624.txt">0001193125-13-084624.txt</a></td>
+            <td scope="row">&nbsp;</td>
+            <td scope="row">4515635</td>
+         </tr>
+         <tr>
+            <td scope="row">7</td>
+            <td scope="row">XBRL INSTANCE DOCUMENT</td>
+            <td scope="row"><a href="/Archives/edgar/data/1092492/000119312513084624/axst-20121231.xml">axst-20121231.xml</a></td>
+            <td scope="row">EX-101.INS</td>
+            <td scope="row">252621</td>
+         </tr>
+         <tr class="evenRow">
+            <td scope="row">8</td>
+            <td scope="row">XBRL TAXONOMY EXTENSION SCHEMA</td>
+            <td scope="row"><a href="/Archives/edgar/data/1092492/000119312513084624/axst-20121231.xsd">axst-20121231.xsd</a></td>
+            <td scope="row">EX-101.SCH</td>
+            <td scope="row">1000</td>
+         </tr>
+"""
+
+
+class _OldFolder:
+    def __init__(self, error):
+        self.error, self.asked = error, []
+
+    def get(self, url):
+        self.asked.append(url.rsplit("/", 1)[1])
+        if url.endswith("-index-headers.html"):
+            raise self.error
+        return AXESSTEL_INDEX.encode()
+
+
+def test_a_filing_older_than_its_header_page_is_read_from_its_index_page():
+    fetcher = _OldFolder(edgar_client.EdgarError("https://www.sec.gov/...: HTTP 404"))
+    types = fetch_fixtures.document_types(fetcher, "0001092492", "0001193125-13-084624")
+    assert types == [("10-K", "d445189d10k.htm"), ("EX-101.INS", "axst-20121231.xml"),
+                     ("EX-101.SCH", "axst-20121231.xsd")]
+    assert fetcher.asked == ["0001193125-13-084624-index-headers.html",
+                             "0001193125-13-084624-index.htm"]
+
+
+def test_a_header_page_that_fails_otherwise_is_not_passed_over():
+    fetcher = _OldFolder(edgar_client.EdgarError("https://www.sec.gov/...: HTTP 503"))
+    with pytest.raises(edgar_client.EdgarError, match="503"):
+        fetch_fixtures.document_types(fetcher, "0001092492", "0001193125-13-084624")

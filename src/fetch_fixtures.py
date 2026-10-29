@@ -354,11 +354,32 @@ def directory(fetcher: Fetcher, cik: str, accession: str) -> list[str]:
     return [item["name"] for item in fetcher.get_json(url)["directory"]["item"]]
 
 
+INDEX_PAGE_URL = "https://www.sec.gov/Archives/edgar/data/{cik_int}/{accession}/{acc_dashed}-index.htm"
+# A row of a filing's index page: the document's link, then its type cell.
+INDEX_ROW = re.compile(r'<a href="[^"]*/([^"/]+)">[^<]*</a></td>\s*<td[^>]*>([^<]*)</td>',
+                       re.IGNORECASE)
+
+
+def _not_found(exc: Exception) -> bool:
+    return getattr(exc, "code", None) == 404 or str(exc).rstrip().endswith("HTTP 404")
+
+
 def document_types(fetcher: Fetcher, cik: str, accession: str) -> list[tuple[str, str]]:
-    """(type, filename) for every document in the submission, in sequence order."""
-    url = HEADER_URL.format(cik_int=int(cik), accession=accession.replace("-", ""),
-                            acc_dashed=accession)
-    header = fetcher.get(url).decode("utf-8", "replace")
+    """(type, filename) for every document in the submission, in sequence order.
+
+    EDGAR serves the submission header as `-index-headers.html` for filings
+    of about 2014 on; for an older one that page is not there (Axesstel's 10-K
+    for fiscal 2012, 0001193125-13-084624, answers 404), and the filing's
+    index page, `-index.htm`, carries the same types in its document tables."""
+    folder = dict(cik_int=int(cik), accession=accession.replace("-", ""), acc_dashed=accession)
+    try:
+        header = fetcher.get(HEADER_URL.format(**folder)).decode("utf-8", "replace")
+    except Exception as exc:        # a fetcher of its own kind says not-found its own way
+        if not _not_found(exc):
+            raise
+        page = fetcher.get(INDEX_PAGE_URL.format(**folder)).decode("utf-8", "replace")
+        return [(kind.strip().upper(), name) for name, kind in INDEX_ROW.findall(page)
+                if kind.strip() and kind.strip() != "&nbsp;"]
     return [(t.upper(), name) for t, name in DOCUMENT_TYPE.findall(header)]
 
 
