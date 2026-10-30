@@ -522,3 +522,10 @@ Each step starts when the previous step's condition is met.
   accounting: our targets are accounting reliability and financial pressure, and
   return direction is one target among several.
 - Hide that accounting-reliability events were zero in year one.
+- Let an installed plugin reshape the project or run an optimizing loop on its
+  own. The oryxflow skills that scaffold, restructure or restyle a project bring
+  their own layout and code rules, and this repository already has both; the
+  autoresearch loop tunes one metric over and over, and over twelve companies
+  that is overfitting dressed as a finding. Claude may not invoke either; the
+  owner can still run one by name. Enforced by the deny list in
+  `.claude/settings.json`.
