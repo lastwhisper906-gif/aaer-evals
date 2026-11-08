@@ -235,7 +235,12 @@ EFFORT = "xhigh"
 CALL_TIMEOUT_SECONDS = 3600
 RETRIES = 1                 # an Opus call: one more try
 FABLE_RETRIES = 2           # a Fable call: at most two more
-LIMIT = re.compile(r"reached your \w+ limit", re.IGNORECASE)
+# The limit as the CLI words it: "You've reached your Fable limit.", and the
+# account's weekly one, "You've hit your weekly limit · resets 10pm (UTC)"
+# (2026-10-28, on Opus calls: read as a reader's failure, the run could not
+# be resumed and was made again), and "You've hit your 5-hour limit · resets
+# 5:20am (UTC)" (2026-10-29), whose name holds a hyphen.
+LIMIT = re.compile(r"(?:reached|hit) your [\w-]+ limit", re.IGNORECASE)
 # The other shape the limit takes (lessons.md, 2026-09-29): a Fable call that
 # fails having spent no token, in about two seconds. Under this many seconds,
 # with no token in or out, a failed Fable call is read as the limit first.

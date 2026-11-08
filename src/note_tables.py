@@ -51,6 +51,8 @@ value are carried.
 from __future__ import annotations
 
 import copy
+import datetime as dt
+from decimal import Decimal
 import xml.etree.ElementTree as ET
 
 from src import assemble_bundle, clean_text, cutoff_guard, instance_facts
@@ -151,6 +153,83 @@ def cell(fact: dict) -> dict:
     return out
 
 
+def _end(cell_: dict) -> str:
+    return cell_.get("instant") or cell_.get("end") or ""
+
+
+def _days(cell_: dict) -> int | None:
+    """A flow's length in days, or None for a cell with no dated span: a
+    `forever` context, or a context the instance does not carry, gives the
+    cell no start and no end, and such a cell is set beside nothing."""
+    start, end = cell_.get("start"), cell_.get("end")
+    if not (isinstance(start, str) and isinstance(end, str)):
+        return None
+    try:
+        return (dt.date.fromisoformat(end[:10]) - dt.date.fromisoformat(start[:10])).days
+    except ValueError:
+        return None
+
+
+# Two flows are like for like when their lengths differ by at most a tenth of
+# the longer: a 13-week quarter beside a 14-week one (91 and 98 days), never a
+# quarter beside six months to date, nor a 45-day stub beside a 30-day month.
+LIKE_SPANS = 0.10
+
+
+def _like(one: int, other: int) -> bool:
+    return abs(one - other) <= LIKE_SPANS * max(one, other)
+
+
+def _period(cell_: dict) -> dict:
+    return {"instant": cell_["instant"]} if "instant" in cell_ else \
+        {"start": cell_["start"], "end": cell_["end"]}
+
+
+def changes(cells: list[dict]) -> list[dict]:
+    """For each fact a table states at more than one date -- the same concept,
+    axes and unit; a balance at two dates, or a flow over two spans whose
+    lengths differ by at most a tenth (`LIKE_SPANS`) -- the change from each
+    earlier date to the latest, worked out here, so a swing the table shows is
+    a number the analyst cites and never one it subtracts. Each change is a
+    cell (`value`, `unit`) with the two periods and the two fact ids it is the
+    difference of, later minus earlier. A cell with no date, and a nil cell,
+    is set beside nothing."""
+    groups: dict[tuple, list[dict]] = {}
+    for one in cells:
+        if one.get("nil") or not isinstance(one.get("value"), (int, float)):
+            continue
+        if "instant" in one:
+            if not isinstance(one["instant"], str):
+                continue
+            kind = "instant"
+        elif _days(one) is None:
+            continue
+        else:
+            kind = "flow"
+        same = (one["concept"], tuple(sorted((one.get("axes") or {}).items())), one["unit"],
+                kind)
+        groups.setdefault(same, []).append(one)
+    out = []
+    for (_, _, _, kind), group in groups.items():
+        last = max(_end(c) for c in group)
+        for latest in sorted((c for c in group if _end(c) == last), key=lambda c: c["fact"]):
+            for earlier in sorted(group, key=lambda c: (_end(c), c["fact"])):
+                if _end(earlier) >= last:
+                    continue
+                if kind == "flow" and not _like(_days(earlier), _days(latest)):
+                    continue
+                entry = {"concept": latest["concept"],
+                         "value": float(Decimal(str(latest["value"]))
+                                        - Decimal(str(earlier["value"]))),
+                         "unit": latest["unit"], "from": _period(earlier),
+                         "to": _period(latest)}
+                if latest.get("axes"):
+                    entry["axes"] = latest["axes"]
+                entry["facts"] = [earlier["fact"], latest["fact"]]
+                out.append(entry)
+    return out
+
+
 def key(paragraph: str) -> str:
     """A paragraph's key here: `notes_38` for `<accession>:notes:38`. The
     accession is the triggering filing's, the one every table here is from, and
@@ -203,6 +282,9 @@ def tables(paragraphs: list[tuple[str, str]], html: bytes, instance: bytes, *,
                 cells.append(cell(fact))
         if cells:
             found[key(paragraph)] = {"paragraph": paragraph, "facts": cells}
+            moved = changes(cells)
+            if moved:
+                found[key(paragraph)]["changes"] = moved
     return {"tables": found, "unmatched": unmatched, "not_in_the_instance": untagged,
             "left_out_as_a_price": prices, "left_out_ending_after_the_cutoff": later}
 
@@ -214,7 +296,11 @@ WHAT_THIS_IS = ("for each table of the triggering filing's notes that reached th
                 "report names the table by, which `paragraph` carries whole). A table is "
                 "tied to its facts when the inline document's table renders character for "
                 "character as the paragraph, never by value. Each fact is a cell whose `value` "
-                "is the number; cite its path, and never add rows up")
+                "is the number; cite its path, and never add rows up. `changes` holds, for a "
+                "fact the table states at more than one date (a balance at two dates, or a "
+                "flow over two spans whose lengths differ by at most a tenth), the change from each earlier date to "
+                "the latest, later minus earlier, worked out by Python: cite a change's path "
+                "and never subtract")
 
 
 def from_run(ticker: str, accession: str | None, cutoff, *, fixtures_root,

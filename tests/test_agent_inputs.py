@@ -1362,6 +1362,45 @@ def test_a_note_table_fact_is_cited_by_its_path_and_read_as_a_number(tmp_path):
     assert analysis_check.placeholder_value(held, path) == 20_342e6
 
 
+def test_a_swing_a_note_table_states_is_a_change_the_analyst_cites(tmp_path):
+    """Apple's intangible table states the non-current net line at two dates,
+    20,342 and 11,093 (millions, read by eye above: f-664 and f-665), so the
+    change the analyst cites is 20,342 - 11,093 = 9,249, later minus earlier;
+    the gross line's is 38,220 - 24,950 = 13,270 (f-656 and f-657)."""
+    from src import analysis_check
+
+    seen = _analyst_directory_of(tmp_path, "AAPL")
+    held = json.loads((seen / "calculator_filings_only.json").read_text(encoding="utf-8"))
+    moved = held["note_tables"]["tables"]["notes_38"]["changes"]
+    at = next(i for i, change in enumerate(moved)
+              if change["concept"] == "aapl:IntangibleAssetsNetExcludingGoodwillNoncurrent")
+    path = f"note_tables.tables.notes_38.changes.{at}"
+    assert analysis_check.PLACEHOLDER.fullmatch("{" + path + "}")
+    assert analysis_check.placeholder_value(held, path) == 9_249e6
+    assert (moved[at]["from"], moved[at]["to"]) == ({"instant": "2025-09-27"},
+                                                    {"instant": "2026-06-27"})
+    assert moved[at]["facts"] == ["0000320193-26-000020:f-665", "0000320193-26-000020:f-664"]
+    gross = next(change for change in moved
+                 if change["concept"] == "us-gaap:IntangibleAssetsGrossExcludingGoodwill")
+    assert gross["value"] == 13_270e6
+
+
+def test_the_note_table_paragraph_tells_both_analysts_what_a_change_is():
+    """The paragraph each analyst reads says what the code writes: a change is
+    later minus earlier, cited at its path, and the analyst never subtracts."""
+    from src import note_tables
+
+    for agent in ("accounting-analyst", "financial-analyst"):
+        text = (REPO / ".claude" / "agents" / f"{agent}.md").read_text(encoding="utf-8")
+        paragraph = text[text.index("**A table of the notes, row by row.**"):]
+        paragraph = " ".join(paragraph[:paragraph.index("\n\n")].split())
+        assert "`changes`" in paragraph and "later minus earlier" in paragraph, agent
+        assert "never subtract" in paragraph, agent
+        assert "{note_tables.tables.notes_38.changes.0}" in paragraph, agent
+    assert "later minus earlier" in note_tables.WHAT_THIS_IS
+    assert "never subtract" in note_tables.WHAT_THIS_IS
+
+
 def test_a_run_whose_note_tables_cannot_be_read_says_so_where_the_run_is_checked(tmp_path):
     """No `input_notes.md` in the bundle: the reason is in the section and in the
     file's own `missing` list, which the analyst's view keeps."""

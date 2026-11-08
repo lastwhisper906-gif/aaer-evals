@@ -42,6 +42,8 @@ whole file exists to enforce.
 
 ## This cycle
 
+[ ] a swing a note table states reaches the analysts as a number Python worked out · `src/note_tables.py` (`changes`), and the note-tables paragraph of `.claude/agents/accounting-analyst.md` and `.claude/agents/financial-analyst.md` · `.venv/bin/python -m pytest tests/test_note_tables.py -q` and `.venv/bin/python -m pytest tests/test_agent_inputs.py -q -k note_table` · the planted inventory table's two balances (1,000,000 and 900,000) and planted flows, the differences worked by hand in the test; Apple's intangible table, its two balances read by eye in the instance (20,342 and 11,093 million) · PR: this one
+
 Nineteen rows in build order, then the two rows of the lens design, then four added on 2026-09-23: the universe file the owner put ahead of the pipeline run, and the three rows the first pipeline check turned up that the run cannot land without. The interpreter row is first because every later
 lens run reads a judge command out of this file. Then the twelve rows that carry
 a cutoff, a layer boundary, a control's integrity or a rule `CLAUDE.md` states;
