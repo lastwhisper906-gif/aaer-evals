@@ -698,7 +698,8 @@ def test_the_late_filing_list_is_a_recount_of_the_stored_file(ticker):
 from tests import event_store  # noqa: E402
 
 EVENT_8KS = {
-    # ticker, accession, document: the index's items, then what the body says
+    # ticker, accession, document: the index's items, what the body says, and the
+    # number of paragraphs each item holds where it was counted by eye
     ("STX", "0001193125-25-141454", "d77702d8k.htm"): ("1.02,2.04,8.01,9.01", {
         "1.02": ["Item 1.02. Termination of a Material Definitive Agreement.",
                  "On June 11, 2025 (the “Redemption Date”), the Seagate HDD Cayman (“Seagate "
@@ -708,11 +709,13 @@ EVENT_8KS = {
         "2.04": ["Item 2.04 Triggering Events That Accelerate or Increase a Direct Financial "
                  "Obligation or an Obligation under an Off-Balance Sheet Arrangement.",
                  "The information set forth in Item 1.02 of this Current Report on Form 8-K "
-                 "is incorporated by reference into this Item 2.04."]}),
+                 "is incorporated by reference into this Item 2.04."]},
+     {"1.02": 2, "2.04": 2}),
     ("STX", "0001137789-23-000021", "stx-20230329.htm"): ("2.05,5.02", {
         "2.05": ["Item 2.05 Costs Associated with Exit or Disposal Activities.",
                  "On March 29, 2023, Seagate Technology Holdings plc (the “Company”) committed "
-                 "to an expansion of the October 2022 Restructuring Plan"]}),
+                 "to an expansion of the October 2022 Restructuring Plan"]},
+     {"2.05": 3}),
     ("POWL", "0000950123-11-096524", "h85596e8vk.htm"): ("2.02,2.06,4.02,9.01", {
         "2.06": ["Item 2.06 Material Impairments.",
                  "In connection with the Company’s ongoing procedures relating to its fiscal "
@@ -726,7 +729,10 @@ EVENT_8KS = {
                  "“Audit Committee”) of Powell Industries, Inc. (the “Company”), based on "
                  "consultation with management, concluded that the Company’s unaudited "
                  "interim consolidated financial statements for the quarters ended March 31 "
-                 "and June 30, 2011"]}),
+                 "and June 30, 2011"]},
+     # the 2.06 is two paragraphs, the heading and the impairment; the 4.02 runs
+     # on into a table of restated figures and is not counted here
+     {"2.06": 2}),
     ("SMCI", "0001375365-24-000045", "smci-20241206.htm"): ("3.01,9.01", {
         "3.01": ["Item 3.01",
                  "Notice of Delisting or Failure to Satisfy a Continued Listing Rule or "
@@ -734,7 +740,10 @@ EVENT_8KS = {
                  "On December 6, 2024, Super Micro Computer, Inc. (the “Company”) received a "
                  "letter (the “Letter”) from the Nasdaq Stock Market (“Nasdaq”) informing the "
                  "Company that Nasdaq has granted the Company’s request for an exception to "
-                 "Nasdaq’s Listing Rule 5250(c)(1) through February 25, 2025."]}),
+                 "Nasdaq’s Listing Rule 5250(c)(1) through February 25, 2025."]},
+     # read by eye: the heading, its title, three paragraphs, the forward-looking
+     # heading and its paragraph
+     {"3.01": 7}),
     ("WDC", "0001193125-26-055920", "d107707d8k.htm"): ("3.03", {
         "3.03": ["Item 3.03 Material Modification to Rights of Security Holders.",
                  "As previously disclosed, Western Digital Corporation (the “Company”) "
@@ -743,7 +752,9 @@ EVENT_8KS = {
                  "On February 17, 2026, in connection with the Mandatory Conversion, the Company "
                  "converted all shares issued and outstanding of Preferred Stock into shares of "
                  "Common Stock, pursuant to and in accordance with Section 8.2 of the "
-                 "Certificate of Designations."]}),
+                 "Certificate of Designations."]},
+     # read by eye: the heading, two paragraphs, and the one that points at exhibit 3.1
+     {"3.03": 4}),
 }
 
 
@@ -754,16 +765,22 @@ def _folded(text: str) -> str:
 @pytest.mark.parametrize("key", sorted(EVENT_8KS), ids=lambda key: f"{key[0]}-{key[1]}")
 def test_a_real_event_8k_is_split_into_the_items_its_index_row_names(key):
     ticker, accession, name = key
-    items, said = EVENT_8KS[key]
+    items, said, totals = EVENT_8KS[key]
     row = event_store.row_of(ticker, accession)
     assert row["items"] == items
     body = parse_8k.body_items(parse_8k.document_text(
         event_store.recorded(accession, name).decode("utf-8")))
     for code, paragraphs in said.items():
+        total = totals.get(code)
         assert code in parse_8k.fetch_fixtures.EVENT_ITEMS + parse_8k.VERBATIM_ITEMS
         got = [_folded(paragraph) for paragraph in body[code]["paragraphs"]]
+        # every paragraph read by eye is there, in order: a zip alone would stop
+        # at the shorter list and pass a body that lost one
+        assert len(got) >= len(paragraphs), (code, len(got), got[:3])
         for want, have in zip(paragraphs, got):
             assert have.startswith(want), (code, have[:200])
+        if total is not None:
+            assert len(got) == total, (code, len(got))
 
 
 def test_a_table_of_contents_line_does_not_take_its_items_body():
@@ -838,24 +855,46 @@ def test_a_store_fetched_without_event_filings_says_so_and_names_the_windows_8ks
     """The committed stores were fetched before the event filings were. AMD's
     committed index holds the 8-K 0001193125-26-226746 of 2026-05-15, items
     "1.01,1.02,2.03,5.02,5.07,9.01", inside the window of its 10-Q of 2026-08-05
-    (0000002488-26-000123), which opens after the 10-Q of 2026-05-06; the bundle
-    names it and carries no text of it. The window is recounted here from the
-    index with `json` and the two filing dates."""
+    (0000002488-26-000123), which opens after the 10-Q 0000002488-26-000076 of
+    2026-05-06; the bundle names it and carries no text of it. The window is
+    recounted here from the index with `json` and the two filing dates as
+    literals, never as the code's own output."""
     trigger = cutoff_guard.one_document("AMD", "10-Q", "primary_html")
+    assert (trigger["accession"], trigger["filing_date"]) == ("0000002488-26-000123", "2026-08-05")
     events = parse_8k.event_filings("AMD", cutoff=trigger["filing_date"], trigger=trigger)
     assert events["state"] == "not_fetched"
     assert events["carried"] == []
+    assert events["previous"] == {"form": "10-Q", "accession": "0000002488-26-000076",
+                                  "filing_date": "2026-05-06", "items": []}
     listed = [(row["form"], row["filing_date"], row["items"]) for row in events["listed"]]
     raw = json.loads(cutoff_guard.load_index(cutoff_guard.one_document(
         "AMD", "submissions", "submissions_index")["full_path"]))
     by_hand = [("8-K", row["filing_date"], row["items"].split(","))
                for row in raw["filings"] if row["form"] in ("8-K", "8-K/A")
-               and events["previous"]["filing_date"] < row["filing_date"] <= trigger["filing_date"]
+               and "2026-05-06" < row["filing_date"] <= "2026-08-05"
                and {"1.02", "2.04", "2.05", "2.06", "3.01", "3.03", "4.01"}
                & set(row["items"].split(","))]
     assert listed == sorted(by_hand, key=lambda one: one[1])
     assert [row["accession"] for row in events["listed"]] == ["0001193125-26-226746"]
-    text = "\n".join(parse_8k.render_event_filings(events))
-    assert "### this store was fetched without event filings" in text
-    assert ("### listed by the index, its text not in the store: 8-K 0001193125-26-226746 "
-            "filed 2026-05-15, items 1.01, 1.02, 2.03, 5.02, 5.07, 9.01") in text
+    # a store with no window record adds nothing to the file, so a run built
+    # from one rebuilds byte for byte; the window is in the payload alone
+    assert parse_8k.render_event_filings(events) == []
+
+
+# The committed runs rebuilt from their committed stores, byte for byte. These
+# four stores hold the run's own filing as their triggering report; the stores
+# were fetched before event filings were, so the file ends where it ended.
+REBUILT_RUNS = [("CSCO", "0000858877-26-000078"), ("DELL", "0001571996-26-000046"),
+                ("QCOM", "0000804328-26-000086"), ("JCI", "0000833444-26-000087")]
+
+
+@pytest.mark.parametrize("ticker,accession", REBUILT_RUNS)
+def test_a_committed_run_rebuilds_its_8k_file_byte_for_byte(ticker, accession, tmp_path):
+    from src import assemble_bundle
+    run = cutoff_guard.REPO_ROOT / "runs" / ticker / accession
+    manifest = json.loads(cutoff_guard.load_bundle_file(run, "input_manifest.json"))
+    bundle = assemble_bundle.build(ticker, manifest["form"], accession=accession,
+                                   prior_runs=tmp_path / "no-runs",
+                                   rules_version=manifest.get("rules_version"))
+    assert bundle["texts"]["input_8k.md"].encode("utf-8") == \
+        (run / "input_8k.md").read_bytes()

@@ -110,11 +110,13 @@ def cik_of(ticker: str) -> str:
     return json.loads((FIXTURES / ticker / "manifest.json").read_text())["cik"]
 
 
-def fetched(tmp_path: Path, ticker: str, accession: str, edgar: RecordedEdgar | None = None):
+def fetched(tmp_path: Path, ticker: str, accession: str, edgar: RecordedEdgar | None = None,
+            extra_rows: list[dict] | None = None):
     """The window of `accession` fetched into a new store from the record:
-    (the store root, the problems, the recorded EDGAR it asked)."""
+    (the store root, the problems, the recorded EDGAR it asked). `extra_rows`
+    are planted index rows, in EDGAR's shape, beside the committed ones."""
     from src import fetch_fixtures
-    rows = index_rows(ticker)
+    rows = index_rows(ticker) + list(extra_rows or [])
     trigger = row_of(ticker, accession)
     known = fetch_fixtures.known_at(rows, trigger)
     root = store_up_to(tmp_path, ticker, accession, known)

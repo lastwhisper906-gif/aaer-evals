@@ -815,10 +815,10 @@ def stale(out: Path, ticker: str, filing: dict, known: frozenset[str]) -> list[s
 # 2024-09-26 and was made public 2024-12-04, after ADTRAN's 10-Q of 2024-11-12:
 # a store read by filing date would have handed that 10-Q's reader a letter
 # nobody outside the company and the SEC could see. So each letter's header is
-# fetched and recorded (`release_header`), every letter row carries `released`,
+# read and its release recorded (`RELEASES`), every letter row carries `released`,
 # the gate refuses one made public after the cutoff
 # (`cutoff_guard.RELEASED_LATER_FORMS`), and a letter released on or after the
-# trigger's day is not in the store at all -- not its text, not its header,
+# trigger's day is not in the store at all -- not its text, not its release,
 # since a release is a day with no time and the trigger's own day does not show
 # it came first. The date printed on a letter decides nothing.
 #
@@ -841,12 +841,15 @@ PERIODIC_FORMS = ("10-K", "10-Q")
 LETTER_LOOKBACK_YEARS = 2
 # The roles an event filing's documents carry in a store's manifest.
 EVENT_BODY, AUDITOR_LETTER, LATE_NOTICE = "event_body", "auditor_letter", "late_notice"
-STAFF_LETTER, COMPANY_RESPONSE, RELEASE_HEADER = ("staff_letter", "company_response",
-                                                  "release_header")
+STAFF_LETTER, COMPANY_RESPONSE = "staff_letter", "company_response"
 LETTER_ROLE = {"UPLOAD": STAFF_LETTER, "CORRESP": COMPANY_RESPONSE}
-EVENT_ROLES = (EVENT_BODY, AUDITOR_LETTER, LATE_NOTICE, STAFF_LETTER, COMPANY_RESPONSE,
-               RELEASE_HEADER)
+EVENT_ROLES = (EVENT_BODY, AUDITOR_LETTER, LATE_NOTICE, STAFF_LETTER, COMPANY_RESPONSE)
 EVENT_RECORD = "event_filings"
+# Under the record, the day EDGAR made each letter public, read off its header:
+# a release is a fact about the filing's dissemination, not a document of the
+# company's, so it is recorded with the header's address and hash and the
+# header itself is not stored.
+RELEASES = "releases"
 EVENT_DIRECTORY = "events"
 # EDGAR's dissemination stamp on a filing's SGML header: the accession, then the
 # day the header was made public.
@@ -1000,14 +1003,6 @@ def fetch_event_filings(fetcher, ticker: str, cik: str, filing: dict, out: Path,
                  "bytes": len(raw), "sha256": sha256(raw)}
         if released is not None:
             entry["released"] = released
-        if role == RELEASE_HEADER:
-            # The header served is EDGAR's dissemination record, and its first
-            # line dates it the day the filing was made public: it is dated that
-            # day here, with the letter's own filing date and acceptance beside
-            # it under their names, on the letter's row.
-            entry["edgar_filing_date"] = entry["filing_date"]
-            entry["filing_date"] = released
-            del entry["acceptance_datetime"]
         documents.append(entry)
         held.add((row["accessionNumber"], role, url))
         print(f"  {ticker} {row['form']:8s} {role:16s} {len(raw):>9,d} B  "
@@ -1031,21 +1026,28 @@ def fetch_event_filings(fetcher, ticker: str, cik: str, filing: dict, out: Path,
                             "primary document in the index")
             continue
         keep(row, LATE_NOTICE, primary)
-    on_record = {entry["accession"]: entry.get("released") for entry in documents
-                 if entry.get("role") == RELEASE_HEADER}
+    on_record = (manifest.get(EVENT_RECORD) or {}).get(RELEASES) or {}
+    releases: dict[str, dict] = {}
     for row in window["letters"]:
         name = f"{row['accessionNumber']}.hdr.sgml"
-        released, raw = on_record.get(row["accessionNumber"]), None
-        if released is None:
-            raw = fetcher.get(url_of(row, name))
+        known_release = on_record.get(row["accessionNumber"])
+        if isinstance(known_release, dict) and known_release.get("released"):
+            release = known_release
+        else:
+            url = url_of(row, name)
+            raw = fetcher.get(url)
             released = released_on(raw, row["accessionNumber"], row["filingDate"])
             if released is None:
                 problems.append(f"{ticker}: the header of {row['form']} "
                                 f"{row['accessionNumber']} states no day it was made public")
                 continue
+            release = {"form": row["form"], "filing_date": row["filingDate"],
+                       "released": released, "header_url": url, "header_bytes": len(raw),
+                       "header_sha256": sha256(raw)}
+        released = release["released"]
         if released >= filing["filingDate"]:
             continue    # not public when the trigger was accepted: not in the store
-        keep(row, RELEASE_HEADER, name, raw=raw, released=released)
+        releases[row["accessionNumber"]] = release
         if not public_in_window(released, previous, filing):
             continue
         text = letter_document(row["form"], document_types(fetcher, cik, row["accessionNumber"]),
@@ -1057,11 +1059,15 @@ def fetch_event_filings(fetcher, ticker: str, cik: str, filing: dict, out: Path,
         "for": filing["accessionNumber"],
         "after": previous["accessionNumber"] if previous is not None else None,
         "letters_filed_after": window["letters_filed_after"],
+        "letter_lookback_years": LETTER_LOOKBACK_YEARS,
+        RELEASES: dict(sorted(releases.items())),
         "note": ("the 8-K bodies of items " + ", ".join(EVENT_ITEMS) + " and "
                  + AUDITOR_CHANGE_ITEM + " with its EX-16 letter, the late-filing notices, "
                  "and the comment letters made public after the report named in `after` "
                  "stood and before the filing named in `for` was accepted; a letter's "
-                 "release is its header's, and a letter not public by then is not held"),
+                 "release is its header's, a letter not public by then is not held, and "
+                 "only letters filed within `letter_lookback_years` of the window's "
+                 "opening were looked at"),
     }
     manifest = dict(manifest, documents=sorted(
         documents, key=lambda entry: (entry["form"], entry["role"], entry.get("accession") or "",

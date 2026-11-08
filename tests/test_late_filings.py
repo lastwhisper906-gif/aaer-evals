@@ -110,9 +110,13 @@ def test_adtrans_notice_names_the_quarter_it_filed_a_week_later(tmp_path):
     # the comment letters filed in 2024 were public in December 2024, before the
     # window opened at the 10-K of 2025-03-03: read for their release, not carried
     assert not [entry for entry in events["carried"] if entry["role"] != "late_notice"]
-    held = {entry["role"] for entry in manifest_rows(root, "ADTN")
-            if entry["form"] in ("UPLOAD", "CORRESP")}
-    assert held == {"release_header"}
+    assert not [entry for entry in manifest_rows(root, "ADTN")
+                if entry["form"] in ("UPLOAD", "CORRESP")]
+    releases = fetch_fixtures.load_manifest(root / "ADTN")["event_filings"]["releases"]
+    assert {accession: release["released"] for accession, release in releases.items()} == {
+        "0000000000-24-010922": "2024-12-04", "0000950170-24-109789": "2024-12-04",
+        "0000000000-24-012258": "2024-12-04", "0000000000-24-012928": "2024-12-27",
+        "0001193125-24-264351": "2024-12-27"}
 
 
 def test_the_late_report_is_the_first_of_the_noticed_form_after_the_notice():

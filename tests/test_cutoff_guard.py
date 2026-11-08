@@ -162,14 +162,17 @@ def test_a_letter_with_no_release_on_record_is_refused(tmp_path, form):
 
 def test_a_letter_is_refused_until_it_was_made_public_whatever_its_filing_date(tmp_path):
     root = _letter_tree(tmp_path, "UPLOAD", released="2024-12-04")
-    for cutoff in ("2024-09-26", "2024-12-03"):
+    # the release day itself is refused: a release is a day with no time, so a
+    # letter made public that day is not shown to have come before a report
+    # accepted that day, the rule every selection path keeps
+    for cutoff in ("2024-09-26", "2024-12-03", "2024-12-04"):
         with pytest.raises(cutoff_guard.NotYetPublicError) as caught:
             cutoff_guard.load_bytes(root / LETTER, cutoff, fixtures_root=root)
         assert caught.value.doc_date == dt.date(2024, 12, 4)
     with pytest.raises(CutoffViolationError) as caught:
         cutoff_guard.load_bytes(root / LETTER, "2024-09-25", fixtures_root=root)
     assert caught.value.doc_date == dt.date(2024, 9, 26)
-    assert cutoff_guard.load_bytes(root / LETTER, "2024-12-04", fixtures_root=root) == \
+    assert cutoff_guard.load_bytes(root / LETTER, "2024-12-05", fixtures_root=root) == \
         b"September 25, 2024\n"
 
 

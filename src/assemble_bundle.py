@@ -392,14 +392,15 @@ def eight_k_file(ticker: str, form: str, *, cutoff, fixtures_root,
     # 15 of the 24 bundles. PANW's 10-K stated that an 8-K was filed 2026-09-01
     # under a cutoff of 2025-08-29 — twelve months of look-ahead, plus the fact
     # that the company filed one in the window.
-    note = (f"no 8-K filed at or before {cutoff} is on record with an earnings "
-            f"release, so this bundle has no earnings release and no verbatim item "
-            f"body of one")
+    note = (f"no 8-K filed at or before {cutoff} is on record, so this bundle "
+            f"has no earnings release and no verbatim item body")
     # No exhibit on record does not mean no filing index. The item codes and the
     # late-filing notices come from `submissions.json`, which is stored for
     # every company, and a bundle that says nothing about them cannot answer
     # `filing_irregularity` either way. Nor does it mean no event filing: the
-    # window's are carried after the index either way.
+    # window's are carried after the index either way, when the store holds the
+    # window record; a store fetched without one adds nothing, so a run built
+    # from such a store rebuilds byte for byte.
     text = (f"# {ticker} 8-K\n\n{note}.\n\n"
             + parse_8k.render_index(ticker, cutoff=cutoff, fixtures_root=fixtures_root,
                                     trigger=trigger))

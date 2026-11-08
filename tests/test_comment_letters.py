@@ -40,7 +40,7 @@ import pytest
 
 from src import cutoff_guard, fetch_fixtures, parse_8k
 from tests import event_store
-from tests.event_store import RecordedEdgar, fetched, manifest_rows, recorded, section
+from tests.event_store import RECORD, RecordedEdgar, fetched, manifest_rows, recorded, section
 
 TICKER = "ADTN"
 QUARTER = "0000950170-24-125685"       # 10-Q filed 2024-11-12
@@ -86,19 +86,22 @@ def test_the_cutoff_reads_edgars_filing_date_and_the_release_never_the_printed_d
         cutoff_guard.load_bytes(path, "2024-09-25", fixtures_root=root)
     assert not isinstance(printed.value, cutoff_guard.NotYetPublicError)
     assert printed.value.doc_date.isoformat() == "2024-09-26"
-    # filed, and still private: refused by the release until its day, which the
-    # date rule allows as it allows a filing date; which letters of the trigger's
-    # own day stood is decided where they are picked (the test after the next)
-    for cutoff in ("2024-09-26", "2024-11-12", "2024-12-03"):
+    # filed, and still private: refused by the release through the release day
+    # itself, since a release is a day with no time and cannot show the letter
+    # was public before a report accepted that day
+    for cutoff in ("2024-09-26", "2024-11-12", "2024-12-03", "2024-12-04"):
         with pytest.raises(cutoff_guard.NotYetPublicError) as private:
             cutoff_guard.load_bytes(path, cutoff, fixtures_root=root)
         assert private.value.doc_date.isoformat() == "2024-12-04"
-    assert cutoff_guard.load_bytes(path, "2024-12-04", fixtures_root=root) == \
+    assert cutoff_guard.load_bytes(path, "2024-12-05", fixtures_root=root) == \
         recorded(STAFF, "filename2.txt")
-    # the header, EDGAR's record of the release, is dated by its own first line
-    header = row(root, STAFF, fetch_fixtures.RELEASE_HEADER)
-    assert (header["filing_date"], header["released"], header["edgar_filing_date"]) == \
-        ("2024-12-04", "2024-12-04", "2024-09-26")
+    # the release is recorded off the header's first line, with the header's
+    # address and hash; the header itself is not a document of the store
+    release = fetch_fixtures.load_manifest(root / TICKER)["event_filings"]["releases"][STAFF]
+    assert (release["form"], release["filing_date"], release["released"]) == \
+        ("UPLOAD", "2024-09-26", "2024-12-04")
+    assert release["header_sha256"] == RECORD["files"][f"{STAFF}/{STAFF}.hdr.sgml"]["sha256"]
+    assert not [entry for entry in manifest_rows(root, TICKER) if entry["role"] == "release_header"]
 
 
 def test_letters_filed_before_a_report_and_made_public_after_it_never_reach_it(tmp_path):
@@ -116,7 +119,9 @@ def test_letters_filed_before_a_report_and_made_public_after_it_never_reach_it(t
     assert events["carried"] == []
     for accession in FIRST_CONVERSATION:
         assert accession not in text
-    assert parse_8k.NOTHING_IN_THE_WINDOW in text
+    assert parse_8k.nothing_in_the_window(2) in text
+    assert ("no comment letter filed in the 2 years before the window opened was made "
+            "public in this window") in text
 
 
 def test_the_first_report_after_the_release_carries_the_whole_conversation(tmp_path):
@@ -169,6 +174,42 @@ def test_a_letter_made_public_on_the_triggers_own_day_is_not_shown_to_stand():
     assert fetch_fixtures.public_in_window("2024-11-12", previous, after)
 
 
+# The window of the 10-Q of 2024-11-12 opens at the 10-Q of 2024-08-09
+# (0000950170-24-094602, the committed index), so the lookback floor is 2022-08-09:
+# a letter filed the day before it is never looked for, one filed the day after is.
+PLANTED_OLD = {"accessionNumber": "0000000000-22-900001", "filingDate": "2022-08-08",
+               "reportDate": "", "form": "UPLOAD", "items": "", "primaryDocument": "filename1.pdf",
+               "primaryDocDescription": "", "acceptanceDateTime": "2022-08-08T14:00:00.000Z"}
+PLANTED_INSIDE = dict(PLANTED_OLD, accessionNumber="0000000000-22-900002", filingDate="2022-08-10",
+                      acceptanceDateTime="2022-08-10T14:00:00.000Z")
+
+
+class ServesThePlantedHeader(RecordedEdgar):
+    def get(self, url):
+        if url.endswith(f"{PLANTED_INSIDE['accessionNumber']}.hdr.sgml"):
+            self.asked.append(url)
+            return (f"<SEC-HEADER>{PLANTED_INSIDE['accessionNumber']}.hdr.sgml : 20221001\n"
+                    "<PRIVATE-TO-PUBLIC>\n").encode()
+        return super().get(url)
+
+
+def test_a_letter_filed_before_the_lookback_is_never_looked_for_and_the_line_says_so(tmp_path):
+    root, problems, edgar = fetched(tmp_path, TICKER, QUARTER, edgar=ServesThePlantedHeader(),
+                                    extra_rows=[PLANTED_OLD, PLANTED_INSIDE])
+    assert problems == []
+    asked = [url.rsplit("/", 1)[1] for url in edgar.asked]
+    assert f"{PLANTED_OLD['accessionNumber']}.hdr.sgml" not in asked
+    assert f"{PLANTED_INSIDE['accessionNumber']}.hdr.sgml" in asked
+    record = fetch_fixtures.load_manifest(root / TICKER)["event_filings"]
+    assert (record["letter_lookback_years"], record["letters_filed_after"]) == (2, "2022-08-09")
+    assert PLANTED_OLD["accessionNumber"] not in record["releases"]
+    # made public 2022-10-01, before the window opened: recorded, not carried
+    assert record["releases"][PLANTED_INSIDE["accessionNumber"]]["released"] == "2022-10-01"
+    events, text = section(root, TICKER, QUARTER)
+    assert events["carried"] == []
+    assert "no comment letter filed in the 2 years before the window opened" in text
+
+
 def test_a_letter_with_no_release_on_record_is_refused_by_the_gate(tmp_path):
     root, _, _ = fetched(tmp_path, TICKER, ANNUAL)
     path = root / TICKER / "manifest.json"
@@ -199,9 +240,9 @@ class PdfOnly(RecordedEdgar):
 def test_a_letter_held_as_a_pdf_only_is_named_and_not_carried(tmp_path):
     root, problems, _ = fetched(tmp_path, TICKER, ANNUAL, edgar=PdfOnly())
     assert problems == []
-    roles = {entry["role"] for entry in manifest_rows(root, TICKER)
-             if entry["accession"] == CLOSING}
-    assert roles == {"release_header"}
+    assert not [entry for entry in manifest_rows(root, TICKER) if entry["accession"] == CLOSING]
+    releases = fetch_fixtures.load_manifest(root / TICKER)["event_filings"]["releases"]
+    assert releases[CLOSING]["released"] == "2024-12-04"
     events, text = section(root, TICKER, ANNUAL)
     assert CLOSING not in {entry["accession"] for entry in events["carried"]}
     assert (f"### not carried: UPLOAD {CLOSING} filed 2024-11-04 and made public "

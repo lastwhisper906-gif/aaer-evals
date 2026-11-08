@@ -289,6 +289,7 @@ def event_filings(ticker: str, *, cutoff, fixtures_root=cutoff_guard.FIXTURES,
     if trigger is None:
         trigger = triggering_report(ticker, cutoff, fixtures_root=fixtures_root)
     payload = {"cutoff": cutoff, "state": "no_trigger", "previous": None,
+               "letter_lookback_years": fetch_fixtures.LETTER_LOOKBACK_YEARS,
                "carried": [], "listed": [], "not_carried": []}
     if trigger is None:
         return payload
@@ -312,6 +313,8 @@ def event_filings(ticker: str, *, cutoff, fixtures_root=cutoff_guard.FIXTURES,
                 f"{ticker}: the store's event filings were fetched for the window after "
                 f"{record.get('after')}, and the index at {cutoff} opens it after {after}")
         payload["state"] = "fetched"
+        if isinstance(record.get("letter_lookback_years"), int):
+            payload["letter_lookback_years"] = record["letter_lookback_years"]
 
     held: dict[str, list[dict]] = {}
     if payload["state"] == "fetched":
@@ -329,16 +332,15 @@ def event_filings(ticker: str, *, cutoff, fixtures_root=cutoff_guard.FIXTURES,
             carried.extend(_notice(row, documents, known, cutoff, fixtures_root))
         else:
             carried.extend(_eight_k(row, documents, cutoff, fixtures_root))
-    letters = {row["accessionNumber"]: row for row in window["letters"]}
-    for accession, documents in held.items():
-        header = next((one for one in documents
-                       if one.get("role") == fetch_fixtures.RELEASE_HEADER), None)
-        if (header is None or accession not in letters
-                or not fetch_fixtures.public_in_window(str(header.get("released")),
-                                                       previous, me)):
+    releases = (record or {}).get(fetch_fixtures.RELEASES) or {} \
+        if payload["state"] == "fetched" else {}
+    for row in window["letters"]:
+        release = releases.get(row["accessionNumber"])
+        released = release.get("released") if isinstance(release, dict) else None
+        if not released or not fetch_fixtures.public_in_window(str(released), previous, me):
             continue
-        carried.extend(_letter(letters[accession], header, documents, cutoff,
-                               fixtures_root, payload["not_carried"]))
+        carried.extend(_letter(row, str(released), held.get(row["accessionNumber"], []),
+                               cutoff, fixtures_root, payload["not_carried"]))
     carried.sort(key=lambda entry: (entry["public"], entry["accession"], entry["order"]))
     payload["carried"] = carried
     return payload
@@ -425,10 +427,9 @@ def _notice(row: dict, documents: list[dict], known: list[dict], cutoff: str,
                                    len(paragraphs))}]
 
 
-def _letter(row: dict, header: dict, documents: list[dict], cutoff: str, fixtures_root,
+def _letter(row: dict, released: str, documents: list[dict], cutoff: str, fixtures_root,
             not_carried: list[dict]) -> list[dict]:
     role = fetch_fixtures.LETTER_ROLE[row["form"]]
-    released = str(header["released"])
     who = ("a letter from the SEC staff" if row["form"] == "UPLOAD"
            else "the company's letter to the SEC staff")
     text = next((one for one in documents if one.get("role") == role), None)
@@ -446,14 +447,28 @@ def _letter(row: dict, header: dict, documents: list[dict], cutoff: str, fixture
              "paragraph_ids": _ids(row["accessionNumber"], role, len(paragraphs))}]
 
 
-NOTHING_IN_THE_WINDOW = (
-    "none: no 8-K of items " + ", ".join(EVENT_ITEMS) + " or " + AUDITOR_CHANGE_ITEM
-    + ", no notification of late filing and no comment letter was made public in this window")
+def nothing_in_the_window(lookback_years: int) -> str:
+    """The line a whole window with nothing in it prints. It says what was looked
+    at: a comment letter is found only through its header, and only the letters
+    filed within the lookback of the window's opening had theirs read."""
+    years = f"{lookback_years} year{'s' if lookback_years != 1 else ''}"
+    return ("none: no 8-K of items " + ", ".join(EVENT_ITEMS) + " or " + AUDITOR_CHANGE_ITEM
+            + ", no notification of late filing, and no comment letter filed in the "
+            f"{years} before the window opened was made public in this window")
 
 
 def render_event_filings(events: dict) -> list[str]:
     """The window's section of `input_8k.md`. Every line that is not a paragraph
-    is a heading, because a line under an `[id]` is that paragraph's text."""
+    is a heading, because a line under an `[id]` is that paragraph's text.
+
+    Nothing at all for a store that holds no window record (`not_fetched`) or
+    no triggering report (`no_trigger`): the committed stores were fetched
+    before event filings were, and a run built from one rebuilds byte for byte
+    from its store only if the file ends where it ended.
+    """
+    state = events["state"]
+    if state in ("no_trigger", "not_fetched"):
+        return []
     cutoff, previous = events["cutoff"], events["previous"]
     if previous is not None:
         title = (f"## event filings made public after the {previous['form']} "
@@ -461,17 +476,7 @@ def render_event_filings(events: dict) -> list[str]:
     else:
         title = f"## event filings made public on or before {cutoff}"
     out = ["", title, ""]
-    state = events["state"]
-    if state == "no_trigger":
-        out.extend([f"### no 10-K or 10-Q of this store was filed on {cutoff}, so no window "
-                    "of event filings is drawn", ""])
-        return out
-    if state == "not_fetched":
-        out.extend(["### this store was fetched without event filings, so no 8-K body of "
-                    "these items, no auditor's letter, no notification of late filing and "
-                    "no comment letter is carried; any 8-K or notice of the window the index "
-                    "lists is named below", ""])
-    elif state == "another_filing":
+    if state == "another_filing":
         out.extend(["### this store's event filings were fetched for another filing than "
                     "this one, so none is carried; any 8-K or notice of the window the index "
                     "lists is named below", ""])
@@ -490,7 +495,7 @@ def render_event_filings(events: dict) -> list[str]:
                     "the letter as a PDF with no text copy", ""])
     if state == "fetched" and not (events["carried"] or events["listed"]
                                    or events["not_carried"]):
-        out.extend([f"### {NOTHING_IN_THE_WINDOW}", ""])
+        out.extend([f"### {nothing_in_the_window(events['letter_lookback_years'])}", ""])
     return out
 
 

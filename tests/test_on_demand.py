@@ -22,6 +22,7 @@ from pathlib import Path
 import pytest
 
 from src import edgar_client, fetch_fixtures, on_demand
+from tests.event_store import EVENT_FIXTURES, RECORD as EVENT_RECORD
 from tests.planted_edgar import DIRECT, SAMPLE_CONTACT, serve
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
@@ -96,6 +97,12 @@ def planted_edgar() -> dict[str, tuple[bytes, str]]:
                          for e in entries if e["role"] in types)
         bodies[folder + f"{accession}-index-headers.html"] = (header.encode(), "")
     bodies[f"/submissions/CIK{CIK}.json"] = (raw_index(), "")
+    # the headers of NVIDIA's three comment letters, which the store reads for the
+    # day each was made public: EDGAR documents committed with the event fixtures
+    for key, entry in EVENT_RECORD["files"].items():
+        if entry["ticker"] == TICKER:
+            bodies[urllib.parse.urlsplit(entry["url"]).path] = (
+                (EVENT_FIXTURES / key).read_bytes(), "")
     return bodies
 
 
@@ -774,6 +781,10 @@ def test_a_header_page_that_fails_otherwise_is_not_passed_over():
 
 EXIT_8K, NOTICE, LETTER, RESPONSE = ("0001045810-26-000060", "0001045810-26-000070",
                                      "0000000000-26-000100", "0001045810-26-000055")
+# an 8-K whose items carry 1.01 beside 1.02, the shape of DELL's real
+# 0001193125-26-265877: the Exhibit 10 path reads every 8-K carrying 1.01
+TERMINATED_8K = "0001045810-26-000062"
+TERMINATED_SENTENCE = "On June 20, 2026, the Company terminated the supply agreement."
 EXIT_SENTENCE = "On June 9, 2026, the Company committed to a plan to close one of its sites."
 NOTICE_SENTENCE = "The Company is unable to file its Form 10-Q within the prescribed period."
 LETTER_SENTENCE = "We have reviewed your filing and have the following comment."
@@ -801,7 +812,18 @@ def plant_the_window(server) -> None:
                 "form": "CORRESP", "items": "", "primaryDocument": "filename1.htm",
                 "primaryDocDescription": "", "isXBRL": 0,
                 "acceptanceDateTime": "2026-05-25T15:00:00.000Z"})
+    plant_rows(server,
+               {"accessionNumber": TERMINATED_8K, "filingDate": "2026-06-22",
+                "reportDate": "2026-06-20", "form": "8-K", "items": "1.01,1.02,9.01",
+                "primaryDocument": "nvda-20260620.htm", "primaryDocDescription": "8-K",
+                "isXBRL": 0, "acceptanceDateTime": "2026-06-22T20:05:00.000Z"})
     server.bodies.update({
+        archive(TERMINATED_8K, "nvda-20260620.htm"): (
+            f"<html><body><p>Item 1.01 Entry into a Material Definitive Agreement.</p>"
+            f"<p>The Company entered into a new supply agreement.</p>"
+            f"<p>Item 1.02 Termination of a Material Definitive Agreement.</p>"
+            f"<p>{TERMINATED_SENTENCE}</p><p>Item 9.01 Financial Statements and Exhibits.</p>"
+            f"<p>SIGNATURES</p></body></html>".encode(), ""),
         archive(EXIT_8K, "nvda-20260609.htm"): (
             f"<html><body><p>Item 2.05 Costs Associated with Exit or Disposal Activities.</p>"
             f"<p>{EXIT_SENTENCE}</p><p>Item 9.01 Financial Statements and Exhibits.</p>"
@@ -834,16 +856,23 @@ def test_the_store_on_demand_holds_the_window_s_event_filings_with_their_own_rol
     rows = {(entry["role"], entry["accession"]): entry for entry in manifest["documents"]
             if entry["accession"] in (EXIT_8K, NOTICE, LETTER, RESPONSE)}
     assert sorted(rows) == [("event_body", EXIT_8K), ("late_notice", NOTICE),
-                            ("release_header", LETTER), ("staff_letter", LETTER)]
+                            ("staff_letter", LETTER)]
+    assert ("event_body", TERMINATED_8K) in {(e["role"], e["accession"])
+                                             for e in manifest["documents"]}
     got = {key: (entry["form"], entry["filing_date"], entry.get("acceptance_datetime"),
                  entry.get("released")) for key, entry in rows.items()}
     assert got == {
         ("event_body", EXIT_8K): ("8-K", "2026-06-10", "2026-06-10T16:05:00-04:00", None),
         ("late_notice", NOTICE): ("NT 10-Q", "2026-08-21", "2026-08-21T17:00:00-04:00", None),
-        ("release_header", LETTER): ("UPLOAD", "2026-06-30", None, "2026-06-30"),
         ("staff_letter", LETTER): ("UPLOAD", "2026-04-02", "2026-04-02T10:00:00-04:00",
                                    "2026-06-30"),
     }
+    # the release is recorded, not stored as a document; the response made public
+    # after the 10-Q is recorded nowhere
+    releases = manifest["event_filings"]["releases"]
+    assert releases[LETTER]["released"] == "2026-06-30"
+    assert releases[LETTER]["header_url"].endswith(f"/{LETTER}.hdr.sgml")
+    assert RESPONSE not in releases
     assert archive(RESPONSE, "filename1.htm") not in server.hits
     before = sum(server.hits.values())
     on_demand.fetch_store(client(tmp_path, server), TICKER, accession=ACCESSION)
@@ -863,9 +892,19 @@ def test_the_bundle_from_the_store_on_demand_carries_them_and_the_owners_grader_
     assemble_bundle.write(bundle, run)
     text = (run / "input_8k.md").read_text(encoding="utf-8")
     for identifier, sentence in ((f"{EXIT_8K}:8k_event:2", EXIT_SENTENCE),
+                                 (f"{TERMINATED_8K}:8k_event:4", TERMINATED_SENTENCE),
                                  (f"{NOTICE}:late_notice:2", NOTICE_SENTENCE),
                                  (f"{LETTER}:staff_letter:2", LETTER_SENTENCE)):
         assert f"[{identifier}]\n{sentence}\n" in text
+    # the Exhibit 10 path reads the earnings 8-K's submission and not an event
+    # 8-K's body: the 8-K carrying 1.01 in the window has no header on record,
+    # and it is neither counted nor asked for one
+    from src import exhibits
+    fetched_store = exhibits.extract_on_trigger(TICKER, cutoff="2026-08-26",
+                                            fixtures_root=held["store"])
+    committed = exhibits.extract_on_trigger(TICKER, cutoff="2026-08-26")
+    assert fetched_store["eight_k_count"] == committed["eight_k_count"] == 1
+    assert TERMINATED_8K not in {t["accession"] for t in fetched_store["triggers"]}
     assert RESPONSE not in text
     assert ("## event filings made public after the 10-Q 0001045810-26-000052 filed "
             "2026-05-20, through 2026-08-26") in text
