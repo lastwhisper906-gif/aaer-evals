@@ -802,21 +802,63 @@ def test_johnson_controls_cross_scope_pairing_is_named_where_it_occurs():
 # --- the cost of debt's fallback reason is written only when it is true -----------------------
 
 def test_the_neither_on_record_reason_is_written_only_with_no_interest_fact():
-    """Dell's and Fortinet's interest expense is on record across the renamed tags
-    (Dell: InterestExpenseNonoperating in the 10-K, InterestExpenseDebt in the 10-Q;
-    Fortinet: InterestExpense and InterestExpenseNonoperating), so each cost of
-    debt is interest expense over average debt and no fallback is written. A
-    planted filer with debt and neither interest expense nor interest paid gets
-    the risk-free rate plus one point, with the reason that says "neither"; one
-    with interest expense tagged does not."""
-    for ticker, cut, end, interest in (("DELL", "2026-09-08", "2026-07-31", 1_607 * MILLION),
-                                       ("FTNT", "2026-07-30", "2026-06-30", 18 * MILLION)):
-        run = next(source.FIXTURES.parent.parent.joinpath("runs", ticker).glob("0*"))
-        out = calculator.calculate(ticker=ticker, cutoff=cut, period_end=end, form="10-Q",
-                                   bundle=run)
-        assert out["terms"]["trailing_four_quarters"]["interest_expense"]["value"] == interest
-        cost = out["cost_of_capital"]["pre_tax_cost_of_debt"]
-        assert cost["formula"] == "interest_expense / average debt" and "fallback" not in cost
+    """Fortinet's interest expense is on record across two tags of one scope,
+    through the independent reader: InterestExpense 20.1 for 2025 (the 10-K) and
+    InterestExpenseNonoperating 7.4 and 9.5 for the six months to 2026-06-30 and
+    2025-06-30 (the 10-Q, both halves under one tag), 20.1 + 7.4 - 9.5 = 18.0
+    million; its cost of debt is interest expense over average debt and no fallback
+    is written.
+
+    Dell's is not: its 10-K tags InterestExpenseNonoperating 1,560 for fiscal 2026
+    and the earlier 10-Q 753 for the six months to 2025-08-01, while the triggering
+    10-Q tags only InterestExpenseDebt, "approximately $0.8 billion" of interest on
+    debt, 800 for both six-month spans -- 800 against 753 for the same span, so the
+    two tags are not one line and are two scopes. Neither scope is on record in
+    every span, so interest expense is missing with the reason, and the cost of
+    debt steps down its ladder: interest paid is on record for fiscal 2026 alone
+    (1,354) and not for either six months, so it is the risk-free rate plus one
+    point, and the reason that says "neither" is true. A planted filer with debt
+    and neither fact gets the same reason; one with interest expense tagged does
+    not."""
+    cut = "2026-07-30"
+    assert source.one_value("FTNT", "InterestExpense", "2025-01-01..2025-12-31", cut) == 20.1 * MILLION
+    assert source.one_value("FTNT", "InterestExpenseNonoperating", "2026-01-01..2026-06-30", cut) \
+        == 7.4 * MILLION
+    assert source.one_value("FTNT", "InterestExpenseNonoperating", "2025-01-01..2025-06-30", cut) \
+        == 9.5 * MILLION
+    assert round(20.1 + 7.4 - 9.5, 1) == 18.0
+    fortinet = calculator.calculate(ticker="FTNT", cutoff=cut, period_end="2026-06-30", form="10-Q",
+                                    bundle=source.FIXTURES.parent.parent / "runs" / "FTNT"
+                                    / "0001262039-26-000021")
+    interest = fortinet["terms"]["trailing_four_quarters"]["interest_expense"]
+    assert interest["value"] == pytest.approx(18.0 * MILLION)
+    assert interest["tags_differ"] == ["InterestExpense", "InterestExpenseNonoperating"]
+    cost = fortinet["cost_of_capital"]["pre_tax_cost_of_debt"]
+    assert cost["formula"] == "interest_expense / average debt" and "fallback" not in cost
+
+    cut = "2026-09-08"
+    nonoperating, debt = "InterestExpenseNonoperating", "InterestExpenseDebt"
+    assert source.one_value("DELL", nonoperating, "2025-02-01..2026-01-30", cut) == 1_560 * MILLION
+    assert source.one_value("DELL", nonoperating, "2025-02-01..2025-08-01", cut) == 753 * MILLION
+    assert source.one_value("DELL", debt, "2026-01-31..2026-07-31", cut) == 800 * MILLION
+    assert source.one_value("DELL", debt, "2025-02-01..2025-08-01", cut) == 800 * MILLION
+    assert source.reported("DELL", nonoperating, "2026-01-31..2026-07-31", cut) == []
+    assert source.reported("DELL", debt, "2025-02-01..2026-01-30", cut) == []
+    assert source.one_value("DELL", "InterestPaidNet", "2025-02-01..2026-01-30", cut) == 1_354 * MILLION
+    assert source.reported("DELL", "InterestPaidNet", "2026-01-31..2026-07-31", cut) == []
+    assert calculator.scope_of("interest_expense", debt) != calculator.scope_of("interest_expense",
+                                                                                nonoperating)
+    dell = calculator.calculate(ticker="DELL", cutoff=cut, period_end="2026-07-31", form="10-Q",
+                                bundle=source.FIXTURES.parent.parent / "runs" / "DELL"
+                                / "0001571996-26-000046")
+    interest = dell["terms"]["trailing_four_quarters"]["interest_expense"]
+    assert "value" not in interest
+    assert "different scopes of interest_expense" in interest["missing"]
+    assert f"this year to date under us-gaap:{debt}" in interest["missing"]
+    cost = dell["cost_of_capital"]["pre_tax_cost_of_debt"]
+    assert cost["formula"] == "risk_free_rate + 0.01"
+    assert "neither interest expense nor interest paid is on record" in cost["fallback"]
+    assert "different scopes of interest_expense" in cost["fallback"]
 
     def planted(interest: dict) -> dict:
         def rows(values: dict) -> list:
@@ -841,3 +883,84 @@ def test_the_neither_on_record_reason_is_written_only_with_no_interest_fact():
     assert "neither interest expense nor interest paid is on record" in bare["fallback"]
     tagged = planted({"InterestExpenseNonoperating": 25.0})["pre_tax_cost_of_debt"]
     assert tagged["value"] == 25.0 / 500.0 and "fallback" not in tagged
+
+
+# --- the two years to date are read like for like within a scope ------------------------------
+
+def test_the_two_years_to_date_are_read_under_one_tag_within_a_scope():
+    """Planted: fiscal 2024 under DepreciationDepletionAndAmortization (100); the six
+    months of 2025 under it (60) and under DepreciationAndAmortization (55); the six
+    months of 2024 under DepreciationAndAmortization alone (40). One scope, but the
+    two years to date would be differenced across a rename: both are read under the
+    tag that carries both, so the year is 100 + 55 - 40 = 115, not 100 + 60 - 40 = 120,
+    and the tags still differ across the sum."""
+    renamed = "DepreciationAndAmortization"
+    lines = {"year": {DEPRECIATION: 100.0}, "to_date": {DEPRECIATION: 60.0, renamed: 55.0},
+             "before": {renamed: 40.0}}
+    record, periods = depreciation_planted(lines)
+    found = calculator.trailing(record, "depreciation_and_amortization", periods)
+    assert found["value"] == 115.0
+    assert found["parts"]["this_year_to_date"]["tag"] == renamed
+    assert found["parts"]["prior_year_to_date"]["tag"] == renamed
+    assert found["tags_differ"] == sorted([DEPRECIATION, renamed])
+
+
+# --- a series of quarters is held to one scope -----------------------------------------------------
+
+def test_a_series_of_quarters_is_read_in_the_one_scope_some_of_it_is_on_record_in():
+    """Planted in Johnson Controls' shape, quarterly: the fiscal year and the six months
+    of 2025 under the continuing-operations tag alone, the six months of 2024 under
+    both (total 80, continuing 30) with its first quarter under both (total 50,
+    continuing 10). The newest quarters are readable in continuing operations only,
+    so the series is: the quarter to June 2024 is 30 - 10 = 20 of continuing
+    operations, not 80 - 50 = 30 of the total, and says so."""
+    continuing, total = ("NetCashProvidedByUsedInOperatingActivitiesContinuingOperations",
+                         "NetCashProvidedByUsedInOperatingActivities")
+    record, periods = mixed_planted({"year": continuing, "to_date": continuing, "before": total},
+                                    {"year": "Revenues", "to_date": "Revenues", "before": "Revenues"})
+    row = dict(record.usd[total][("2024-01-01", "2024-06-30")][0])
+    record.usd[total][("2024-01-01", "2024-06-30")] = [dict(row, val=80.0)]
+    record.usd[continuing][("2024-01-01", "2024-06-30")] = [dict(row, val=30.0)]
+    record.usd[total][("2024-01-01", "2024-03-31")] = [dict(row, end="2024-03-31", val=50.0)]
+    record.usd[continuing][("2024-01-01", "2024-03-31")] = [dict(row, end="2024-03-31", val=10.0)]
+    # the three months of 2025 under continuing operations alone, so the quarter to
+    # June 2025 is 40 - 15 = 25 and readable in that scope only
+    record.usd[continuing][("2025-01-01", "2025-03-31")] = [
+        dict(row, start="2025-01-01", end="2025-03-31", val=15.0)]
+    spans = calculator.durations(record.usd)
+    alone = calculator.quarter(record, "operating_cash_flow", spans, calculator.dt.date(2024, 6, 30))
+    assert alone["value"] == 30.0 and alone["parts"][0]["tag"] == total
+    ends = [calculator.dt.date(2025, 6, 30), calculator.dt.date(2024, 6, 30)]
+    series = calculator.quarters_in_one_scope(record, "operating_cash_flow", spans, ends)
+    assert [found["value"] for found in series] == [25.0, 20.0]
+    assert {found["scope"] for found in series} == {continuing}
+    assert [part["tag"] for part in series[1]["parts"]] == [continuing, continuing]
+    # a quarter the forced scope does not reach is missing with the reason, never read in the other
+    del record.usd[continuing][("2024-01-01", "2024-03-31")]
+    series = calculator.quarters_in_one_scope(record, "operating_cash_flow", spans, ends)
+    assert "value" not in series[1]
+    assert f"in the scope the series is read in, us-gaap:{continuing}" in series[1]["missing"]
+
+
+def test_johnson_controls_oldest_smoothness_quarter_is_continuing_operations():
+    """Through the independent reader: the six months to 2024-06-30 are 216 under the
+    continuing-operations tag and 572 under the total; the three months to
+    2024-03-31 are -437 and -449. The eight newer quarters of the series are on
+    record under continuing operations alone, so the quarter to June 2024 is
+    216 - (-437) = 653, not 572 - (-449) = 1,021, and the cell says which scope."""
+    cut, continuing, total = ("2026-07-29",
+                              "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations",
+                              "NetCashProvidedByUsedInOperatingActivities")
+    assert source.one_value("JCI", continuing, "2023-10-01..2024-06-30", cut) == 216 * MILLION
+    assert source.one_value("JCI", continuing, "2023-10-01..2024-03-31", cut) == -437 * MILLION
+    assert cfo("JCI", "2023-10-01..2024-06-30", cut) == 572 * MILLION
+    assert cfo("JCI", "2023-10-01..2024-03-31", cut) == -449 * MILLION
+    assert source.reported("JCI", total, "2024-10-01..2025-09-30", cut) == []
+    bundle = source.FIXTURES.parent.parent / "runs" / "JCI" / "0000833444-26-000087"
+    out = calculator.calculate(ticker="JCI", cutoff=cut, period_end="2026-06-30", form="10-Q",
+                               bundle=bundle)
+    smooth = out["earnings_versus_cash"]["smoothness"]
+    assert smooth["quarters_read"][8] == "2024-06-30"
+    assert smooth["operating_cash_flow"][8] == 653 * MILLION
+    assert smooth["operating_cash_flow"][7] == 1_352 * MILLION
+    assert smooth["operating_cash_flow_scope"].startswith(f"every quarter read under us-gaap:{continuing}")

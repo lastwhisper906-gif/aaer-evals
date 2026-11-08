@@ -7,8 +7,10 @@ operating cash flow over the four quarters to 2025-06-30 through
 `tests/companyfacts_source.py` and the run's own bundle, worked by hand below
 (1,568 + 1,586 - 216 = 2,938 million under the continuing-operations tag; the
 published run summed 1,568 + 1,586 - 572 = 2,582 across two tags), its fourth
-quarter of fiscal 2024 (1,568 - 216 = 1,352; published 1,568 - 572 = 996), and the
-nine quarters its smoothness and growth read.
+quarter of fiscal 2024 (1,568 - 216 = 1,352; published 1,568 - 572 = 996), the
+quarter to June 2024 in the same scope (216 - (-437) = 653; published 572 - (-449) =
+1,021 under the total), and the nine quarters its smoothness and growth read. Dell's
+interest expense is the other moved term: two scopes, missing with the reason.
 """
 
 from __future__ import annotations
@@ -135,10 +137,11 @@ def test_johnson_controls_moves_as_worked_by_hand(listed):
     2,572 - 1,283 = 1,289, 1,283 - 611 = 672, 611, 2,554 - 1,586 = 968, 1,586 - 799 =
     787, 799 - 249 = 550, 249, then the fourth quarter of fiscal 2024 -- 1,568 - 216 =
     1,352 within continuing operations, where the published run took 1,568 - 572 =
-    996 across the total -- and 572 - (-449) = 1,021 (both under the total: fiscal
-    2024's nine and six months carry no continuing tag). The value is the population
-    standard deviation of the eight quarter-to-quarter changes in net income over
-    the same for operating cash flow.
+    996 across the total -- and the quarter to June 2024 in the same scope, 216 -
+    (-437) = 653, where the published run took 572 - (-449) = 1,021 under the total.
+    The value is the population standard deviation of the eight quarter-to-quarter
+    changes in net income over the same for operating cash flow: 1.44369 as
+    published, 1.05002 with the series in one scope.
     """
     year_earlier = (source_row(CONTINUING, "2023-10-01..2024-09-30")
                     + source_row(CONTINUING, "2024-10-01..2025-06-30")
@@ -177,23 +180,26 @@ def test_johnson_controls_moves_as_worked_by_hand(listed):
     assert cash_to_fiscal_2025 == [1_289, 672, 611, 968, 787, 550, 249]
     fourth_quarter = source_row(CONTINUING, "2023-10-01..2024-09-30") - source_row(CONTINUING, "2023-10-01..2024-06-30")
     published_fourth = source_row(CONTINUING, "2023-10-01..2024-09-30") - source_row(TOTAL, "2023-10-01..2024-06-30")
-    oldest = source_row(TOTAL, "2023-10-01..2024-06-30") - source_row(TOTAL, "2023-10-01..2024-03-31")
-    assert (fourth_quarter, published_fourth, oldest) == (1_352, 996, 1_021)
+    oldest = source_row(CONTINUING, "2023-10-01..2024-06-30") - source_row(CONTINUING, "2023-10-01..2024-03-31")
+    published_oldest = source_row(TOTAL, "2023-10-01..2024-06-30") - source_row(TOTAL, "2023-10-01..2024-03-31")
+    assert (fourth_quarter, published_fourth, oldest, published_oldest) == (1_352, 996, 653, 1_021)
 
     def smoothness(cash: list) -> float:
         changes_in_income = [a - b for a, b in zip(net_income, net_income[1:])]
         changes_in_cash = [a - b for a, b in zip(cash, cash[1:])]
         return spread(changes_in_income) / spread(changes_in_cash)
-    old_smoothness = smoothness(cash_to_fiscal_2025 + [published_fourth, oldest])
+    old_smoothness = smoothness(cash_to_fiscal_2025 + [published_fourth, published_oldest])
     new_smoothness = smoothness(cash_to_fiscal_2025 + [fourth_quarter, oldest])
     assert old_smoothness == pytest.approx(1.44369, abs=5e-6)
-    assert new_smoothness == pytest.approx(1.13481, abs=5e-6)
+    assert new_smoothness == pytest.approx(1.05002, abs=5e-6)
 
     rows = {row["path"]: (row["old"], row["new"]) for row in listed if row["run"] == JCI}
     approx = lambda a, b: (pytest.approx(a, rel=1e-9), pytest.approx(b, rel=1e-9))  # noqa: E731
     assert rows == {
         "earnings_versus_cash.smoothness.operating_cash_flow.7":
             (published_fourth * MILLION, fourth_quarter * MILLION),
+        "earnings_versus_cash.smoothness.operating_cash_flow.8":
+            (published_oldest * MILLION, oldest * MILLION),
         "earnings_versus_cash.smoothness.value": approx(old_smoothness, new_smoothness),
         "ratios.growth.operating_cash_flow.trailing_four_quarters.inputs.before.parts"
         ".prior_year_to_date.value": (572 * MILLION, 216 * MILLION),
@@ -211,13 +217,27 @@ def test_johnson_controls_moves_as_worked_by_hand(listed):
     assert (3_540 - 2_582) / 2_582 == pytest.approx(0.371030, abs=5e-7)
 
 
-def test_no_other_published_run_changes(listed):
-    """Only Johnson Controls mixed two scopes. Arista's and Fortinet's capital
-    expenditure, Dell's and Fortinet's interest expense and Western Digital's
-    depreciation and dividends each cross two tags of one same-concept group, and
+def test_dells_interest_expense_is_the_only_other_moved_term(listed):
+    """Dell's published interest expense summed 1,560 (InterestExpenseNonoperating,
+    fiscal 2026) + 800 (InterestExpenseDebt, six months to 2026-07-31) - 753
+    (InterestExpenseNonoperating, six months to 2025-08-01); the two tags are two
+    scopes (tests/test_calculator_accruals.py reads the rows), so the term and the
+    interest coverage that reads it are missing, thirteen leaves. Arista's and
+    Fortinet's capital expenditure, Fortinet's interest expense and Western Digital's
+    depreciation and dividends each cross two tags of one same-concept group and
     stand as published."""
-    assert {row["run"] for row in listed} == {JCI}
-    assert len(listed) == 7
+    dell = [row for row in listed if row["run"] == "DELL/0001571996-26-000046"]
+    assert {row["run"] for row in listed} == {JCI, "DELL/0001571996-26-000046"}
+    assert len(listed) == 8 + 13 and len(dell) == 13
+    assert all(row["new"] is None for row in dell)
+    assert {row["path"].split(".")[0] for row in dell} == {"terms", "ratios"}
+    assert {row["path"].split(".")[2] for row in dell if row["path"].startswith("terms.")} \
+        == {"interest_expense"}
+    assert {row["path"] for row in dell if row["path"].count(".") == 3} == {
+        "terms.trailing_four_quarters.interest_expense.value",
+        "ratios.solvency.interest_coverage.value"}
+    moved = {row["path"]: row["old"] for row in dell}
+    assert moved["terms.trailing_four_quarters.interest_expense.value"] == (1_560 + 800 - 753) * MILLION
 
 
 def test_changed_leaves_are_numbers_that_moved_or_went_missing_or_were_found():

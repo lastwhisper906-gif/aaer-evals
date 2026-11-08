@@ -688,8 +688,12 @@ SAME_CONCEPT: dict[str, tuple[tuple[str, ...], ...]] = {
     # PaymentsToAcquirePropertyPlantAndEquipment; Arista's the same way
     "capital_expenditure": (("PaymentsToAcquirePropertyPlantAndEquipment",
                              "PaymentsToAcquireProductiveAssets"),),
+    # InterestExpenseDebt is a scope of its own: Dell's 10-Q puts it on the debt
+    # note's "approximately $0.8 billion" for six months the earlier 10-Q's
+    # income-statement table states as 753 under InterestExpenseNonoperating,
+    # so the two are not one line
     "interest_expense": (("InterestExpense", "InterestExpenseNonoperating",
-                          "InterestExpenseDebt", "InterestAndDebtExpense"),),
+                          "InterestAndDebtExpense"),),
 }
 
 # The scope rule is on in every run; it is a name so that `src/calculator_drift.py`
@@ -706,41 +710,103 @@ def scope_of(term: str, tag: str | None) -> str:
     return str(tag)
 
 
-def one_scope(record: Record, term: str, parts: dict, spans: dict) -> dict | None:
+def read_in_scope(record: Record, term: str, span, scope: str) -> dict:
+    """One span of `term` read under the tags of one scope only -- the first of
+    them the record carries there, the two-line fallback standing for its own
+    name -- or missing."""
+    kind, chain = TERMS[term]
+    tags = tuple(tag for tag in chain if scope_of(term, tag) == scope)
+    found = (trends.term_source(record.document, record.usd, term, _period(span),
+                                {term: (kind, tags)}) if tags
+             else {"missing": f"no tag of {term} is in the scope {scope}"})
+    if "missing" in found and term == "depreciation_and_amortization" \
+            and scope_of(term, TWO_LINE_DEPRECIATION) == scope:
+        found = record.two_line_fallback(term, _period(span)) or found
+    if "missing" not in found and term in CASH_FLOW_TERMS:
+        found["direction"] = direction_of(found["tag"])
+    return found
+
+
+def one_scope(record: Record, term: str, parts: dict, spans: dict,
+              like_for_like: tuple = ()) -> dict | None:
     """`parts`, each span read by the record's own rule, held to one scope of `term`.
 
     All in one scope: returned as they are, tags within a same-concept group
-    differing or not. In two scopes: the first scope (in chain order) with a
-    tag on record in every span is read in every span -- each span under its
-    first tag of that scope, the two-line fallback standing for its own name --
-    so Johnson Controls' operating cash flow a year earlier is 1,568 + 1,586 -
-    216 under continuing operations, not 1,568 + 1,586 - 572 across the total.
-    No scope on record in every span: None, and the caller names the term
-    missing. A cell returned may still be `missing` where a filing states two
-    values, as every read is.
+    differing or not -- except the two spans `like_for_like` names (a trailing
+    year's two years to date, which one 10-Q states side by side): where their
+    tags differ and one tag of the scope carries both, both are read under it,
+    so a filer's rename between its 10-Qs is not differenced. In two scopes: the
+    first scope (in chain order) with a tag on record in every span is read in
+    every span, so Johnson Controls' operating cash flow a year earlier is 1,568
+    + 1,586 - 216 under continuing operations, not 1,568 + 1,586 - 572 across
+    the total. No scope on record in every span: None, and the caller names the
+    term missing. A cell returned may still be `missing` where a filing states
+    two values, as every read is.
     """
     present = {scope_of(term, part.get("tag")) for part in parts.values()}
-    if len(present) == 1:
-        return parts
     kind, chain = TERMS[term]
-    fallback = TWO_LINE_DEPRECIATION if term == "depreciation_and_amortization" else None
-    order = list(chain) + ([fallback] if fallback else [])
+    order = list(chain) + [TWO_LINE_DEPRECIATION]
+    if len(present) == 1:
+        if like_for_like and len({parts[name].get("tag") for name in like_for_like}) > 1:
+            scope, = present
+            shared = next((tag for tag in chain if scope_of(term, tag) == scope
+                           and all(record.usd.get(tag, {}).get(spans[name])
+                                   for name in like_for_like)), None)
+            if shared is not None:
+                parts = dict(parts)
+                for name in like_for_like:
+                    parts[name] = trends.term_source(record.document, record.usd, term,
+                                                     _period(spans[name]), {term: (kind, (shared,))})
+                    if "missing" not in parts[name] and term in CASH_FLOW_TERMS:
+                        parts[name]["direction"] = direction_of(parts[name]["tag"])
+        return parts
     for scope in sorted(present, key=lambda label: order.index(label) if label in order else len(order)):
-        tags = tuple(tag for tag in chain if scope_of(term, tag) == scope)
-        read = {}
-        for name, span in spans.items():
-            found = (trends.term_source(record.document, record.usd, term, _period(span),
-                                        {term: (kind, tags)}) if tags else {"missing": "no tag"})
-            if "missing" in found and fallback and scope_of(term, fallback) == scope:
-                found = record.two_line_fallback(term, _period(span)) or found
-            if "missing" in found and trends.TWO_VALUES not in found["missing"]:
-                break
-            if "missing" not in found and term in CASH_FLOW_TERMS:
-                found["direction"] = direction_of(found["tag"])
-            read[name] = found
-        else:
+        read = {name: read_in_scope(record, term, span, scope) for name, span in spans.items()}
+        if all("missing" not in cell or trends.TWO_VALUES in cell["missing"]
+               for cell in read.values()):
             return read
     return None
+
+
+def quarters_in_one_scope(record: Record, term: str, spans: list, ends: list) -> list[dict]:
+    """A series of quarters held to one scope of `term`, as `quarter` reads each.
+
+    Where the quarters read fall in two scopes, a quarter readable in one scope
+    only forces that scope on the series (where two quarters force two scopes,
+    the newest such quarter's scope, the series being newest first): every
+    quarter is read in it, and a quarter not on record in it is missing with the
+    reason. Johnson Controls' record holds its
+    quarters from fiscal 2024 under continuing operations alone and the quarter
+    to June 2024 under both, so that quarter is 216 - (-437) = 653 of continuing
+    operations beside them, not 572 - (-449) = 1,021 of the total.
+    """
+    first = [quarter(record, term, spans, end) for end in ends]
+    scopes = {scope_of(term, found["parts"][0].get("tag")) for found in first
+              if "missing" not in found}
+    if not SCOPE_RULE or len(scopes) <= 1:
+        return first
+    kind, chain = TERMS[term]
+    order = list(chain) + [TWO_LINE_DEPRECIATION]
+    forced = []
+    for found, end in zip(first, ends):
+        if "missing" in found:
+            continue
+        readable = [scope for scope in scopes
+                    if "missing" not in quarter(record, term, spans, end, scope=scope)]
+        if len(readable) == 1:
+            forced.append(readable[0])
+    chosen = forced[0] if forced else min(
+        scopes, key=lambda label: order.index(label) if label in order else len(order))
+    out = []
+    for end in ends:
+        found = quarter(record, term, spans, end, scope=chosen)
+        if "missing" in found:
+            found = {"missing": f"no {term} for the quarter ending near {end} in the scope the "
+                                f"series is read in, us-gaap:{chosen}: {found['missing']}"}
+        else:
+            found["scope"] = chosen
+        out.append(found)
+    return out
 
 
 def trailing(record: Record, term: str, periods: dict, *, back: int = 0,
@@ -773,7 +839,8 @@ def trailing(record: Record, term: str, periods: dict, *, back: int = 0,
         # never mixed.
         spans = {"prior_fiscal_year": year, "this_year_to_date": to_date,
                  "prior_year_to_date": prior_to_date}
-        held = one_scope(record, term, parts, spans)
+        held = one_scope(record, term, parts, spans,
+                         like_for_like=("this_year_to_date", "prior_year_to_date"))
         if held is None:
             named = "; ".join(f"{name.replace('_', ' ')} under us-gaap:{part.get('tag')}"
                               for name, part in parts.items())
@@ -796,16 +863,20 @@ def trailing(record: Record, term: str, periods: dict, *, back: int = 0,
     return out
 
 
-def quarter(record: Record, term: str, spans: list, end: dt.date) -> dict:
+def quarter(record: Record, term: str, spans: list, end: dt.date, *,
+            scope: str | None = None) -> dict:
     """One fiscal quarter's flow: stated, or this year to date minus the last.
 
     A fourth quarter is never stated as a duration -- the 10-K states the year
     -- so it is the year less the nine months, on the same start date, and the
-    derivation is named.
+    derivation is named. With `scope`, every row is read under that scope of the
+    term alone (`quarters_in_one_scope`).
     """
+    def read(span) -> dict:
+        return read_in_scope(record, term, span, scope) if scope else record.term(term, span)
     direct = quarter_ending(spans, end)
     if direct is not None:
-        found = record.term(term, direct)
+        found = read(direct)
         if "missing" not in found:
             return {"value": found["value"], "formula": "the quarter as stated",
                     "parts": [found], "end": direct[1]}
@@ -825,11 +896,11 @@ def quarter(record: Record, term: str, spans: list, end: dt.date) -> dict:
                            f"stated and no shorter year-to-date on the same start is "
                            f"on record to take it from"}
     before = max(earlier, key=lambda span: span[1])
-    whole, part = record.term(term, to_date), record.term(term, before)
+    whole, part = read(to_date), read(before)
     for found in (whole, part):
         if "missing" in found:
             return {"missing": found["missing"]}
-    if SCOPE_RULE:
+    if SCOPE_RULE and scope is None:
         # A difference of two scopes is not a quarter. Johnson Controls' record
         # holds fiscal 2024 only under the continuing-operations tag (1,568
         # million, restated in the 10-K filed 2025-11-14) and its nine months
@@ -1236,9 +1307,9 @@ def growth(record: Record, terms: dict, periods: dict) -> dict:
     end = _date(periods["balance_now"])
     out = {}
     for term in ("revenue", "operating_income", "net_income", "operating_cash_flow"):
-        this = quarter(record, term, spans, end)
-        last = quarter(record, term, spans, end - dt.timedelta(days=QUARTER_STEP))
-        year_ago = quarter(record, term, spans, end - dt.timedelta(days=YEAR_STEP))
+        this, last, year_ago = quarters_in_one_scope(
+            record, term, spans, [end, end - dt.timedelta(days=QUARTER_STEP),
+                                  end - dt.timedelta(days=YEAR_STEP)])
         now_ttm = terms["trailing_four_quarters"][term]
         prior_ttm = terms["trailing_four_quarters_a_year_earlier"][term]
         out[term] = {
@@ -1330,10 +1401,12 @@ def smoothness(record: Record, periods: dict) -> dict:
     spans = durations(record.usd)
     end = _date(periods["balance_now"])
     income, cash, used = [], [], []
-    for back in range(9):
-        when = end - dt.timedelta(days=QUARTER_STEP * back)
-        one = quarter(record, "net_income", spans, when)
-        two = quarter(record, "operating_cash_flow", spans, when)
+    whens = [end - dt.timedelta(days=QUARTER_STEP * back) for back in range(9)]
+    # each series held to one scope of its term (`quarters_in_one_scope`)
+    incomes = quarters_in_one_scope(record, "net_income", spans, whens)
+    cashes = quarters_in_one_scope(record, "operating_cash_flow", spans, whens)
+    scopes = {found["scope"] for found in cashes if "scope" in found}
+    for one, two in zip(incomes, cashes):
         if "missing" in one or "missing" in two:
             break
         income.append(one["value"])
@@ -1347,11 +1420,15 @@ def smoothness(record: Record, periods: dict) -> dict:
     spread_cash = statistics.pstdev(d_cash)
     if spread_cash == 0:
         return {"missing": "operating cash flow did not change across the quarters"}
-    return {"value": statistics.pstdev(d_income) / spread_cash,
-            "formula": "population standard deviation of quarter-to-quarter changes in net "
-                       "income / the same for operating cash flow; below 1 means income "
-                       "moves less than cash",
-            "quarters_read": used, "net_income": income, "operating_cash_flow": cash}
+    out = {"value": statistics.pstdev(d_income) / spread_cash,
+           "formula": "population standard deviation of quarter-to-quarter changes in net "
+                      "income / the same for operating cash flow; below 1 means income "
+                      "moves less than cash",
+           "quarters_read": used, "net_income": income, "operating_cash_flow": cash}
+    if scopes:
+        out["operating_cash_flow_scope"] = (f"every quarter read under us-gaap:{scopes.pop()}, "
+                                            f"the one scope the series is on record in")
+    return out
 
 
 def annual_history(record: Record, periods: dict) -> dict:
@@ -1803,9 +1880,10 @@ def operating_cash_flow_by_quarter(record: Record, periods: dict) -> dict:
     spans = durations(record.usd)
     end = _date(periods["balance_now"])
     history = []
-    for back in range(QUARTERS_OF_OPERATING_CASH_FLOW):
-        found = quarter(record, "operating_cash_flow", spans,
-                        end - dt.timedelta(days=QUARTER_STEP * back))
+    series = quarters_in_one_scope(
+        record, "operating_cash_flow", spans,
+        [end - dt.timedelta(days=QUARTER_STEP * back) for back in range(QUARTERS_OF_OPERATING_CASH_FLOW)])
+    for back, found in enumerate(series):
         if "missing" in found:
             history.append({"quarters_back": back, **_missing(found["missing"])})
             continue
