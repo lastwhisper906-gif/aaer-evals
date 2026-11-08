@@ -161,7 +161,7 @@ def test_with_no_tag_carrying_both_spans_the_quarter_is_missing():
     spans = calculator.durations(record.usd)
     found = calculator.quarter(record, "operating_cash_flow", spans,
                                calculator.dt.date(2025, 12, 31))
-    assert "value" not in found and "no tag carries both" in found["missing"]
+    assert "value" not in found and "different scopes" in found["missing"]
 
 
 # --- the three accrual measures, side by side -----------------------------------------------
@@ -512,10 +512,10 @@ def test_a_mixed_tag_trailing_sum_is_refused_not_labelled_continuing():
                                     {"year": revenue, "to_date": revenue, "before": revenue})
     terms = calculator.gather(record, periods)
     cash = terms["trailing_four_quarters"]["operating_cash_flow"]
-    assert "value" not in cash and "no tag carries all three" in cash["missing"]
+    assert "value" not in cash and "different scopes" in cash["missing"]
     section = calculator.quarterly_cash_flow_and_accruals(record, terms, periods)
     assert section["cash_flow_accruals"]["value"] is None
-    assert "no tag carries all three" in section["cash_flow_accruals"]["missing"]
+    assert "different scopes" in section["cash_flow_accruals"]["missing"]
 
 
 def test_a_growth_gap_never_divides_by_a_mixed_tag_revenue():
@@ -529,11 +529,315 @@ def test_a_growth_gap_never_divides_by_a_mixed_tag_revenue():
          "before": "RevenueFromContractWithCustomerExcludingAssessedTax"})
     terms = calculator.gather(record, periods)
     revenue = terms["trailing_four_quarters"]["revenue"]
-    assert "value" not in revenue and "no tag carries all three" in revenue["missing"]
+    assert "value" not in revenue and "different scopes" in revenue["missing"]
     receivables = calculator.receivables_extension(record, terms, periods, [])
     gap = receivables["receivables_growth_minus_revenue_growth"]
     assert gap["value"] is None
     assert gap["missing"].startswith("revenue_growth:")
-    assert "no tag carries all three" in gap["missing"]
+    assert "different scopes" in gap["missing"]
     index = receivables["days_sales_outstanding_index"]
-    assert index["value"] is None and "no tag carries all three" in index["missing"]
+    assert index["value"] is None and "different scopes" in index["missing"]
+
+
+# --- a trailing year and a quarter are held to one scope of their term --------------------------
+
+DEPRECIATION = "DepreciationDepletionAndAmortization"
+TWO_LINES = "Depreciation + AmortizationOfIntangibleAssets"
+
+
+def test_the_same_concept_table_names_tags_of_each_terms_chain_once():
+    """One structure, read here: every tag in a group is in that term's chain (or is
+    the two-line depreciation reading), no tag is in two groups, and the two
+    operating-cash-flow tags are two scopes."""
+    for term, groups in calculator.SAME_CONCEPT.items():
+        chain = set(calculator.TERMS[term][1]) | {calculator.TWO_LINE_DEPRECIATION}
+        seen: list[str] = []
+        for group in groups:
+            for tag in group:
+                assert tag in chain, (term, tag)
+                assert tag not in seen, (term, tag)
+                seen.append(tag)
+    assert calculator.scope_of("operating_cash_flow", "NetCashProvidedByUsedInOperatingActivities") \
+        != calculator.scope_of("operating_cash_flow",
+                               "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations")
+    assert calculator.scope_of("capital_expenditure", "PaymentsToAcquireProductiveAssets") == \
+        calculator.scope_of("capital_expenditure", "PaymentsToAcquirePropertyPlantAndEquipment")
+    # a tag in no group is a scope of its own, so an undeclared chain is read strictly
+    assert calculator.scope_of("revenue", "Revenues") == "Revenues"
+    assert calculator.SCOPE_RULE is True
+
+
+def depreciation_planted(by_span: dict) -> tuple:
+    """A made-up quarterly filer whose depreciation sits, span by span, under the
+    tags `by_span` names: fiscal 2024, six months of 2025 and six months of 2024,
+    and fiscal 2024's nine months for the fourth quarter."""
+    spans = {"year": ("2024-01-01", "2024-12-31"), "to_date": ("2025-01-01", "2025-06-30"),
+             "before": ("2024-01-01", "2024-06-30"), "nine": ("2024-01-01", "2024-09-30")}
+    facts: dict = {"Revenues": []}
+    for name, span in spans.items():
+        facts["Revenues"].append({"start": span[0], "end": span[1], "val": 1_000.0, "accn": "P-1",
+                                  "form": "10-Q", "filed": "2025-08-01"})
+        for tag, value in by_span.get(name, {}).items():
+            facts.setdefault(tag, []).append(
+                {"start": span[0], "end": span[1], "val": value, "accn": "P-1", "form": "10-Q",
+                 "filed": "2025-08-01"})
+    record = calculator.Record({"ticker": "TEST", "facts": {"us-gaap": {
+        tag: {"units": {"USD": rows}} for tag, rows in facts.items()}}})
+    return record, calculator.trigger_periods(record.usd, "2025-06-30", "10-Q")
+
+
+def test_a_year_the_filer_tags_as_two_lines_in_every_span_is_summed():
+    """Planted: no total tagged anywhere, Depreciation and AmortizationOfIntangibleAssets
+    in every span. Hand-summed: (70 + 30) + (40 + 15) - (35 + 10) = 100 + 55 - 45 = 110."""
+    lines = {"year": {"Depreciation": 70.0, "AmortizationOfIntangibleAssets": 30.0},
+             "to_date": {"Depreciation": 40.0, "AmortizationOfIntangibleAssets": 15.0},
+             "before": {"Depreciation": 35.0, "AmortizationOfIntangibleAssets": 10.0}}
+    record, periods = depreciation_planted(lines)
+    found = calculator.trailing(record, "depreciation_and_amortization", periods)
+    assert found["value"] == 110.0
+    assert {part["tag"] for part in found["parts"].values()} == {TWO_LINES}
+    assert "tags_differ" not in found
+
+
+def test_a_span_under_the_total_tag_beside_spans_under_two_lines_is_summed_and_marked():
+    """Planted, the lens's case: fiscal 2024 tagged DepreciationDepletionAndAmortization
+    (100), the six months of 2025 and of 2024 as two lines only (40 + 15, 35 + 10).
+    The total tag and the two lines are one concept, so the year is
+    100 + 55 - 45 = 110, with the tags it mixes named under `tags_differ`."""
+    lines = {"year": {DEPRECIATION: 100.0},
+             "to_date": {"Depreciation": 40.0, "AmortizationOfIntangibleAssets": 15.0},
+             "before": {"Depreciation": 35.0, "AmortizationOfIntangibleAssets": 10.0}}
+    record, periods = depreciation_planted(lines)
+    found = calculator.trailing(record, "depreciation_and_amortization", periods)
+    assert found["value"] == 110.0
+    assert found["tags_differ"] == sorted([DEPRECIATION, TWO_LINES])
+    assert found["parts"]["prior_fiscal_year"]["tag"] == DEPRECIATION
+    assert found["parts"]["this_year_to_date"]["tag"] == TWO_LINES
+    # and a rename of the total: 100 under DepreciationAndAmortization, the rest under
+    # DepreciationDepletionAndAmortization -- one concept, 100 + 55 - 45 = 110, marked
+    renamed = {"year": {"DepreciationAndAmortization": 100.0}, "to_date": {DEPRECIATION: 55.0},
+               "before": {DEPRECIATION: 45.0}}
+    record, periods = depreciation_planted(renamed)
+    found = calculator.trailing(record, "depreciation_and_amortization", periods)
+    assert found["value"] == 110.0
+    assert found["tags_differ"] == sorted([DEPRECIATION, "DepreciationAndAmortization"])
+
+
+def test_a_quarter_differenced_from_two_lines_in_both_spans_is_read_under_them():
+    """Planted: fiscal 2024 and its nine months as two lines only. The fourth
+    quarter is (70 + 30) - (50 + 20) = 30; and with the year under the total tag
+    instead, one concept still, 100 - 70 = 30."""
+    lines = {"year": {"Depreciation": 70.0, "AmortizationOfIntangibleAssets": 30.0},
+             "nine": {"Depreciation": 50.0, "AmortizationOfIntangibleAssets": 20.0}}
+    record, _ = depreciation_planted(lines)
+    found = calculator.quarter(record, "depreciation_and_amortization",
+                               calculator.durations(record.usd), calculator.dt.date(2024, 12, 31))
+    assert found["value"] == 30.0
+    assert [part["tag"] for part in found["parts"]] == [TWO_LINES, TWO_LINES]
+    lines["year"] = {DEPRECIATION: 100.0}
+    record, _ = depreciation_planted(lines)
+    found = calculator.quarter(record, "depreciation_and_amortization",
+                               calculator.durations(record.usd), calculator.dt.date(2024, 12, 31))
+    assert found["value"] == 30.0
+    assert [part["tag"] for part in found["parts"]] == [DEPRECIATION, TWO_LINES]
+
+
+def test_two_scopes_with_one_on_record_in_every_span_are_read_under_that_scope():
+    """Planted in Johnson Controls' shape: the fiscal year under the continuing-operations
+    tag alone (90), the six months of 2025 under it alone (40), the six months of
+    2024 under both (total 80, continuing 30). Continuing operations is the one
+    scope on record in every span: 90 + 40 - 30 = 100, never 90 + 40 - 80 = 50."""
+    continuing, total = ("NetCashProvidedByUsedInOperatingActivitiesContinuingOperations",
+                         "NetCashProvidedByUsedInOperatingActivities")
+    record, periods = mixed_planted({"year": continuing, "to_date": continuing, "before": total},
+                                    {"year": "Revenues", "to_date": "Revenues", "before": "Revenues"})
+    record.usd[continuing][("2024-01-01", "2024-06-30")] = [
+        dict(record.usd[total][("2024-01-01", "2024-06-30")][0], val=30.0)]
+    found = calculator.trailing(record, "operating_cash_flow", periods)
+    assert found["value"] == 100.0
+    assert {part["tag"] for part in found["parts"].values()} == {continuing}
+    assert "tags_differ" not in found
+
+
+def test_fortinets_capital_expenditure_is_summed_across_its_two_tags_as_the_statement_prints_it():
+    """Fortinet, through the independent reader: its 10-Q for the six months to
+    2026-06-30 tags purchases of property and equipment
+    PaymentsToAcquirePropertyPlantAndEquipment, 148.6 million, and puts
+    PaymentsToAcquireProductiveAssets on a sentence inside them -- "we purchased
+    certain real estate property in the United States totaling $62.1 million". Its
+    10-K tags the whole line for 2025 PaymentsToAcquireProductiveAssets, 364.8, and
+    both tags carry the six months to 2025-06-30 at 234.3. The two tags are one
+    concept, each span read under the first of them the record carries there:
+    364.8 + 148.6 - 234.3 = 279.1 million, as the published run printed it, marked
+    `tags_differ`. A year under the one tag that carries all three spans would be
+    364.8 + 62.1 - 234.3 = 192.6: a statement line plus a sentence, which this
+    does not print."""
+    cut = "2026-07-30"
+    line, sentence = ("PaymentsToAcquirePropertyPlantAndEquipment",
+                      "PaymentsToAcquireProductiveAssets")
+    assert source.one_value("FTNT", line, "2026-01-01..2026-06-30", cut) == 148.6 * MILLION
+    assert source.one_value("FTNT", sentence, "2026-01-01..2026-06-30", cut) == 62.1 * MILLION
+    assert source.one_value("FTNT", sentence, "2025-01-01..2025-12-31", cut) == 364.8 * MILLION
+    assert source.one_value("FTNT", line, "2025-01-01..2025-06-30", cut) == 234.3 * MILLION
+    assert source.one_value("FTNT", sentence, "2025-01-01..2025-06-30", cut) == 234.3 * MILLION
+    assert source.reported("FTNT", line, "2025-01-01..2025-12-31", cut) == []
+    assert round(364.8 + 148.6 - 234.3, 1) == 279.1 and round(364.8 + 62.1 - 234.3, 1) == 192.6
+    bundle = source.FIXTURES.parent.parent / "runs" / "FTNT" / "0001262039-26-000021"
+    out = calculator.calculate(ticker="FTNT", cutoff=cut, period_end="2026-06-30", form="10-Q",
+                               bundle=bundle)
+    cell = out["terms"]["trailing_four_quarters"]["capital_expenditure"]
+    assert cell["value"] == pytest.approx(279.1 * MILLION)
+    assert cell["parts"]["this_year_to_date"]["tag"] == line
+    assert cell["parts"]["prior_fiscal_year"]["tag"] == sentence
+    assert cell["tags_differ"] == sorted([line, sentence])
+    assert out["free_cash_flow"]["free_cash_flow_simple"]["value"] == pytest.approx(
+        out["terms"]["trailing_four_quarters"]["operating_cash_flow"]["value"] - 279.1 * MILLION)
+
+
+def test_two_scopes_with_none_on_record_in_every_span_are_missing():
+    """Planted: operating cash flow under the continuing-operations tag in the fiscal
+    year and under the total in both six-month spans, no span under both. Neither
+    scope reaches every span: missing with the reason, never 90 + 40 - 30 across
+    the two."""
+    continuing, total = ("NetCashProvidedByUsedInOperatingActivitiesContinuingOperations",
+                         "NetCashProvidedByUsedInOperatingActivities")
+    record, periods = mixed_planted({"year": continuing, "to_date": total, "before": total},
+                                    {"year": "Revenues", "to_date": "Revenues", "before": "Revenues"})
+    found = calculator.trailing(record, "operating_cash_flow", periods)
+    assert "value" not in found
+    assert "different scopes of operating_cash_flow" in found["missing"]
+    assert f"prior fiscal year under us-gaap:{continuing}" in found["missing"]
+
+
+# --- the cash side of Hribar and Collins beside a discontinued-operations income line --------
+
+def test_a_total_operating_cash_flow_beside_discontinued_income_is_not_called_continuing():
+    """Planted in Western Digital's shape: income from discontinued operations tagged
+    for the fiscal year, operating cash flow as the total in every span, and no
+    operating cash flow of discontinued operations anywhere. The total is not the
+    continuing figure, so the cash side is missing with the reason, and so is the
+    measure; it is not read as the total less a zero."""
+    record, terms, periods = quarterly_planted(
+        {"IncomeLossFromDiscontinuedOperationsNetOfTax": {"year": 5.0},
+         "IncomeLossFromContinuingOperations": {"year": 95.0, "to_date": 60.0, "before": 50.0}})
+    section = calculator.quarterly_cash_flow_and_accruals(record, terms, periods)
+    cell = section["cash_flow_accruals"]
+    assert cell["value"] is None
+    assert "discontinued-operations income line for 2024-01-01..2024-12-31" in cell["missing"]
+    assert "operating cash flow of continuing operations is not on record" in cell["missing"]
+
+
+def test_western_digitals_cash_side_is_refused_on_its_own_record():
+    """Western Digital's fiscal 2025 (2024-06-29..2025-06-27), through the independent
+    reader: income from discontinued operations 246 million, income from continuing
+    operations 1,643, net income 1,889, operating cash flow 1,691 under the total tag
+    and nothing under the continuing-operations tag."""
+    cut, year = "2026-05-01", "2024-06-29..2025-06-27"
+    assert source.one_value(
+        "WDC", "IncomeLossFromDiscontinuedOperationsNetOfTaxAttributableToReportingEntity",
+        year, cut) == 246 * MILLION
+    assert source.one_value("WDC", "IncomeLossFromContinuingOperations", year, cut) == 1_643 * MILLION
+    assert source.one_value("WDC", "NetIncomeLoss", year, cut) == 1_889 * MILLION
+    assert cfo("WDC", year, cut) == 1_691 * MILLION
+    assert source.reported("WDC", "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations",
+                           year, cut) == []
+    bundle = source.FIXTURES.parent.parent / "runs" / "WDC" / "0001628280-26-029054"
+    out = calculator.calculate(ticker="WDC", cutoff=cut, period_end="2026-04-03", form="10-Q",
+                               bundle=bundle)
+    cell = out[SECTION]["cash_flow_accruals"]
+    assert cell["value"] is None
+    assert "operating cash flow of continuing operations is not on record" in cell["missing"]
+
+
+# --- the pairing of continuing-operations cash flow with total net income is named -----------
+
+def bundle_fact(run, tag: str, start: str, end: str, cutoff: str) -> float:
+    """One entity-wide fact of a run's own bundle (`input_numbers.json`), where the
+    fixture store's companyfacts predates the triggering filing: read here by the
+    test, not through `src/`."""
+    facts = json.loads((run / "input_numbers.json").read_text(encoding="utf-8"))["facts"]
+    values = {fact["number"] for fact in facts
+              if fact["tag"] == tag and not fact.get("nil") and not fact.get("superseded_by")
+              and not (fact.get("context") or {}).get("segment")
+              and (fact.get("context") or {}).get("start") == start
+              and (fact.get("context") or {}).get("end") == end
+              and fact.get("filing_date", "9999") <= cutoff}
+    assert len(values) == 1, (tag, start, end, values)
+    return values.pop()
+
+
+def test_johnson_controls_cross_scope_pairing_is_named_where_it_occurs():
+    """Johnson Controls' record holds operating cash flow under the continuing-operations
+    tag alone and net income as the total; `earnings_versus_cash` pairs them as it
+    did, and now says so beside each ratio. For the four quarters to 2026-06-30:
+    operating cash flow 2,554 + 2,572 - 1,586 = 3,540 (fiscal 2025 and the nine
+    months of 2025 through the independent reader; the nine months of 2026 from the
+    run's own bundle, the store's companyfacts predating the 10-Q) and net income
+    3,291 + 1,886 - 1,598 = 3,579, so the ratio is 3,540 / 3,579."""
+    cut, continuing = "2026-07-29", "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations"
+    bundle = source.FIXTURES.parent.parent / "runs" / "JCI" / "0000833444-26-000087"
+    assert source.one_value("JCI", continuing, "2024-10-01..2025-09-30", cut) == 2_554 * MILLION
+    assert source.one_value("JCI", continuing, "2024-10-01..2025-06-30", cut) == 1_586 * MILLION
+    assert bundle_fact(bundle, continuing, "2025-10-01", "2026-06-30", cut) == 2_572 * MILLION
+    assert source.one_value("JCI", "NetIncomeLoss", "2024-10-01..2025-09-30", cut) == 3_291 * MILLION
+    assert source.one_value("JCI", "NetIncomeLoss", "2024-10-01..2025-06-30", cut) == 1_598 * MILLION
+    assert bundle_fact(bundle, "NetIncomeLoss", "2025-10-01", "2026-06-30", cut) == 1_886 * MILLION
+    assert source.reported("JCI", "NetCashProvidedByUsedInOperatingActivities",
+                           "2024-10-01..2025-09-30", cut) == []
+    out = calculator.calculate(ticker="JCI", cutoff=cut, period_end="2026-06-30", form="10-Q",
+                               bundle=bundle)
+    ratio = out["earnings_versus_cash"]["operating_cash_flow_over_net_income"]
+    assert ratio["value"] == pytest.approx(3_540 / 3_579, rel=1e-12)
+    assert ratio["note"].startswith("operating cash flow is of continuing operations")
+    assert out["earnings_versus_cash"]["accruals_over_average_assets"]["note"] == ratio["note"]
+    history = out["earnings_versus_cash"]["history"]
+    assert history["note"] == ratio["note"]
+    assert history["years"][0]["operating_cash_flow"] == 2_554 * MILLION       # fiscal 2025, continuing
+    assert history["years"][0]["net_income"] == 3_291 * MILLION                # the total: 0.776 across scopes
+    # NVIDIA's record pairs the total with the total: no note
+    nvidia = calculator.calculate(**NVDA)
+    assert "note" not in nvidia["earnings_versus_cash"]["operating_cash_flow_over_net_income"]
+
+
+# --- the cost of debt's fallback reason is written only when it is true -----------------------
+
+def test_the_neither_on_record_reason_is_written_only_with_no_interest_fact():
+    """Dell's and Fortinet's interest expense is on record across the renamed tags
+    (Dell: InterestExpenseNonoperating in the 10-K, InterestExpenseDebt in the 10-Q;
+    Fortinet: InterestExpense and InterestExpenseNonoperating), so each cost of
+    debt is interest expense over average debt and no fallback is written. A
+    planted filer with debt and neither interest expense nor interest paid gets
+    the risk-free rate plus one point, with the reason that says "neither"; one
+    with interest expense tagged does not."""
+    for ticker, cut, end, interest in (("DELL", "2026-09-08", "2026-07-31", 1_607 * MILLION),
+                                       ("FTNT", "2026-07-30", "2026-06-30", 18 * MILLION)):
+        run = next(source.FIXTURES.parent.parent.joinpath("runs", ticker).glob("0*"))
+        out = calculator.calculate(ticker=ticker, cutoff=cut, period_end=end, form="10-Q",
+                                   bundle=run)
+        assert out["terms"]["trailing_four_quarters"]["interest_expense"]["value"] == interest
+        cost = out["cost_of_capital"]["pre_tax_cost_of_debt"]
+        assert cost["formula"] == "interest_expense / average debt" and "fallback" not in cost
+
+    def planted(interest: dict) -> dict:
+        def rows(values: dict) -> list:
+            return [{"start": s, "end": e, "val": v, "accn": "P-1", "form": "10-K",
+                     "filed": "2026-02-01"} for (s, e), v in values.items()]
+        year, before = ("2025-01-01", "2025-12-31"), ("2024-01-01", "2024-12-31")
+        facts = {"Revenues": rows({year: 1_000.0, before: 900.0}),
+                 "NetIncomeLoss": rows({year: 100.0, before: 90.0}),
+                 "LongTermDebtNoncurrent": [
+                     {"end": end, "val": 500.0, "accn": "P-1", "form": "10-K", "filed": "2026-02-01"}
+                     for end in ("2025-12-31", "2024-12-31")]}
+        facts.update({tag: rows({year: value}) for tag, value in interest.items()})
+        record = calculator.Record({"ticker": "TEST", "facts": {"us-gaap": {
+            tag: {"units": {"USD": found}} for tag, found in facts.items()}}})
+        periods = calculator.trigger_periods(record.usd, "2025-12-31", "10-K")
+        terms = calculator.gather(record, periods)
+        return calculator.cost_of_capital(terms, calculator.ratios(record, terms, periods),
+                                          {"missing": "no prices"},
+                                          calculator.dt.date(2026, 2, 1), None)
+
+    bare = planted({})["pre_tax_cost_of_debt"]
+    assert "neither interest expense nor interest paid is on record" in bare["fallback"]
+    tagged = planted({"InterestExpenseNonoperating": 25.0})["pre_tax_cost_of_debt"]
+    assert tagged["value"] == 25.0 / 500.0 and "fallback" not in tagged

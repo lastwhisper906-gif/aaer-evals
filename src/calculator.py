@@ -664,6 +664,85 @@ def _fact(tag: str, key: tuple, settled: dict, *, unit: str = "USD",
 
 # --- trailing four quarters ----------------------------------------------------
 
+# Which tags of a term's chain name the same concept under another name -- and so
+# may be summed or differenced across spans, marked `tags_differ` -- and which are
+# a different scope of it, never mixed. One structure, read by `scope_of` and by
+# tests/test_calculator_accruals.py. A tag in no group is a scope of its own, so a
+# chain with no entry here is read strictly: two tags across the spans of a
+# trailing year are two scopes. The owner may move a tag between groups at a rules
+# version (docs/needs_judgment.md, Settled by default).
+TWO_LINE_DEPRECIATION = " + ".join(DEPRECIATION_LINES)
+SAME_CONCEPT: dict[str, tuple[tuple[str, ...], ...]] = {
+    # the total and continuing operations are two scopes: Johnson Controls'
+    # record holds fiscal 2024 under the second only and its nine months under
+    # both, 572 million total and 216 continuing
+    "operating_cash_flow": (("NetCashProvidedByUsedInOperatingActivities",),
+                            ("NetCashProvidedByUsedInOperatingActivitiesContinuingOperations",)),
+    # renames of one line, and the line stated as its two parts
+    "depreciation_and_amortization": ((
+        "DepreciationDepletionAndAmortization", "DepreciationAndAmortization",
+        "DepreciationAmortizationAndAccretionNet", TWO_LINE_DEPRECIATION),),
+    "dividends_paid": (("PaymentsOfDividends", "PaymentsOfDividendsCommonStock"),),
+    # Fortinet's 10-K tags purchases of property and equipment
+    # PaymentsToAcquireProductiveAssets and its 10-Qs
+    # PaymentsToAcquirePropertyPlantAndEquipment; Arista's the same way
+    "capital_expenditure": (("PaymentsToAcquirePropertyPlantAndEquipment",
+                             "PaymentsToAcquireProductiveAssets"),),
+    "interest_expense": (("InterestExpense", "InterestExpenseNonoperating",
+                          "InterestExpenseDebt", "InterestAndDebtExpense"),),
+}
+
+# The scope rule is on in every run; it is a name so that `src/calculator_drift.py`
+# can turn it off for one control recomputation and show that the drift it lists
+# is this rule's and nothing else's.
+SCOPE_RULE = True
+
+
+def scope_of(term: str, tag: str | None) -> str:
+    """The scope a tag belongs to under `term`: its group's first tag, or itself."""
+    for group in SAME_CONCEPT.get(term, ()):
+        if tag in group:
+            return group[0]
+    return str(tag)
+
+
+def one_scope(record: Record, term: str, parts: dict, spans: dict) -> dict | None:
+    """`parts`, each span read by the record's own rule, held to one scope of `term`.
+
+    All in one scope: returned as they are, tags within a same-concept group
+    differing or not. In two scopes: the first scope (in chain order) with a
+    tag on record in every span is read in every span -- each span under its
+    first tag of that scope, the two-line fallback standing for its own name --
+    so Johnson Controls' operating cash flow a year earlier is 1,568 + 1,586 -
+    216 under continuing operations, not 1,568 + 1,586 - 572 across the total.
+    No scope on record in every span: None, and the caller names the term
+    missing. A cell returned may still be `missing` where a filing states two
+    values, as every read is.
+    """
+    present = {scope_of(term, part.get("tag")) for part in parts.values()}
+    if len(present) == 1:
+        return parts
+    kind, chain = TERMS[term]
+    fallback = TWO_LINE_DEPRECIATION if term == "depreciation_and_amortization" else None
+    order = list(chain) + ([fallback] if fallback else [])
+    for scope in sorted(present, key=lambda label: order.index(label) if label in order else len(order)):
+        tags = tuple(tag for tag in chain if scope_of(term, tag) == scope)
+        read = {}
+        for name, span in spans.items():
+            found = (trends.term_source(record.document, record.usd, term, _period(span),
+                                        {term: (kind, tags)}) if tags else {"missing": "no tag"})
+            if "missing" in found and fallback and scope_of(term, fallback) == scope:
+                found = record.two_line_fallback(term, _period(span)) or found
+            if "missing" in found and trends.TWO_VALUES not in found["missing"]:
+                break
+            if "missing" not in found and term in CASH_FLOW_TERMS:
+                found["direction"] = direction_of(found["tag"])
+            read[name] = found
+        else:
+            return read
+    return None
+
+
 def trailing(record: Record, term: str, periods: dict, *, back: int = 0,
              family: bool = False) -> dict:
     """A flow over the trailing four quarters, or one year earlier with `back=1`."""
@@ -688,33 +767,24 @@ def trailing(record: Record, term: str, periods: dict, *, back: int = 0,
         if "missing" in part:
             return {"missing": f"{term} over the trailing four quarters needs the "
                                f"{name.replace('_', ' ')}: {part['missing']}"}
-    if not family and len({part.get("tag") for part in parts.values()}) > 1:
-        # A sum of two concepts is not a trailing year. Johnson Controls' record
-        # holds fiscal 2025 and its nine months under the continuing-operations
-        # tag and the nine months before under the total tag: 1,568 + 1,586 - 572
-        # mixed them. The first tag of the chain that carries all three spans is
-        # read; with none the term is missing, never mixed.
-        kind, chain = TERMS[term]
+    if SCOPE_RULE and not family:
+        # A sum of two scopes is not a trailing year (`one_scope`): the parts are
+        # held to one, and with none on record in every span the term is missing,
+        # never mixed.
         spans = {"prior_fiscal_year": year, "this_year_to_date": to_date,
                  "prior_year_to_date": prior_to_date}
-        shared = next((tag for tag in chain
-                       if all(record.usd.get(tag, {}).get(span) for span in spans.values())),
-                      None)
-        if shared is None:
+        held = one_scope(record, term, parts, spans)
+        if held is None:
             named = "; ".join(f"{name.replace('_', ' ')} under us-gaap:{part.get('tag')}"
                               for name, part in parts.items())
-            return {"missing": f"{term} over the trailing four quarters: {named}, and no tag "
-                               f"carries all three, so the sum would be of different concepts"}
-        single = {term: (kind, (shared,))}
-        parts = {name: trends.term_source(record.document, record.usd, term,
-                                          {"start": span[0], "end": span[1]}, single)
-                 for name, span in spans.items()}
+            return {"missing": f"{term} over the trailing four quarters: {named}; these are "
+                               f"different scopes of {term}, and none is on record in every "
+                               f"span, so the sum would be of two concepts"}
+        parts = held
         for name, part in parts.items():
             if "missing" in part:
                 return {"missing": f"{term} over the trailing four quarters needs the "
                                    f"{name.replace('_', ' ')}: {part['missing']}"}
-            if term in CASH_FLOW_TERMS:
-                part["direction"] = direction_of(part["tag"])
     value = (parts["prior_fiscal_year"]["value"] + parts["this_year_to_date"]["value"]
              - parts["prior_year_to_date"]["value"])
     out = {"value": value,
@@ -759,26 +829,23 @@ def quarter(record: Record, term: str, spans: list, end: dt.date) -> dict:
     for found in (whole, part):
         if "missing" in found:
             return {"missing": found["missing"]}
-    if whole.get("tag") != part.get("tag"):
-        # A difference of two concepts is not a quarter. Johnson Controls' record
+    if SCOPE_RULE:
+        # A difference of two scopes is not a quarter. Johnson Controls' record
         # holds fiscal 2024 only under the continuing-operations tag (1,568
         # million, restated in the 10-K filed 2025-11-14) and its nine months
         # under both: 572 million total, 216 million continuing. Subtracting
-        # across the two gave 996; under one tag the quarter is 1,352. The first
-        # tag of the chain that carries both spans is read, and with none the
-        # quarter is missing, never mixed.
-        kind, tags = TERMS[term]
-        shared = next((tag for tag in tags if record.usd.get(tag, {}).get(to_date)
-                       and record.usd.get(tag, {}).get(before)), None)
-        if shared is None:
+        # across the two gave 996; within one scope the quarter is 1,352
+        # (`one_scope`), and with no scope on record in both spans it is
+        # missing, never mixed.
+        held = one_scope(record, term, {"year_to_date": whole, "one_quarter_shorter": part},
+                         {"year_to_date": to_date, "one_quarter_shorter": before})
+        if held is None:
             return {"missing": f"no {term} for the quarter ending {to_date[1]}: the year to "
                                f"date is on record under us-gaap:{whole.get('tag')} and the "
-                               f"one a quarter shorter under us-gaap:{part.get('tag')}, and no "
-                               f"tag carries both, so the difference would be of two concepts"}
-        single = {term: (kind, (shared,))}
-        whole, part = (trends.term_source(record.document, record.usd, term,
-                                          {"start": span[0], "end": span[1]}, single)
-                       for span in (to_date, before))
+                               f"one a quarter shorter under us-gaap:{part.get('tag')}, "
+                               f"different scopes of {term} with neither on record in both, "
+                               f"so the difference would be of two concepts"}
+        whole, part = held["year_to_date"], held["one_quarter_shorter"]
         for found in (whole, part):
             if "missing" in found:
                 return {"missing": found["missing"]}
@@ -1191,6 +1258,22 @@ def _growth(now: dict, before: dict) -> dict:
 
 # --- earnings against cash ----------------------------------------------------------
 
+def scopes_paired(cash_flow: dict, net_income: dict) -> str | None:
+    """The sentence written beside a ratio that pairs operating cash flow of
+    continuing operations with total net income -- Johnson Controls, whose record
+    holds operating cash flow under the continuing-operations tag alone and net
+    income as the total. The pairing is kept as it stands this cycle and named
+    where it occurs (docs/needs_judgment.md, Settled by default)."""
+    if "missing" in cash_flow or "missing" in net_income:
+        return None
+    cash_scopes = {scope_of("operating_cash_flow", tag) for tag in _cash_flow_tags(cash_flow)}
+    if cash_scopes == {"NetCashProvidedByUsedInOperatingActivitiesContinuingOperations"}:
+        return ("operating cash flow is of continuing operations, as the record tags it, and "
+                "net income is the total: a pairing across two scopes, kept as it stands and "
+                "named here (docs/needs_judgment.md)")
+    return None
+
+
 def earnings_versus_cash(record: Record, terms: dict, periods: dict) -> dict:
     """Area 1's numbers: cash over income, accruals, working capital, smoothness, history."""
     ttm = terms["trailing_four_quarters"]
@@ -1206,6 +1289,10 @@ def earnings_versus_cash(record: Record, terms: dict, periods: dict) -> dict:
              "average_assets": average(now["assets"], ago["assets"])},
             lambda v: (v["net_income"] - v["operating_cash_flow"]) / v["average_assets"]),
     }
+    across = scopes_paired(ttm["operating_cash_flow"], ttm["net_income"])
+    if across:
+        for cell in out.values():
+            cell["note"] = across
     absorbed = {}
     for balance, flow, sign in (("receivables", "change_in_receivables", "asset"),
                                 ("inventory", "change_in_inventory", "asset"),
@@ -1233,6 +1320,8 @@ def earnings_versus_cash(record: Record, terms: dict, periods: dict) -> dict:
     out["working_capital"] = absorbed
     out["smoothness"] = smoothness(record, periods)
     out["history"] = annual_history(record, periods)
+    if across:
+        out["history"]["note"] = across
     return out
 
 
@@ -1641,11 +1730,23 @@ def quarterly_cash_flow_and_accruals(record: Record, terms: dict, periods: dict)
                                                 "as tagged")
     else:
         carrying, lacking = spans_carrying(record, "operating_cash_flow_discontinued", periods)
-        if not carrying:
+        income_discontinued, _ = spans_carrying(record, "income_from_discontinued_operations",
+                                                periods)
+        if not carrying and income_discontinued:
+            # Western Digital's fiscal 2025: 246 million of income from discontinued
+            # operations, and operating cash flow as the total with no
+            # discontinued-operations cash flow line. The total is not the
+            # continuing figure, and nothing on record says how much of it is.
+            continuing_cash = {"missing": f"operating cash flow is the total, with no operating "
+                                          f"cash flow of discontinued operations tagged, while "
+                                          f"the record carries a discontinued-operations income "
+                                          f"line for {', '.join(income_discontinued)}; operating "
+                                          f"cash flow of continuing operations is not on record"}
+        elif not carrying:
             continuing_cash = cash_flow if "missing" in cash_flow else dict(
                 cash_flow, basis="operating cash flow: the record tags no operating cash flow of "
-                                 "discontinued operations for any span of the period, so the "
-                                 "two are one figure")
+                                 "discontinued operations and no discontinued-operations income "
+                                 "for any span of the period, so the two are one figure")
         elif lacking:
             continuing_cash = {"missing": f"operating cash flow of discontinued operations is "
                                           f"on record for {', '.join(carrying)} and not for "
