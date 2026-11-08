@@ -329,3 +329,150 @@ def test_a_fact_the_filing_dates_after_the_cutoff_is_left_out_and_counted(found)
                    for cell in found["tables"]["notes_4"]["facts"])
     assert found["left_out_ending_after_the_cutoff"] == {"notes_4": 1}
     assert run_analysis.calculator_problems({"note_tables": found}, "2026-07-31") == []
+
+
+# -- the changes a table states, worked out by Python --------------------------
+
+def test_a_balance_at_two_dates_carries_its_change_later_minus_earlier(found):
+    """The planted inventory table: 1,000,000 at 2026-06-30 and 900,000 at
+    2025-12-31 (f-1 and f-2), so the change is 100,000, from the earlier date to
+    the later, in the facts' own unit."""
+    moved = found["tables"]["notes_2"]["changes"]
+    assert moved == [{"concept": "us-gaap:InventoryNet", "value": 100_000.0,
+                      "unit": "iso4217:USD", "from": {"instant": "2025-12-31"},
+                      "to": {"instant": "2026-06-30"},
+                      "facts": [f"{ACCESSION}:f-2", f"{ACCESSION}:f-1"]}]
+
+
+def test_a_table_stating_each_fact_at_one_date_carries_no_changes(found):
+    assert "changes" not in found["tables"]["notes_3"]
+
+
+def _cell(fact, value, *, instant=None, start=None, end=None, axes=None, nil=False,
+          concept="us-gaap:Revenues", unit="iso4217:USD"):
+    out = {"concept": concept, "value": value, "unit": unit}
+    if instant:
+        out["instant"] = instant
+    else:
+        out["start"], out["end"] = start, end
+    if axes:
+        out["axes"] = axes
+    if nil:
+        out["nil"] = True
+    out["fact"] = fact
+    return out
+
+
+def test_a_flow_is_set_beside_a_flow_of_the_same_length_only():
+    cells = [_cell("q", 250.0, start="2026-04-01", end="2026-06-30"),        # a quarter
+             _cell("q0", 200.0, start="2025-04-01", end="2025-06-30"),       # its year-ago quarter
+             _cell("h", 480.0, start="2026-01-01", end="2026-06-30"),        # six months to date
+             _cell("h0", 390.5, start="2025-01-01", end="2025-06-30")]
+    moved = {tuple(c["facts"]): c["value"] for c in note_tables.changes(cells)}
+    # 250 - 200 = 50 and 480 - 390.5 = 89.5; never the quarter against six months
+    assert moved == {("q0", "q"): 50.0, ("h0", "h"): 89.5}
+
+
+def test_each_earlier_date_is_set_against_the_latest_and_axes_and_nil_are_kept_apart():
+    widgets = {"us-gaap:StatementBusinessSegmentsAxis": "zzzz:WidgetsMember"}
+    cells = [_cell("a3", 0.3, instant="2026-06-30", concept="zzzz:Rate", unit="pure"),
+             _cell("a2", 0.1, instant="2025-12-31", concept="zzzz:Rate", unit="pure"),
+             _cell("a1", 0.2, instant="2025-06-30", concept="zzzz:Rate", unit="pure"),
+             _cell("w2", 70.0, instant="2026-06-30", axes=widgets),
+             _cell("t1", 50.0, instant="2025-12-31"),                         # no axes
+             _cell("n1", None, instant="2025-12-31", axes=widgets, nil=True)]
+    moved = note_tables.changes(cells)
+    # 0.3 - 0.1 = 0.2 and 0.3 - 0.2 = 0.1, exactly, not 0.19999999999999998
+    assert [(c["facts"], c["value"]) for c in moved] == [(["a1", "a3"], 0.1),
+                                                         (["a2", "a3"], 0.2)]
+
+
+def test_the_memo_prints_a_change_in_the_facts_unit(found):
+    from src import memo
+    assert memo.fill("{note_tables.tables.notes_2.changes.0}", {"note_tables": found}) == \
+        "10만 달러"
+
+
+def test_a_cell_with_no_dated_span_is_set_beside_nothing_and_raises_nothing():
+    # a `forever` context, or one the instance does not carry: no start, no end
+    cells = [_cell("f1", 10.0, start=None, end=None),
+             _cell("f2", 12.0, start="2026-04-01", end="2026-06-30"),
+             {"concept": "us-gaap:Revenues", "value": 9.0, "unit": "iso4217:USD",
+              "instant": None, "fact": "f3"}]
+    assert note_tables.changes(cells) == []
+
+
+def test_a_fourteen_week_quarter_stands_beside_a_thirteen_week_one_and_a_stub_beside_nothing():
+    cells = [_cell("q", 300.0, start="2026-03-29", end="2026-07-04"),       # 97 days
+             _cell("q0", 260.0, start="2025-03-30", end="2025-06-28"),      # 90 days
+             _cell("m", 50.0, start="2026-06-01", end="2026-07-04"),        # 33 days
+             _cell("s0", 70.0, start="2025-05-15", end="2025-06-28")]       # 44 days
+    # 97 against 90 differ by 7, within a tenth of 97; 33 against 44 differ by 11,
+    # more than a tenth of 44; 300 - 260 = 40
+    assert [(c["facts"], c["value"]) for c in note_tables.changes(cells)] == \
+        [(["q0", "q"], 40.0)]
+
+
+def test_a_fact_in_two_units_and_two_facts_of_the_latest_date_each_pair_as_stated():
+    cells = [_cell("u1", 120.0, instant="2026-06-30"),
+             _cell("u0", 100.0, instant="2025-12-31"),
+             _cell("s1", 7.0, instant="2026-06-30", unit="shares"),
+             _cell("s0", 5.0, instant="2025-12-31", unit="shares"),
+             # two facts of one concept on the latest date: each is set against
+             # the earlier one, neither chosen over the other by its id
+             _cell("f-2", 100.0, start="2025-07-01", end="2026-06-27", concept="zzzz:Flow"),
+             _cell("f-10", 130.0, start="2025-07-01", end="2026-06-27", concept="zzzz:Flow"),
+             _cell("f-1", 90.0, start="2024-07-01", end="2025-06-28", concept="zzzz:Flow")]
+    moved = {tuple(c["facts"]): (c["value"], c["unit"]) for c in note_tables.changes(cells)}
+    # 120 - 100 = 20 dollars and 7 - 5 = 2 shares, never across the two units;
+    # 100 - 90 = 10 and 130 - 90 = 40
+    assert moved == {("u0", "u1"): (20.0, "iso4217:USD"), ("s0", "s1"): (2.0, "shares"),
+                     ("f-1", "f-10"): (40.0, "iso4217:USD"),
+                     ("f-1", "f-2"): (10.0, "iso4217:USD")}
+
+
+# A table that states an inventory balance at two dates, an exercise price at
+# the same two dates, and the inventory again at a date after the cutoff.
+LEFT_OUT = table("<td>Inventory</td>" + number("g-1", "us-gaap:InventoryNet", "now", "500")
+                 + number("g-2", "us-gaap:InventoryNet", "then", "400")
+                 + number("g-3", "us-gaap:InventoryNet", "after", "999"),
+                 "<td>Price</td>" + number("g-4", "us-gaap:ShareBasedCompensationArrangementBy"
+                                           "ShareBasedPaymentAwardOptionsExercisePrice", "now",
+                                           "191.20")
+                 + number("g-5", "us-gaap:ShareBasedCompensationArrangementBy"
+                                 "ShareBasedPaymentAwardOptionsExercisePrice", "then", "150.00"))
+LEFT_OUT_INLINE = f"""<html xmlns="http://www.w3.org/1999/xhtml"
+ xmlns:ix="http://www.xbrl.org/2013/inlineXBRL"><body>{LEFT_OUT}</body></html>""".encode()
+LEFT_OUT_INSTANCE = f"""<xbrl xmlns="http://www.xbrl.org/2003/instance"
+ xmlns:xbrli="http://www.xbrl.org/2003/instance" xmlns:us-gaap="http://fasb.org/us-gaap/2025">
+<xbrli:context id="now"><xbrli:period><xbrli:instant>2026-06-30</xbrli:instant></xbrli:period></xbrli:context>
+<xbrli:context id="then"><xbrli:period><xbrli:instant>2025-12-31</xbrli:instant></xbrli:period></xbrli:context>
+<xbrli:context id="after"><xbrli:period><xbrli:instant>2026-09-30</xbrli:instant></xbrli:period></xbrli:context>
+<xbrli:unit id="usd"><xbrli:measure>iso4217:USD</xbrli:measure></xbrli:unit>
+<xbrli:unit id="usdPerShare"><xbrli:divide><xbrli:unitNumerator><xbrli:measure>iso4217:USD</xbrli:measure></xbrli:unitNumerator><xbrli:unitDenominator><xbrli:measure>xbrli:shares</xbrli:measure></xbrli:unitDenominator></xbrli:divide></xbrli:unit>
+<us-gaap:InventoryNet id="g-1" contextRef="now" unitRef="usd" decimals="-3">500000</us-gaap:InventoryNet>
+<us-gaap:InventoryNet id="g-2" contextRef="then" unitRef="usd" decimals="-3">400000</us-gaap:InventoryNet>
+<us-gaap:InventoryNet id="g-3" contextRef="after" unitRef="usd" decimals="-3">999000</us-gaap:InventoryNet>
+<us-gaap:ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsExercisePrice id="g-4" contextRef="now" unitRef="usdPerShare" decimals="2">191.20</us-gaap:ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsExercisePrice>
+<us-gaap:ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsExercisePrice id="g-5" contextRef="then" unitRef="usdPerShare" decimals="2">150.00</us-gaap:ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsExercisePrice>
+</xbrl>""".encode()
+
+
+def test_a_fact_left_out_never_enters_a_change():
+    """The price at two dates and the balance after the cutoff are left out, so
+    the one change is the inventory's, 500,000 - 400,000 = 100,000."""
+    found = note_tables.tables([(f"{ACCESSION}:notes:7", rendered(bare(LEFT_OUT)))],
+                               LEFT_OUT_INLINE, LEFT_OUT_INSTANCE, accession=ACCESSION,
+                               cutoff="2026-07-31")
+    entry = found["tables"]["notes_7"]
+    assert [(c["facts"], c["value"]) for c in entry["changes"]] == \
+        [([f"{ACCESSION}:g-2", f"{ACCESSION}:g-1"], 100_000.0)]
+    assert found["left_out_as_a_price"] == {"notes_7": 2}
+    assert found["left_out_ending_after_the_cutoff"] == {"notes_7": 1}
+
+
+def test_a_change_under_ten_thousand_dollars_prints_in_dollars():
+    from src import memo
+    assert memo.korean_number(-3_000.0, "iso4217:USD") == "-3,000달러"
+    assert memo.korean_number(0.0, "USD") == "0달러"
+    assert memo.korean_number(12_000.0, "USD") == "1만 달러"

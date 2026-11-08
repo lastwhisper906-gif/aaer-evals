@@ -148,7 +148,11 @@ def korean_number(value: float, unit: str, *, percent: bool = False) -> str:
     if unit == "USD":
         if abs(value) >= 1e8:
             return f"{value / 1e8:,.1f}억 달러"
-        return f"{value / 1e4:,.0f}만 달러"
+        if abs(value) >= 1e4:
+            return f"{value / 1e4:,.0f}만 달러"
+        # under ten thousand dollars, in dollars: in 만 a change of 3,000
+        # would print as "-0만 달러", a sign with nothing after it
+        return f"{value:,.0f}달러"
     if unit == "USD per share":
         return f"주당 {value:,.2f}달러"
     if unit == "days":

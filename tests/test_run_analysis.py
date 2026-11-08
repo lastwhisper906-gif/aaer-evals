@@ -1454,6 +1454,22 @@ def test_the_limit_stops_the_call_at_once_and_says_so(tmp_path, monkeypatch):
     assert "Fable limit" in record["reason"]
 
 
+def test_the_weekly_limit_on_an_opus_call_is_the_limit_too(tmp_path, monkeypatch):
+    """The account's weekly limit, as the CLI answered an Opus call on
+    2026-10-28: read as the limit, so the run stops where it stands and can be
+    resumed, never as a failure retried and recorded as the agent's."""
+    weekly = (1, {"is_error": True,
+                  "result": "You've hit your weekly limit \u00b7 resets 10pm (UTC)"}, None)
+    record, calls = _ask(tmp_path, monkeypatch, [weekly] * 3, "opus")
+    assert record["limit_reached"] is True and len(calls) == 1
+    assert "weekly limit" in record["reason"]
+    hourly = (1, {"is_error": True,
+                  "result": "You've hit your 5-hour limit \u00b7 resets 5:20am (UTC)"}, None)
+    (tmp_path / "hourly").mkdir()
+    record, calls = _ask(tmp_path / "hourly", monkeypatch, [hourly] * 3, "opus")
+    assert record["limit_reached"] is True and len(calls) == 1
+
+
 def test_the_limit_stops_the_run_where_it_stands_publishes_what_finished_and_exits_four(
         tmp_path, monkeypatch):
     run = tmp_path / "NVDA" / NVDA_ACCESSION

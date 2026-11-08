@@ -28,7 +28,12 @@ id. A table sits under its paragraph's number — `note_tables.tables.notes_38`
 is the table the notes reader names `<accession>:notes:38`, also when it writes
 "amounts only" and makes no item of it — and `paragraph` carries the whole id.
 Cite a fact as any other field, `{note_tables.tables.notes_38.facts.3}`. A row
-the table does not print is not there; you never add rows up.
+the table does not print is not there; you never add rows up. Where the table
+states a fact at two dates — a balance at two dates, or a flow over two spans
+of like length (within a tenth) — `changes` holds the change from each earlier date to the
+latest, later minus earlier, with the two periods and the two fact ids:
+`{note_tables.tables.notes_38.changes.0}`. A swing you need is cited there;
+you never subtract one fact from another.
 
 ## You never do arithmetic, and you write no number of your own
 
