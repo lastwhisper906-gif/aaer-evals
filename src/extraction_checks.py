@@ -384,6 +384,18 @@ def check_cutoff(manifest: dict | None, texts: dict | None = None) -> Result:
             result.fail(f"{named}: {exc} — refused, a document with no filing date "
                         f"cannot be shown to be inside the cutoff")
             continue
+        # A comment letter is filed in private and made public later; the day it
+        # was made public is the one the cutoff holds it to (`cutoff_guard`).
+        if row.get("released") is not None:
+            try:
+                public = _date(row.get("released"), named)
+            except ValueError as exc:
+                result.fail(f"{named}: {exc} — refused, a letter whose release cannot "
+                            f"be read cannot be shown to be public by the cutoff")
+                continue
+            if public >= cutoff:
+                result.fail(f"{named} was made public {public}, not before the cutoff "
+                            f"{cutoff}")
         if filed > cutoff:
             result.fail(f"{named} was filed {filed}, after the cutoff {cutoff}")
         elif (row.get("accession") == manifest.get("accession")

@@ -11,7 +11,8 @@ kind — plus the sections that are always carried verbatim.
 **You see** only the files in your input directory: the notes after the diff
 layer, the note change history, MD&A, the auditor's report, Item 9A or Item 4,
 the Item 1A diff, the Exhibit 21 diff, any Exhibit 10 pulled on trigger, the
-8-K bodies, and your own prior flags with the probabilities removed.
+8-K bodies, the event filings made public since the previous report, and your
+own prior flags with the probabilities removed.
 
 **You never see** the trend table, prices, abnormal returns, short interest, any
 other company's files, any prior run's probability, or the outcome window. If
@@ -76,6 +77,28 @@ every period, or because the report is already long. There is no item limit and
 no target count: the report is finished when the input is, not at a round
 number. The note change history tells you what is new; it is not a second list
 to report.
+
+**The event filings at the end of `input_8k.md`.** Under the heading that opens
+"event filings made public after" sit the filings the company made public between
+its previous 10-K or 10-Q and this report, each verbatim under ids of its own
+accession: the body of an 8-K that reports a terminated agreement, an accelerated
+or increased obligation, exit or restructuring costs, an impairment, a notice of
+delisting or a missed listing standard, or a change to holders' rights; an auditor
+change with the former auditor's letter (exhibit 16), where what matters is
+whether the auditor resigned, declined or was dismissed and whether the letter
+agrees or names a disagreement or a reportable event; a notification of late
+filing, whose narrative gives the reason and says whether results will change,
+with the report it gave notice of named in its heading; and the SEC staff's
+comment letters with the company's responses, dated by the day EDGAR made them
+public. Report each in substance like any other paragraph: the obligation
+accelerated and its trigger, the impairment and its cause, what the staff asked
+and what the company conceded or promised "in future filings". Area
+`controls_audit_and_filings` for auditor changes, late filings and comment
+letters, and the area the substance bears on otherwise. A heading that says the
+store holds no text of a filing, or that a letter is a PDF with no text copy, is
+not an item and carries no paragraph id, so it needs no line in the list of
+paragraphs you did not report. Do not compute how late a report was or how long a review lasted:
+the dates in the headings are for locating, not for arithmetic.
 
 **Plain names in your own words.** Write every period, item and form in words, the way the filing writes it: the third quarter of fiscal 2026, not a tag of letters and digits. A letter-number code may stand only where the filing prints it: in your prose inputs, or inside a member or element name the filer gave a fact, which you copy with its id. Python reads your report for one before an analyst sees it, and a report that carries a code of your own is asked for once more, with the same message.
 
