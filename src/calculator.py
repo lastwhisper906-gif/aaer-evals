@@ -688,6 +688,33 @@ def trailing(record: Record, term: str, periods: dict, *, back: int = 0,
         if "missing" in part:
             return {"missing": f"{term} over the trailing four quarters needs the "
                                f"{name.replace('_', ' ')}: {part['missing']}"}
+    if not family and len({part.get("tag") for part in parts.values()}) > 1:
+        # A sum of two concepts is not a trailing year. Johnson Controls' record
+        # holds fiscal 2025 and its nine months under the continuing-operations
+        # tag and the nine months before under the total tag: 1,568 + 1,586 - 572
+        # mixed them. The first tag of the chain that carries all three spans is
+        # read; with none the term is missing, never mixed.
+        kind, chain = TERMS[term]
+        spans = {"prior_fiscal_year": year, "this_year_to_date": to_date,
+                 "prior_year_to_date": prior_to_date}
+        shared = next((tag for tag in chain
+                       if all(record.usd.get(tag, {}).get(span) for span in spans.values())),
+                      None)
+        if shared is None:
+            named = "; ".join(f"{name.replace('_', ' ')} under us-gaap:{part.get('tag')}"
+                              for name, part in parts.items())
+            return {"missing": f"{term} over the trailing four quarters: {named}, and no tag "
+                               f"carries all three, so the sum would be of different concepts"}
+        single = {term: (kind, (shared,))}
+        parts = {name: trends.term_source(record.document, record.usd, term,
+                                          {"start": span[0], "end": span[1]}, single)
+                 for name, span in spans.items()}
+        for name, part in parts.items():
+            if "missing" in part:
+                return {"missing": f"{term} over the trailing four quarters needs the "
+                                   f"{name.replace('_', ' ')}: {part['missing']}"}
+            if term in CASH_FLOW_TERMS:
+                part["direction"] = direction_of(part["tag"])
     value = (parts["prior_fiscal_year"]["value"] + parts["this_year_to_date"]["value"]
              - parts["prior_year_to_date"]["value"])
     out = {"value": value,
@@ -1609,7 +1636,7 @@ def quarterly_cash_flow_and_accruals(record: Record, terms: dict, periods: dict)
     income = continuing_income(record, terms, periods)
     cash_flow = ttm["operating_cash_flow"]
     if "missing" not in cash_flow and \
-            "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations" in _cash_flow_tags(cash_flow):
+            _cash_flow_tags(cash_flow) == {"NetCashProvidedByUsedInOperatingActivitiesContinuingOperations"}:
         continuing_cash = dict(cash_flow, basis="operating cash flow of continuing operations, "
                                                 "as tagged")
     else:

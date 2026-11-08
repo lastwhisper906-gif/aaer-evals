@@ -402,18 +402,19 @@ def named_paths(name: str, opening: str) -> list[str]:
 
 @pytest.fixture(scope="module")
 def committed_views() -> dict:
-    """The filings-only view of every committed run, computed from its own bundle."""
+    """The filings-only view of every committed run, reruns included (the analysts
+    read those too), computed from its own bundle. A rerun's directory name is not
+    its accession, so the trigger is the one its own manifest names."""
     views = {}
     for manifest in sorted(RUNS.glob("*/*/input_manifest.json")):
         run = manifest.parent
-        if "rerun" in run.name:
-            continue
         stated = json.loads(manifest.read_text(encoding="utf-8"))
+        accession = stated["accession"]
         trigger, = {(d["form"], d["report_date"]) for d in stated["documents"]
-                    if d.get("accession") == run.name}
+                    if d.get("accession") == accession}
         views[f"{run.parent.name}/{run.name}"] = calculator.filings_only(calculator.calculate(
             ticker=run.parent.name, cutoff=stated["cutoff"], period_end=trigger[1],
-            form=trigger[0], accession=run.name, bundle=run))
+            form=trigger[0], accession=accession, bundle=run))
     return views
 
 
@@ -422,7 +423,8 @@ def test_every_path_the_analysts_are_told_resolves_in_every_committed_run(commit
     every run's calculator_filings_only.json, it is a cell holding `value`, and
     where that value is a number `placeholder_value` prints that number. A null
     cell names its reason under `missing`."""
-    assert len(committed_views) >= 12
+    assert len(committed_views) == len(list(RUNS.glob("*/*/input_manifest.json")))
+    assert any("rerun" in run for run in committed_views)
     for name, opening in PARAGRAPHS:
         paths = named_paths(name, opening)
         assert len(paths) >= 10, name
@@ -450,3 +452,88 @@ def test_the_past_due_share_carries_its_year_earlier_when_nothing_is_found(commi
     for cell in nulls:
         assert cell["as_of"] is None
         assert cell["a_year_earlier"]["value"] is None and cell["a_year_earlier"]["missing"]
+
+
+# --- a trailing year is never a sum of two concepts ------------------------------------------------
+
+def test_a_trailing_year_is_read_under_one_tag():
+    """Johnson Controls' operating cash flow over the four quarters to 2025-06-30,
+    through the independent reader: fiscal 2024 (2023-10-01..2024-09-30) 1,568
+    million and the nine months to 2025-06-30 1,586 million, both under the
+    continuing-operations tag; the nine months to 2024-06-30 under it as 216 and
+    under the total tag as 572. Under one tag: 1,568 + 1,586 - 216 = 2,938, never
+    1,568 + 1,586 - 572 = 2,582 across two."""
+    cut, continuing = "2026-07-29", "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations"
+    year, to_date = "2023-10-01..2024-09-30", "2024-10-01..2025-06-30"
+    before = "2023-10-01..2024-06-30"
+    assert source.one_value("JCI", continuing, year, cut) == 1_568 * MILLION
+    assert source.one_value("JCI", continuing, to_date, cut) == 1_586 * MILLION
+    assert source.one_value("JCI", continuing, before, cut) == 216 * MILLION
+    assert cfo("JCI", before, cut) == 572 * MILLION
+    bundle = source.FIXTURES.parent.parent / "runs" / "JCI" / "0000833444-26-000087"
+    out = calculator.calculate(ticker="JCI", cutoff=cut, period_end="2026-06-30", form="10-Q",
+                               bundle=bundle)
+    ago = out["terms"]["trailing_four_quarters_a_year_earlier"]["operating_cash_flow"]
+    assert ago["value"] == 2_938 * MILLION
+    assert {part["tag"] for part in ago["parts"].values()} == {continuing}
+
+
+def mixed_planted(cash_tags: dict, revenue_tags: dict) -> tuple:
+    """A made-up quarterly filer whose spans may sit under different tags."""
+    spans = {"year": ("2024-01-01", "2024-12-31"), "to_date": ("2025-01-01", "2025-06-30"),
+             "before": ("2024-01-01", "2024-06-30")}
+    values = {"year": 90.0, "to_date": 40.0, "before": 30.0}
+    facts: dict = {}
+    for tags, scale in ((cash_tags, 1.0), (revenue_tags, 10.0)):
+        for name, tag in tags.items():
+            facts.setdefault(tag, []).append(
+                {"start": spans[name][0], "end": spans[name][1], "val": values[name] * scale,
+                 "accn": "P-1", "form": "10-Q", "filed": "2025-08-01"})
+    facts["NetIncomeLoss"] = [{"start": s, "end": e, "val": 10.0, "accn": "P-1", "form": "10-Q",
+                               "filed": "2025-08-01"} for s, e in spans.values()]
+    facts["AccountsReceivableNetCurrent"] = [
+        {"end": end, "val": value, "accn": "P-1", "form": "10-Q", "filed": "2025-08-01"}
+        for end, value in (("2025-06-30", 120.0), ("2024-06-30", 100.0))]
+    record = calculator.Record({"ticker": "TEST", "facts": {"us-gaap": {
+        tag: {"units": {"USD": rows}} for tag, rows in facts.items()}}})
+    periods = calculator.trigger_periods(record.usd, "2025-06-30", "10-Q")
+    return record, periods
+
+
+def test_a_mixed_tag_trailing_sum_is_refused_not_labelled_continuing():
+    """Planted: the fiscal year under the continuing-operations tag, both years to
+    date under the total tag, no tag on all three. The trailing sum is missing,
+    and the Hribar and Collins measure is not handed a continuing-operations
+    figure built across the two."""
+    continuing, total = ("NetCashProvidedByUsedInOperatingActivitiesContinuingOperations",
+                         "NetCashProvidedByUsedInOperatingActivities")
+    revenue = "Revenues"
+    record, periods = mixed_planted({"year": continuing, "to_date": total, "before": total},
+                                    {"year": revenue, "to_date": revenue, "before": revenue})
+    terms = calculator.gather(record, periods)
+    cash = terms["trailing_four_quarters"]["operating_cash_flow"]
+    assert "value" not in cash and "no tag carries all three" in cash["missing"]
+    section = calculator.quarterly_cash_flow_and_accruals(record, terms, periods)
+    assert section["cash_flow_accruals"]["value"] is None
+    assert "no tag carries all three" in section["cash_flow_accruals"]["missing"]
+
+
+def test_a_growth_gap_never_divides_by_a_mixed_tag_revenue():
+    """Planted: revenue a year earlier would mix two revenue tags (the fiscal year
+    under one, the six months before it under another), so every growth gap is
+    missing with that reason rather than measured against a sum of two concepts."""
+    cash = "NetCashProvidedByUsedInOperatingActivities"
+    record, periods = mixed_planted(
+        {"year": cash, "to_date": cash, "before": cash},
+        {"year": "Revenues", "to_date": "Revenues",
+         "before": "RevenueFromContractWithCustomerExcludingAssessedTax"})
+    terms = calculator.gather(record, periods)
+    revenue = terms["trailing_four_quarters"]["revenue"]
+    assert "value" not in revenue and "no tag carries all three" in revenue["missing"]
+    receivables = calculator.receivables_extension(record, terms, periods, [])
+    gap = receivables["receivables_growth_minus_revenue_growth"]
+    assert gap["value"] is None
+    assert gap["missing"].startswith("revenue_growth:")
+    assert "no tag carries all three" in gap["missing"]
+    index = receivables["days_sales_outstanding_index"]
+    assert index["value"] is None and "no tag carries all three" in index["missing"]
