@@ -4,19 +4,22 @@ differently, listed by run and path, and shown to be the scope rule's alone.
 A run under `runs/` stands as published; the list is for the owner to read
 (`docs/needs_judgment.md`, Settled by default). Expected values: Johnson Controls'
 operating cash flow over the four quarters to 2025-06-30 through
-`tests/companyfacts_source.py`, worked by hand in `tests/test_calculator_accruals.py`
+`tests/companyfacts_source.py` and the run's own bundle, worked by hand below
 (1,568 + 1,586 - 216 = 2,938 million under the continuing-operations tag; the
-published run summed 1,568 + 1,586 - 572 = 2,582 across two tags), and its fourth
-quarter of fiscal 2024 (1,568 - 216 = 1,352; published 1,568 - 572 = 996).
+published run summed 1,568 + 1,586 - 572 = 2,582 across two tags), its fourth
+quarter of fiscal 2024 (1,568 - 216 = 1,352; published 1,568 - 572 = 996), and the
+nine quarters its smoothness and growth read.
 """
 
 from __future__ import annotations
 
 import json
+import math
 
 import pytest
 
 from src import calculator, calculator_drift as drift
+from tests import companyfacts_source as source
 
 MILLION = 1_000_000
 JCI = "JCI/0000833444-26-000087"
@@ -85,27 +88,127 @@ def test_every_changed_path_is_under_a_term_held_to_one_scope(listed):
                     (run, row["path"])
 
 
+CUTOFF = "2026-07-29"
+NET_INCOME = "NetIncomeLoss"
+CONTINUING = "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations"
+TOTAL = "NetCashProvidedByUsedInOperatingActivities"
+
+
+def source_row(tag: str, period: str) -> float:
+    """One of Johnson Controls' rows, in millions: companyfacts through the independent
+    reader, or, for the two facts the 10-Q filed 2026-07-29 first stated (the store's
+    companyfacts predates it), the run's own `input_numbers.json`, read here."""
+    standing = source.reported("JCI", tag, period, CUTOFF)
+    if standing:
+        values = {row["val"] for row in standing}
+    else:
+        start, end = period.split("..")
+        facts = json.loads((drift.RUNS / JCI / "input_numbers.json").read_text(encoding="utf-8"))
+        values = {fact["number"] for fact in facts["facts"]
+                  if fact["tag"] == tag and not fact.get("nil") and not fact.get("superseded_by")
+                  and not (fact.get("context") or {}).get("segment")
+                  and (fact.get("context") or {}).get("start") == start
+                  and (fact.get("context") or {}).get("end") == end
+                  and fact.get("filing_date", "9999") <= CUTOFF}
+    assert len(values) == 1, (tag, period, values)
+    return values.pop() / MILLION
+
+
+def spread(values: list) -> float:
+    """The population standard deviation, in plain arithmetic."""
+    mean = sum(values) / len(values)
+    return math.sqrt(sum((value - mean) ** 2 for value in values) / len(values))
+
+
 def test_johnson_controls_moves_as_worked_by_hand(listed):
-    """The seven leaves of the one run whose figure moves rather than goes missing."""
+    """The seven leaves of the one run whose figure moves rather than goes missing,
+    each worked from the source rows, in millions.
+
+    Operating cash flow a year earlier: 1,568 (fiscal 2024) + 1,586 (nine months to
+    2025-06-30) - 216 (nine months to 2024-06-30), all continuing operations, 2,938;
+    the published run subtracted the total 572 instead, 2,582. This year: 2,554
+    (fiscal 2025) + 2,572 (nine months to 2026-06-30) - 1,586 = 3,540, so growth is
+    (3,540 - 2,938) / 2,938 where it was (3,540 - 2,582) / 2,582.
+
+    Smoothness reads nine quarters, newest first. Net income: 749, 613, 524, 3,291 -
+    1,598 = 1,693, 701, 478, 419, 1,705 - 1,072 = 633, 975. Operating cash flow:
+    2,572 - 1,283 = 1,289, 1,283 - 611 = 672, 611, 2,554 - 1,586 = 968, 1,586 - 799 =
+    787, 799 - 249 = 550, 249, then the fourth quarter of fiscal 2024 -- 1,568 - 216 =
+    1,352 within continuing operations, where the published run took 1,568 - 572 =
+    996 across the total -- and 572 - (-449) = 1,021 (both under the total: fiscal
+    2024's nine and six months carry no continuing tag). The value is the population
+    standard deviation of the eight quarter-to-quarter changes in net income over
+    the same for operating cash flow.
+    """
+    year_earlier = (source_row(CONTINUING, "2023-10-01..2024-09-30")
+                    + source_row(CONTINUING, "2024-10-01..2025-06-30")
+                    - source_row(CONTINUING, "2023-10-01..2024-06-30"))
+    published_year_earlier = (source_row(CONTINUING, "2023-10-01..2024-09-30")
+                              + source_row(CONTINUING, "2024-10-01..2025-06-30")
+                              - source_row(TOTAL, "2023-10-01..2024-06-30"))
+    this_year = (source_row(CONTINUING, "2024-10-01..2025-09-30")
+                 + source_row(CONTINUING, "2025-10-01..2026-06-30")
+                 - source_row(CONTINUING, "2024-10-01..2025-06-30"))
+    assert (year_earlier, published_year_earlier, this_year) == (2_938, 2_582, 3_540)
+    assert source_row(CONTINUING, "2023-10-01..2024-06-30") == 216
+    assert source_row(TOTAL, "2023-10-01..2024-06-30") == 572
+
+    net_income = [
+        source_row(NET_INCOME, "2026-04-01..2026-06-30"),
+        source_row(NET_INCOME, "2026-01-01..2026-03-31"),
+        source_row(NET_INCOME, "2025-10-01..2025-12-31"),
+        source_row(NET_INCOME, "2024-10-01..2025-09-30") - source_row(NET_INCOME, "2024-10-01..2025-06-30"),
+        source_row(NET_INCOME, "2025-04-01..2025-06-30"),
+        source_row(NET_INCOME, "2025-01-01..2025-03-31"),
+        source_row(NET_INCOME, "2024-10-01..2024-12-31"),
+        source_row(NET_INCOME, "2023-10-01..2024-09-30") - source_row(NET_INCOME, "2023-10-01..2024-06-30"),
+        source_row(NET_INCOME, "2024-04-01..2024-06-30"),
+    ]
+    assert net_income == [749, 613, 524, 1_693, 701, 478, 419, 633, 975]
+    cash_to_fiscal_2025 = [
+        source_row(CONTINUING, "2025-10-01..2026-06-30") - source_row(CONTINUING, "2025-10-01..2026-03-31"),
+        source_row(CONTINUING, "2025-10-01..2026-03-31") - source_row(CONTINUING, "2025-10-01..2025-12-31"),
+        source_row(CONTINUING, "2025-10-01..2025-12-31"),
+        source_row(CONTINUING, "2024-10-01..2025-09-30") - source_row(CONTINUING, "2024-10-01..2025-06-30"),
+        source_row(CONTINUING, "2024-10-01..2025-06-30") - source_row(CONTINUING, "2024-10-01..2025-03-31"),
+        source_row(CONTINUING, "2024-10-01..2025-03-31") - source_row(CONTINUING, "2024-10-01..2024-12-31"),
+        source_row(CONTINUING, "2024-10-01..2024-12-31"),
+    ]
+    assert cash_to_fiscal_2025 == [1_289, 672, 611, 968, 787, 550, 249]
+    fourth_quarter = source_row(CONTINUING, "2023-10-01..2024-09-30") - source_row(CONTINUING, "2023-10-01..2024-06-30")
+    published_fourth = source_row(CONTINUING, "2023-10-01..2024-09-30") - source_row(TOTAL, "2023-10-01..2024-06-30")
+    oldest = source_row(TOTAL, "2023-10-01..2024-06-30") - source_row(TOTAL, "2023-10-01..2024-03-31")
+    assert (fourth_quarter, published_fourth, oldest) == (1_352, 996, 1_021)
+
+    def smoothness(cash: list) -> float:
+        changes_in_income = [a - b for a, b in zip(net_income, net_income[1:])]
+        changes_in_cash = [a - b for a, b in zip(cash, cash[1:])]
+        return spread(changes_in_income) / spread(changes_in_cash)
+    old_smoothness = smoothness(cash_to_fiscal_2025 + [published_fourth, oldest])
+    new_smoothness = smoothness(cash_to_fiscal_2025 + [fourth_quarter, oldest])
+    assert old_smoothness == pytest.approx(1.44369, abs=5e-6)
+    assert new_smoothness == pytest.approx(1.13481, abs=5e-6)
+
     rows = {row["path"]: (row["old"], row["new"]) for row in listed if row["run"] == JCI}
+    approx = lambda a, b: (pytest.approx(a, rel=1e-9), pytest.approx(b, rel=1e-9))  # noqa: E731
     assert rows == {
-        "earnings_versus_cash.smoothness.operating_cash_flow.7": (996 * MILLION, 1_352 * MILLION),
-        "earnings_versus_cash.smoothness.value": rows["earnings_versus_cash.smoothness.value"],
+        "earnings_versus_cash.smoothness.operating_cash_flow.7":
+            (published_fourth * MILLION, fourth_quarter * MILLION),
+        "earnings_versus_cash.smoothness.value": approx(old_smoothness, new_smoothness),
         "ratios.growth.operating_cash_flow.trailing_four_quarters.inputs.before.parts"
         ".prior_year_to_date.value": (572 * MILLION, 216 * MILLION),
         "ratios.growth.operating_cash_flow.trailing_four_quarters.inputs.before.value":
-            (2_582 * MILLION, 2_938 * MILLION),
-        "ratios.growth.operating_cash_flow.trailing_four_quarters.value":
-            rows["ratios.growth.operating_cash_flow.trailing_four_quarters.value"],
+            (published_year_earlier * MILLION, year_earlier * MILLION),
+        "ratios.growth.operating_cash_flow.trailing_four_quarters.value": approx(
+            (this_year - published_year_earlier) / published_year_earlier,
+            (this_year - year_earlier) / year_earlier),
         "terms.trailing_four_quarters_a_year_earlier.operating_cash_flow.parts"
         ".prior_year_to_date.value": (572 * MILLION, 216 * MILLION),
         "terms.trailing_four_quarters_a_year_earlier.operating_cash_flow.value":
-            (2_582 * MILLION, 2_938 * MILLION),
+            (published_year_earlier * MILLION, year_earlier * MILLION),
     }
-    old_growth, new_growth = rows["ratios.growth.operating_cash_flow.trailing_four_quarters.value"]
-    # the growth rate over the year earlier, with 3,540 of operating cash flow this year
-    # (fiscal 2025's 2,554 + 2,572 to date - 1,586, each under the continuing tag)
-    assert new_growth == pytest.approx(old_growth * 2_582 / 2_938 + (2_582 / 2_938 - 1), rel=1e-9)
+    assert (3_540 - 2_938) / 2_938 == pytest.approx(0.204901, abs=5e-7)
+    assert (3_540 - 2_582) / 2_582 == pytest.approx(0.371030, abs=5e-7)
 
 
 def test_no_other_published_run_changes(listed):
