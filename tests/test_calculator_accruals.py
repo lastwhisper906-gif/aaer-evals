@@ -725,28 +725,51 @@ def test_a_total_operating_cash_flow_beside_discontinued_income_is_not_called_co
     assert cell["value"] is None
     assert "discontinued-operations income line for 2024-01-01..2024-12-31" in cell["missing"]
     assert "operating cash flow of continuing operations is not on record" in cell["missing"]
+    # the SEC model's measure reads the same cash side, and is refused with it
+    sec = section["free_cash_flow_accruals"]
+    assert sec["value"] is None and sec["missing"] == cell["missing"]
 
 
 def test_western_digitals_cash_side_is_refused_on_its_own_record():
-    """Western Digital's fiscal 2025 (2024-06-29..2025-06-27), through the independent
-    reader: income from discontinued operations 246 million, income from continuing
-    operations 1,643, net income 1,889, operating cash flow 1,691 under the total tag
-    and nothing under the continuing-operations tag."""
-    cut, year = "2026-05-01", "2024-06-29..2025-06-27"
-    assert source.one_value(
-        "WDC", "IncomeLossFromDiscontinuedOperationsNetOfTaxAttributableToReportingEntity",
-        year, cut) == 246 * MILLION
-    assert source.one_value("WDC", "IncomeLossFromContinuingOperations", year, cut) == 1_643 * MILLION
+    """Western Digital, through the independent reader, over the spans the trailing
+    year reads (fiscal 2025, 2024-06-29..2025-06-27; the nine months to 2026-04-03
+    and to 2025-03-28): income from continuing operations 1,643, 6,229 and 1,391;
+    income from discontinued operations 246 and 216 (fiscal 2025 and the nine months
+    to 2025-03-28; 468 for the six months to 2024-12-27); operating cash flow 1,691,
+    2,540 and 945 under the total tag and nothing under the continuing-operations
+    tag; purchases of property and equipment 412, 310 and 341. Both measures that
+    pair income with operating cash flow are missing with the reason: the Hribar
+    and Collins measure, and the SEC model's, which would otherwise have been
+    (1,643 + 6,229 - 1,391) - ((1,691 + 2,540 - 945) - (412 + 310 - 341)) =
+    6,481 - (3,286 - 381) = 3,576 across two scopes, and is not printed."""
+    cut = "2026-05-01"
+    year, to_date, before = "2024-06-29..2025-06-27", "2025-06-28..2026-04-03", "2024-06-29..2025-03-28"
+    continuing_income = "IncomeLossFromContinuingOperations"
+    discontinued = "IncomeLossFromDiscontinuedOperationsNetOfTaxAttributableToReportingEntity"
+    assert [source.one_value("WDC", continuing_income, span, cut) for span in (year, to_date, before)] \
+        == [1_643 * MILLION, 6_229 * MILLION, 1_391 * MILLION]
+    assert source.one_value("WDC", discontinued, year, cut) == 246 * MILLION
+    assert source.one_value("WDC", discontinued, before, cut) == 216 * MILLION
+    assert source.one_value("WDC", discontinued, "2024-06-29..2024-12-27", cut) == 468 * MILLION
     assert source.one_value("WDC", "NetIncomeLoss", year, cut) == 1_889 * MILLION
-    assert cfo("WDC", year, cut) == 1_691 * MILLION
-    assert source.reported("WDC", "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations",
-                           year, cut) == []
+    assert [cfo("WDC", span, cut) for span in (year, to_date, before)] \
+        == [1_691 * MILLION, 2_540 * MILLION, 945 * MILLION]
+    for span in (year, to_date, before):
+        assert source.reported("WDC", "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations",
+                               span, cut) == []
+    assert [source.one_value("WDC", "PaymentsToAcquirePropertyPlantAndEquipment", span, cut)
+            for span in (year, to_date, before)] == [412 * MILLION, 310 * MILLION, 341 * MILLION]
+    assert (1_643 + 6_229 - 1_391) - ((1_691 + 2_540 - 945) - (412 + 310 - 341)) == 3_576
     bundle = source.FIXTURES.parent.parent / "runs" / "WDC" / "0001628280-26-029054"
     out = calculator.calculate(ticker="WDC", cutoff=cut, period_end="2026-04-03", form="10-Q",
                                bundle=bundle)
+    assert out["terms"]["trailing_four_quarters"]["operating_cash_flow"]["value"] == 3_286 * MILLION
     cell = out[SECTION]["cash_flow_accruals"]
     assert cell["value"] is None
     assert "operating cash flow of continuing operations is not on record" in cell["missing"]
+    sec = out[SECTION]["free_cash_flow_accruals"]
+    assert sec["value"] is None and sec["missing"] == cell["missing"]
+    assert "2024-06-29..2025-06-27" in sec["missing"]
 
 
 # --- the pairing of continuing-operations cash flow with total net income is named -----------

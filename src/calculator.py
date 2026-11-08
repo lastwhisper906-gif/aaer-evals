@@ -1846,16 +1846,22 @@ def quarterly_cash_flow_and_accruals(record: Record, terms: dict, periods: dict)
         lambda v: (v["income_from_continuing_operations"]
                    - v["operating_cash_flow_of_continuing_operations"]) / v["average_assets"],
         denominator="average_assets")
+    # The same cash side: the SEC model subtracts free cash flow from income
+    # before extraordinary items, and a total operating cash flow beside a
+    # discontinued-operations income line is refused here as it is above.
     free_cash_flow_accruals = field(
-        "income_from_continuing_operations - (operating_cash_flow - capital_expenditure)",
+        "income_from_continuing_operations - (operating_cash_flow_of_continuing_operations "
+        "- capital_expenditure)",
         {"income_from_continuing_operations": income,
-         "operating_cash_flow": ttm["operating_cash_flow"],
+         "operating_cash_flow_of_continuing_operations": continuing_cash,
          "capital_expenditure": ttm["capital_expenditure"]},
         lambda v: v["income_from_continuing_operations"]
-        - (v["operating_cash_flow"] - v["capital_expenditure"]), unit="USD")
+        - (v["operating_cash_flow_of_continuing_operations"] - v["capital_expenditure"]),
+        unit="USD")
     free_cash_flow_accruals["basis"] = (
         "income before extraordinary items is income from continuing operations: extraordinary "
-        "items left US GAAP with ASU 2015-01")
+        "items left US GAAP with ASU 2015-01; the operating cash flow is the continuing figure "
+        "the Hribar and Collins measure reads, or missing with it")
 
     return {
         "what_this_is": ("three accrual measures, each named for its source and kept apart: "
