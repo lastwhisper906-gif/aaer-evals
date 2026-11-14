@@ -22,6 +22,7 @@ against the figure the filing prints, read by eye from the committed fixture:
 
 from __future__ import annotations
 
+import gzip
 import json
 import re
 
@@ -824,25 +825,86 @@ def test_johnson_controls_cross_scope_pairing_is_named_where_it_occurs():
 
 # --- the cost of debt's fallback reason is written only when it is true -----------------------
 
-def test_the_neither_on_record_reason_is_written_only_with_no_interest_fact():
-    """Fortinet's interest expense is on record across two tags of one scope,
-    through the independent reader: InterestExpense 20.1 for 2025 (the 10-K) and
-    InterestExpenseNonoperating 7.4 and 9.5 for the six months to 2026-06-30 and
-    2025-06-30 (the 10-Q, both halves under one tag), 20.1 + 7.4 - 9.5 = 18.0
-    million; its cost of debt is interest expense over average debt and no fallback
-    is written.
+def decimals_in_the_instance(ticker: str, form: str, name: str, tag: str) -> set:
+    """The `decimals` every fact of one tag carries in a committed XBRL instance,
+    read by this test's own regular expression."""
+    raw = gzip.decompress((source.FIXTURES / ticker / form / name).read_bytes()).decode("utf-8")
+    return set(re.findall(rf'<us-gaap:{tag} [^>]*decimals="(-?\d+)"', raw))
 
-    Dell's is not: its 10-K tags InterestExpenseNonoperating 1,560 for fiscal 2026
-    and the earlier 10-Q 753 for the six months to 2025-08-01, while the triggering
-    10-Q tags only InterestExpenseDebt, "approximately $0.8 billion" of interest on
-    debt, 800 for both six-month spans -- 800 against 753 for the same span, so the
-    two tags are not one line and are two scopes. Neither scope is on record in
-    every span, so interest expense is missing with the reason, and the cost of
-    debt steps down its ladder: interest paid is on record for fiscal 2026 alone
-    (1,354) and not for either six months, so it is the risk-free rate plus one
-    point, and the reason that says "neither" is true. A planted filer with debt
-    and neither fact gets the same reason; one with interest expense tagged does
-    not."""
+
+def test_dells_interest_expense_is_two_scopes_and_its_cost_of_debt_is_interest_paid():
+    """Dell, through the independent reader. Its 10-K tags InterestExpenseNonoperating
+    1,560 for fiscal 2026 and the earlier 10-Q 753 for the six months to 2025-08-01;
+    the triggering 10-Q tags only InterestExpenseDebt, 800 for both six-month spans,
+    on the debt note's sentence about total interest expense related to its
+    outstanding debt, "$0.8 billion for both the six months ended" (the whole
+    sentence is read below). InterestExpenseDebt is interest on debt alone, a
+    scope of its own; and in the instance every such fact carries decimals of -8
+    ($0.1 billion) where the 10-K's interest expense carries -6 (the million), so
+    the published 1,560 + 800 - 753 = 1,607 was not like for like on either count.
+    Neither scope is on record in every span, so interest expense is missing with
+    the reason.
+
+    The cost of debt then steps down its ladder. Interest paid is on record for
+    fiscal 2026, 1,354, and not for either six months, so the trailing rung is
+    missing and the last-fiscal-year rung is read: 1,354 over average debt of
+    (8,481 + 25,985 + 7,154 + 21,535) / 2 = 31,577.5, 0.042879. The label says
+    interest expense is on record in two scopes, and never that neither is on
+    record."""
+    cut = "2026-09-08"
+    nonoperating, debt = "InterestExpenseNonoperating", "InterestExpenseDebt"
+    year, to_date, before = "2025-02-01..2026-01-30", "2026-01-31..2026-07-31", "2025-02-01..2025-08-01"
+    assert source.one_value("DELL", nonoperating, year, cut) == 1_560 * MILLION
+    assert source.one_value("DELL", nonoperating, before, cut) == 753 * MILLION
+    assert source.one_value("DELL", debt, to_date, cut) == 800 * MILLION
+    assert source.one_value("DELL", debt, before, cut) == 800 * MILLION
+    assert source.reported("DELL", nonoperating, to_date, cut) == []
+    assert source.reported("DELL", debt, year, cut) == []
+    assert decimals_in_the_instance("DELL", "10-Q", "dell-20260731_htm.xml.gz", debt) == {"-8"}
+    assert decimals_in_the_instance("DELL", "10-K", "dell-20260130_htm.xml.gz", nonoperating) == {"-6"}
+    notes = (source.FIXTURES.parent.parent / "runs" / "DELL" / "0001571996-26-000046"
+             / "input_notes.md").read_text(encoding="utf-8")
+    assert ("Total interest expense related to the Company\u2019s outstanding debt was $0.4 billion "
+            "for both the three months ended July\u00a031, 2026 and August\u00a01, 2025, and "
+            "$0.8 billion for both the six months ended July\u00a031, 2026 and August\u00a01, 2025"
+            ) in notes
+    assert calculator.scope_of("interest_expense", debt) != calculator.scope_of("interest_expense",
+                                                                                nonoperating)
+    paid = source.one_value("DELL", "InterestPaidNet", year, cut)
+    assert paid == 1_354 * MILLION
+    assert source.reported("DELL", "InterestPaidNet", to_date, cut) == []
+    assert source.reported("DELL", "InterestPaidNet", before, cut) == []
+    debt_lines = [source.one_value("DELL", tag, date, cut) for tag, date in (
+        ("DebtCurrent", "2026-07-31"), ("LongTermDebtNoncurrent", "2026-07-31"),
+        ("DebtCurrent", "2025-08-01"), ("LongTermDebtNoncurrent", "2025-08-01"))]
+    assert debt_lines == [8_481 * MILLION, 25_985 * MILLION, 7_154 * MILLION, 21_535 * MILLION]
+    average_debt = sum(debt_lines) / 2
+    assert average_debt == 31_577.5 * MILLION
+
+    dell = calculator.calculate(ticker="DELL", cutoff=cut, period_end="2026-07-31", form="10-Q",
+                                bundle=source.FIXTURES.parent.parent / "runs" / "DELL"
+                                / "0001571996-26-000046")
+    interest = dell["terms"]["trailing_four_quarters"]["interest_expense"]
+    assert "value" not in interest
+    assert "different scopes of interest_expense" in interest["missing"]
+    assert f"this year to date under us-gaap:{debt}" in interest["missing"]
+    cost = dell["cost_of_capital"]["pre_tax_cost_of_debt"]
+    assert cost["value"] == pytest.approx(1_354 / 31_577.5, rel=1e-12)
+    assert cost["formula"] == "interest_paid_last_fiscal_year / average debt"
+    assert cost["inputs"]["interest_paid_last_fiscal_year"]["tag"] == "InterestPaidNet"
+    assert cost["fallback"].startswith(
+        f"interest paid in cash over the last fiscal year ({year}), which the years to date "
+        f"do not state, in place of interest expense is on record but its spans fall in two "
+        f"scopes: ")
+    assert "neither interest expense nor interest paid" not in cost["fallback"]
+
+
+def test_fortinets_interest_expense_is_one_scope_and_its_cost_of_debt_reads_it():
+    """Fortinet, through the independent reader: InterestExpense 20.1 for 2025 (the
+    10-K) and InterestExpenseNonoperating 7.4 and 9.5 for the six months to
+    2026-06-30 and 2025-06-30 (the 10-Q, both halves under one tag), two names of
+    one line: 20.1 + 7.4 - 9.5 = 18.0 million, marked `tags_differ`. Its cost of
+    debt is interest expense over average debt and no fallback is written."""
     cut = "2026-07-30"
     assert source.one_value("FTNT", "InterestExpense", "2025-01-01..2025-12-31", cut) == 20.1 * MILLION
     assert source.one_value("FTNT", "InterestExpenseNonoperating", "2026-01-01..2026-06-30", cut) \
@@ -859,53 +921,48 @@ def test_the_neither_on_record_reason_is_written_only_with_no_interest_fact():
     cost = fortinet["cost_of_capital"]["pre_tax_cost_of_debt"]
     assert cost["formula"] == "interest_expense / average debt" and "fallback" not in cost
 
-    cut = "2026-09-08"
-    nonoperating, debt = "InterestExpenseNonoperating", "InterestExpenseDebt"
-    assert source.one_value("DELL", nonoperating, "2025-02-01..2026-01-30", cut) == 1_560 * MILLION
-    assert source.one_value("DELL", nonoperating, "2025-02-01..2025-08-01", cut) == 753 * MILLION
-    assert source.one_value("DELL", debt, "2026-01-31..2026-07-31", cut) == 800 * MILLION
-    assert source.one_value("DELL", debt, "2025-02-01..2025-08-01", cut) == 800 * MILLION
-    assert source.reported("DELL", nonoperating, "2026-01-31..2026-07-31", cut) == []
-    assert source.reported("DELL", debt, "2025-02-01..2026-01-30", cut) == []
-    assert source.one_value("DELL", "InterestPaidNet", "2025-02-01..2026-01-30", cut) == 1_354 * MILLION
-    assert source.reported("DELL", "InterestPaidNet", "2026-01-31..2026-07-31", cut) == []
-    assert calculator.scope_of("interest_expense", debt) != calculator.scope_of("interest_expense",
-                                                                                nonoperating)
-    dell = calculator.calculate(ticker="DELL", cutoff=cut, period_end="2026-07-31", form="10-Q",
-                                bundle=source.FIXTURES.parent.parent / "runs" / "DELL"
-                                / "0001571996-26-000046")
-    interest = dell["terms"]["trailing_four_quarters"]["interest_expense"]
-    assert "value" not in interest
-    assert "different scopes of interest_expense" in interest["missing"]
-    assert f"this year to date under us-gaap:{debt}" in interest["missing"]
-    cost = dell["cost_of_capital"]["pre_tax_cost_of_debt"]
-    assert cost["formula"] == "risk_free_rate + 0.01"
-    assert "neither interest expense nor interest paid is on record" in cost["fallback"]
-    assert "different scopes of interest_expense" in cost["fallback"]
 
-    def planted(interest: dict) -> dict:
-        def rows(values: dict) -> list:
-            return [{"start": s, "end": e, "val": v, "accn": "P-1", "form": "10-K",
-                     "filed": "2026-02-01"} for (s, e), v in values.items()]
-        year, before = ("2025-01-01", "2025-12-31"), ("2024-01-01", "2024-12-31")
-        facts = {"Revenues": rows({year: 1_000.0, before: 900.0}),
-                 "NetIncomeLoss": rows({year: 100.0, before: 90.0}),
-                 "LongTermDebtNoncurrent": [
-                     {"end": end, "val": 500.0, "accn": "P-1", "form": "10-K", "filed": "2026-02-01"}
-                     for end in ("2025-12-31", "2024-12-31")]}
-        facts.update({tag: rows({year: value}) for tag, value in interest.items()})
-        record = calculator.Record({"ticker": "TEST", "facts": {"us-gaap": {
-            tag: {"units": {"USD": found}} for tag, found in facts.items()}}})
-        periods = calculator.trigger_periods(record.usd, "2025-12-31", "10-K")
-        terms = calculator.gather(record, periods)
-        return calculator.cost_of_capital(terms, calculator.ratios(record, terms, periods),
-                                          {"missing": "no prices"},
-                                          calculator.dt.date(2026, 2, 1), None)
+def test_the_ladder_says_how_each_input_stood_and_neither_only_when_true():
+    """Planted, each called as `cost_of_capital` calls the ladder, with debt of 100
+    at both dates and a risk-free rate of 4%:
 
-    bare = planted({})["pre_tax_cost_of_debt"]
-    assert "neither interest expense nor interest paid is on record" in bare["fallback"]
-    tagged = planted({"InterestExpenseNonoperating": 25.0})["pre_tax_cost_of_debt"]
-    assert tagged["value"] == 25.0 / 500.0 and "fallback" not in tagged
+    - interest expense in two scopes, interest paid 4 for the last fiscal year
+      alone: 4 / 100 = 0.04, labelled as that rung;
+    - interest expense in two scopes and no interest paid anywhere: 0.04 + 0.01 =
+      0.05, and the label says interest expense is on record in two scopes and
+      interest paid is not, never "neither";
+    - neither on record: 0.05, and the label says "neither"."""
+    scopes = {"missing": "interest_expense over the trailing four quarters: prior fiscal year "
+                         "under us-gaap:A; this year to date under us-gaap:B; these are "
+                         "different scopes of interest_expense, and none is on record in every "
+                         "span, so the sum would be of two concepts"}
+    absent = {"missing": "no row for interest_paid in any period"}
+    debt = {"value": 100.0}
+    rate = {"value": 0.04}
+    last_year = {"value": 4.0, "tag": "InterestPaidNet", "period": "2025-01-01..2025-12-31"}
+
+    def ladder(expense: dict, paid: dict, paid_last_year: dict | None) -> dict:
+        return calculator.cost_of_debt_fallback(
+            {"interest_expense": expense, "interest_paid": paid}, debt, debt, rate,
+            f"interest_expense: {expense['missing']}", paid_last_year)
+
+    stepped = ladder(scopes, {"missing": "interest_paid over the trailing four quarters needs "
+                                         "the this year to date: no row"}, last_year)
+    assert stepped["value"] == 4.0 / 100.0
+    assert stepped["fallback"].startswith(
+        "interest paid in cash over the last fiscal year (2025-01-01..2025-12-31)")
+    assert "interest expense is on record but its spans fall in two scopes" in stepped["fallback"]
+
+    no_paid = ladder(scopes, absent, None)
+    assert no_paid["value"] == pytest.approx(0.05)
+    assert "interest expense is on record but its spans fall in two scopes" in no_paid["fallback"]
+    assert "interest paid is not on record: no row for interest_paid in any period" \
+        in no_paid["fallback"]
+    assert "neither interest expense nor interest paid" not in no_paid["fallback"]
+
+    neither = ladder({"missing": "no row for interest_expense in any period"}, absent, None)
+    assert neither["value"] == pytest.approx(0.05)
+    assert "neither interest expense nor interest paid is on record" in neither["fallback"]
 
 
 # --- the two years to date are read like for like within a scope ------------------------------
@@ -926,6 +983,26 @@ def test_the_two_years_to_date_are_read_under_one_tag_within_a_scope():
     assert found["parts"]["this_year_to_date"]["tag"] == renamed
     assert found["parts"]["prior_year_to_date"]["tag"] == renamed
     assert found["tags_differ"] == sorted([DEPRECIATION, renamed])
+
+
+def test_like_for_like_holds_when_the_spans_first_fell_in_two_scopes():
+    """Planted: interest expense 100 under InterestExpense for fiscal 2024; the six
+    months of 2025 under InterestExpenseNonoperating (60) and InterestAndDebtExpense
+    (55); the six months of 2024 under InterestExpenseDebt (8), a scope of its own
+    and the first tag found there, and InterestAndDebtExpense (40). The spans first
+    fall in two scopes; the interest-expense group is on record in every span and
+    is read, and within it the two years to date are read under the one tag that
+    carries both: 100 + 55 - 40 = 115, not 100 + 60 - 40 = 120 across a rename."""
+    lines = {"year": {"InterestExpense": 100.0},
+             "to_date": {"InterestExpenseNonoperating": 60.0, "InterestAndDebtExpense": 55.0},
+             "before": {"InterestExpenseDebt": 8.0, "InterestAndDebtExpense": 40.0}}
+    record, periods = depreciation_planted(lines)
+    assert record.term("interest_expense", periods["prior_to_date"])["tag"] == "InterestExpenseDebt"
+    found = calculator.trailing(record, "interest_expense", periods)
+    assert found["value"] == 115.0
+    assert found["parts"]["this_year_to_date"]["tag"] == "InterestAndDebtExpense"
+    assert found["parts"]["prior_year_to_date"]["tag"] == "InterestAndDebtExpense"
+    assert found["tags_differ"] == ["InterestAndDebtExpense", "InterestExpense"]
 
 
 # --- a series of quarters is held to one scope -----------------------------------------------------

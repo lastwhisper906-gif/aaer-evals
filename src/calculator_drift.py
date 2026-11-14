@@ -5,18 +5,23 @@ correction is a new run beside it (CLAUDE.md). When a rule of `src/calculator.py
 changes -- a trailing year or a differenced quarter held to one scope of its
 term -- the published figures do not move, but the owner should be able to see
 which ones the rule would have moved. This module recomputes every committed
-run's `calculator_filings_only.json` from the run's own bundle and the fixture
-store, as `src/run_analysis.py` computed it, and prints every numeric leaf whose
-value changed, old and new, by run and path. It writes nothing under `runs/`.
+run's `calculator_filings_only.json` (the view both analysts read) and its
+`calculator.json` (the final file, with the accounting analyst's adjustments and
+the valuation analyst's assumptions the run holds) from the run's own bundle and
+the fixture store, as `src/run_analysis.py` computed them, and prints every
+numeric leaf whose value changed, old and new, by run, file and path. It writes
+nothing under `runs/`.
 
     .venv/bin/python -m src.calculator_drift [--runs runs] [--fixtures tests/fixtures]
 
-The comparison is of the view with no price, which both analysts read, so no
-price directory is needed and nothing the valuation layer adds is in it. A leaf
-is a number under `value` (or any other numeric field) at a path present in the
-published file; a cell that had a number and is now missing, or was missing and
-now has a number, is a change too. A path the published file never held -- a
-section added since the run -- is not a change and is not listed.
+The price and beta a run read are in its published `calculator.json` under
+`market`, exactly as `calculator.market_inputs` returned them, and are handed
+back to the calculator as that run's market data, so the priced sections
+recompute from the run's own inputs. A leaf is a number under `value` (or any other numeric
+field) at a path present in the published file; a cell that had a number and is
+now missing, or was missing and now has a number, is a change too. A path the
+published file never held -- a section added since the run -- is not a change
+and is not listed.
 """
 
 from __future__ import annotations
@@ -49,12 +54,32 @@ def trigger(run: Path) -> dict:
             "form": form, "accession": accession}
 
 
+FINAL = "calculator.json"
+
+
+def _written(run: Path, name: str) -> dict | None:
+    path = run / name
+    return json.loads(path.read_text(encoding="utf-8")) if path.is_file() else None
+
+
 def recompute(run: Path, fixtures_root: Path = cutoff_guard.FIXTURES) -> dict:
     """The filings-only view of one run, from its bundle and the store, as today's
     calculator prints it."""
     named = trigger(run)
     return calculator.filings_only(calculator.calculate(
         **named, fixtures_root=fixtures_root, bundle=run))
+
+
+def recompute_final(run: Path, fixtures_root: Path = cutoff_guard.FIXTURES) -> dict:
+    """The run's `calculator.json` as today's calculator prints it: the accounting
+    analyst's adjustments, the valuation analyst's assumptions and the market
+    data (price and beta) are the run's own, read from its published files."""
+    named = trigger(run)
+    published = _written(run, FINAL) or {}
+    return calculator.calculate(**named, fixtures_root=fixtures_root, bundle=run,
+                                market_data=published.get("market"),
+                                accounting=_written(run, "analysis_accounting.json"),
+                                assumptions=_written(run, "assumptions.json"))
 
 
 def numeric_leaves(node, prefix: str = "") -> dict[str, float]:
@@ -110,26 +135,34 @@ def changed_leaves(old: dict, new: dict) -> list[dict]:
 
 
 def drift(run: Path, fixtures_root: Path = cutoff_guard.FIXTURES) -> list[dict]:
-    """The changed leaves of one run, each with the run's name."""
-    published = json.loads((run / calculator.FILINGS_ONLY).read_text(encoding="utf-8"))
+    """The changed leaves of one run, in its filings-only view and in its
+    calculator.json, each with the run's name and the file."""
     name = f"{run.parent.name}/{run.name}"
-    return [{"run": name, **row} for row in changed_leaves(published, recompute(run, fixtures_root))]
+    rows = []
+    for file, fresh in ((calculator.FILINGS_ONLY, recompute), (FINAL, recompute_final)):
+        published = _written(run, file)
+        if published is None:
+            continue
+        rows.extend({"run": name, "file": file, **row}
+                    for row in changed_leaves(published, fresh(run, fixtures_root)))
+    return rows
 
 
 def report(root: Path = RUNS, fixtures_root: Path = cutoff_guard.FIXTURES, *,
-           scope_rule: bool = True) -> list[dict]:
-    """Every run's changed leaves. `scope_rule=False` recomputes with the
-    calculator's scope rule for a trailing year and a quarter turned off: the
-    control, which says what today's calculator would print differently for any
-    other reason, so that the difference between the two lists is that rule's."""
-    was = calculator.SCOPE_RULE
-    calculator.SCOPE_RULE = scope_rule
+           scope_rule: bool = True, last_fiscal_year_rung: bool = True) -> list[dict]:
+    """Every run's changed leaves. With `scope_rule=False` the calculator's scope
+    rule for a trailing year and a quarter is off, and with
+    `last_fiscal_year_rung=False` the cost of debt's last-fiscal-year rung is: the
+    controls, which say what today's calculator would print differently without
+    each, so that a list's difference from its control is that rule's alone."""
+    was = calculator.SCOPE_RULE, calculator.LAST_FISCAL_YEAR_RUNG
+    calculator.SCOPE_RULE, calculator.LAST_FISCAL_YEAR_RUNG = scope_rule, last_fiscal_year_rung
     try:
         rows = []
         for run in committed_runs(root):
             rows.extend(drift(run, fixtures_root))
     finally:
-        calculator.SCOPE_RULE = was
+        calculator.SCOPE_RULE, calculator.LAST_FISCAL_YEAR_RUNG = was
     return rows
 
 
@@ -149,7 +182,8 @@ def printed(rows: list[dict]) -> str:
         own = [row for row in rows if row["run"] == run]
         lines.append(f"{run}: {len(own)} changed")
         for row in own:
-            lines.append(f"  {row['path']}: {_number(row['old'])} -> {_number(row['new'])}")
+            lines.append(f"  {row.get('file', calculator.FILINGS_ONLY)} {row['path']}: "
+                         f"{_number(row['old'])} -> {_number(row['new'])}")
     if not rows:
         lines.append("no published figure changes")
     return "\n".join(lines)
@@ -161,9 +195,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--fixtures", default=str(cutoff_guard.FIXTURES))
     parser.add_argument("--json", action="store_true", help="print the rows as JSON lines")
     parser.add_argument("--control", action="store_true",
-                        help="recompute with the scope rule off: what moves for any other reason")
+                        help="recompute with the scope rule and the last-fiscal-year rung off: "
+                             "what moves for any other reason")
     args = parser.parse_args(argv)
-    rows = report(Path(args.runs), Path(args.fixtures), scope_rule=not args.control)
+    rows = report(Path(args.runs), Path(args.fixtures), scope_rule=not args.control,
+                  last_fiscal_year_rung=not args.control)
     if args.json:
         for row in rows:
             print(json.dumps(row))

@@ -688,10 +688,16 @@ SAME_CONCEPT: dict[str, tuple[tuple[str, ...], ...]] = {
     # PaymentsToAcquirePropertyPlantAndEquipment; Arista's the same way
     "capital_expenditure": (("PaymentsToAcquirePropertyPlantAndEquipment",
                              "PaymentsToAcquireProductiveAssets"),),
-    # InterestExpenseDebt is a scope of its own: Dell's 10-Q puts it on the debt
-    # note's "approximately $0.8 billion" for six months the earlier 10-Q's
-    # income-statement table states as 753 under InterestExpenseNonoperating,
-    # so the two are not one line
+    # InterestExpenseDebt is a scope of its own for every filer: the taxonomy
+    # defines it as interest on debt alone, a component of interest expense (Dell
+    # puts it on its debt note's total interest expense related to outstanding
+    # debt), where the three below name the whole line. Dell's record shows why
+    # its published sum was not like for like on a second count: the 10-Q states
+    # that debt interest to $0.1 billion (decimals of -8: "$0.8 billion for both
+    # the six months ended") and the 10-K its interest expense to the million
+    # (1,560). Precision would be the narrower rule, but companyfacts carries no
+    # decimals, so the calculator cannot read it for the spans of earlier
+    # filings; the scope is the rule (docs/needs_judgment.md, Settled by default).
     "interest_expense": (("InterestExpense", "InterestExpenseNonoperating",
                           "InterestAndDebtExpense"),),
 }
@@ -727,44 +733,53 @@ def read_in_scope(record: Record, term: str, span, scope: str) -> dict:
     return found
 
 
+def like_for_like_pair(record: Record, term: str, parts: dict, spans: dict, names: tuple,
+                       scope: str) -> dict:
+    """`parts` with the spans `names` -- a trailing year's two years to date, which
+    one 10-Q states side by side -- read under one tag of `scope` where their tags
+    differ and one tag carries both, so a filer's rename between its 10-Qs is not
+    differenced. Otherwise `parts` as given."""
+    if not names or len({parts[name].get("tag") for name in names}) <= 1:
+        return parts
+    kind, chain = TERMS[term]
+    shared = next((tag for tag in chain if scope_of(term, tag) == scope
+                   and all(record.usd.get(tag, {}).get(spans[name]) for name in names)), None)
+    if shared is None:
+        return parts
+    parts = dict(parts)
+    for name in names:
+        parts[name] = trends.term_source(record.document, record.usd, term,
+                                         _period(spans[name]), {term: (kind, (shared,))})
+        if "missing" not in parts[name] and term in CASH_FLOW_TERMS:
+            parts[name]["direction"] = direction_of(parts[name]["tag"])
+    return parts
+
+
 def one_scope(record: Record, term: str, parts: dict, spans: dict,
               like_for_like: tuple = ()) -> dict | None:
     """`parts`, each span read by the record's own rule, held to one scope of `term`.
 
     All in one scope: returned as they are, tags within a same-concept group
-    differing or not -- except the two spans `like_for_like` names (a trailing
-    year's two years to date, which one 10-Q states side by side): where their
-    tags differ and one tag of the scope carries both, both are read under it,
-    so a filer's rename between its 10-Qs is not differenced. In two scopes: the
-    first scope (in chain order) with a tag on record in every span is read in
-    every span, so Johnson Controls' operating cash flow a year earlier is 1,568
-    + 1,586 - 216 under continuing operations, not 1,568 + 1,586 - 572 across
-    the total. No scope on record in every span: None, and the caller names the
-    term missing. A cell returned may still be `missing` where a filing states
-    two values, as every read is.
+    differing or not. In two scopes: the first scope (in chain order) with a
+    tag on record in every span is read in every span, so Johnson Controls'
+    operating cash flow a year earlier is 1,568 + 1,586 - 216 under continuing
+    operations, not 1,568 + 1,586 - 572 across the total. In either case the
+    two spans `like_for_like` names are then read under one tag of the scope
+    where one carries both (`like_for_like_pair`). No scope on record in every
+    span: None, and the caller names the term missing. A cell returned may
+    still be `missing` where a filing states two values, as every read is.
     """
     present = {scope_of(term, part.get("tag")) for part in parts.values()}
     kind, chain = TERMS[term]
     order = list(chain) + [TWO_LINE_DEPRECIATION]
     if len(present) == 1:
-        if like_for_like and len({parts[name].get("tag") for name in like_for_like}) > 1:
-            scope, = present
-            shared = next((tag for tag in chain if scope_of(term, tag) == scope
-                           and all(record.usd.get(tag, {}).get(spans[name])
-                                   for name in like_for_like)), None)
-            if shared is not None:
-                parts = dict(parts)
-                for name in like_for_like:
-                    parts[name] = trends.term_source(record.document, record.usd, term,
-                                                     _period(spans[name]), {term: (kind, (shared,))})
-                    if "missing" not in parts[name] and term in CASH_FLOW_TERMS:
-                        parts[name]["direction"] = direction_of(parts[name]["tag"])
-        return parts
+        scope, = present
+        return like_for_like_pair(record, term, parts, spans, like_for_like, scope)
     for scope in sorted(present, key=lambda label: order.index(label) if label in order else len(order)):
         read = {name: read_in_scope(record, term, span, scope) for name, span in spans.items()}
         if all("missing" not in cell or trends.TWO_VALUES in cell["missing"]
                for cell in read.values()):
-            return read
+            return like_for_like_pair(record, term, read, spans, like_for_like, scope)
     return None
 
 
@@ -1090,6 +1105,11 @@ def gather(record: Record, periods: dict) -> dict:
         "cash_flow_families": families,
         "diluted_shares": record.term("diluted_shares", diluted_span),
         "shares_outstanding": record.term("shares_outstanding", now),
+        # a 10-Q's years to date seldom state interest paid and the 10-K's year
+        # does: the cost of debt's ladder reads this rung under the trailing one
+        "interest_paid_last_fiscal_year": (
+            {"missing": "the trailing four quarters are the fiscal year itself"}
+            if periods["annual_trigger"] else record.term("interest_paid", periods["prior_year"])),
     }
 
 
@@ -2526,25 +2546,49 @@ COST_OF_DEBT_QUESTION = ("docs/needs_judgment.md: the pre-tax cost of debt when 
                          "carries no interest expense")
 
 
+# The last-fiscal-year rung is on in every run; like `SCOPE_RULE` it is a name so
+# that `src/calculator_drift.py` can turn it off for a control recomputation.
+LAST_FISCAL_YEAR_RUNG = True
+
+
+def _refused(cell: dict) -> bool:
+    """A term on record that one filing states two values for (trends.TWO_VALUES)."""
+    return "missing" in cell and trends.TWO_VALUES in cell["missing"]
+
+
+def _in_two_scopes(cell: dict) -> bool:
+    """A term on record whose spans fall in two scopes with none in every span
+    (`one_scope`): on record, and not summed."""
+    return "missing" in cell and "different scopes" in cell["missing"]
+
+
 def cost_of_debt_fallback(ttm: dict, debt_now: dict, debt_ago: dict, rf: dict,
-                          why: str) -> dict:
+                          why: str, paid_last_year: dict | None = None) -> dict:
     """The ladder under a missing interest expense over average debt: interest paid
-    over average debt, or else the risk-free rate plus one point, each labelled a
-    fallback. Never silent: the cell says what it stands in for, and the label
-    says which input was missing and how -- interest expense on record but no
-    average debt; interest expense or interest paid on record but refused (one
-    filing's two values for one period, trends.TWO_VALUES); interest paid on
-    record but no average debt; or no fact at all, the only case that says
-    "neither" -- because each is a different fact about the company."""
+    over the trailing four quarters over average debt; interest paid over the last
+    fiscal year, where a 10-Q's years to date do not state it and the 10-K's year
+    does; or else the risk-free rate plus one point; each labelled a fallback.
+    Never silent: the cell says what it stands in for, and the label says how each
+    input stood -- interest expense on record but no average debt; interest
+    expense or interest paid on record but refused (one filing's two values for
+    one period, trends.TWO_VALUES); interest expense on record but in two scopes
+    with none in every span; interest paid on record but no average debt; or no
+    fact at all, the only case that says "neither" -- because each is a different
+    fact about the company."""
     expense = ttm.get("interest_expense") or {"missing": "interest_expense is not gathered"}
     paid = ttm.get("interest_paid") or {"missing": "interest_paid is not gathered"}
-    # A refused term -- one filing's two values for one period -- is on record,
-    # and the label says so before the ladder steps down from it.
-    expense_refused = "missing" in expense and trends.TWO_VALUES in expense["missing"]
-    paid_refused = "missing" in paid and trends.TWO_VALUES in paid["missing"]
+    # A refused term -- one filing's two values for one period -- and a term in
+    # two scopes are on record, and the label says so before the ladder steps
+    # down from it.
+    expense_refused, paid_refused = _refused(expense), _refused(paid)
+    expense_on_record = expense_refused or _in_two_scopes(expense)
     expense_words = (f"interest expense is on record but refused: {expense['missing']}"
                      if expense_refused else
+                     f"interest expense is on record but its spans fall in two scopes: "
+                     f"{expense['missing']}" if _in_two_scopes(expense) else
                      f"interest expense, which is not on record: {why}")
+    last_year = paid_last_year if (LAST_FISCAL_YEAR_RUNG and paid_last_year
+                                   and "missing" not in paid_last_year) else None
     if "missing" not in expense:
         because = f"interest expense is on record but average debt is missing/zero: {why}"
     elif "missing" not in paid:
@@ -2557,12 +2601,26 @@ def cost_of_debt_fallback(ttm: dict, debt_now: dict, debt_ago: dict, rf: dict,
             return cell
         because = ("interest paid is on record but average debt is missing/zero, so the "
                    f"cost of debt is the risk-free rate plus one point: {cell['missing']}")
-        if expense_refused:
+        if expense_on_record:
             because = f"{expense_words}; {because}"
-    elif paid_refused or expense_refused:
+    elif last_year is not None:
+        cell = measure("interest_paid_last_fiscal_year / average debt",
+                       {"interest_paid_last_fiscal_year": last_year,
+                        "average_debt": average(debt_now, debt_ago)},
+                       lambda v: v["interest_paid_last_fiscal_year"] / v["average_debt"],
+                       denominator="average_debt")
+        if "missing" not in cell:
+            cell["fallback"] = (f"interest paid in cash over the last fiscal year "
+                                f"({last_year.get('period')}), which the years to date do not "
+                                f"state, in place of {expense_words}")
+            return cell
+        because = (f"{expense_words}; interest paid is on record for the last fiscal year but "
+                   f"average debt is missing/zero, so the cost of debt is the risk-free rate "
+                   f"plus one point: {cell['missing']}")
+    elif paid_refused or expense_on_record:
         paid_words = (f"interest paid is on record but refused: {paid['missing']}"
                       if paid_refused else f"interest paid is not on record: {paid['missing']}")
-        because = f"{expense_words}; {paid_words}" if expense_refused else paid_words
+        because = f"{expense_words}; {paid_words}" if expense_on_record else paid_words
     else:
         because = f"neither interest expense nor interest paid is on record: {why}"
     if "missing" in rf:
@@ -2588,7 +2646,8 @@ def cost_of_capital(terms: dict, sections: dict, market_data: dict, cutoff: dt.d
 
     if "missing" in debt_now:
         cost_of_debt = cost_of_debt_fallback(ttm, debt_now, debt_ago, rf,
-                                             f"average_debt: {debt_now['missing']}")
+                                             f"average_debt: {debt_now['missing']}",
+                                             terms.get("interest_paid_last_fiscal_year"))
     elif debt_now["value"] == 0 and ("missing" in debt_ago or debt_ago["value"] == 0):
         cost_of_debt = {"value": 0.0, "note": "no debt on the balance sheet, so it carries no weight"}
     else:
@@ -2600,7 +2659,8 @@ def cost_of_capital(terms: dict, sections: dict, market_data: dict, cutoff: dt.d
                                denominator="average_debt")
         if "missing" in cost_of_debt:
             cost_of_debt = cost_of_debt_fallback(ttm, debt_now, debt_ago, rf,
-                                                 cost_of_debt["missing"])
+                                                 cost_of_debt["missing"],
+                                                 terms.get("interest_paid_last_fiscal_year"))
     if "pre_tax_cost_of_debt" in overrides:
         chosen = overrides["pre_tax_cost_of_debt"]
         if isinstance(chosen.get("value"), (int, float)) and chosen.get("quote"):
