@@ -30,6 +30,7 @@ from src import calculator, calculator_drift as drift
 from tests import companyfacts_source as source
 
 MILLION = 1_000_000
+RUNS, STORE = source.FIXTURES.parent.parent / "runs", source.FIXTURES
 FILINGS_ONLY, FINAL = calculator.FILINGS_ONLY, "calculator.json"
 JCI = "JCI/0000833444-26-000087"
 DELL = "DELL/0001571996-26-000046"
@@ -49,19 +50,19 @@ def keyed(rows: list[dict]) -> dict:
 
 @pytest.fixture(scope="module")
 def listed() -> dict:
-    rows = drift.report()
+    rows = drift.report(RUNS, STORE)
     assert (calculator.SCOPE_RULE, calculator.LAST_FISCAL_YEAR_RUNG) == (True, True)
     return keyed(rows)
 
 
 @pytest.fixture(scope="module")
 def without_the_scope_rule() -> dict:
-    return keyed(drift.report(scope_rule=False))
+    return keyed(drift.report(RUNS, STORE, scope_rule=False))
 
 
 @pytest.fixture(scope="module")
 def baseline() -> dict:
-    rows = drift.report(scope_rule=False, last_fiscal_year_rung=False)
+    rows = drift.report(RUNS, STORE, scope_rule=False, last_fiscal_year_rung=False)
     assert (calculator.SCOPE_RULE, calculator.LAST_FISCAL_YEAR_RUNG) == (True, True)
     return keyed(rows)
 
@@ -76,7 +77,7 @@ def source_row(run: str, tag: str, period: str) -> float:
         values = {row["val"] for row in standing}
     else:
         start, _, end = period.rpartition("..")
-        facts = json.loads((drift.RUNS / run / "input_numbers.json").read_text(encoding="utf-8"))
+        facts = json.loads((RUNS / run / "input_numbers.json").read_text(encoding="utf-8"))
 
         def at(context: dict) -> bool:
             return (context.get("start") == start and context.get("end") == end) if start \
@@ -101,10 +102,10 @@ def close(old, new) -> tuple:
 
 
 def test_it_runs_on_every_committed_run_and_reruns_are_among_them():
-    runs = drift.committed_runs()
-    assert len(runs) == len(list(drift.RUNS.glob("*/*/input_manifest.json"))) >= 12
+    runs = drift.committed_runs(RUNS)
+    assert len(runs) == len(list(RUNS.glob("*/*/input_manifest.json"))) >= 12
     assert any("rerun" in run.name for run in runs)
-    named = drift.trigger(drift.RUNS / "JCI" / "0000833444-26-000087")
+    named = drift.trigger(RUNS / "JCI" / "0000833444-26-000087")
     assert named == {"ticker": "JCI", "cutoff": "2026-07-29", "period_end": "2026-06-30",
                      "form": "10-Q", "accession": "0000833444-26-000087"}
 
@@ -127,7 +128,7 @@ def test_the_baseline_is_two_runs_written_before_the_cost_of_debt_had_a_fallback
         "valuation.risk_free_rate_cap_on_terminal_growth", "valuation.tax_rate", "valuation.wacc"}
     assert {path for run, _, path in baseline if run == CARR} == {
         "cost_of_capital.pre_tax_cost_of_debt.computed.value"}
-    published = json.loads((drift.RUNS / AAPL / FINAL).read_text(encoding="utf-8"))
+    published = json.loads((RUNS / AAPL / FINAL).read_text(encoding="utf-8"))
     assert "fallback" not in published["cost_of_capital"]["pre_tax_cost_of_debt"]
     assert published["cost_of_capital"]["pre_tax_cost_of_debt"]["missing"].startswith(
         "interest_expense:")
@@ -190,7 +191,7 @@ def test_the_rung_moves_the_runs_published_as_neither_on_record(without_the_scop
         (CARR, FINAL, f"{cell}.computed.value"): close(None, carrier_paid / carrier_debt),
     }
     for run, rate in ((JCI, 0.0567), (CARR_RERUN, 0.0561)):
-        published = json.loads((drift.RUNS / run / FINAL).read_text(encoding="utf-8"))
+        published = json.loads((RUNS / run / FINAL).read_text(encoding="utf-8"))
         assert published["cost_of_capital"]["pre_tax_cost_of_debt"]["value"] == pytest.approx(rate)
         assert "neither interest expense nor interest paid is on record" in \
             published["cost_of_capital"]["pre_tax_cost_of_debt"]["fallback"]

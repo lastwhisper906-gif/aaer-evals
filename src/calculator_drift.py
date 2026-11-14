@@ -12,7 +12,10 @@ the fixture store, as `src/run_analysis.py` computed them, and prints every
 numeric leaf whose value changed, old and new, by run, file and path. It writes
 nothing under `runs/`.
 
-    .venv/bin/python -m src.calculator_drift [--runs runs] [--fixtures tests/fixtures]
+    .venv/bin/python -m src.calculator_drift [--root runs] [--store tests/fixtures]
+
+It opens no filing and no fixture itself: the record is read by the calculator,
+through the cutoff gate, and a run's manifest through the gate's bundle reader.
 
 The price and beta a run read are in its published `calculator.json` under
 `market`, exactly as `calculator.market_inputs` returned them, and are handed
@@ -33,19 +36,18 @@ from pathlib import Path
 
 from src import calculator, cutoff_guard
 
-RUNS = cutoff_guard.REPO_ROOT / "runs"
+FINAL = "calculator.json"
 
 
-def committed_runs(root: Path = RUNS) -> list[Path]:
-    """Every run directory under `root` that holds a manifest and the filings-only view."""
-    return sorted(manifest.parent for manifest in root.glob("*/*/input_manifest.json")
-                  if (manifest.parent / calculator.FILINGS_ONLY).is_file())
+def committed_runs(root: Path) -> list[Path]:
+    """Every run directory under `root` that holds the published filings-only view."""
+    return sorted(path.parent for path in root.glob(f"*/*/{calculator.FILINGS_ONLY}"))
 
 
 def trigger(run: Path) -> dict:
     """The triggering filing of a run, from its own manifest: a rerun's directory
     name is not its accession, so the manifest's `accession` names it."""
-    manifest = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
+    manifest = json.loads(cutoff_guard.load_bundle_file(run, "input_manifest.json"))
     accession = manifest["accession"]
     form, report_date = next((document["form"], document["report_date"])
                              for document in manifest["documents"]
@@ -54,29 +56,27 @@ def trigger(run: Path) -> dict:
             "form": form, "accession": accession}
 
 
-FINAL = "calculator.json"
-
-
 def _written(run: Path, name: str) -> dict | None:
+    """A file the run itself wrote -- a calculator stage, an analyst's checked
+    output -- or None where it wrote none."""
     path = run / name
     return json.loads(path.read_text(encoding="utf-8")) if path.is_file() else None
 
 
-def recompute(run: Path, fixtures_root: Path = cutoff_guard.FIXTURES) -> dict:
+def recompute(run: Path, store: Path) -> dict:
     """The filings-only view of one run, from its bundle and the store, as today's
     calculator prints it."""
     named = trigger(run)
-    return calculator.filings_only(calculator.calculate(
-        **named, fixtures_root=fixtures_root, bundle=run))
+    return calculator.filings_only(calculator.calculate(**named, fixtures_root=store, bundle=run))
 
 
-def recompute_final(run: Path, fixtures_root: Path = cutoff_guard.FIXTURES) -> dict:
+def recompute_final(run: Path, store: Path) -> dict:
     """The run's `calculator.json` as today's calculator prints it: the accounting
     analyst's adjustments, the valuation analyst's assumptions and the market
     data (price and beta) are the run's own, read from its published files."""
     named = trigger(run)
     published = _written(run, FINAL) or {}
-    return calculator.calculate(**named, fixtures_root=fixtures_root, bundle=run,
+    return calculator.calculate(**named, fixtures_root=store, bundle=run,
                                 market_data=published.get("market"),
                                 accounting=_written(run, "analysis_accounting.json"),
                                 assumptions=_written(run, "assumptions.json"))
@@ -134,7 +134,7 @@ def changed_leaves(old: dict, new: dict) -> list[dict]:
     return sorted(out, key=lambda row: row["path"])
 
 
-def drift(run: Path, fixtures_root: Path = cutoff_guard.FIXTURES) -> list[dict]:
+def drift(run: Path, store: Path) -> list[dict]:
     """The changed leaves of one run, in its filings-only view and in its
     calculator.json, each with the run's name and the file."""
     name = f"{run.parent.name}/{run.name}"
@@ -144,12 +144,12 @@ def drift(run: Path, fixtures_root: Path = cutoff_guard.FIXTURES) -> list[dict]:
         if published is None:
             continue
         rows.extend({"run": name, "file": file, **row}
-                    for row in changed_leaves(published, fresh(run, fixtures_root)))
+                    for row in changed_leaves(published, fresh(run, store)))
     return rows
 
 
-def report(root: Path = RUNS, fixtures_root: Path = cutoff_guard.FIXTURES, *,
-           scope_rule: bool = True, last_fiscal_year_rung: bool = True) -> list[dict]:
+def report(root: Path, store: Path, *, scope_rule: bool = True,
+           last_fiscal_year_rung: bool = True) -> list[dict]:
     """Every run's changed leaves. With `scope_rule=False` the calculator's scope
     rule for a trailing year and a quarter is off, and with
     `last_fiscal_year_rung=False` the cost of debt's last-fiscal-year rung is: the
@@ -160,7 +160,7 @@ def report(root: Path = RUNS, fixtures_root: Path = cutoff_guard.FIXTURES, *,
     try:
         rows = []
         for run in committed_runs(root):
-            rows.extend(drift(run, fixtures_root))
+            rows.extend(drift(run, store))
     finally:
         calculator.SCOPE_RULE, calculator.LAST_FISCAL_YEAR_RUNG = was
     return rows
@@ -191,14 +191,15 @@ def printed(rows: list[dict]) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--runs", default=str(RUNS))
-    parser.add_argument("--fixtures", default=str(cutoff_guard.FIXTURES))
+    parser.add_argument("--root", default="runs", help="a directory of <ticker>/<accession> runs")
+    parser.add_argument("--store", default=str(cutoff_guard.FIXTURES))
     parser.add_argument("--json", action="store_true", help="print the rows as JSON lines")
     parser.add_argument("--control", action="store_true",
                         help="recompute with the scope rule and the last-fiscal-year rung off: "
                              "what moves for any other reason")
     args = parser.parse_args(argv)
-    rows = report(Path(args.runs), Path(args.fixtures), scope_rule=not args.control,
+    root, store = Path(args.root), Path(args.store)
+    rows = report(root, store, scope_rule=not args.control,
                   last_fiscal_year_rung=not args.control)
     if args.json:
         for row in rows:
