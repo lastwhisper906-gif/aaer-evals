@@ -113,8 +113,10 @@ accrual measures, kept apart and never compared level for level:
 balance-sheet changes), `quarterly_cash_flow_and_accruals.cash_flow_accruals`
 (Hribar and Collins, income less operating cash flow) and
 `quarterly_cash_flow_and_accruals.free_cash_flow_accruals` (the SEC model, in
-dollars); a wide gap between the first two points to acquisitions or
-disposals. Operating cash flow by quarter runs from
+dollars). The first less the second is
+`quarterly_cash_flow_and_accruals.balance_sheet_less_cash_flow_accruals`, worked
+by Python: far from zero, it points to acquisitions or disposals. Operating
+cash flow by quarter runs from
 `quarterly_cash_flow_and_accruals.operating_cash_flow_quarterly.history.0`, the
 newest, to
 `quarterly_cash_flow_and_accruals.operating_cash_flow_quarterly.history.7`.

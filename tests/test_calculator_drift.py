@@ -10,7 +10,7 @@ every committed run from its own bundle, market data and analysts' files:
   differently before it (two runs written before the cost of debt had a fallback);
 - with the cost of debt's last-fiscal-year rung on: the runs whose published cost of
   debt was "the risk-free rate plus one point, because neither interest expense nor
-  interest paid is on record" while interest paid was on record for the fiscal year;
+  interest paid is on record" while the 10-K states interest for the fiscal year;
 - with the scope rule on as well: Johnson Controls' operating cash flow and Dell's
   interest expense.
 
@@ -136,45 +136,54 @@ def test_the_baseline_is_two_runs_written_before_the_cost_of_debt_had_a_fallback
 
 # --- the last-fiscal-year rung of the cost of debt ---------------------------------------------
 
-def average_debt(run: str, now: list, a_year_earlier: list) -> float:
-    """The average of total debt now and a year earlier, each the sum of its lines."""
-    return (sum(source_row(run, tag, date) for tag, date in now)
-            + sum(source_row(run, tag, date) for tag, date in a_year_earlier)) / 2
+def debt_at(run: str, lines: list) -> float:
+    """Total debt at one date, the sum of its lines, in millions."""
+    return sum(source_row(run, tag, date) for tag, date in lines)
 
 
 def test_the_rung_moves_the_runs_published_as_neither_on_record(without_the_scope_rule, baseline):
     """Johnson Controls and Carrier (its rerun, and the fallback beside its first run's
     chosen figure) were published at the risk-free rate plus one point, "because
     neither interest expense nor interest paid is on record", while each 10-K states
-    interest paid for the fiscal year. In millions:
+    interest for the fiscal year. The rung reads that year's interest expense, else
+    its interest paid, over the average of debt at that same year's start and end.
+    In millions:
 
-      Johnson Controls   321 paid in fiscal 2025; debt 311 + 865 + 8,299 = 9,475 at
-                         2026-06-30 and 570 + 1,277 + 8,446 = 10,293 a year earlier;
-                         321 / 9,884 = 0.032477, where 0.0567 was published
-      Carrier            422 paid in 2025; debt 1,638 + 10,314 = 11,952 at 2026-06-30
-                         and 107 + 11,336 = 11,443 a year earlier; 422 / 11,697.5 =
-                         0.036076, where 0.0561 was published (its 10-Q's own words,
-                         which the valuation analyst quoted: "an approximate
-                         weighted-average interest rate of 3.65%")
+      Johnson Controls   no interest expense tagged for fiscal 2025; 321 paid in it;
+                         debt 566 + 723 + 8,591 = 9,880 at 2025-09-30 and 536 + 953 +
+                         8,004 = 9,493 at 2024-09-30; 321 / 9,686.5 = 0.033139,
+                         where 0.0567 was published
+      Carrier            interest expense 458 for 2025 (InterestExpenseDebt, the one
+                         interest tag its 10-K carries for the year); debt 468 +
+                         11,365 = 11,833 at 2025-12-31 and 1,336 + 11,026 = 12,362
+                         at 2024-12-31; 458 / 12,097.5 = 0.037859, where 0.0561 was
+                         published
     """
-    jci_debt = average_debt(
-        JCI, [("LongTermDebtAndCapitalLeaseObligationsCurrent", "2026-06-30"),
-              ("ShortTermBorrowings", "2026-06-30"),
-              ("LongTermDebtAndCapitalLeaseObligations", "2026-06-30")],
-        [("LongTermDebtAndCapitalLeaseObligationsCurrent", "2025-06-30"),
-         ("ShortTermBorrowings", "2025-06-30"),
-         ("LongTermDebtAndCapitalLeaseObligations", "2025-06-30")])
-    assert jci_debt == (9_475 + 10_293) / 2 == 9_884
+    current, borrowings, long_term = ("LongTermDebtAndCapitalLeaseObligationsCurrent",
+                                      "ShortTermBorrowings", "LongTermDebtAndCapitalLeaseObligations")
+    jci_end = debt_at(JCI, [(current, "2025-09-30"), (borrowings, "2025-09-30"),
+                            (long_term, "2025-09-30")])
+    jci_start = debt_at(JCI, [(current, "2024-09-30"), (borrowings, "2024-09-30"),
+                              (long_term, "2024-09-30")])
+    assert (jci_end, jci_start) == (9_880, 9_493)
+    for tag in ("InterestExpense", "InterestExpenseNonoperating", "InterestExpenseDebt",
+                "InterestAndDebtExpense"):
+        assert source.reported("JCI", tag, "2024-10-01..2025-09-30", CUTOFFS[JCI]) == []
     jci_paid = source_row(JCI, "InterestPaidNet", "2024-10-01..2025-09-30")
     assert jci_paid == 321
-    carrier_debt = average_debt(
-        CARR, [("DebtCurrent", "2026-06-30"), ("LongTermDebtAndCapitalLeaseObligations", "2026-06-30")],
-        [("LongTermDebtCurrent", "2025-06-30"), ("LongTermDebtAndCapitalLeaseObligations", "2025-06-30")])
-    assert carrier_debt == (11_952 + 11_443) / 2 == 11_697.5
-    carrier_paid = source_row(CARR, "InterestPaidNet", "2025-01-01..2025-12-31")
-    assert carrier_paid == 422
-    assert jci_paid / jci_debt == pytest.approx(0.032477, abs=5e-7)
-    assert carrier_paid / carrier_debt == pytest.approx(0.036076, abs=5e-7)
+    jci = jci_paid / ((jci_end + jci_start) / 2)
+    assert (jci_end + jci_start) / 2 == 9_686.5 and jci == pytest.approx(0.033139, abs=5e-7)
+
+    carrier_end = debt_at(CARR, [("DebtCurrent", "2025-12-31"), (long_term, "2025-12-31")])
+    carrier_start = debt_at(CARR, [("DebtCurrent", "2024-12-31"), (long_term, "2024-12-31")])
+    assert (carrier_end, carrier_start) == (11_833, 12_362)
+    for tag in ("InterestExpense", "InterestExpenseNonoperating"):
+        assert source.reported("CARR", tag, "2025-01-01..2025-12-31", CUTOFFS[CARR]) == []
+    carrier_expense = source_row(CARR, "InterestExpenseDebt", "2025-01-01..2025-12-31")
+    assert carrier_expense == 458
+    carrier = carrier_expense / ((carrier_end + carrier_start) / 2)
+    assert (carrier_end + carrier_start) / 2 == 12_097.5
+    assert carrier == pytest.approx(0.037859, abs=5e-7)
 
     moved = {key: value for key, value in without_the_scope_rule.items()
              if baseline.get(key) != value}
@@ -186,9 +195,9 @@ def test_the_rung_moves_the_runs_published_as_neither_on_record(without_the_scop
                 (run, FINAL, f"{cell}.parts.risk_free_rate.value"): close(published - 0.01, None),
                 (run, FINAL, f"{cell}.parts.spread.value"): close(0.01, None)}
     assert moved == {
-        **rung(JCI, 0.0567, jci_paid / jci_debt),
-        **rung(CARR_RERUN, 0.0561, carrier_paid / carrier_debt),
-        (CARR, FINAL, f"{cell}.computed.value"): close(None, carrier_paid / carrier_debt),
+        **rung(JCI, 0.0567, jci),
+        **rung(CARR_RERUN, 0.0561, carrier),
+        (CARR, FINAL, f"{cell}.computed.value"): close(None, carrier),
     }
     for run, rate in ((JCI, 0.0567), (CARR_RERUN, 0.0561)):
         published = json.loads((RUNS / run / FINAL).read_text(encoding="utf-8"))
@@ -317,9 +326,11 @@ def test_dell_moves_as_worked_by_hand(listed, without_the_scope_rule):
 
       interest coverage   EBIT 8,149 + 9,041 - 2,938 = 14,252 over 1,607 = 8.8687,
                           now missing
-      cost of debt        1,607 over average debt (8,481 + 25,985 + 7,154 + 21,535)
-                          / 2 = 31,577.5, 0.050891; now interest paid in fiscal
-                          2026, 1,354 / 31,577.5 = 0.042879, the ladder's next rung
+      cost of debt        1,607 over the trailing average debt (8,481 + 25,985 +
+                          7,154 + 21,535) / 2 = 31,577.5, 0.050891; now the last
+                          fiscal year's own interest expense over that year's own
+                          debt, 1,560 / ((7,990 + 23,513 + 5,204 + 19,363) / 2) =
+                          1,560 / 28,035 = 0.055645
     """
     def row(tag: str, period: str) -> float:
         return source_row(DELL, tag, period)
@@ -333,13 +344,16 @@ def test_dell_moves_as_worked_by_hand(listed, without_the_scope_rule):
     assert ebit == (8_149, 9_041, 2_938)
     published_ebit = ebit[0] + ebit[1] - ebit[2]
     assert (published_interest, published_ebit) == (1_607, 14_252)
-    debt = (row("DebtCurrent", "2026-07-31") + row("LongTermDebtNoncurrent", "2026-07-31")
-            + row("DebtCurrent", "2025-08-01") + row("LongTermDebtNoncurrent", "2025-08-01")) / 2
-    assert debt == (8_481 + 25_985 + 7_154 + 21_535) / 2 == 31_577.5
-    paid = row("InterestPaidNet", year)
-    assert paid == 1_354
-    assert published_interest / debt == pytest.approx(0.050891, abs=5e-7)
-    assert paid / debt == pytest.approx(0.042879, abs=5e-7)
+    now = (row("DebtCurrent", "2026-07-31"), row("LongTermDebtNoncurrent", "2026-07-31"))
+    ago = (row("DebtCurrent", "2025-08-01"), row("LongTermDebtNoncurrent", "2025-08-01"))
+    assert (now, ago) == ((8_481, 25_985), (7_154, 21_535))
+    trailing_debt = (sum(now) + sum(ago)) / 2
+    assert trailing_debt == 31_577.5
+    year_debt = (row("DebtCurrent", "2026-01-30") + row("LongTermDebtNoncurrent", "2026-01-30")
+                 + row("DebtCurrent", "2025-01-31") + row("LongTermDebtNoncurrent", "2025-01-31")) / 2
+    assert year_debt == (7_990 + 23_513 + 5_204 + 19_363) / 2 == 28_035
+    assert published_interest / trailing_debt == pytest.approx(0.050891, abs=5e-7)
+    assert interest[0] / year_debt == pytest.approx(0.055645, abs=5e-7)
 
     def trailing_cell(prefix: str, parts: tuple, total: float) -> dict:
         names = ("prior_fiscal_year", "this_year_to_date", "prior_year_to_date")
@@ -353,16 +367,32 @@ def test_dell_moves_as_worked_by_hand(listed, without_the_scope_rule):
         **trailing_cell("ratios.solvency.interest_coverage.inputs.ebit", ebit, published_ebit),
         "ratios.solvency.interest_coverage.value": close(published_ebit / published_interest, None),
     }
+    debt_cell = "cost_of_capital.pre_tax_cost_of_debt.inputs.average_debt"
+
+    def balance(prefix: str, lines: tuple) -> dict:
+        current, noncurrent = lines
+        return {f"{prefix}.value": ((current + noncurrent) * MILLION, None),
+                f"{prefix}.lines.0.value": (current * MILLION, None),
+                f"{prefix}.lines.1.value": (noncurrent * MILLION, None),
+                f"{prefix}.parts.debt_current.value": (current * MILLION, None),
+                f"{prefix}.parts.debt_current.lines.0.value": (current * MILLION, None),
+                f"{prefix}.parts.debt_noncurrent.value": (noncurrent * MILLION, None),
+                f"{prefix}.parts.debt_noncurrent.lines.0.value": (noncurrent * MILLION, None)}
     cost_of_debt = {
         **trailing_cell("cost_of_capital.pre_tax_cost_of_debt.inputs.interest_expense", interest,
                         published_interest),
-        "cost_of_capital.pre_tax_cost_of_debt.value": close(published_interest / debt, paid / debt),
-        "wacc_components.rows.4.value": close(published_interest / debt, paid / debt),
+        f"{debt_cell}.value": (trailing_debt * MILLION, None),
+        **balance(f"{debt_cell}.parts.now", now),
+        **balance(f"{debt_cell}.parts.a_year_earlier", ago),
+        "cost_of_capital.pre_tax_cost_of_debt.value": close(published_interest / trailing_debt,
+                                                            interest[0] / year_debt),
+        "wacc_components.rows.4.value": close(published_interest / trailing_debt,
+                                              interest[0] / year_debt),
     }
     assert scope_rows(listed, without_the_scope_rule, DELL) == {
         **{(file, path): value for file in (FILINGS_ONLY, FINAL) for path, value in both_files.items()},
         **{(FINAL, path): value for path, value in cost_of_debt.items()}}
-    assert len(scope_rows(listed, without_the_scope_rule, DELL)) == 13 + 13 + 6
+    assert len(scope_rows(listed, without_the_scope_rule, DELL)) == 13 + 13 + 21
 
 
 # --- the tool's own parts -------------------------------------------------------------------------
