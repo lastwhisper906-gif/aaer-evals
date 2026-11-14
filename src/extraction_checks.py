@@ -385,7 +385,13 @@ def check_cutoff(manifest: dict | None, texts: dict | None = None) -> Result:
                         f"cannot be shown to be inside the cutoff")
             continue
         # A comment letter is filed in private and made public later; the day it
-        # was made public is the one the cutoff holds it to (`cutoff_guard`).
+        # was made public is the one the cutoff holds it to (`cutoff_guard`), and
+        # a letter's row that records no such day is refused as the gate refuses
+        # it: its filing date is not a day anyone could read it.
+        if row.get("released") is None and row.get("form") in cutoff_guard.RELEASED_LATER_FORMS:
+            result.fail(f"{named} is a {row.get('form')} with no release on record — "
+                        f"refused, its filing date is the day it was filed in private")
+            continue
         if row.get("released") is not None:
             try:
                 public = _date(row.get("released"), named)

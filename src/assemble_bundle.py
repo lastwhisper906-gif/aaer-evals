@@ -197,9 +197,15 @@ def documents_on_record(ticker: str, cutoff, fixtures_root) -> list[dict]:
     """Every fixture document filed at or before the cutoff, as the record has
     it. A document filed later is not in the bundle and not in the manifest, and
     neither is a comment letter filed in private before it and made public on
-    or after it: at the cutoff it was on nobody's record but the SEC's."""
+    or after it: at the cutoff it was on nobody's record but the SEC's. A
+    letter's row with no release on record is refused, as the gate refuses a
+    read of it: an absent release is not an early one."""
     rows = []
     for row in cutoff_guard.documents(ticker, fixtures_root=fixtures_root):
+        if row.get("form") in cutoff_guard.RELEASED_LATER_FORMS and not row.get("released"):
+            raise cutoff_guard.CutoffGuardError(
+                f"{ticker} {row['path']} is a {row.get('form')} with no release on record "
+                "— refused, because its filing date is the day it was filed in private")
         if row["filing_date"] <= str(cutoff) and str(row.get("released") or "") < str(cutoff):
             rows.append(with_release(with_stamp(
                 {"form": row["form"], "role": row["role"],

@@ -1401,6 +1401,46 @@ def test_the_note_table_paragraph_tells_both_analysts_what_a_change_is():
     assert "never subtract" in note_tables.WHAT_THIS_IS
 
 
+def test_the_event_filings_paragraph_tells_the_notes_reader_what_the_section_shows():
+    """The paragraph the notes reader reads says what `src/parse_8k.py` writes at
+    the end of `input_8k.md` and what the absence of it shows: the area for an
+    auditor change, a late filing and a comment letter; a heading-only line is
+    no finding; and a file without the section shows nothing about the company,
+    since a store fetched without event filings gives the same file as a quarter
+    that had none."""
+    from src import fetch_fixtures, parse_8k
+
+    text = (REPO / ".claude" / "agents" / "notes-text-reader.md").read_text(encoding="utf-8")
+    paragraph = text[text.index("**The event filings at the end of `input_8k.md`.**"):]
+    paragraph = " ".join(paragraph[:paragraph.index("\n\n")].split())
+    assert ("Area `controls_audit_and_filings` for auditor changes, late filings and "
+            "comment letters") in paragraph
+    # the area is one the quote gate accepts in an item id (rules/pilot/areas.json)
+    areas = json.loads((REPO / "rules" / "pilot" / "areas.json").read_text(encoding="utf-8"))
+    assert areas["controls_audit_and_filings"] == "Controls, audit and filings"
+    assert ("A heading that says the store holds no text of a filing, or that a letter is "
+            "a PDF with no text copy, is not a finding and carries no paragraph id"
+            ) in paragraph
+    assert 'write at most "none in this file" and never that the company filed none' \
+        in paragraph
+    assert "from a store that was fetched without them" in paragraph
+    assert "carries no event filing" not in paragraph
+    assert "you report none" not in paragraph
+    # the paragraph names the section by the words the code opens it with, and
+    # the lookback it states is the one the code fetches by
+    events = {"state": "another_filing", "cutoff": "2026-08-05",
+              "previous": {"form": "10-Q", "accession": "0000002488-26-000076",
+                           "filing_date": "2026-05-06", "items": []},
+              "letter_lookback_years": fetch_fixtures.LETTER_LOOKBACK_YEARS,
+              "carried": [], "listed": [], "not_carried": []}
+    opening = next(line for line in parse_8k.render_event_filings(events)
+                   if line.startswith("## "))
+    assert opening.startswith("## event filings made public after")
+    assert 'opens "event filings made public after"' in paragraph
+    assert fetch_fixtures.LETTER_LOOKBACK_YEARS == 2
+    assert "within the two years before the window opened" in paragraph
+
+
 def test_a_run_whose_note_tables_cannot_be_read_says_so_where_the_run_is_checked(tmp_path):
     """No `input_notes.md` in the bundle: the reason is in the section and in the
     file's own `missing` list, which the analyst's view keeps."""

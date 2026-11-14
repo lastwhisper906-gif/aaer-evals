@@ -287,3 +287,184 @@ def test_a_store_holding_a_letter_not_yet_public_at_the_trigger_is_refused(tmp_p
     found = fetch_fixtures.held_to_the_trigger(root, TICKER, trigger, known)
     assert any(STAFF in line and "made public 2024-12-04" in line for line in found)
     assert any(SHELF in line and "did not stand" in line for line in found)
+
+
+# --- the edges of each rule, one test per clause -----------------------------
+#
+# Each test below plants the one row or the one header that sits on a rule's
+# boundary: a release on the cutoff's own day, a letter filed on the lookback
+# floor's own day, a row with no release at all.
+
+def set_release(root, accession, released):
+    """Rewrite the store's rows of one letter: `released` set, or removed for None."""
+    path = root / TICKER / "manifest.json"
+    manifest = json.loads(path.read_text())
+    for entry in manifest["documents"]:
+        if entry["accession"] == accession and entry["role"] in ("staff_letter",
+                                                                 "company_response"):
+            if released is None:
+                entry.pop("released", None)
+            else:
+                entry["released"] = released
+    path.write_text(json.dumps(manifest, indent=2) + "\n")
+
+
+def test_the_bundles_record_keeps_a_letter_from_the_day_after_its_release(tmp_path):
+    """The staff letter was filed 2024-09-26 and made public 2024-12-04: a bundle
+    whose cutoff is the release day does not list it, one a day later does."""
+    from src import assemble_bundle
+    root, _, _ = fetched(tmp_path, TICKER, ANNUAL)
+    on_the_day = assemble_bundle.documents_on_record(TICKER, "2024-12-04", root)
+    assert STAFF not in {entry["accession"] for entry in on_the_day}
+    assert not [entry for entry in on_the_day
+                if entry["role"] in ("staff_letter", "company_response")]
+    after = assemble_bundle.documents_on_record(TICKER, "2024-12-05", root)
+    assert {entry["accession"] for entry in after
+            if entry["role"] in ("staff_letter", "company_response")} == set(FIRST_CONVERSATION)
+    [letter] = [entry for entry in after if entry["accession"] == STAFF]
+    assert (letter["filing_date"], letter["released"]) == ("2024-09-26", "2024-12-04")
+
+
+def test_the_bundles_record_refuses_a_letter_with_no_release(tmp_path):
+    """An absent release is not an early one: the row is refused, not listed."""
+    from src import assemble_bundle
+    root, _, _ = fetched(tmp_path, TICKER, ANNUAL)
+    set_release(root, STAFF, None)
+    with pytest.raises(cutoff_guard.CutoffGuardError, match="UPLOAD with no release on record"):
+        assemble_bundle.documents_on_record(TICKER, "2025-03-03", root)
+
+
+def held_problems(root, accession):
+    """What the store's own check says of the 10-K's store, about one letter."""
+    trigger = event_store.row_of(TICKER, ANNUAL)        # filed 2025-03-03
+    known = frozenset(one["accessionNumber"] for one in fetch_fixtures.known_at(
+        event_store.index_rows(TICKER), trigger))
+    return [line for line in fetch_fixtures.held_to_the_trigger(root, TICKER, trigger, known)
+            if accession in line]
+
+
+def test_the_stores_check_refuses_a_letter_released_on_the_triggers_own_day(tmp_path):
+    """The 10-K was filed 2025-03-03. As fetched the store passes; a letter row
+    saying it was made public that day is named, the day before is not, and a
+    row with no release is named for that."""
+    root, _, _ = fetched(tmp_path, TICKER, ANNUAL)
+    assert held_problems(root, STAFF) == []
+    set_release(root, STAFF, "2025-03-03")
+    [line] = held_problems(root, STAFF)
+    assert "was made public 2025-03-03, not before" in line and ANNUAL in line
+    set_release(root, STAFF, "2025-03-02")
+    assert held_problems(root, STAFF) == []
+    set_release(root, STAFF, None)
+    [line] = held_problems(root, STAFF)
+    assert "is a UPLOAD with no release on record" in line
+
+
+# Two planted staff letters filed 2025-02-03, inside the 10-K's lookback, one
+# made public on the 10-K's own day (2025-03-03) and one the day before. EDGAR
+# is planted to hold each as a PDF only, so no text is asked for.
+ON_THE_DAY = dict(PLANTED_OLD, accessionNumber="0000000000-25-900001", filingDate="2025-02-03",
+                  acceptanceDateTime="2025-02-03T14:00:00.000Z")
+THE_DAY_BEFORE = dict(ON_THE_DAY, accessionNumber="0000000000-25-900002")
+# and one filed on the lookback floor's own day for the 10-Q of 2024-11-12
+ON_THE_FLOOR = dict(PLANTED_OLD, accessionNumber="0000000000-22-900003", filingDate="2022-08-09",
+                    acceptanceDateTime="2022-08-09T14:00:00.000Z")
+
+
+class PlantedLetters(RecordedEdgar):
+    """The record, and for each planted accession a header stamped with its day
+    and a listing that names a PDF alone."""
+
+    def __init__(self, stamps: dict[str, str]) -> None:
+        super().__init__()
+        self.stamps = stamps
+
+    def get(self, url):
+        for accession, stamp in self.stamps.items():
+            if url.endswith(f"{accession}.hdr.sgml"):
+                self.asked.append(url)
+                return f"<SEC-HEADER>{accession}.hdr.sgml : {stamp}\n<PRIVATE-TO-PUBLIC>\n".encode()
+            if url.endswith(f"{accession}-index-headers.html"):
+                self.asked.append(url)
+                return b"<TYPE>LETTER\n<SEQUENCE>1\n<FILENAME>filename1.pdf\n"
+        return super().get(url)
+
+
+def test_the_fetch_keeps_no_release_of_a_letter_made_public_on_the_triggers_own_day(tmp_path):
+    edgar = PlantedLetters({ON_THE_DAY["accessionNumber"]: "20250303",
+                            THE_DAY_BEFORE["accessionNumber"]: "20250302"})
+    root, problems, _ = fetched(tmp_path, TICKER, ANNUAL, edgar=edgar,
+                                extra_rows=[ON_THE_DAY, THE_DAY_BEFORE])
+    assert problems == []
+    releases = fetch_fixtures.load_manifest(root / TICKER)["event_filings"]["releases"]
+    assert ON_THE_DAY["accessionNumber"] not in releases
+    assert releases[THE_DAY_BEFORE["accessionNumber"]]["released"] == "2025-03-02"
+    # the header of each was read; only the one public in time had its listing read
+    asked = [url.rsplit("/", 1)[1] for url in edgar.asked]
+    assert f"{ON_THE_DAY['accessionNumber']}.hdr.sgml" in asked
+    assert f"{ON_THE_DAY['accessionNumber']}-index-headers.html" not in asked
+    assert f"{THE_DAY_BEFORE['accessionNumber']}-index-headers.html" in asked
+    events, text = section(root, TICKER, ANNUAL)
+    assert ON_THE_DAY["accessionNumber"] not in text
+    assert (f"### not carried: UPLOAD {THE_DAY_BEFORE['accessionNumber']} filed 2025-02-03 "
+            "and made public 2025-03-02") in text
+
+
+def test_a_letter_filed_on_the_lookback_floors_own_day_is_never_looked_for(tmp_path):
+    """The floor for the 10-Q of 2024-11-12 is 2022-08-09 (`letters_filed_after`):
+    a letter filed that day is outside, the one filed 2022-08-10 inside."""
+    edgar = ServesThePlantedHeader()
+    root, problems, _ = fetched(tmp_path, TICKER, QUARTER, edgar=edgar,
+                                extra_rows=[ON_THE_FLOOR, PLANTED_INSIDE])
+    assert problems == []
+    asked = [url.rsplit("/", 1)[1] for url in edgar.asked]
+    assert not [name for name in asked if ON_THE_FLOOR["accessionNumber"] in name]
+    assert f"{PLANTED_INSIDE['accessionNumber']}.hdr.sgml" in asked
+    record = fetch_fixtures.load_manifest(root / TICKER)["event_filings"]
+    assert record["letters_filed_after"] == "2022-08-09"
+    assert ON_THE_FLOOR["accessionNumber"] not in record["releases"]
+    window = fetch_fixtures.event_window(
+        event_store.index_rows(TICKER) + [ON_THE_FLOOR, PLANTED_INSIDE],
+        event_store.row_of(TICKER, QUARTER))
+    planted = [one["accessionNumber"] for one in window["letters"]
+               if one["accessionNumber"].startswith("0000000000-22-9")]
+    assert planted == [PLANTED_INSIDE["accessionNumber"]]
+
+
+def test_a_store_fetched_for_another_window_opening_is_refused(tmp_path):
+    """The 10-K's window opens after the 10-Q of 2024-11-12, by the index. A
+    record that says the event filings were fetched for a window opening after
+    some other report does not describe this window, and nothing is read."""
+    root, _, _ = fetched(tmp_path, TICKER, ANNUAL)
+    path = root / TICKER / "manifest.json"
+    manifest = json.loads(path.read_text())
+    assert manifest["event_filings"]["after"] == QUARTER
+    earlier = "0000950170-24-094602"            # ADTRAN's 10-Q of 2024-08-09
+    manifest["event_filings"]["after"] = earlier
+    path.write_text(json.dumps(manifest, indent=2) + "\n")
+    with pytest.raises(cutoff_guard.CutoffGuardError) as refusal:
+        section(root, TICKER, ANNUAL)
+    assert (f"fetched for the window after {earlier}, and the index at 2025-03-03 opens it "
+            f"after {QUARTER}") in str(refusal.value)
+    assert not isinstance(refusal.value, cutoff_guard.CutoffViolationError)
+
+
+def test_the_index_keeps_the_rows_of_letters_not_yet_public_and_no_input_prints_them(tmp_path):
+    """The store for the 10-Q of 2024-11-12 holds no document and no release of
+    the three letters made public 2024-12-04, and its index, EDGAR's list by
+    filing date, holds their rows. The file the reader gets names none of them."""
+    root, _, _ = fetched(tmp_path, TICKER, QUARTER)
+    index = json.loads((root / TICKER / "submissions.json").read_text())
+    listed = {entry["accession"]: (entry["form"], entry["filing_date"])
+              for entry in index["filings"]}
+    assert {accession: listed[accession] for accession in FIRST_CONVERSATION} == {
+        STAFF: ("UPLOAD", "2024-09-26"), RESPONSE: ("CORRESP", "2024-09-27"),
+        CLOSING: ("UPLOAD", "2024-11-04")}
+    manifest = fetch_fixtures.load_manifest(root / TICKER)
+    assert not set(FIRST_CONVERSATION) & set(manifest["event_filings"]["releases"])
+    assert not set(FIRST_CONVERSATION) & {entry["accession"] for entry in manifest["documents"]}
+    text = parse_8k.render_index(TICKER, cutoff="2024-11-12", fixtures_root=root,
+                                 trigger=event_store.as_trigger(TICKER, QUARTER))
+    assert "## item codes, every 8-K on or before 2024-11-12" in text    # the index is printed
+    for accession in FIRST_CONVERSATION:
+        assert accession not in text
+    assert "UPLOAD" not in text and "CORRESP" not in text

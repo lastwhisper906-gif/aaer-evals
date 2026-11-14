@@ -879,8 +879,14 @@ def test_the_store_on_demand_holds_the_window_s_event_filings_with_their_own_rol
     assert sum(server.hits.values()) - before == 1          # the index alone, as before
 
 
-def test_the_bundle_from_the_store_on_demand_carries_them_and_the_owners_grader_passes_it(
+def test_the_bundle_from_the_store_on_demand_carries_them_and_the_release_rule_is_the_gates(
         tmp_path, server):
+    """The bundle carries the window's documents under their ids. The owner's two
+    checks at the end read filing dates and acceptance stamps and never a
+    letter's `released`, so their pass shows the filing-date rule and nothing
+    about the release; the release rule is shown by the gate and the extraction
+    check, which refuse the same letter once its release is not before the
+    cutoff or is not on record."""
     from evals.common import PASS
     from evals.regression import mechanical
     from src import assemble_bundle
@@ -914,9 +920,37 @@ def test_the_bundle_from_the_store_on_demand_carries_them_and_the_owners_grader_
         {EXIT_8K: ["input_8k.md"], NOTICE: ["input_8k.md"], LETTER: ["input_8k.md"]}
     assert documents[LETTER]["released"] == "2026-06-30"
     assert RESPONSE not in json.dumps(bundle["manifest"])
+    # the owner's checks, by filing date: the letter was filed 2026-04-02
     for check in (mechanical.check_nothing_after_cutoff, mechanical.check_inputs_on_record):
         result = check(run)
         assert result.status == PASS, (check.__name__, result.failures)
+    # the release rule. The gate: the letter was made public 2026-06-30 (its
+    # planted header), so a read at that day is refused though it was filed
+    # twelve weeks before, and a read the day after is served
+    from src import cutoff_guard, extraction_checks
+    stored = held["store"] / TICKER / documents[LETTER]["path"]
+    with pytest.raises(cutoff_guard.NotYetPublicError):
+        cutoff_guard.load_bytes(stored, "2026-06-30", fixtures_root=held["store"])
+    assert LETTER_SENTENCE.encode() in cutoff_guard.load_bytes(
+        stored, "2026-07-01", fixtures_root=held["store"])
+    # the extraction check: the bundle as built passes its cutoff gate, and the
+    # same bundle whose manifest says the letter was made public on the cutoff's
+    # own day, or says nothing of its release, fails it on that row
+    def cutoff_line(change) -> str:
+        manifest = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
+        [row] = [one for one in manifest["documents"] if one["accession"] == LETTER]
+        change(row)
+        texts = extraction_checks.read_bundle(run)
+        [line] = extraction_checks.check_cutoff(manifest, texts).lines()
+        return line
+
+    assert cutoff_line(lambda row: None).startswith("cutoff: pass — ")
+    on_the_day = cutoff_line(lambda row: row.update(released="2026-08-26"))
+    assert on_the_day.startswith("cutoff: FAIL — ")
+    assert "was made public 2026-08-26, not before the cutoff 2026-08-26" in on_the_day
+    unrecorded = cutoff_line(lambda row: row.pop("released"))
+    assert unrecorded.startswith("cutoff: FAIL — ")
+    assert "is a UPLOAD with no release on record" in unrecorded
 
 
 def test_an_empty_window_fetched_on_demand_leaves_the_published_file_as_it_was(tmp_path, server):

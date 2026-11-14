@@ -91,16 +91,20 @@ filing, whose narrative gives the reason and says whether results will change,
 with the report it gave notice of named in its heading; and the SEC staff's
 comment letters with the company's responses, dated by the day EDGAR made them
 public (only letters filed within the two years before the window opened were
-looked for, as the section's second line says; a file with no such heading
-carries no event filing, and you report none). Report each in substance like any other paragraph: the obligation
-accelerated and its trigger, the impairment and its cause, what the staff asked
-and what the company conceded or promised "in future filings". Area
+looked for, as the section's second line says). A file with no such heading
+shows only that this file holds none: the same file comes from a quarter with no
+event filing and from a store that was fetched without them, so write at most
+"none in this file" and never that the company filed none. Report each in
+substance like any other paragraph: the obligation accelerated and its trigger,
+the impairment and its cause, what the staff asked and what the company conceded
+or promised "in future filings". Area
 `controls_audit_and_filings` for auditor changes, late filings and comment
 letters, and the area the substance bears on otherwise. A heading that says the
 store holds no text of a filing, or that a letter is a PDF with no text copy, is
-not an item and carries no paragraph id, so it needs no line in the list of
-paragraphs you did not report. Do not compute how late a report was or how long a review lasted:
-the dates in the headings are for locating, not for arithmetic.
+not a finding and carries no paragraph id, so it is not an item and needs no
+line in the list of paragraphs you did not report. Do not compute how late a
+report was or how long a review lasted: the dates in the headings are for
+locating, not for arithmetic.
 
 **Plain names in your own words.** Write every period, item and form in words, the way the filing writes it: the third quarter of fiscal 2026, not a tag of letters and digits. A letter-number code may stand only where the filing prints it: in your prose inputs, or inside a member or element name the filer gave a fact, which you copy with its id. Python reads your report for one before an analyst sees it, and a report that carries a code of your own is asked for once more, with the same message.
 

@@ -694,6 +694,10 @@ def held_to_the_trigger(out: Path, ticker: str, filing: dict,
                     problems.append(f"{row['full_path']} is from {row.get('accession')}, "
                                     f"which did not stand when {filing['accessionNumber']} "
                                     "was accepted")
+                elif row.get("form") in LETTER_FORMS and not row.get("released"):
+                    problems.append(f"{row['full_path']} is a {row.get('form')} with no "
+                                    "release on record, so nothing shows it was public "
+                                    f"before {filing['accessionNumber']}'s day")
                 elif str(row.get("released") or "") >= filing["filingDate"]:
                     problems.append(f"{row['full_path']} was made public "
                                     f"{row.get('released')}, not before "
@@ -817,10 +821,17 @@ def stale(out: Path, ticker: str, filing: dict, known: frozenset[str]) -> list[s
 # nobody outside the company and the SEC could see. So each letter's header is
 # read and its release recorded (`RELEASES`), every letter row carries `released`,
 # the gate refuses one made public after the cutoff
-# (`cutoff_guard.RELEASED_LATER_FORMS`), and a letter released on or after the
-# trigger's day is not in the store at all -- not its text, not its release,
-# since a release is a day with no time and the trigger's own day does not show
-# it came first. The date printed on a letter decides nothing.
+# (`cutoff_guard.RELEASED_LATER_FORMS`), and of a letter released on or after the
+# trigger's day the store holds neither the document nor the release, since a
+# release is a day with no time and the trigger's own day does not show it came
+# first. Its row in the store's index is another matter: the index is EDGAR's
+# list by filing date, so the row of a letter filed before the trigger and made
+# public after it is there (ADTRAN's store for the 10-Q of 2024-11-12 holds the
+# rows of three letters made public 2024-12-04). No input prints a letter's
+# index row -- `input_8k.md` lists 8-Ks and late-filing notices from the index,
+# and letters only from the documents the store holds -- and
+# `docs/needs_judgment.md` carries the question of dropping such rows. The date
+# printed on a letter decides nothing.
 #
 # The letters looked at are those filed in the two years before the window
 # opens (`LETTER_LOOKBACK_YEARS`), since a letter's release can only be known

@@ -828,6 +828,101 @@ def test_an_auditor_change_carries_its_body_and_the_former_auditors_letter(tmp_p
             "auditor's letter (exhibit161.htm), verbatim") in text
 
 
+SECOND_LETTER = "exhibit162.htm"
+SECOND_LETTER_SENTENCES = ("We were previously the auditors of a subsidiary of the Company.",
+                           "We agree with the statements in Item 4.01 that concern us.")
+
+
+class NamesASecondAuditorLetter(event_store.RecordedEdgar):
+    """The record, with a second exhibit 16 planted in the 8-K's own listing after
+    the first, and a planted two-paragraph letter served for it."""
+
+    def get(self, url):
+        if url.endswith("/000088933123000135/0000889331-23-000135-index-headers.html"):
+            return super().get(url) + (
+                f"&lt;DOCUMENT&gt;\n&lt;TYPE&gt;EX-16.2\n&lt;SEQUENCE&gt;9\n"
+                f"&lt;FILENAME&gt;{SECOND_LETTER}\n&lt;/DOCUMENT&gt;\n").encode()
+        if url.endswith(f"/000088933123000135/{SECOND_LETTER}"):
+            self.asked.append(url)
+            return ("<html><body>" + "".join(f"<p>{sentence}</p>"
+                                             for sentence in SECOND_LETTER_SENTENCES)
+                    + "</body></html>").encode()
+        return super().get(url)
+
+
+def test_two_auditor_letters_in_one_8k_never_share_a_paragraph_id(tmp_path):
+    """Grant Thornton's letter as recorded is twelve blocks of text, counted by
+    eye in `exhibit161.htm`: the page's title "Document", the date, four lines
+    of address, "Re: Littelfuse, Inc.", the file number, the salutation, the one
+    sentence, "Very truly yours," and the signature. A second exhibit 16 in the
+    same 8-K continues the count at thirteen, so no id names two paragraphs."""
+    root, problems, _ = event_store.fetched(tmp_path, "LFUS", "0000889331-23-000157",
+                                            edgar=NamesASecondAuditorLetter())
+    assert problems == []
+    assert {entry["path"] for entry in event_store.manifest_rows(root, "LFUS")
+            if entry["role"] == "auditor_letter"} == {
+        "events/0000889331-23-000135/exhibit161.htm",
+        f"events/0000889331-23-000135/{SECOND_LETTER}"}
+    events, text = event_store.section(root, "LFUS", "0000889331-23-000157")
+    body, first, second = events["carried"]
+    assert (first["document"], second["document"]) == ("exhibit161.htm", SECOND_LETTER)
+    assert first["paragraph_ids"] == [
+        f"0000889331-23-000135:auditor_letter:{number}" for number in range(1, 13)]
+    assert second["paragraph_ids"] == ["0000889331-23-000135:auditor_letter:13",
+                                       "0000889331-23-000135:auditor_letter:14"]
+    assert [_folded(paragraph) for paragraph in second["paragraphs"]] == \
+        list(SECOND_LETTER_SENTENCES)
+    every = body["paragraph_ids"] + first["paragraph_ids"] + second["paragraph_ids"]
+    assert len(set(every)) == len(every)
+    for identifier in every:
+        assert text.count(f"[{identifier}]") == 1
+    assert f"[0000889331-23-000135:auditor_letter:13]\n{SECOND_LETTER_SENTENCES[0]}\n" in text
+
+
+def planted_row(accession, form, day, accepted, items=""):
+    return {"accessionNumber": accession, "filingDate": day, "reportDate": "", "form": form,
+            "items": items, "primaryDocument": "document.htm", "primaryDocDescription": form,
+            "acceptanceDateTime": accepted}
+
+
+def test_an_8k_accepted_after_the_trigger_on_its_own_day_is_outside_the_window():
+    """Planted rows, EDGAR's shape. The 10-Q is accepted 2024-11-01 at 20:15
+    universal time. An impairment 8-K accepted at noon that day stood before it
+    and is in its window; an exit-costs 8-K and a late notice accepted at 21:00
+    did not and are not. The window opens at the 10-Q accepted 2024-08-01 at
+    20:10: a delisting 8-K accepted ten minutes before that belongs to the
+    earlier window, one accepted ten minutes after it to this one."""
+    from src import fetch_fixtures
+    previous = planted_row("0000111111-24-000010", "10-Q", "2024-08-01",
+                           "2024-08-01T20:10:00.000Z")
+    trigger = planted_row("0000111111-24-000020", "10-Q", "2024-11-01",
+                          "2024-11-01T20:15:00.000Z")
+    before_the_opening = planted_row("0000111111-24-000009", "8-K", "2024-08-01",
+                                     "2024-08-01T20:00:00.000Z", "3.01")
+    after_the_opening = planted_row("0000111111-24-000011", "8-K", "2024-08-01",
+                                    "2024-08-01T20:20:00.000Z", "3.01,9.01")
+    at_noon = planted_row("0000111111-24-000019", "8-K", "2024-11-01",
+                          "2024-11-01T12:00:00.000Z", "2.06")
+    that_evening = planted_row("0000111111-24-000021", "8-K", "2024-11-01",
+                               "2024-11-01T21:00:00.000Z", "2.05,9.01")
+    notice_that_evening = planted_row("0000111111-24-000022", "NT 10-Q", "2024-11-01",
+                                      "2024-11-01T21:00:00.000Z")
+    rows = [previous, trigger, before_the_opening, after_the_opening, at_noon, that_evening,
+            notice_that_evening]
+    window = fetch_fixtures.event_window(rows, trigger)
+    assert window["previous"]["accessionNumber"] == previous["accessionNumber"]
+    assert [row["accessionNumber"] for row in window["eight_ks"]] == [
+        after_the_opening["accessionNumber"], at_noon["accessionNumber"]]
+    assert window["notices"] == []
+    # and the evening's filings are the next report's: a 10-Q accepted the day after
+    later = planted_row("0000111111-25-000003", "10-K", "2025-02-20", "2025-02-20T21:00:00.000Z")
+    window = fetch_fixtures.event_window(rows + [later], later)
+    assert [row["accessionNumber"] for row in window["eight_ks"]] == [
+        that_evening["accessionNumber"]]
+    assert [row["accessionNumber"] for row in window["notices"]] == [
+        notice_that_evening["accessionNumber"]]
+
+
 def test_a_body_that_heads_no_item_its_index_row_names_is_carried_whole(tmp_path):
     """Logitech's 8-K 0001032975-25-000071, filed 2025-10-02, is indexed under item
     3.01 and its body heads Item 5.03, an amendment to its articles. The window is
