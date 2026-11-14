@@ -269,8 +269,16 @@ def test_the_gap_between_the_first_two_measures_is_worked_by_python(nvidia):
     assert set(cell["inputs"]) == {"balance_sheet_accruals", "cash_flow_accruals"}
     assert cell["inputs"]["balance_sheet_accruals"]["value"] == pytest.approx(29_291 / 159_202)
     assert cell["unit"] == "ratio"
-    assert "`quarterly_cash_flow_and_accruals.balance_sheet_less_cash_flow_accruals`" in \
-        " ".join((AGENTS / "accounting-analyst.md").read_text(encoding="utf-8").split())
+    paragraph = " ".join((AGENTS / "accounting-analyst.md").read_text(encoding="utf-8").split())
+    assert "`quarterly_cash_flow_and_accruals.balance_sheet_less_cash_flow_accruals`" in paragraph
+    # the paragraph does not forbid a comparison and then ask for one: the analyst
+    # compares nothing by hand, and the one gap that means something is Python's cell
+    assert "never compared level for level" not in paragraph
+    assert "do not compare one measure's level with another's yourself" in paragraph
+    assert ("Python states the one gap that carries meaning, the first less the second, both "
+            "over the same average assets, as "
+            "`quarterly_cash_flow_and_accruals.balance_sheet_less_cash_flow_accruals`") in paragraph
+    assert "it does not by itself say earnings were managed" in paragraph
 
 
 def test_free_cash_flow_accruals_are_the_sec_models_in_dollars(nvidia):
@@ -424,21 +432,28 @@ def named_paths(name: str, opening: str) -> list[str]:
 
 
 @pytest.fixture(scope="module")
-def committed_views() -> dict:
-    """The filings-only view of every committed run, reruns included (the analysts
-    read those too), computed from its own bundle. A rerun's directory name is not
-    its accession, so the trigger is the one its own manifest names."""
-    views = {}
+def committed_calculators() -> dict:
+    """The calculator of every committed run, reruns included (the analysts read
+    those too), computed from its own bundle. A rerun's directory name is not its
+    accession, so the trigger is the one its own manifest names."""
+    whole = {}
     for manifest in sorted(RUNS.glob("*/*/input_manifest.json")):
         run = manifest.parent
         stated = json.loads(manifest.read_text(encoding="utf-8"))
         accession = stated["accession"]
         trigger, = {(d["form"], d["report_date"]) for d in stated["documents"]
                     if d.get("accession") == accession}
-        views[f"{run.parent.name}/{run.name}"] = calculator.filings_only(calculator.calculate(
+        whole[f"{run.parent.name}/{run.name}"] = (stated["cutoff"], calculator.calculate(
             ticker=run.parent.name, cutoff=stated["cutoff"], period_end=trigger[1],
             form=trigger[0], accession=accession, bundle=run))
-    return views
+    return whole
+
+
+@pytest.fixture(scope="module")
+def committed_views(committed_calculators) -> dict:
+    """The filings-only view of every committed run, as the two analysts read it."""
+    return {run: calculator.filings_only(payload)
+            for run, (_, payload) in committed_calculators.items()}
 
 
 def test_every_path_the_analysts_are_told_resolves_in_every_committed_run(committed_views):
@@ -1010,8 +1025,12 @@ def test_the_ladder_says_how_each_input_stood_and_neither_only_when_true():
     trailing_debt, rate = {"value": 100.0}, {"value": 0.04}
     period = "2025-01-01..2025-12-31"
 
-    def last_year(expense: dict, paid: dict, start: dict | None = None) -> dict:
+    def last_year(expense: dict, paid: dict, start: dict | None = None,
+                  to_date: dict | None = None) -> dict:
         return {"period": period, "debt_dates": ["2024-12-31", "2025-12-31"],
+                "interest_expense_years_to_date": to_date or {
+                    "2026-01-01..2026-06-30": {"missing": "no row"},
+                    "2025-01-01..2025-06-30": {"missing": "no row"}},
                 "interest_expense": expense, "interest_paid": paid,
                 "debt_at_the_end": {"value": 60.0}, "debt_at_the_start": start or {"value": 40.0}}
 
@@ -1056,6 +1075,153 @@ def test_the_ladder_says_how_each_input_stood_and_neither_only_when_true():
     neither = ladder({"missing": "no row for interest_expense in any period"}, absent, None)
     assert neither["value"] == pytest.approx(0.05)
     assert "neither interest expense nor interest paid is on record" in neither["fallback"]
+
+    # no row in any span of the trailing four quarters, the last fiscal year read
+    # and empty too: still "neither", and the only case that is
+    empty_year = ladder(partial, absent, last_year({"missing": "no row"}, {"missing": "no row"}))
+    assert empty_year["value"] == pytest.approx(0.05)
+    assert "neither interest expense nor interest paid is on record" in empty_year["fallback"]
+
+
+def test_the_last_fiscal_year_is_tried_before_the_risk_free_rate_whenever_it_is_on_record():
+    """Planted: interest paid 4 over the trailing four quarters is on record, and the
+    trailing debt a year earlier is not, so that rung has no average debt. The last
+    fiscal year has its own interest expense, 3, and its own debt, 40 at its start
+    and 60 at its end: 3 / 50 = 0.06 is read before the risk-free rate plus one
+    point (0.04 + 0.01 = 0.05), and the label says why each rung above it stood
+    aside. With that year's opening debt missing too, the rate plus one point is
+    read, and the label still says interest expense is on record for the year."""
+    period = "2025-01-01..2025-12-31"
+    partial = {"missing": "interest_expense over the trailing four quarters needs the this year "
+                          "to date: no row"}
+    paid = {"value": 4.0, "tag": "InterestPaidNet", "period": "trailing"}
+
+    def year(start: dict) -> dict:
+        return {"period": period, "debt_dates": ["2024-12-31", "2025-12-31"],
+                "interest_expense_years_to_date": {"2026-01-01..2026-06-30": {"missing": "no row"}},
+                "interest_expense": {"value": 3.0, "tag": "InterestExpense"},
+                "interest_paid": {"missing": "no row"},
+                "debt_at_the_end": {"value": 60.0}, "debt_at_the_start": start}
+
+    def ladder(last_year: dict) -> dict:
+        return calculator.cost_of_debt_fallback(
+            {"interest_expense": partial, "interest_paid": paid}, {"value": 100.0},
+            {"missing": "no debt a year earlier"}, {"value": 0.04},
+            f"interest_expense: {partial['missing']}", last_year)
+
+    stepped = ladder(year({"value": 40.0}))
+    assert stepped["value"] == 3.0 / 50.0
+    assert stepped["periods"] == {"numerator": period, "denominator": ["2024-12-31", "2025-12-31"]}
+    assert stepped["fallback"].startswith(
+        f"interest expense over the last fiscal year ({period}) over the average of debt at "
+        f"that year's start and end (2024-12-31 and 2025-12-31), because interest expense is on "
+        f"record for the last fiscal year ({period}) and not for every span of the trailing "
+        f"four quarters: ")
+    assert "interest paid is on record but average debt is missing/zero: " in stepped["fallback"]
+    assert "no debt a year earlier" in stepped["fallback"]
+    assert "risk-free rate" not in stepped["fallback"]
+
+    no_rung = ladder(year({"missing": "no debt at the start"}))
+    assert no_rung["value"] == pytest.approx(0.05)
+    assert (f"interest expense is on record for the last fiscal year ({period}) and not for "
+            f"every span of the trailing four quarters") in no_rung["fallback"]
+    assert "interest paid is on record but average debt is missing/zero" in no_rung["fallback"]
+    assert "that year's average debt is missing/zero" in no_rung["fallback"]
+    assert "no debt at the start" in no_rung["fallback"]
+
+
+def test_an_interest_expense_stated_for_the_years_to_date_alone_is_never_called_not_on_record():
+    """Planted in Johnson Controls' shape, with no interest paid anywhere: interest
+    expense for both years to date and none for the last fiscal year. Nothing can
+    be divided, so the risk-free rate plus one point is read, 0.04 + 0.01 = 0.05;
+    the label names the spans that state interest expense and the one that does
+    not, and neither "not on record" nor "neither" is said of it."""
+    period = "2025-01-01..2025-12-31"
+    partial = {"missing": "interest_expense over the trailing four quarters needs the prior "
+                          "fiscal year: no row"}
+    year = {"period": period, "debt_dates": ["2024-12-31", "2025-12-31"],
+            "interest_expense_years_to_date": {
+                "2026-01-01..2026-06-30": {"value": 2.0, "tag": "InterestExpense"},
+                "2025-01-01..2025-06-30": {"value": 1.0, "tag": "InterestExpense"}},
+            "interest_expense": {"missing": "no row"}, "interest_paid": {"missing": "no row"},
+            "debt_at_the_end": {"value": 60.0}, "debt_at_the_start": {"value": 40.0}}
+    out = calculator.cost_of_debt_fallback(
+        {"interest_expense": partial, "interest_paid": {"missing": "no row for interest_paid"}},
+        {"value": 100.0}, {"value": 100.0}, {"value": 0.04},
+        f"interest_expense: {partial['missing']}", year)
+    assert out["value"] == pytest.approx(0.05)
+    assert (f"interest expense is on record for the years to date (2026-01-01..2026-06-30 and "
+            f"2025-01-01..2025-06-30) and not for the last fiscal year ({period}): ") \
+        in out["fallback"]
+    assert "interest paid is not on record: no row for interest_paid" in out["fallback"]
+    assert "which is not on record" not in out["fallback"]
+    assert "neither interest expense nor interest paid" not in out["fallback"]
+
+
+INTEREST_TAGS = ("InterestExpense", "InterestExpenseNonoperating", "InterestExpenseDebt",
+                 "InterestAndDebtExpense")
+
+
+def interest_rows_on_record(run: str, cutoff: str, periods: list) -> list:
+    """Every (tag, period) of interest expense the record holds for the spans named:
+    companyfacts through the independent reader, and the run's own bundle, read here."""
+    ticker = run.split("/")[0]
+    facts = json.loads((RUNS / run / "input_numbers.json").read_text(encoding="utf-8"))["facts"]
+    in_bundle = {(fact["tag"], f"{context['start']}..{context['end']}") for fact in facts
+                 for context in [fact.get("context") or {}]
+                 if fact["tag"] in INTEREST_TAGS and context.get("start")
+                 and not context.get("segment") and not fact.get("nil")
+                 and fact.get("filing_date", "9999") <= cutoff}
+    return [(tag, period) for tag in INTEREST_TAGS for period in periods
+            if (tag, period) in in_bundle or source.reported(ticker, tag, period, cutoff)]
+
+
+def test_johnson_controls_label_names_the_spans_that_state_interest_expense():
+    """Johnson Controls' 10-Q filed 2026-07-29 tags InterestExpense 160 for the nine
+    months to 2026-06-30 and 178 for the nine months to 2025-06-30 (the run's own
+    bundle; the store's companyfacts predates the filing), and no interest tag
+    carries fiscal 2025. So the cost of debt reads fiscal 2025's interest paid, and
+    its label says interest expense is on record for the years to date and not
+    for the last fiscal year -- not that it "is not on record"."""
+    cut, run = "2026-07-29", "JCI/0000833444-26-000087"
+    year, to_date, before = "2024-10-01..2025-09-30", "2025-10-01..2026-06-30", "2024-10-01..2025-06-30"
+    bundle = RUNS / run
+    assert bundle_fact(bundle, "InterestExpense", "2025-10-01", "2026-06-30", cut) == 160 * MILLION
+    assert bundle_fact(bundle, "InterestExpense", "2024-10-01", "2025-06-30", cut) == 178 * MILLION
+    assert interest_rows_on_record(run, cut, [year]) == []
+    assert interest_rows_on_record(run, cut, [to_date, before]) == [
+        ("InterestExpense", to_date), ("InterestExpense", before)]
+    out = calculator.calculate(ticker="JCI", cutoff=cut, period_end="2026-06-30", form="10-Q",
+                               bundle=bundle)
+    cost = out["cost_of_capital"]["pre_tax_cost_of_debt"]
+    assert cost["value"] == pytest.approx(321 / 9_686.5, rel=1e-12)
+    assert cost["fallback"].startswith(
+        f"interest paid in cash over the last fiscal year ({year}) over the average of debt at "
+        f"that year's start and end (2024-09-30 and 2025-09-30), which the years to date do not "
+        f"state, because interest expense is on record for the years to date ({to_date} and "
+        f"{before}) and not for the last fiscal year ({year}): ")
+    assert "which is not on record" not in cost["fallback"]
+
+
+def test_no_committed_run_is_told_interest_expense_is_not_on_record_when_a_span_states_it(
+        committed_calculators):
+    """Every committed run, recomputed: where the cost of debt's label says interest
+    expense is not on record, or that neither it nor interest paid is, no interest
+    tag carries any span of that run's trailing four quarters -- checked against
+    companyfacts and the run's bundle, not against the calculator."""
+    assert len(committed_calculators) == len(list(RUNS.glob("*/*/input_manifest.json"))) >= 32
+    said = []
+    for run, (cutoff, payload) in committed_calculators.items():
+        label = payload["cost_of_capital"]["pre_tax_cost_of_debt"].get("fallback", "")
+        if "which is not on record" not in label and "neither interest expense" not in label:
+            continue
+        parts = payload["terms"]["trailing_four_quarters"]["revenue"]["parts"]
+        periods = [part["period"] for part in (parts.values() if isinstance(parts, dict) else parts)]
+        assert periods and all(".." in period for period in periods), run
+        assert interest_rows_on_record(run, cutoff, periods) == [], (run, label[:120])
+        said.append(run)
+    # Apple is the one company no interest tag reaches in these spans
+    assert said and {run.split("/")[0] for run in said} == {"AAPL"}
 
 
 # --- the two years to date are read like for like within a scope ------------------------------

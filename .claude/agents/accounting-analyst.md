@@ -108,15 +108,20 @@ and `trend_table`.
 **Revenue and working capital.** Four sections feed earnings versus cash,
 revenue recognition and the industry lens. Each field named here is a number,
 or null with its reason beside it: when it is null, say it is not there. Three
-accrual measures, kept apart and never compared level for level:
+accrual measures, each read on its own:
 `quarterly_cash_flow_and_accruals.balance_sheet_accruals` (Sloan, from
 balance-sheet changes), `quarterly_cash_flow_and_accruals.cash_flow_accruals`
 (Hribar and Collins, income less operating cash flow) and
 `quarterly_cash_flow_and_accruals.free_cash_flow_accruals` (the SEC model, in
-dollars). The first less the second is
-`quarterly_cash_flow_and_accruals.balance_sheet_less_cash_flow_accruals`, worked
-by Python: far from zero, it points to acquisitions or disposals. Operating
-cash flow by quarter runs from
+dollars, set beside neither). Each has its own source and its own scale, so do
+not compare one measure's level with another's yourself, and write no
+difference of your own. Python states the one gap that carries meaning, the
+first less the second, both over the same average assets, as
+`quarterly_cash_flow_and_accruals.balance_sheet_less_cash_flow_accruals`: far
+from zero, it says balance-sheet accounts moved without passing through the
+cash flow statement, which points to acquisitions or disposals; it does not by
+itself say earnings were managed, and a gap near zero does not clear them.
+Operating cash flow by quarter runs from
 `quarterly_cash_flow_and_accruals.operating_cash_flow_quarterly.history.0`, the
 newest, to
 `quarterly_cash_flow_and_accruals.operating_cash_flow_quarterly.history.7`.

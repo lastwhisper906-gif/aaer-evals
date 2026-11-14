@@ -1121,8 +1121,13 @@ def last_fiscal_year(record: Record, periods: dict) -> dict:
     year, before = periods["prior_year"], periods.get("two_years_back")
     if not year:
         return {"missing": "no complete fiscal year before the year to date is on record"}
+    to_date = [span for span in (periods["current_to_date"], periods["prior_to_date"]) if span]
     return {"period": f"{year[0]}..{year[1]}",
             "debt_dates": [before[1] if before else None, year[1]],
+            # the years to date, so the ladder's label can say which spans of the
+            # trailing four quarters state interest expense and which do not
+            "interest_expense_years_to_date": {
+                f"{span[0]}..{span[1]}": record.term("interest_expense", span) for span in to_date},
             "interest_expense": record.term("interest_expense", year),
             "interest_paid": record.term("interest_paid", year),
             "debt_at_the_end": total_debt(record, year[1]),
@@ -2585,6 +2590,34 @@ def _in_two_scopes(cell: dict) -> bool:
     return "missing" in cell and "different scopes" in cell["missing"]
 
 
+def interest_expense_standing(expense: dict, why: str, last_year: dict | None) -> tuple[bool, str]:
+    """How a missing trailing interest expense stands, and whether any row of it is
+    on record: refused (one filing's two values for one period); in two scopes
+    with none in every span; on record for the last fiscal year and not for every
+    span (Carrier: the 10-K tags the year, the 10-Q no six months); on record for
+    the years to date and not for the last fiscal year (Johnson Controls: the
+    10-Qs tag their nine months, the 10-K no year); or, only when no span of the
+    trailing four quarters carries a row, not on record."""
+    if _refused(expense):
+        return True, f"interest expense is on record but refused: {expense['missing']}"
+    if _in_two_scopes(expense):
+        return True, (f"interest expense is on record but its spans fall in two scopes: "
+                      f"{expense['missing']}")
+    spans = last_year if last_year and "missing" not in last_year else None
+    if spans and "missing" not in spans["interest_expense"]:
+        return True, (f"interest expense is on record for the last fiscal year "
+                      f"({spans['period']}) and not for every span of the trailing four "
+                      f"quarters: {why}")
+    stated = [period for period, cell in
+              ((spans or {}).get("interest_expense_years_to_date") or {}).items()
+              if "missing" not in cell]
+    if stated:
+        return True, (f"interest expense is on record for the years to date "
+                      f"({' and '.join(stated)}) and not for the last fiscal year "
+                      f"({spans['period']}): {why}")
+    return False, f"interest expense, which is not on record: {why}"
+
+
 def cost_of_debt_fallback(ttm: dict, debt_now: dict, debt_ago: dict, rf: dict,
                           why: str, last_year: dict | None = None) -> dict:
     """The ladder under a missing interest expense over average debt, each rung
@@ -2595,18 +2628,17 @@ def cost_of_debt_fallback(ttm: dict, debt_now: dict, debt_ago: dict, rf: dict,
        figure and the 10-K's year does, in the trailing ladder's own order --
        that year's interest expense, else that year's interest paid -- over the
        average of debt at that year's start and end, never the trailing
-       balances: a year's interest over that year's debt;
+       balances: a year's interest over that year's debt. It has its own
+       numerator and its own two debt dates, so it is tried before the last
+       rung whenever those are on record, also where a trailing figure is on
+       record and the trailing average debt is not;
     3. the risk-free rate plus one point.
 
     Never silent: the cell says what it stands in for and names the periods of
-    its numerator and denominator, and the label says how each input stood --
-    interest expense on record but no average debt; interest expense or
-    interest paid on record but refused (one filing's two values for one
-    period, trends.TWO_VALUES); interest expense on record but in two scopes
-    with none in every span, or on record for the last fiscal year and not for
-    every span; interest paid on record but no average debt; or no fact at all,
-    the only case that says "neither" -- because each is a different fact about
-    the company."""
+    its numerator and denominator, and the label says how each input stood
+    (`interest_expense_standing`; interest paid on record but refused, or on
+    record with no average debt) -- and "neither" only when no span carries a
+    row of either -- because each is a different fact about the company."""
     expense = ttm.get("interest_expense") or {"missing": "interest_expense is not gathered"}
     paid = ttm.get("interest_paid") or {"missing": "interest_paid is not gathered"}
     year = last_year if (LAST_FISCAL_YEAR_RUNG and last_year and "missing" not in last_year) \
@@ -2614,20 +2646,10 @@ def cost_of_debt_fallback(ttm: dict, debt_now: dict, debt_ago: dict, rf: dict,
     year_expense = year["interest_expense"] if year and "missing" not in year["interest_expense"] \
         else None
     year_paid = year["interest_paid"] if year and "missing" not in year["interest_paid"] else None
-    # A refused term -- one filing's two values for one period --, a term in two
-    # scopes and a term on record for the fiscal year alone are on record, and
-    # the label says so before the ladder steps down from it.
-    expense_refused, paid_refused = _refused(expense), _refused(paid)
-    expense_on_record = expense_refused or _in_two_scopes(expense) or (
-        "missing" in expense and year_expense is not None)
-    expense_words = (f"interest expense is on record but refused: {expense['missing']}"
-                     if expense_refused else
-                     f"interest expense is on record but its spans fall in two scopes: "
-                     f"{expense['missing']}" if _in_two_scopes(expense) else
-                     f"interest expense is on record for the last fiscal year ({year['period']}) "
-                     f"and not for every span of the trailing four quarters: {why}"
-                     if "missing" in expense and year_expense is not None else
-                     f"interest expense, which is not on record: {why}")
+    paid_refused = _refused(paid)
+    expense_on_record, expense_words = (
+        interest_expense_standing(expense, why, last_year) if "missing" in expense
+        else (True, ""))
 
     def over_the_year(name: str, numerator: dict) -> dict:
         debt = average(year["debt_at_the_end"], year["debt_at_the_start"])
@@ -2645,8 +2667,12 @@ def cost_of_debt_fallback(ttm: dict, debt_now: dict, debt_ago: dict, rf: dict,
             cell["periods"] = {"numerator": year["period"], "denominator": year["debt_dates"]}
         return cell
 
+    # What the trailing rungs found; `reason` is what a later rung's label gives
+    # for standing in, `because` what the last rung's does.
+    stated_to_date = ""
     if "missing" not in expense:
-        because = f"interest expense is on record but average debt is missing/zero: {why}"
+        reason = f"interest expense is on record but average debt is missing/zero: {why}"
+        because = reason
     elif "missing" not in paid:
         cell = measure("interest_paid / average debt",
                        {"interest_paid": paid, "average_debt": average(debt_now, debt_ago)},
@@ -2655,11 +2681,20 @@ def cost_of_debt_fallback(ttm: dict, debt_now: dict, debt_ago: dict, rf: dict,
         if "missing" not in cell:
             cell["fallback"] = f"interest paid in cash in place of {expense_words}"
             return cell
+        reason = f"interest paid is on record but average debt is missing/zero: {cell['missing']}"
         because = ("interest paid is on record but average debt is missing/zero, so the "
                    f"cost of debt is the risk-free rate plus one point: {cell['missing']}")
         if expense_on_record:
-            because = f"{expense_words}; {because}"
-    elif year_expense is not None or year_paid is not None:
+            reason, because = f"{expense_words}; {reason}", f"{expense_words}; {because}"
+    else:
+        reason, stated_to_date = expense_words, ", which the years to date do not state"
+        if paid_refused or expense_on_record:
+            paid_words = (f"interest paid is on record but refused: {paid['missing']}"
+                          if paid_refused else f"interest paid is not on record: {paid['missing']}")
+            because = f"{expense_words}; {paid_words}" if expense_on_record else paid_words
+        else:
+            because = f"neither interest expense nor interest paid is on record: {why}"
+    if year_expense is not None or year_paid is not None:
         name, numerator, words = (
             ("interest_expense", year_expense, "interest expense") if year_expense is not None
             else ("interest_paid", year_paid, "interest paid in cash"))
@@ -2667,18 +2702,12 @@ def cost_of_debt_fallback(ttm: dict, debt_now: dict, debt_ago: dict, rf: dict,
         if "missing" not in cell:
             cell["fallback"] = (f"{words} over the last fiscal year ({year['period']}) over the "
                                 f"average of debt at that year's start and end "
-                                f"({year['debt_dates'][0]} and {year['debt_dates'][1]}), which "
-                                f"the years to date do not state, because {expense_words}")
+                                f"({year['debt_dates'][0]} and {year['debt_dates'][1]})"
+                                f"{stated_to_date}, because {reason}")
             return cell
-        because = (f"{expense_words}; {words} is on record for the last fiscal year but that "
+        because = (f"{reason}; {words} is on record for the last fiscal year but that "
                    f"year's average debt is missing/zero, so the cost of debt is the risk-free "
                    f"rate plus one point: {cell['missing']}")
-    elif paid_refused or expense_on_record:
-        paid_words = (f"interest paid is on record but refused: {paid['missing']}"
-                      if paid_refused else f"interest paid is not on record: {paid['missing']}")
-        because = f"{expense_words}; {paid_words}" if expense_on_record else paid_words
-    else:
-        because = f"neither interest expense nor interest paid is on record: {why}"
     if "missing" in rf:
         return {"missing": f"{why}; and no risk-free rate for the fallback: {rf['missing']}"}
     return {"value": rf["value"] + FALLBACK_SPREAD_OVER_RISK_FREE,
