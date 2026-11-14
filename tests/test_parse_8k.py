@@ -856,44 +856,78 @@ def test_a_store_fetched_without_event_filings_says_so_and_names_the_windows_8ks
     committed index holds the 8-K 0001193125-26-226746 of 2026-05-15, items
     "1.01,1.02,2.03,5.02,5.07,9.01", inside the window of its 10-Q of 2026-08-05
     (0000002488-26-000123), which opens after the 10-Q 0000002488-26-000076 of
-    2026-05-06; the bundle names it and carries no text of it. The window is
-    recounted here from the index with `json` and the two filing dates as
-    literals, never as the code's own output."""
+    2026-05-06; the bundle's manifest names it and the file carries no text of it.
+    The window's opening is derived here from the index with `json` alone -- the
+    newest 10-K or 10-Q filed before the trigger's day -- and held to the literal
+    read by eye, and the window is recounted between the two dates; nothing the
+    code under test returned bounds it."""
     trigger = cutoff_guard.one_document("AMD", "10-Q", "primary_html")
     assert (trigger["accession"], trigger["filing_date"]) == ("0000002488-26-000123", "2026-08-05")
+    raw = json.loads(cutoff_guard.load_index(cutoff_guard.one_document(
+        "AMD", "submissions", "submissions_index")["full_path"]))
+    reports_before = sorted((row["filing_date"], row["accession"], row["form"])
+                            for row in raw["filings"]
+                            if row["form"] in ("10-K", "10-Q") and row["filing_date"] < "2026-08-05")
+    opens_after, opening_accession, opening_form = reports_before[-1]
+    assert (opens_after, opening_accession, opening_form) == \
+        ("2026-05-06", "0000002488-26-000076", "10-Q")
     events = parse_8k.event_filings("AMD", cutoff=trigger["filing_date"], trigger=trigger)
     assert events["state"] == "not_fetched"
     assert events["carried"] == []
     assert events["previous"] == {"form": "10-Q", "accession": "0000002488-26-000076",
                                   "filing_date": "2026-05-06", "items": []}
     listed = [(row["form"], row["filing_date"], row["items"]) for row in events["listed"]]
-    raw = json.loads(cutoff_guard.load_index(cutoff_guard.one_document(
-        "AMD", "submissions", "submissions_index")["full_path"]))
     by_hand = [("8-K", row["filing_date"], row["items"].split(","))
                for row in raw["filings"] if row["form"] in ("8-K", "8-K/A")
-               and "2026-05-06" < row["filing_date"] <= "2026-08-05"
+               and opens_after < row["filing_date"] <= "2026-08-05"
                and {"1.02", "2.04", "2.05", "2.06", "3.01", "3.03", "4.01"}
                & set(row["items"].split(","))]
     assert listed == sorted(by_hand, key=lambda one: one[1])
     assert [row["accession"] for row in events["listed"]] == ["0001193125-26-226746"]
     # a store with no window record adds nothing to the file, so a run built
-    # from one rebuilds byte for byte; the window is in the payload alone
+    # from one rebuilds byte for byte; the window is the manifest's to record
     assert parse_8k.render_event_filings(events) == []
+    record = parse_8k.window_record(events)
+    assert (record["state"], record["note"]) == ("not_fetched", parse_8k.NOT_FETCHED)
+    assert [row["accession"] for row in record["listed"]] == ["0001193125-26-226746"]
 
 
-# The committed runs rebuilt from their committed stores, byte for byte. These
-# four stores hold the run's own filing as their triggering report; the stores
-# were fetched before event filings were, so the file ends where it ended.
-REBUILT_RUNS = [("CSCO", "0000858877-26-000078"), ("DELL", "0001571996-26-000046"),
-                ("QCOM", "0000804328-26-000086"), ("JCI", "0000833444-26-000087")]
+# Every committed run's `input_8k.md`, rebuilt from the committed store of its
+# company and held to the published file byte for byte: the expected value is
+# the file under `runs/`. The stores were fetched before event filings were, so
+# each file has to end where it ended.
+#
+# Two published files do not rebuild on main either, and for a reason older
+# than this change: each was published before the item-code list said of an
+# amendment that the index does not name what it amends, and the rebuilt list
+# carries that clause -- on Littelfuse's 8-K/A 0001437749-18-005267 of
+# 2018-03-23, the first of the lines the published file lacks. Each is a strict
+# expected failure, so the day the two agree again the mark turns red.
+PUBLISHED_BEFORE_THE_AMENDMENT_CLAUSE = {
+    ("LFUS", "0001628280-26-050481"), ("STX", "0001137789-26-000159")}
+COMMITTED_RUNS = sorted(
+    (path.parent.parent.name, path.parent.name)
+    for path in (cutoff_guard.REPO_ROOT / "runs").glob("*/*/input_manifest.json"))
+REBUILT_RUNS = [
+    pytest.param(ticker, name, marks=pytest.mark.xfail(
+        strict=True, reason="published before the amendment clause; differs on main too"))
+    if (ticker, name) in PUBLISHED_BEFORE_THE_AMENDMENT_CLAUSE else pytest.param(ticker, name)
+    for ticker, name in COMMITTED_RUNS]
 
 
-@pytest.mark.parametrize("ticker,accession", REBUILT_RUNS)
-def test_a_committed_run_rebuilds_its_8k_file_byte_for_byte(ticker, accession, tmp_path):
+def test_the_rebuild_covers_every_committed_run():
+    """28 run directories on 2026-11-14, counted with `ls runs/*/*/input_manifest.json`;
+    a floor, so a run published later joins the list and none can drop out of it."""
+    assert len(COMMITTED_RUNS) >= 28
+    assert PUBLISHED_BEFORE_THE_AMENDMENT_CLAUSE <= set(COMMITTED_RUNS)
+
+
+@pytest.mark.parametrize("ticker,name", REBUILT_RUNS)
+def test_a_committed_run_rebuilds_its_8k_file_byte_for_byte(ticker, name, tmp_path):
     from src import assemble_bundle
-    run = cutoff_guard.REPO_ROOT / "runs" / ticker / accession
+    run = cutoff_guard.REPO_ROOT / "runs" / ticker / name
     manifest = json.loads(cutoff_guard.load_bundle_file(run, "input_manifest.json"))
-    bundle = assemble_bundle.build(ticker, manifest["form"], accession=accession,
+    bundle = assemble_bundle.build(ticker, manifest["form"], accession=manifest["accession"],
                                    prior_runs=tmp_path / "no-runs",
                                    rules_version=manifest.get("rules_version"))
     assert bundle["texts"]["input_8k.md"].encode("utf-8") == \

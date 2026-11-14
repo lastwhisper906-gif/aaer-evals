@@ -373,8 +373,9 @@ def excluded_paragraphs(ticker: str, form: str, *, cutoff, fixtures_root) -> lis
 
 def eight_k_file(ticker: str, form: str, *, cutoff, fixtures_root,
                  on_record: dict, trigger: dict | None = None
-                 ) -> tuple[dict | None, str, str | None]:
-    """`input_8k.md`: the parsed payload if there is one, the text, the reason.
+                 ) -> tuple[dict | None, str, str | None, dict]:
+    """`input_8k.md`: the parsed payload if there is one, the text, the reason,
+    and the window of event filings as `parse_8k.event_filings` drew it.
 
     The payload is returned so the exclusions can be read out of the same
     cleaning that produced the text, instead of cleaning the exhibit twice.
@@ -385,7 +386,7 @@ def eight_k_file(ticker: str, form: str, *, cutoff, fixtures_root,
     if ("8-K", "exhibit_99_1") in on_record and ("8-K", "primary_html") in on_record:
         payload = parse_8k.extract(ticker, cutoff=cutoff, fixtures_root=fixtures_root,
                                    trigger=trigger)
-        return payload, parse_8k.render(payload), None
+        return payload, parse_8k.render(payload), None, payload["event_filings"]
 
     # The sentence says what is missing and nothing about what comes later. It
     # used to name the held 8-K's own filing date, a date after the cutoff, in
@@ -399,12 +400,14 @@ def eight_k_file(ticker: str, form: str, *, cutoff, fixtures_root,
     # every company, and a bundle that says nothing about them cannot answer
     # `filing_irregularity` either way. Nor does it mean no event filing: the
     # window's are carried after the index either way, when the store holds the
-    # window record; a store fetched without one adds nothing, so a run built
-    # from such a store rebuilds byte for byte.
+    # window record and the window holds something; otherwise nothing is added,
+    # so a run built from a store fetched without them rebuilds byte for byte.
+    events = parse_8k.event_filings(ticker, cutoff=cutoff, fixtures_root=fixtures_root,
+                                    trigger=trigger)
     text = (f"# {ticker} 8-K\n\n{note}.\n\n"
             + parse_8k.render_index(ticker, cutoff=cutoff, fixtures_root=fixtures_root,
-                                    trigger=trigger))
-    return None, text, note
+                                    trigger=trigger, events=events))
+    return None, text, note, events
 
 
 def excluded_from_the_release(payload: dict | None) -> list[dict]:
@@ -616,7 +619,7 @@ def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIX
                                                    fixtures_root=fixtures_root)
 
     with phase(opened, "input_8k.md"):
-        eight_k, eight_k_text, eight_k_note = eight_k_file(
+        eight_k, eight_k_text, eight_k_note, events = eight_k_file(
             ticker, form, cutoff=cutoff, fixtures_root=fixtures_root,
             on_record=on_record, trigger=trigger)
 
@@ -717,6 +720,11 @@ def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIX
         "on_record_at_cutoff": documents_on_record(ticker, cutoff, fixtures_root),
         "paragraphs": paragraphs,
         "exclusions": exclusions,
+        # The window of event filings: what was drawn, carried and listed, and
+        # whether the store was fetched with them at all. `input_8k.md` prints
+        # nothing for an empty window or a store fetched without them, so this
+        # is where the two are told apart.
+        "event_filings": parse_8k.window_record(events),
         "counts": {
             "paragraphs": len(paragraphs),
             "exclusions": len(exclusions),

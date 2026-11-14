@@ -185,8 +185,12 @@ def test_an_unreadable_release_is_refused(tmp_path):
 def test_a_store_records_whether_it_fetched_event_filings(tmp_path):
     root = _letter_tree(tmp_path, "UPLOAD", released="2024-12-04")
     assert cutoff_guard.fetched_event_filings("ZZZZ", fixtures_root=root) is None
-    assert cutoff_guard.fetched_event_filings("NVDA")["for"] == "0001045810-26-000075"
+    # the committed stores were fetched before event filings were
+    assert cutoff_guard.fetched_event_filings("NVDA") is None
     path = root / "ZZZZ" / "manifest.json"
+    planted = {"for": "0000000000-25-000001", "after": None}
+    path.write_text(json.dumps(dict(json.loads(path.read_text()), event_filings=planted)))
+    assert cutoff_guard.fetched_event_filings("ZZZZ", fixtures_root=root) == planted
     path.write_text(json.dumps(dict(json.loads(path.read_text()), event_filings=["x"])))
     with pytest.raises(CutoffGuardError, match="not an object"):
         cutoff_guard.fetched_event_filings("ZZZZ", fixtures_root=root)

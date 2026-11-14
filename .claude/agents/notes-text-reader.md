@@ -91,8 +91,8 @@ filing, whose narrative gives the reason and says whether results will change,
 with the report it gave notice of named in its heading; and the SEC staff's
 comment letters with the company's responses, dated by the day EDGAR made them
 public (only letters filed within the two years before the window opened were
-looked for, and the section's closing line says so when the window holds
-nothing). Report each in substance like any other paragraph: the obligation
+looked for, as the section's second line says; a file with no such heading
+carries no event filing, and you report none). Report each in substance like any other paragraph: the obligation
 accelerated and its trigger, the impairment and its cause, what the staff asked
 and what the company conceded or promised "in future filings". Area
 `controls_audit_and_filings` for auditor changes, late filings and comment

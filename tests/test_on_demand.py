@@ -917,3 +917,36 @@ def test_the_bundle_from_the_store_on_demand_carries_them_and_the_owners_grader_
     for check in (mechanical.check_nothing_after_cutoff, mechanical.check_inputs_on_record):
         result = check(run)
         assert result.status == PASS, (check.__name__, result.failures)
+
+
+def test_an_empty_window_fetched_on_demand_leaves_the_published_file_as_it_was(tmp_path, server):
+    """NVIDIA's window for the 10-Q of 2026-08-26 holds nothing: its three comment
+    letters, filed July to September 2025, were made public 2026-01-13 (each
+    header's first line, committed under tests/fixtures/event_filings/), before
+    the 10-Q of 2026-05-20 the window opens after. So the store fetched on demand
+    records the three releases and carries no letter, and the bundle built from
+    it is the published run's file, byte for byte; that the window was drawn and
+    found empty is the manifest's record, where the committed store's says it
+    was fetched without event filings."""
+    from src import assemble_bundle
+    held = on_demand.fetch_store(client(tmp_path, server), TICKER, accession=ACCESSION)
+    record = fetch_fixtures.load_manifest(held["store"] / TICKER)["event_filings"]
+    assert {accession: release["released"] for accession, release in
+            record["releases"].items()} == {"0000000000-25-007684": "2026-01-13",
+                                            "0001045810-25-000192": "2026-01-13",
+                                            "0000000000-25-009788": "2026-01-13"}
+    assert not [entry for entry in fetch_fixtures.load_manifest(held["store"] / TICKER)
+                ["documents"] if entry["form"] in ("UPLOAD", "CORRESP")]
+    published = (FIXTURES.parent.parent / "runs" / TICKER / ACCESSION / "input_8k.md").read_bytes()
+    fetched_bundle = assemble_bundle.build(TICKER, "10-Q", accession=ACCESSION,
+                                           fixtures_root=held["store"],
+                                           prior_runs=tmp_path / "no-runs")
+    assert fetched_bundle["texts"]["input_8k.md"].encode("utf-8") == published
+    window = fetched_bundle["manifest"]["event_filings"]
+    assert (window["state"], window["carried"], window["listed"]) == ("fetched", [], [])
+    assert window["opens_after"]["accession"] == "0001045810-26-000052"
+    assert "no comment letter filed in the 2 years before the window opened" in window["note"]
+    committed = assemble_bundle.build(TICKER, "10-Q", accession=ACCESSION,
+                                      prior_runs=tmp_path / "no-runs")
+    assert committed["manifest"]["event_filings"]["state"] == "not_fetched"
+    assert committed["texts"]["input_8k.md"].encode("utf-8") == published

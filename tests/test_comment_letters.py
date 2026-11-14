@@ -119,9 +119,14 @@ def test_letters_filed_before_a_report_and_made_public_after_it_never_reach_it(t
     assert events["carried"] == []
     for accession in FIRST_CONVERSATION:
         assert accession not in text
-    assert parse_8k.nothing_in_the_window(2) in text
+    # an empty window prints nothing, so the file is the one a store fetched
+    # without event filings gives; the manifest's record says which it was, and
+    # says what was looked at
+    assert text == ""
+    record = parse_8k.window_record(events)
+    assert record["state"] == "fetched" and record["carried"] == []
     assert ("no comment letter filed in the 2 years before the window opened was made "
-            "public in this window") in text
+            "public in this window") in record["note"]
 
 
 def test_the_first_report_after_the_release_carries_the_whole_conversation(tmp_path):
@@ -140,6 +145,10 @@ def test_the_first_report_after_the_release_carries_the_whole_conversation(tmp_p
     ]
     assert (f"### UPLOAD {STAFF}, a letter from the SEC staff, filed 2024-09-26 and made "
             "public 2024-12-04, verbatim") in text
+    # a window that carries something says what was looked for
+    assert ("### comment letters: those filed in the 2 years before the window opened were "
+            "looked for, and are carried when made public inside it") in text
+    assert "note" not in parse_8k.window_record(events)
     assert (f"### CORRESP {RESPONSE}, the company's letter to the SEC staff, filed "
             "2024-09-27 and made public 2024-12-04, verbatim") in text
     staff = next(entry for entry in events["carried"] if entry["accession"] == STAFF)
@@ -207,7 +216,8 @@ def test_a_letter_filed_before_the_lookback_is_never_looked_for_and_the_line_say
     assert record["releases"][PLANTED_INSIDE["accessionNumber"]]["released"] == "2022-10-01"
     events, text = section(root, TICKER, QUARTER)
     assert events["carried"] == []
-    assert "no comment letter filed in the 2 years before the window opened" in text
+    assert "no comment letter filed in the 2 years before the window opened" in \
+        parse_8k.window_record(events)["note"]
 
 
 def test_a_letter_with_no_release_on_record_is_refused_by_the_gate(tmp_path):

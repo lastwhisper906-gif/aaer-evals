@@ -447,14 +447,52 @@ def _letter(row: dict, released: str, documents: list[dict], cutoff: str, fixtur
              "paragraph_ids": _ids(row["accessionNumber"], role, len(paragraphs))}]
 
 
+def _years(lookback_years: int) -> str:
+    return f"{lookback_years} year{'s' if lookback_years != 1 else ''}"
+
+
 def nothing_in_the_window(lookback_years: int) -> str:
-    """The line a whole window with nothing in it prints. It says what was looked
-    at: a comment letter is found only through its header, and only the letters
-    filed within the lookback of the window's opening had theirs read."""
-    years = f"{lookback_years} year{'s' if lookback_years != 1 else ''}"
+    """What a whole window with nothing in it comes to, in the bundle manifest's
+    record of the window (`window_record`). It says what was looked at: a
+    comment letter is found only through its header, and only the letters filed
+    within the lookback of the window's opening had theirs read."""
     return ("none: no 8-K of items " + ", ".join(EVENT_ITEMS) + " or " + AUDITOR_CHANGE_ITEM
             + ", no notification of late filing, and no comment letter filed in the "
-            f"{years} before the window opened was made public in this window")
+            f"{_years(lookback_years)} before the window opened was made public in this "
+            "window")
+
+
+NOT_FETCHED = ("this store was fetched without event filings, so input_8k.md carries no "
+               "8-K body of these items, no auditor's letter, no notification of late "
+               "filing and no comment letter; the window's 8-Ks and notices the index "
+               "lists are under `listed`")
+
+
+def window_record(events: dict) -> dict:
+    """The bundle manifest's record of the window: what was drawn, what was
+    carried, what the index lists and the store does not hold, and, for a
+    window with nothing in it, the sentence saying so with the lookback. It is
+    where an empty window and a store fetched without event filings are told
+    apart, since `input_8k.md` prints nothing for either."""
+    state = events["state"]
+    record = {
+        "state": state,
+        "opens_after": events["previous"],
+        "through": events["cutoff"],
+        "letter_lookback_years": events["letter_lookback_years"],
+        "carried": [{"form": entry["form"], "accession": entry["accession"],
+                     "role": entry["role"], "filing_date": entry["filing_date"],
+                     "released": entry["released"], "paragraphs": len(entry["paragraphs"])}
+                    for entry in events["carried"]],
+        "listed": events["listed"],
+        "not_carried": events["not_carried"],
+    }
+    if state == "not_fetched":
+        record["note"] = NOT_FETCHED
+    elif state == "fetched" and not (events["carried"] or events["listed"]
+                                     or events["not_carried"]):
+        record["note"] = nothing_in_the_window(events["letter_lookback_years"])
+    return record
 
 
 def render_event_filings(events: dict) -> list[str]:
@@ -462,12 +500,16 @@ def render_event_filings(events: dict) -> list[str]:
     is a heading, because a line under an `[id]` is that paragraph's text.
 
     Nothing at all for a store that holds no window record (`not_fetched`) or
-    no triggering report (`no_trigger`): the committed stores were fetched
-    before event filings were, and a run built from one rebuilds byte for byte
-    from its store only if the file ends where it ended.
+    no triggering report (`no_trigger`), and nothing for a window that holds
+    nothing: the committed stores were fetched before event filings were, and a
+    published run rebuilds byte for byte from its store only if the file ends
+    where it ended -- NVIDIA's 10-Q of 2026-08-26 has an empty window, and its
+    file is the same whether its store was fetched with event filings or
+    without. Which of the two it was is the manifest's to say (`window_record`).
     """
     state = events["state"]
-    if state in ("no_trigger", "not_fetched"):
+    empty = not (events["carried"] or events["listed"] or events["not_carried"])
+    if state in ("no_trigger", "not_fetched") or (state == "fetched" and empty):
         return []
     cutoff, previous = events["cutoff"], events["previous"]
     if previous is not None:
@@ -476,6 +518,10 @@ def render_event_filings(events: dict) -> list[str]:
     else:
         title = f"## event filings made public on or before {cutoff}"
     out = ["", title, ""]
+    if state == "fetched":
+        out.extend(["### comment letters: those filed in the "
+                    f"{_years(events['letter_lookback_years'])} before the window opened "
+                    "were looked for, and are carried when made public inside it", ""])
     if state == "another_filing":
         out.extend(["### this store's event filings were fetched for another filing than "
                     "this one, so none is carried; any 8-K or notice of the window the index "
@@ -493,9 +539,6 @@ def render_event_filings(events: dict) -> list[str]:
         out.extend([f"### not carried: {row['form']} {row['accession']} filed "
                     f"{row['filing_date']} and made public {row['released']}: EDGAR holds "
                     "the letter as a PDF with no text copy", ""])
-    if state == "fetched" and not (events["carried"] or events["listed"]
-                                   or events["not_carried"]):
-        out.extend([f"### {nothing_in_the_window(events['letter_lookback_years'])}", ""])
     return out
 
 
@@ -592,7 +635,7 @@ def index_lines(filings: list[dict], late: list[dict], cutoff) -> list[str]:
 
 
 def render_index(ticker: str, *, cutoff, fixtures_root=cutoff_guard.FIXTURES,
-                 trigger: dict | None = None) -> str:
+                 trigger: dict | None = None, events: dict | None = None) -> str:
     """The filing index alone, for a bundle with no earnings exhibit on record,
     and the event filings of the window, which do not depend on one.
 
@@ -601,11 +644,12 @@ def render_index(ticker: str, *, cutoff, fixtures_root=cutoff_guard.FIXTURES,
     printed neither could not answer `filing_irregularity` either way.
     """
     index = submissions(ticker, fixtures_root=fixtures_root)
+    if events is None:
+        events = event_filings(ticker, cutoff=cutoff, fixtures_root=fixtures_root,
+                               trigger=trigger)
     return "\n".join(index_lines(eight_k_filings(index, cutoff),
                                  late_filings(index, cutoff), cutoff)
-                     + render_event_filings(event_filings(
-                         ticker, cutoff=cutoff, fixtures_root=fixtures_root,
-                         trigger=trigger)))
+                     + render_event_filings(events))
 
 
 def render(payload: dict) -> str:
