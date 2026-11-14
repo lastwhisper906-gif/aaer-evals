@@ -1,0 +1,1613 @@
+{
+ "question": "do reported earnings and cash reflect economic reality?",
+ "areas": {
+  "earnings_versus_cash": {
+   "finding": "Cash runs well ahead of reported income, and the gap widened against the company's own history. Over the trailing four quarters operating cash flow is {earnings_versus_cash.operating_cash_flow_over_net_income} times net income, against {earnings_versus_cash.history.years.0.operating_cash_flow_over_net_income} in fiscal 2025 and {earnings_versus_cash.history.years.1.operating_cash_flow_over_net_income} in fiscal 2024. The ratio rose because trailing net income fell {ratios.growth.net_income.trailing_four_quarters|pct} to {terms.trailing_four_quarters.net_income} while operating cash flow rose {ratios.growth.operating_cash_flow.trailing_four_quarters|pct} to {terms.trailing_four_quarters.operating_cash_flow}. In the quarter itself the company reported a net loss of {ratios.growth.net_income.this_quarter} while operating cash flow was {ratios.growth.operating_cash_flow.this_quarter}, up {ratios.growth.operating_cash_flow.year_over_year|pct} on the year-ago quarter and {ratios.growth.operating_cash_flow.quarter_over_quarter|pct} on the prior quarter. The wedge is non-cash and acquisition-driven: share-based compensation over the trailing four quarters was {terms.trailing_four_quarters.share_based_compensation}, larger than trailing net income, and depreciation and amortization was {terms.trailing_four_quarters.depreciation_and_amortization}; the quarter alone carried share-based compensation of {note_tables.tables.notes_175.facts.20}, up {note_tables.tables.notes_175.changes.10} on the year-ago quarter, intangible amortization of {note_tables.tables.notes_107.facts.12} and severance of {note_tables.tables.notes_83.facts.29}, while a non-cash gain of {note_tables.tables.notes_42.facts.8} on the QRadar contingent consideration inside general and administrative expense lifted the operating result. Accruals over average assets are {earnings_versus_cash.accruals_over_average_assets}, negative as in every filled year of the history ({trend_table.years-back-0.ratios.accruals_over_total_assets} in fiscal 2025, {trend_table.years-back-1.ratios.accruals_over_total_assets} in fiscal 2024), so cash has long exceeded income; the denominator is now swollen by acquired goodwill. Working capital: receivables rose {earnings_versus_cash.working_capital.receivables.balance_sheet_change} year over year, {earnings_versus_cash.working_capital.receivables.share_of_net_income} times trailing net income, while the cash-flow statement's receivables line over the same span shows an increase of {earnings_versus_cash.working_capital.receivables.cash_flow_statement_change}; the articulation gap of {earnings_versus_cash.working_capital.receivables.articulation_gap} is close to the {note_tables.tables.notes_77.facts.3} of receivables CyberArk brought on at the acquisition date, so the two statements articulate once acquired balances are allowed for. Payables supplied {earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change} on the balance sheet against {earnings_versus_cash.working_capital.accounts_payable.cash_flow_statement_change} on the cash-flow statement, a gap of {earnings_versus_cash.working_capital.accounts_payable.articulation_gap}; inventory is not tagged at either balance date, so its absorption cannot be read. Earnings are much smoother than cash: the smoothness ratio is {earnings_versus_cash.smoothness}, well below one, because quarterly operating cash flow swings with seasonal billings while income was steady until this quarter's loss. Simple free cash flow over the trailing four quarters is {free_cash_flow.free_cash_flow_simple}; after share-based compensation and acquisition spending of {free_cash_flow.free_cash_flow_quality_adjusted.inputs.acquisitions.cash_spent}, quality-adjusted free cash flow is {free_cash_flow.free_cash_flow_quality_adjusted}. Share count also moved: basic weighted-average shares rose by {note_tables.tables.notes_182.changes.2} to {note_tables.tables.notes_182.facts.4} on the shares issued for CyberArk, net of {terms.trailing_four_quarters.share_repurchases} of repurchases.",
+   "verdict": "Operating cash generation is real and above income, but reported income is depressed by acquisition charges and cash is flattered by non-cash compensation that is a genuine cost; after compensation and acquisition spending the company consumed cash over the trailing four quarters.",
+   "evidence": [
+    "earnings_quality_net_loss_line",
+    "earnings_quality_net_income_cumulative_line",
+    "earnings_quality_operating_loss_line",
+    "earnings_quality_accruals_ratio_annual_trend",
+    "earnings_quality_accruals_ratio_quarterly_trend",
+    "revenue_recognition_accounts_receivable_balance",
+    "liquidity_and_capital_accounts_payable_balance",
+    "liquidity_and_capital_common_shares_issued",
+    "earnings_quality_accelerated_vesting_from_cyberark_and_koi",
+    "earnings_quality_contingent_consideration_gain_inside_general_and_administrative",
+    "articulation_and_the_filed_history_cyberark_acquired_receivables_and_deferred_revenue",
+    "liquidity_and_capital_operating_cash_flow_attributed_to_collections",
+    "estimates_and_discretion_cyberark_workforce_optimization_severance"
+   ],
+   "fields": [
+    "earnings_versus_cash.operating_cash_flow_over_net_income",
+    "earnings_versus_cash.history.years.0.operating_cash_flow_over_net_income",
+    "earnings_versus_cash.history.years.1.operating_cash_flow_over_net_income",
+    "ratios.growth.net_income.trailing_four_quarters",
+    "ratios.growth.operating_cash_flow.trailing_four_quarters",
+    "ratios.growth.net_income.this_quarter",
+    "ratios.growth.operating_cash_flow.this_quarter",
+    "terms.trailing_four_quarters.share_based_compensation",
+    "terms.trailing_four_quarters.depreciation_and_amortization",
+    "earnings_versus_cash.accruals_over_average_assets",
+    "trend_table.years-back-0.ratios.accruals_over_total_assets",
+    "earnings_versus_cash.working_capital.receivables.balance_sheet_change",
+    "earnings_versus_cash.working_capital.receivables.cash_flow_statement_change",
+    "earnings_versus_cash.working_capital.receivables.articulation_gap",
+    "earnings_versus_cash.working_capital.receivables.share_of_net_income",
+    "earnings_versus_cash.working_capital.accounts_payable.articulation_gap",
+    "earnings_versus_cash.smoothness",
+    "free_cash_flow.free_cash_flow_simple",
+    "free_cash_flow.free_cash_flow_quality_adjusted",
+    "note_tables.tables.notes_77.facts.3",
+    "note_tables.tables.notes_175.facts.20",
+    "note_tables.tables.notes_42.facts.8",
+    "note_tables.tables.notes_182.changes.2"
+   ]
+  },
+  "revenue_recognition": {
+   "finding": "Receivables are outrunning revenue. Quarterly days sales outstanding is {trend_table.quarters-back-0.ratios.days_sales_outstanding} days, the highest of the six filled quarters, against {trend_table.quarters-back-1.ratios.days_sales_outstanding} a quarter earlier and {trend_table.quarters-back-4.ratios.days_sales_outstanding} in the year-ago quarter; receivables over quarterly revenue is {trend_table.quarters-back-0.ratios.receivables_over_revenue}, also the highest, and on a trailing-four-quarter basis days sales outstanding is {ratios.efficiency.days_sales_outstanding}. Part of the rise is acquired: CyberArk brought {note_tables.tables.notes_77.facts.3} of receivables, close to the whole articulation gap of {earnings_versus_cash.working_capital.receivables.articulation_gap}, but the year-over-year pattern was already seasonal and the quarter-end level is still above every earlier quarter. Current contract liabilities over quarterly revenue fell to {trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue}, the lowest of six quarters, from {trend_table.quarters-back-1.ratios.contract_liabilities_over_revenue} a quarter earlier and {trend_table.quarters-back-4.ratios.contract_liabilities_over_revenue} a year earlier, even though CyberArk added {note_tables.tables.notes_77.facts.7} of deferred revenue; deferred revenue is growing more slowly than recognized revenue, so less of the growth is pre-funded by customers than a year ago. Revenue grew {ratios.growth.revenue.year_over_year|pct} year over year and {ratios.growth.revenue.quarter_over_quarter|pct} on the prior quarter, with product revenue up {note_tables.tables.notes_30.changes.0} and subscription and support up {note_tables.tables.notes_30.changes.6}, but the filing states the acquired businesses contributed \"revenue of $388 million and $391 million\" since their acquisition dates, so organic growth is well below the headline. A new judgment area appeared: product revenue now includes \"certain identity security offerings\" recognized when the license is delivered, a point-in-time stream that management says will vary from quarter to quarter with renewal timing, and the pro forma table puts combined revenue for the quarter at {note_tables.tables.notes_95.facts.0}. The geographic discussion credits sales-force investment alone, with United States revenue up {note_tables.tables.notes_28.changes.0}, while other paragraphs credit acquisitions, so the stated reasons for growth are not consistent across the filing. No extended payment terms, bill-and-hold or fourth-quarter concentration could be found in the inputs, and fiscal fourth quarters are not reported as durations in the record, so quarter-weighting cannot be tested. The company's own customer-financing book declined to {note_tables.tables.notes_54.facts.6} current and {note_tables.tables.notes_54.facts.14} noncurrent.",
+   "verdict": "Revenue recognition is strained at the edges rather than broken: receivables and deferred revenue both move against revenue in the quarter, headline growth is partly bought, and a new point-in-time license stream widens management's discretion over quarterly timing.",
+   "evidence": [
+    "revenue_recognition_days_sales_outstanding_quarterly_trend",
+    "revenue_recognition_receivables_over_revenue_quarterly_trend",
+    "revenue_recognition_contract_liabilities_over_revenue_quarterly_trend",
+    "revenue_recognition_days_sales_outstanding_annual_trend",
+    "revenue_recognition_contract_liabilities_over_revenue_annual_trend",
+    "revenue_recognition_total_revenue_line",
+    "revenue_recognition_product_revenue_line",
+    "revenue_recognition_subscription_and_support_revenue_line",
+    "revenue_recognition_accounts_receivable_balance",
+    "revenue_recognition_contract_liabilities_noncurrent_balance",
+    "revenue_recognition_financing_receivables_current_balance",
+    "revenue_recognition_financing_receivables_noncurrent_balance",
+    "revenue_recognition_americas_revenue_line",
+    "results_against_expectations_acquired_businesses_revenue_and_operating_loss",
+    "revenue_recognition_identity_licenses_recognized_on_delivery",
+    "results_against_expectations_total_revenue_growth_attributed_to_acquisitions",
+    "across_documents_geographic_growth_explained_without_acquisitions",
+    "articulation_and_the_filed_history_cyberark_acquired_receivables_and_deferred_revenue"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.days_sales_outstanding",
+    "trend_table.quarters-back-1.ratios.days_sales_outstanding",
+    "trend_table.quarters-back-4.ratios.days_sales_outstanding",
+    "trend_table.quarters-back-0.ratios.receivables_over_revenue",
+    "ratios.efficiency.days_sales_outstanding",
+    "trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue",
+    "trend_table.quarters-back-1.ratios.contract_liabilities_over_revenue",
+    "trend_table.quarters-back-4.ratios.contract_liabilities_over_revenue",
+    "ratios.growth.revenue.year_over_year",
+    "ratios.growth.revenue.quarter_over_quarter",
+    "note_tables.tables.notes_30.changes.0",
+    "note_tables.tables.notes_30.changes.6",
+    "note_tables.tables.notes_28.changes.0",
+    "note_tables.tables.notes_95.facts.0",
+    "note_tables.tables.notes_77.facts.3",
+    "note_tables.tables.notes_77.facts.7",
+    "note_tables.tables.notes_54.facts.6",
+    "note_tables.tables.notes_54.facts.14"
+   ]
+  },
+  "estimates_and_reserves": {
+   "finding": "The bad-debt allowance thinned while receivables peaked. The allowance is {terms.balances_now.bad_debt_allowance} against receivables of {terms.balances_now.receivables}, a ratio of {trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio}, the lowest of the six filled quarters, down from {trend_table.quarters-back-1.ratios.bad_debt_reserve_ratio} a quarter earlier and {trend_table.quarters-back-4.ratios.bad_debt_reserve_ratio} a year earlier, when the allowance was {terms.balances_a_year_earlier.bad_debt_allowance}; the filing now prints to whole millions so the step is coarse, but the move is against rising receivables and acquired balances, and no explanation is given. Allowances on financing receivables were unchanged at {note_tables.tables.notes_54.facts.4} current and {note_tables.tables.notes_54.facts.12} noncurrent while the weakest internal rating bucket grew by {note_tables.tables.notes_56.changes.14} to {note_tables.tables.notes_56.facts.29} as the gross book shrank by {note_tables.tables.notes_56.changes.19}. The largest estimate change raised income: management cut its estimate of QRadar contingent payments, producing a gain of {note_tables.tables.notes_42.facts.8} inside general and administrative expense in a quarter with an operating loss of {ratios.growth.operating_income.this_quarter}; the level-three liability fell from {note_tables.tables.notes_42.facts.0} to {note_tables.tables.notes_42.facts.16} after payments of {note_tables.tables.notes_42.facts.12}, and the nine-month gain is {note_tables.tables.notes_42.facts.10}, while the undiscounted range the filing gives still runs well above the carrying amount. Goodwill is {note_tables.tables.notes_102.facts.2} after {note_tables.tables.notes_102.facts.1} was acquired in the nine months, intangibles are {note_tables.tables.notes_105.facts.38}, and the measurement period is open, so allocations can still move; platform-renewal intangibles of {note_tables.tables.notes_79.facts.1} carry lives of twelve to fourteen years, a long life that keeps amortization lower than a shorter one would. Tax moved against the company rather than for it: trailing tax expense of {terms.trailing_four_quarters.income_tax_expense} on pretax income of {terms.trailing_four_quarters.pretax_income} is an effective rate of {tax_rate.effective_rate|pct}, above statutory, and the quarter booked tax expense on a pretax loss; no valuation-allowance release appears and the California allowance remains. Deferred tax liabilities rose with acquired intangibles while deferred tax assets edged down. Own-share-price marks now flow through earnings under the fair value option on the assumed convertible notes, a loss of {note_tables.tables.notes_187.facts.8} for the nine months, and on capped calls carried at {note_tables.tables.notes_37.facts.67}. The Centripetal litigation accrual grows with interest. Inventory and warranty reserves are not tagged in any period, so management's statement that inventory excess and obsolete charges fell cannot be tested.",
+   "verdict": "Reserves moved in the income-raising direction, a thinner bad-debt allowance and a contingent-consideration cut booked as an operating gain, while tax moved against the company; the acquisition estimates are large, open and management-set, and two reserve ratios the industry lens needs are untagged.",
+   "evidence": [
+    "estimates_and_discretion_bad_debt_reserve_ratio_quarterly_trend",
+    "estimates_and_discretion_bad_debt_reserve_ratio_annual_trend",
+    "estimates_and_discretion_allowance_for_doubtful_accounts_balance",
+    "structure_and_disclosure_changes_rounding_to_whole_millions",
+    "estimates_and_discretion_goodwill_balance",
+    "estimates_and_discretion_intangible_assets_balance",
+    "estimates_and_discretion_deferred_tax_liabilities_balance",
+    "estimates_and_discretion_deferred_tax_assets_balance",
+    "earnings_quality_income_tax_expense_against_pretax_loss",
+    "estimates_and_discretion_inventory_reserve_ratio_quarterly_trend",
+    "estimates_and_discretion_warranty_reserve_ratio_quarterly_trend",
+    "estimates_and_discretion_qradar_contingent_payment_estimate_reduced",
+    "estimates_and_discretion_qradar_undiscounted_payment_range",
+    "estimates_and_discretion_cyberark_intangible_useful_lives",
+    "estimates_and_discretion_acquisition_allocations_open_in_measurement_period",
+    "earnings_quality_effective_tax_rate_attributed_to_cyberark",
+    "estimates_and_discretion_tax_rate_fluctuation_from_cyberark_integration",
+    "earnings_quality_fair_value_option_on_acquired_convertible_notes",
+    "earnings_quality_capped_calls_fair_value_carried_in_other_assets",
+    "related_parties_contingencies_and_subsequent_events_centripetal_accrual_with_interest",
+    "estimates_and_discretion_lower_inventory_excess_and_obsolete_charges",
+    "estimates_and_discretion_credit_loss_expedient_not_expected_material"
+   ],
+   "fields": [
+    "terms.balances_now.bad_debt_allowance",
+    "terms.balances_now.receivables",
+    "terms.balances_a_year_earlier.bad_debt_allowance",
+    "trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio",
+    "trend_table.quarters-back-1.ratios.bad_debt_reserve_ratio",
+    "trend_table.quarters-back-4.ratios.bad_debt_reserve_ratio",
+    "note_tables.tables.notes_54.facts.4",
+    "note_tables.tables.notes_54.facts.12",
+    "note_tables.tables.notes_56.changes.14",
+    "note_tables.tables.notes_56.facts.29",
+    "note_tables.tables.notes_56.changes.19",
+    "note_tables.tables.notes_42.facts.8",
+    "note_tables.tables.notes_42.facts.0",
+    "note_tables.tables.notes_42.facts.16",
+    "note_tables.tables.notes_42.facts.12",
+    "note_tables.tables.notes_42.facts.10",
+    "note_tables.tables.notes_102.facts.2",
+    "note_tables.tables.notes_102.facts.1",
+    "note_tables.tables.notes_105.facts.38",
+    "note_tables.tables.notes_79.facts.1",
+    "terms.trailing_four_quarters.income_tax_expense",
+    "terms.trailing_four_quarters.pretax_income",
+    "tax_rate.effective_rate",
+    "note_tables.tables.notes_187.facts.8",
+    "note_tables.tables.notes_37.facts.67",
+    "ratios.growth.operating_income.this_quarter"
+   ]
+  },
+  "cost_deferral": {
+   "finding": "No capitalized software development cost is tagged in any period, so the capitalized-to-expensed ratio cannot be formed; research and development is expensed, {terms.trailing_four_quarters.research_and_development_expense} over the trailing four quarters, and the quarter's expense rose on acquired headcount. Capitalized contract costs are mixed, current up and noncurrent down, roughly flat in total. Soft assets jumped: the soft-asset share is {trend_table.quarters-back-0.ratios.soft_asset_share}, the highest of six quarters, from {trend_table.quarters-back-1.ratios.soft_asset_share} a quarter earlier and {trend_table.years-back-0.ratios.soft_asset_share} at the fiscal year-end, because goodwill and intangibles from CyberArk and Koi now dominate the balance sheet of {terms.balances_now.assets}. The deferred cost that matters is acquired intangibles: gross intangibles rose {note_tables.tables.notes_105.changes.18}, amortization in the quarter was {note_tables.tables.notes_107.facts.12} against {note_tables.tables.notes_107.facts.13} a year earlier, and {note_tables.tables.notes_109.facts.2} is scheduled for the next twelve months with {note_tables.tables.notes_109.facts.6} beyond year four; that amortization, now inside cost of product revenue for the first time at {note_tables.tables.notes_107.facts.0}, is why gross margin fell to {trend_table.quarters-back-0.ratios.gross_margin}, the lowest of six quarters, from {trend_table.quarters-back-4.ratios.gross_margin} a year earlier. Items presented as acquisition-specific recur: transaction costs, accelerated vesting, severance of {note_tables.tables.notes_83.facts.28} and amortization appear with each deal, and the deals are serial, with acquisition cash of {terms.cash_flow_families.acquisitions} over the trailing four quarters against {terms.cash_flow_families.acquisitions.parts.prior_fiscal_year} in fiscal 2025 and Portkey closing after the quarter. The non-GAAP to GAAP gap cannot be measured from the filings, since no non-GAAP concept is tagged and the release body is absent, yet performance awards are tied to non-GAAP earnings per share, which gives management a reason to define the gap generously. Capital spending rose to {terms.trailing_four_quarters.capital_expenditure} from {terms.trailing_four_quarters_a_year_earlier.capital_expenditure}, including land for the headquarters, so free cash flow carries a heavier property charge than before.",
+   "verdict": "Cost deferral through development capitalization is not visible, but the balance sheet is now mostly purchased intangibles whose amortization is compressing margins, and the acquisition charges the company treats as one-off arrive every period.",
+   "evidence": [
+    "earnings_quality_soft_asset_share_quarterly_trend",
+    "earnings_quality_soft_asset_share_annual_trend",
+    "earnings_quality_gross_margin_quarterly_trend",
+    "earnings_quality_gross_margin_annual_trend",
+    "earnings_quality_non_gaap_gap_quarterly_trend",
+    "earnings_quality_research_and_development_expense",
+    "estimates_and_discretion_capitalized_contract_costs_current",
+    "estimates_and_discretion_capitalized_contract_costs_noncurrent",
+    "estimates_and_discretion_intangible_assets_balance",
+    "liquidity_and_capital_property_and_equipment_balance",
+    "earnings_quality_cyberark_amortization_in_cost_of_product_revenue",
+    "earnings_quality_subscription_and_support_margin_decrease_from_amortization",
+    "earnings_quality_cyberark_transaction_costs_in_general_and_administrative",
+    "earnings_quality_accelerated_vesting_from_cyberark_and_koi",
+    "estimates_and_discretion_cyberark_workforce_optimization_severance",
+    "related_parties_contingencies_and_subsequent_events_portkey_closed_after_quarter",
+    "liquidity_and_capital_headquarters_land_purchase",
+    "results_against_expectations_research_and_development_personnel_growth"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.research_and_development_expense",
+    "trend_table.quarters-back-0.ratios.soft_asset_share",
+    "trend_table.quarters-back-1.ratios.soft_asset_share",
+    "trend_table.years-back-0.ratios.soft_asset_share",
+    "terms.balances_now.assets",
+    "note_tables.tables.notes_105.changes.18",
+    "note_tables.tables.notes_107.facts.12",
+    "note_tables.tables.notes_107.facts.13",
+    "note_tables.tables.notes_107.facts.0",
+    "note_tables.tables.notes_109.facts.2",
+    "note_tables.tables.notes_109.facts.6",
+    "trend_table.quarters-back-0.ratios.gross_margin",
+    "trend_table.quarters-back-4.ratios.gross_margin",
+    "note_tables.tables.notes_83.facts.28",
+    "terms.cash_flow_families.acquisitions",
+    "terms.cash_flow_families.acquisitions.parts.prior_fiscal_year",
+    "terms.trailing_four_quarters.capital_expenditure",
+    "terms.trailing_four_quarters_a_year_earlier.capital_expenditure"
+   ]
+  },
+  "cash_flow_engineering_and_off_balance_sheet": {
+   "finding": "No receivables factoring programme or supplier-finance obligation is tagged in any period, and the calculator marks both as missing, though the financing-receivables note records sales of financing receivables whose amounts the readers did not carry, so that channel is unresolved rather than clean. Classification does move cash: payments on the QRadar contingent consideration, {note_tables.tables.notes_42.facts.14} in the nine months and {note_tables.tables.notes_42.facts.12} in the quarter, are presented in financing activities, so a cash cost of buying that business sits outside operating cash flow and outside the company's own free cash flow measure; gains on investments sold to fund acquisitions sit in earnings while the proceeds sit in investing, with the other, net line at {note_tables.tables.notes_187.facts.17} for the nine months against {note_tables.tables.notes_187.facts.18} a year earlier; and the {terms.cash_flow_families.borrowing_issued.parts.this_year_to_date} received for terminating part of the capped calls is tagged as proceeds from convertible debt. Unrecorded purchase obligations are {terms.balances_now.unconditional_purchase_obligations} against {terms.balances_a_year_earlier.unconditional_purchase_obligations} a year earlier; {note_tables.tables.notes_142.facts.0} of the total is cloud commitments, of which {note_tables.tables.notes_142.facts.6} falls due beyond four years, and the whole is well above trailing cost of revenue of {terms.trailing_four_quarters.cost_of_revenue}. Leases grew with the headquarters extension; the calculator's invested capital still carries an operating lease liability of {ratios.solvency.operating_lease_liability} from the prior fiscal year-end and flags that the period-end noncurrent balance alone is larger. The company assumed convertible notes: the fair value table shows {note_tables.tables.notes_37.facts.91} short-term and {note_tables.tables.notes_37.facts.123} long-term, yet the calculator's total debt is {ratios.solvency.total_debt} and net debt {ratios.solvency.net_debt} because its tag list omits convertible debt, so leverage and invested-capital figures here understate the obligations; interest expense is {terms.trailing_four_quarters.interest_expense} because the notes carry no coupon, and their principal is settleable in cash. No guarantee exposure or variable-interest entity is tagged. Share-based compensation is treated as the real cost it is: {terms.trailing_four_quarters.share_based_compensation} over the trailing four quarters and {note_tables.tables.notes_175.facts.20} in the quarter against {note_tables.tables.notes_175.facts.21} a year earlier, which is why quality-adjusted free cash flow of {free_cash_flow.free_cash_flow_quality_adjusted} is negative while simple free cash flow is {free_cash_flow.free_cash_flow_simple}.",
+   "verdict": "No factoring or supplier finance is visible, but financing-classified acquisition payments, investment gains in earnings, a doubled commitment book and debt the calculator cannot see all make operating cash flow and leverage look better than the economics.",
+   "evidence": [
+    "earnings_quality_contingent_consideration_payments_in_financing_activities",
+    "earnings_quality_investment_sale_gains_to_fund_acquisitions",
+    "liquidity_and_capital_capped_calls_partly_terminated_for_cash",
+    "liquidity_and_capital_headquarters_lease_extension",
+    "structure_and_disclosure_changes_operating_lease_right_of_use_asset",
+    "structure_and_disclosure_changes_operating_lease_liability_noncurrent",
+    "liquidity_and_capital_assumed_zero_coupon_exchangeable_notes",
+    "liquidity_and_capital_convertible_debt_current_portion",
+    "liquidity_and_capital_convertible_debt_noncurrent_portion",
+    "liquidity_and_capital_interest_expense_line",
+    "liquidity_and_capital_exchangeable_notes_principal_payable_in_cash",
+    "related_parties_contingencies_and_subsequent_events_commitments_and_contingencies_caption",
+    "results_against_expectations_cost_of_subscription_and_support_drivers",
+    "liquidity_and_capital_investing_outflow_from_acquisitions_and_investment_sales",
+    "earnings_quality_cyberark_replacement_awards_future_expense"
+   ],
+   "fields": [
+    "note_tables.tables.notes_42.facts.14",
+    "note_tables.tables.notes_42.facts.12",
+    "note_tables.tables.notes_187.facts.17",
+    "note_tables.tables.notes_187.facts.18",
+    "terms.cash_flow_families.borrowing_issued.parts.this_year_to_date",
+    "terms.balances_now.unconditional_purchase_obligations",
+    "terms.balances_a_year_earlier.unconditional_purchase_obligations",
+    "note_tables.tables.notes_142.facts.0",
+    "note_tables.tables.notes_142.facts.6",
+    "terms.trailing_four_quarters.cost_of_revenue",
+    "ratios.solvency.operating_lease_liability",
+    "note_tables.tables.notes_37.facts.91",
+    "note_tables.tables.notes_37.facts.123",
+    "ratios.solvency.total_debt",
+    "ratios.solvency.net_debt",
+    "terms.trailing_four_quarters.interest_expense",
+    "terms.trailing_four_quarters.share_based_compensation",
+    "note_tables.tables.notes_175.facts.20",
+    "note_tables.tables.notes_175.facts.21",
+    "free_cash_flow.free_cash_flow_quality_adjusted",
+    "free_cash_flow.free_cash_flow_simple"
+   ]
+  },
+  "controls_audit_and_filing_signals": {
+   "finding": "No auditor's report sits in a 10-Q bundle, so auditor changes and critical audit matters cannot be read here. The controls item says no change in internal control over financial reporting materially affected it during the quarter in which CyberArk, acquired for {note_tables.tables.notes_75.facts.4}, and Koi were consolidated; it neither reports bringing the acquired companies into the control assessment nor excluding them, and no material weakness is disclosed. No chief financial officer, chief accounting officer or controller departure appears in the inputs, and no late filing or amendment appears. The earnings release filed as an 8-K is listed but its body is absent, and the index contradicts itself about whether it is on record, so the release cannot be matched to the 10-Q. An 8-K dated 2026-04-13 reporting a material agreement and a direct financial obligation also has no body, and the debt note describes only the credit agreement from calendar 2023 with nothing drawn, so which agreement that filing reports is unresolved. Presentation changed quietly: facts from fiscal 2026 filings are rounded to whole millions where earlier periods printed tenths, which coarsens small balances such as the bad-debt allowance and makes its fall look stepwise; prior-year totals are re-presented in the current report and no restatement trace exists in the bundle to say whether any value moved. The pro forma table combines the company's quarters with CyberArk's calendar quarters ended a month earlier, the earnings-per-share captions now read net income (loss), and the filing reserves discretion over how much acquisition impact it will disclose for the coming year. No related-party growth, subsidiary-list change or comment letter appears in the inputs.",
+   "verdict": "No hard control failure is on record, but the control assertion is silent on the largest acquisition in the company's history, the earnings release cannot be checked against the 10-Q, and presentation choices (rounding, misaligned pro forma periods, disclosure discretion) reduce what an outside reader can verify.",
+   "evidence": [
+    "controls_audit_and_filings_no_control_change_reported_in_acquisition_quarter",
+    "across_documents_financial_obligation_current_report_body_absent",
+    "structure_and_disclosure_changes_rounding_to_whole_millions",
+    "structure_and_disclosure_changes_pro_forma_uses_cyberark_calendar_quarters",
+    "structure_and_disclosure_changes_acquisition_impact_disclosure_discretion",
+    "structure_and_disclosure_changes_exchangeable_notes_excluded_from_diluted_shares",
+    "articulation_and_the_filed_history_balance_sheet_totals_print_equal",
+    "structure_and_disclosure_changes_cyberark_purchase_consideration_recorded",
+    "earnings_quality_non_gaap_gap_quarterly_trend"
+   ],
+   "fields": [
+    "note_tables.tables.notes_75.facts.4"
+   ]
+  },
+  "cross_document_reconciliation": {
+   "finding": "Of the forty-six notes items that carry a direction, most are confirmed by the numbers: the acquisition entries (consideration, goodwill, intangibles, replacement awards, severance, amortization, transaction costs), the assumed convertible notes and capped calls, the lease extension, the repurchases, the quarter's operating loss and the margin compression all print in the direction the prose gives. Two cross-checks tie exactly: the prose's subscription-and-support amortization increase matches {note_tables.tables.notes_107.changes.2} for the quarter and {note_tables.tables.notes_107.changes.3} for the nine months in the amortization table, and the prose's contingent-consideration gain matches {note_tables.tables.notes_42.facts.8} in the level-three rollforward. Two items are contradicted. Deferred tax liabilities rose rather than fell despite the deductible-goodwill prose, carrying the {note_tables.tables.notes_77.facts.8} CyberArk brought in. Management's attribution of higher operating cash flow to increased collections is not supported by the receivables data: quarter-end receivables stand at {trend_table.quarters-back-0.ratios.days_sales_outstanding} days of quarterly revenue, the highest of six quarters, and the cash-flow statement's receivables line reads {terms.trailing_four_quarters.change_in_receivables.parts.this_year_to_date} for this fiscal year to date against {terms.trailing_four_quarters.change_in_receivables.parts.prior_year_to_date} a year earlier, a smaller release of cash from receivables than last year even though operating cash flow itself rose. Several items are unresolved because they fall after the balance-sheet date (the Portkey closing, the cash settlement of the surrendered notes) or because the account is not tagged (inventory excess and obsolete charges, QRadar-migrated revenue, the principal conversion that has not happened). The 8-K earnings release cannot be matched to the 10-Q because its body is not in the bundle; the numbers reader found no earnings-release figures to check.",
+   "verdict": "The notes and the numbers largely agree on what happened; where they disagree it is on management's explanation of cash flow and on the tax effect of acquired goodwill, and the earnings release remains unchecked.",
+   "evidence": [
+    "results_against_expectations_cost_of_subscription_and_support_drivers",
+    "earnings_quality_contingent_consideration_gain_inside_general_and_administrative",
+    "estimates_and_discretion_cyberark_goodwill_tax_deductible",
+    "estimates_and_discretion_deferred_tax_liabilities_balance",
+    "liquidity_and_capital_operating_cash_flow_attributed_to_collections",
+    "revenue_recognition_days_sales_outstanding_quarterly_trend",
+    "related_parties_contingencies_and_subsequent_events_portkey_closed_after_quarter",
+    "related_parties_contingencies_and_subsequent_events_make_whole_notes_paid_after_quarter",
+    "estimates_and_discretion_lower_inventory_excess_and_obsolete_charges",
+    "across_documents_financial_obligation_current_report_body_absent"
+   ],
+   "fields": [
+    "note_tables.tables.notes_107.changes.2",
+    "note_tables.tables.notes_107.changes.3",
+    "note_tables.tables.notes_42.facts.8",
+    "note_tables.tables.notes_77.facts.8",
+    "trend_table.quarters-back-0.ratios.days_sales_outstanding",
+    "terms.trailing_four_quarters.change_in_receivables.parts.this_year_to_date",
+    "terms.trailing_four_quarters.change_in_receivables.parts.prior_year_to_date"
+   ]
+  },
+  "industry_lens": {
+   "finding": "Inventory obsolescence: inventory is not tagged at the quarter-end and no inventory reserve or write-down is tagged in any period, so neither days of inventory nor a reserve ratio can be formed for the quarter; the fiscal 2025 annual figure was {trend_table.years-back-0.ratios.days_sales_of_inventory} days against {trend_table.years-back-1.ratios.days_sales_of_inventory} the year before, management says excess and obsolete charges fell, which cannot be tested, and the filing names memory and component shortages and tariffs as pressures on hardware cost. Purchase commitments: unrecorded obligations are {terms.balances_now.unconditional_purchase_obligations}, up from {terms.balances_a_year_earlier.unconditional_purchase_obligations} a year earlier, with cloud commitments of {note_tables.tables.notes_142.facts.0} and inventory commitments of {note_tables.tables.notes_142.facts.7}; the cloud figure alone is well above trailing cost of revenue of {terms.trailing_four_quarters.cost_of_revenue}, and while whether it exceeds need cannot be judged from the filings, its growth far outpaces trailing revenue growth of {ratios.growth.revenue.trailing_four_quarters|pct}. Customer concentration: the latest tagged facts, from the fiscal 2025 10-K, put four distributors at {concentration.facts.0|pct} of accounts receivable and three customers at {concentration.facts.1|pct}, {concentration.facts.2|pct} and {concentration.facts.3|pct} of revenue; the 10-Q tables carry no update, so the acquisition's effect on concentration is unknown. Channel stuffing: the signals that would accompany it are present, days sales outstanding at {trend_table.quarters-back-0.ratios.days_sales_outstanding}, the highest of six quarters, receivables over revenue at {trend_table.quarters-back-0.ratios.receivables_over_revenue}, the allowance at its lowest, product revenue up {note_tables.tables.notes_30.changes.0} on hardware demand and licenses, and distributors as the largest customers, but acquired receivables of {note_tables.tables.notes_77.facts.3} explain most of the articulation gap and nothing in the prose addresses channel inventory, so the reading stays open rather than adverse. Circular or vendor-financed deals: the company finances its own customers through financing receivables of {note_tables.tables.notes_54.facts.6} current and {note_tables.tables.notes_54.facts.14} noncurrent, a book that shrank by {note_tables.tables.notes_56.changes.19} gross while its weakest rating bucket rose to {note_tables.tables.notes_56.facts.29}; some of these receivables are sold, with amounts not carried into the inputs. The QRadar arrangement pays IBM only when its customers sign qualified new transactions, and the estimate cut signals fewer such migrations than planned. No investment in a customer that then buys from the company appears in the inputs.",
+   "verdict": "The hardware-specific tests are mostly untestable because inventory and its reserve are untagged; the visible industry signals are a receivables peak with a thin allowance against distributor customers, a cloud commitment book growing far faster than revenue, and a shrinking but weakening customer-financing book.",
+   "evidence": [
+    "earnings_quality_days_sales_of_inventory_quarterly_trend",
+    "earnings_quality_days_sales_of_inventory_annual_trend",
+    "estimates_and_discretion_inventory_reserve_ratio_quarterly_trend",
+    "estimates_and_discretion_lower_inventory_excess_and_obsolete_charges",
+    "narrative_signs_of_operating_pressure_memory_and_component_shortages",
+    "narrative_signs_of_operating_pressure_higher_tariff_costs",
+    "results_against_expectations_cost_of_subscription_and_support_drivers",
+    "revenue_recognition_days_sales_outstanding_quarterly_trend",
+    "revenue_recognition_receivables_over_revenue_quarterly_trend",
+    "estimates_and_discretion_bad_debt_reserve_ratio_quarterly_trend",
+    "revenue_recognition_product_revenue_line",
+    "revenue_recognition_financing_receivables_current_balance",
+    "revenue_recognition_financing_receivables_noncurrent_balance",
+    "narrative_signs_of_operating_pressure_fewer_qualified_qradar_transactions_expected",
+    "estimates_and_discretion_qradar_contingent_payment_estimate_reduced"
+   ],
+   "fields": [
+    "trend_table.years-back-0.ratios.days_sales_of_inventory",
+    "trend_table.years-back-1.ratios.days_sales_of_inventory",
+    "terms.balances_now.unconditional_purchase_obligations",
+    "terms.balances_a_year_earlier.unconditional_purchase_obligations",
+    "note_tables.tables.notes_142.facts.0",
+    "note_tables.tables.notes_142.facts.7",
+    "terms.trailing_four_quarters.cost_of_revenue",
+    "ratios.growth.revenue.trailing_four_quarters",
+    "concentration.facts.0",
+    "concentration.facts.1",
+    "concentration.facts.2",
+    "concentration.facts.3",
+    "trend_table.quarters-back-0.ratios.days_sales_outstanding",
+    "trend_table.quarters-back-0.ratios.receivables_over_revenue",
+    "note_tables.tables.notes_30.changes.0",
+    "note_tables.tables.notes_77.facts.3",
+    "note_tables.tables.notes_54.facts.6",
+    "note_tables.tables.notes_54.facts.14",
+    "note_tables.tables.notes_56.changes.19",
+    "note_tables.tables.notes_56.facts.29"
+   ]
+  }
+ },
+ "reconciliation": [
+  {
+   "notes_item": "structure_and_disclosure_changes_cyberark_results_consolidated_from_acquisition_date",
+   "numbers_items": [
+    "revenue_recognition_total_revenue_line",
+    "earnings_quality_total_operating_expenses"
+   ],
+   "outcome": "confirms",
+   "why": "Revenue rose {ratios.growth.revenue.year_over_year|pct} year over year and total operating expenses rose with it; the acquired businesses' own contribution is tagged in the impact and pro forma tables."
+  },
+  {
+   "notes_item": "estimates_and_discretion_qradar_contingent_payment_estimate_reduced",
+   "numbers_items": [
+    "liquidity_and_capital_accrued_liabilities_balance",
+    "liquidity_and_capital_other_noncurrent_liabilities"
+   ],
+   "outcome": "confirms",
+   "why": "The level-three liability fell by {note_tables.tables.notes_42.changes.4} between the January and April balance dates to {note_tables.tables.notes_42.facts.16}, with a gain of {note_tables.tables.notes_42.facts.8} through earnings and payments of {note_tables.tables.notes_42.facts.12} in the quarter."
+  },
+  {
+   "notes_item": "narrative_signs_of_operating_pressure_fewer_qualified_qradar_transactions_expected",
+   "numbers_items": [
+    "revenue_recognition_subscription_and_support_revenue_line"
+   ],
+   "outcome": "unresolved",
+   "why": "Subscription and support revenue rose in total by {note_tables.tables.notes_30.changes.6}; revenue from migrated QRadar customers is not tagged separately, so the shortfall the prose implies cannot be seen in the numbers."
+  },
+  {
+   "notes_item": "structure_and_disclosure_changes_cyberark_purchase_consideration_recorded",
+   "numbers_items": [
+    "estimates_and_discretion_goodwill_balance",
+    "estimates_and_discretion_intangible_assets_balance",
+    "liquidity_and_capital_paid_in_capital_balance",
+    "liquidity_and_capital_common_shares_issued"
+   ],
+   "outcome": "confirms",
+   "why": "Goodwill acquired in the nine months is {note_tables.tables.notes_102.facts.1}, net intangibles rose by {note_tables.tables.notes_105.changes.20}, and the consideration table tags {note_tables.tables.notes_75.facts.4} in total including {note_tables.tables.notes_75.facts.2} of shares; paid-in capital and shares issued rose accordingly."
+  },
+  {
+   "notes_item": "earnings_quality_cyberark_replacement_awards_future_expense",
+   "numbers_items": [
+    "earnings_quality_general_and_administrative_expense",
+    "earnings_quality_total_operating_expenses"
+   ],
+   "outcome": "confirms",
+   "why": "Share-based compensation in the quarter rose by {note_tables.tables.notes_175.changes.10} to {note_tables.tables.notes_175.facts.20}; the direction the prose gives for the coming year is already visible."
+  },
+  {
+   "notes_item": "articulation_and_the_filed_history_cyberark_acquired_receivables_and_deferred_revenue",
+   "numbers_items": [
+    "revenue_recognition_accounts_receivable_balance",
+    "revenue_recognition_contract_liabilities_noncurrent_balance",
+    "revenue_recognition_contract_liabilities_over_revenue_quarterly_trend"
+   ],
+   "outcome": "confirms",
+   "why": "Receivables rose {earnings_versus_cash.working_capital.receivables.balance_sheet_change} year over year and the articulation gap of {earnings_versus_cash.working_capital.receivables.articulation_gap} sits close to the acquired {note_tables.tables.notes_77.facts.3}; current and noncurrent deferred revenue both rose. Against the fiscal year-end, receivables are lower, a seasonal pattern the item does not address."
+  },
+  {
+   "notes_item": "estimates_and_discretion_cyberark_goodwill_tax_deductible",
+   "numbers_items": [
+    "estimates_and_discretion_deferred_tax_liabilities_balance",
+    "estimates_and_discretion_deferred_tax_assets_balance"
+   ],
+   "outcome": "contradicts",
+   "why": "Deferred tax liabilities rose rather than fell, carrying the {note_tables.tables.notes_77.facts.8} CyberArk brought in, and deferred tax assets edged down; cash paid for income taxes is not in the calculator, so the future deduction the prose points to is not visible anywhere in the numbers."
+  },
+  {
+   "notes_item": "estimates_and_discretion_cyberark_intangible_useful_lives",
+   "numbers_items": [
+    "earnings_quality_product_cost_of_revenue_line",
+    "earnings_quality_subscription_and_support_cost_of_revenue_line",
+    "earnings_quality_selling_and_marketing_expense"
+   ],
+   "outcome": "confirms",
+   "why": "Amortization of intangibles in the quarter is {note_tables.tables.notes_107.facts.12}, up {note_tables.tables.notes_107.changes.6} on the year-ago quarter, and the next twelve months carry {note_tables.tables.notes_109.facts.2}."
+  },
+  {
+   "notes_item": "earnings_quality_cyberark_transaction_costs_in_general_and_administrative",
+   "numbers_items": [
+    "earnings_quality_general_and_administrative_expense"
+   ],
+   "outcome": "confirms",
+   "why": "General and administrative expense in the quarter is well above the year-ago quarter, consistent with the transaction costs the prose places there."
+  },
+  {
+   "notes_item": "estimates_and_discretion_cyberark_workforce_optimization_severance",
+   "numbers_items": [
+    "liquidity_and_capital_employee_related_liabilities_balance",
+    "earnings_quality_total_operating_expenses"
+   ],
+   "outcome": "confirms",
+   "why": "Severance charges tagged for the plan are {note_tables.tables.notes_83.facts.28} to date, of which {note_tables.tables.notes_83.facts.16} sits in sales and marketing, and accrued compensation rose."
+  },
+  {
+   "notes_item": "structure_and_disclosure_changes_koi_acquisition_closed",
+   "numbers_items": [
+    "estimates_and_discretion_goodwill_balance"
+   ],
+   "outcome": "confirms",
+   "why": "Koi goodwill is tagged at {note_tables.tables.notes_87.facts.0} and developed technology at {note_tables.tables.notes_89.facts.0}, with total consideration of {note_tables.tables.notes_87.facts.4}."
+  },
+  {
+   "notes_item": "earnings_quality_koi_replacement_awards_future_expense",
+   "numbers_items": [
+    "earnings_quality_general_and_administrative_expense"
+   ],
+   "outcome": "confirms",
+   "why": "Share-based compensation rose by {note_tables.tables.notes_175.changes.10} in the quarter; the Koi awards add to a line already moving in the stated direction."
+  },
+  {
+   "notes_item": "related_parties_contingencies_and_subsequent_events_portkey_agreement_at_quarter_end",
+   "numbers_items": [
+    "estimates_and_discretion_goodwill_balance"
+   ],
+   "outcome": "unresolved",
+   "why": "Portkey closed after the balance-sheet date, so neither cash nor goodwill at 2026-04-30 carries it; the effect belongs to the next filing."
+  },
+  {
+   "notes_item": "related_parties_contingencies_and_subsequent_events_portkey_closed_after_quarter",
+   "numbers_items": [
+    "estimates_and_discretion_goodwill_balance",
+    "estimates_and_discretion_intangible_assets_balance"
+   ],
+   "outcome": "unresolved",
+   "why": "The acquisition will be recorded in the fourth quarter of fiscal 2026; no number in this filing carries it."
+  },
+  {
+   "notes_item": "results_against_expectations_acquired_businesses_revenue_and_operating_loss",
+   "numbers_items": [
+    "earnings_quality_operating_loss_line",
+    "revenue_recognition_total_revenue_line"
+   ],
+   "outcome": "confirms",
+   "why": "Operating income swung to {ratios.growth.operating_income.this_quarter}, a change of {ratios.growth.operating_income.year_over_year|pct} on the year-ago quarter, consistent with an acquired operating loss of the size the filing states."
+  },
+  {
+   "notes_item": "liquidity_and_capital_headquarters_land_purchase",
+   "numbers_items": [
+    "liquidity_and_capital_property_and_equipment_balance"
+   ],
+   "outcome": "confirms",
+   "why": "Property and equipment rose and capital spending over the trailing four quarters is {terms.trailing_four_quarters.capital_expenditure} against {terms.trailing_four_quarters_a_year_earlier.capital_expenditure} a year earlier."
+  },
+  {
+   "notes_item": "liquidity_and_capital_assumed_zero_coupon_exchangeable_notes",
+   "numbers_items": [
+    "liquidity_and_capital_convertible_debt_current_portion",
+    "liquidity_and_capital_convertible_debt_noncurrent_portion",
+    "liquidity_and_capital_convertible_notes_face_amount"
+   ],
+   "outcome": "confirms",
+   "why": "The fair value table tags {note_tables.tables.notes_37.facts.91} of short-term and {note_tables.tables.notes_37.facts.123} of long-term convertible notes where none existed a year earlier; the calculator's debt total of {ratios.solvency.total_debt} misses them because its tag list does not include convertible debt."
+  },
+  {
+   "notes_item": "liquidity_and_capital_exchangeable_notes_principal_payable_in_cash",
+   "numbers_items": [
+    "liquidity_and_capital_convertible_debt_current_portion"
+   ],
+   "outcome": "unresolved",
+   "why": "No conversion other than the make-whole surrenders has occurred; a cash settlement of principal is a possibility over the horizon, not a movement in these numbers."
+  },
+  {
+   "notes_item": "liquidity_and_capital_make_whole_conversions_cash_settled",
+   "numbers_items": [
+    "liquidity_and_capital_convertible_debt_current_portion"
+   ],
+   "outcome": "unresolved",
+   "why": "The surrendered notes still sit as a current liability of {note_tables.tables.notes_37.facts.91} at the balance-sheet date; the cash settlement falls after it."
+  },
+  {
+   "notes_item": "related_parties_contingencies_and_subsequent_events_make_whole_notes_paid_after_quarter",
+   "numbers_items": [
+    "liquidity_and_capital_convertible_debt_current_portion"
+   ],
+   "outcome": "unresolved",
+   "why": "The current classification at {note_tables.tables.notes_37.facts.91} is confirmed, but the payment is a subsequent event and no cash number in this filing reflects it."
+  },
+  {
+   "notes_item": "earnings_quality_exchangeable_notes_fair_value_loss",
+   "numbers_items": [
+    "liquidity_and_capital_accumulated_other_comprehensive_income"
+   ],
+   "outcome": "confirms",
+   "why": "The other income table tags a {note_tables.tables.notes_187.facts.8} change in fair value of the convertible notes, other income, net fell by {note_tables.tables.notes_187.changes.9} on the year-ago quarter to {note_tables.tables.notes_187.facts.19}, and accumulated other comprehensive income swung negative."
+  },
+  {
+   "notes_item": "liquidity_and_capital_capped_calls_partly_terminated_for_cash",
+   "numbers_items": [
+    "structure_and_disclosure_changes_other_noncurrent_assets"
+   ],
+   "outcome": "confirms",
+   "why": "Other noncurrent assets rose and the fair value table carries capped calls of {note_tables.tables.notes_37.facts.67}; the cash flow statement tags {terms.cash_flow_families.borrowing_issued.parts.this_year_to_date} of proceeds under the convertible-debt proceeds concept, the same amount the prose gives for the termination."
+  },
+  {
+   "notes_item": "liquidity_and_capital_headquarters_lease_extension",
+   "numbers_items": [
+    "structure_and_disclosure_changes_operating_lease_right_of_use_asset",
+    "structure_and_disclosure_changes_operating_lease_liability_noncurrent"
+   ],
+   "outcome": "confirms",
+   "why": "Right-of-use assets and noncurrent lease liabilities roughly doubled; the calculator still carries an operating lease liability of {ratios.solvency.operating_lease_liability} from the prior fiscal year-end and flags that the period-end noncurrent balance alone exceeds it."
+  },
+  {
+   "notes_item": "related_parties_contingencies_and_subsequent_events_centripetal_accrual_with_interest",
+   "numbers_items": [
+    "liquidity_and_capital_other_noncurrent_liabilities",
+    "earnings_quality_general_and_administrative_expense"
+   ],
+   "outcome": "confirms",
+   "why": "Other long-term liabilities rose and general and administrative expense rose; the accrual sits in both."
+  },
+  {
+   "notes_item": "liquidity_and_capital_share_repurchase_authorization_raised_and_extended",
+   "numbers_items": [
+    "liquidity_and_capital_paid_in_capital_balance"
+   ],
+   "outcome": "confirms",
+   "why": "Repurchases over the trailing four quarters are {terms.trailing_four_quarters.share_repurchases} against none a year earlier, so cash left as the item expects; paid-in capital nonetheless rose because {note_tables.tables.notes_75.facts.2} of shares were issued for CyberArk, which swamps the retirement."
+  },
+  {
+   "notes_item": "liquidity_and_capital_share_repurchases_executed_in_quarter",
+   "numbers_items": [
+    "liquidity_and_capital_common_shares_issued",
+    "earnings_quality_diluted_share_count_prior_report"
+   ],
+   "outcome": "confirms",
+   "why": "The repurchase outflow of {terms.trailing_four_quarters.share_repurchases} is tagged; basic weighted-average shares still rose by {note_tables.tables.notes_182.changes.2} to {note_tables.tables.notes_182.facts.4} because the acquisition issuance far exceeded the shares retired."
+  },
+  {
+   "notes_item": "earnings_quality_accelerated_vesting_from_cyberark_and_koi",
+   "numbers_items": [
+    "earnings_quality_general_and_administrative_expense"
+   ],
+   "outcome": "confirms",
+   "why": "General and administrative share-based compensation is {note_tables.tables.notes_175.facts.16} against {note_tables.tables.notes_175.facts.17} a year earlier, a rise of {note_tables.tables.notes_175.changes.8}."
+  },
+  {
+   "notes_item": "results_against_expectations_total_revenue_growth_attributed_to_acquisitions",
+   "numbers_items": [
+    "revenue_recognition_total_revenue_line",
+    "revenue_recognition_total_revenue_cumulative_line"
+   ],
+   "outcome": "confirms",
+   "why": "Revenue grew {ratios.growth.revenue.year_over_year|pct} in the quarter and {ratios.growth.revenue.trailing_four_quarters|pct} over the trailing four quarters."
+  },
+  {
+   "notes_item": "revenue_recognition_identity_licenses_recognized_on_delivery",
+   "numbers_items": [
+    "revenue_recognition_product_revenue_line"
+   ],
+   "outcome": "confirms",
+   "why": "Product revenue rose by {note_tables.tables.notes_30.changes.0} on the year-ago quarter, with the new license stream inside it."
+  },
+  {
+   "notes_item": "results_against_expectations_product_revenue_growth_from_cyberark_licenses",
+   "numbers_items": [
+    "revenue_recognition_product_revenue_line"
+   ],
+   "outcome": "confirms",
+   "why": "Product revenue is {note_tables.tables.notes_30.facts.0} against {note_tables.tables.notes_30.facts.1} a year earlier."
+  },
+  {
+   "notes_item": "results_against_expectations_subscription_and_support_growth_from_acquisitions",
+   "numbers_items": [
+    "revenue_recognition_subscription_and_support_revenue_line",
+    "revenue_recognition_support_revenue_line"
+   ],
+   "outcome": "confirms",
+   "why": "Subscription and support revenue rose {note_tables.tables.notes_30.changes.6}, of which subscription rose {note_tables.tables.notes_30.changes.2} and support {note_tables.tables.notes_30.changes.4}."
+  },
+  {
+   "notes_item": "narrative_signs_of_operating_pressure_memory_and_component_shortages",
+   "numbers_items": [
+    "earnings_quality_product_cost_of_revenue_line",
+    "earnings_quality_days_sales_of_inventory_quarterly_trend"
+   ],
+   "outcome": "confirms",
+   "why": "Cost of product revenue rose faster than product revenue in the quarter; inventory itself is not tagged at the quarter-end, so the inventory leg cannot be checked."
+  },
+  {
+   "notes_item": "earnings_quality_cyberark_amortization_in_cost_of_product_revenue",
+   "numbers_items": [
+    "earnings_quality_product_cost_of_revenue_line"
+   ],
+   "outcome": "confirms",
+   "why": "Amortization inside cost of product revenue is {note_tables.tables.notes_107.facts.0} against {note_tables.tables.notes_107.facts.1} a year earlier."
+  },
+  {
+   "notes_item": "estimates_and_discretion_lower_inventory_excess_and_obsolete_charges",
+   "numbers_items": [
+    "estimates_and_discretion_inventory_reserve_ratio_quarterly_trend",
+    "earnings_quality_days_sales_of_inventory_quarterly_trend",
+    "earnings_quality_product_cost_of_revenue_line"
+   ],
+   "outcome": "unresolved",
+   "why": "No inventory reserve or write-down is tagged in any period and inventory is absent at the quarter-end, so the claimed decrease cannot be tested; cost of product revenue rose."
+  },
+  {
+   "notes_item": "narrative_signs_of_operating_pressure_higher_tariff_costs",
+   "numbers_items": [
+    "earnings_quality_product_cost_of_revenue_line"
+   ],
+   "outcome": "confirms",
+   "why": "Cost of product revenue rose in the direction given; the tariff component is not tagged separately."
+  },
+  {
+   "notes_item": "results_against_expectations_cost_of_subscription_and_support_drivers",
+   "numbers_items": [
+    "earnings_quality_subscription_and_support_cost_of_revenue_line"
+   ],
+   "outcome": "confirms",
+   "why": "The prose's amortization increases equal {note_tables.tables.notes_107.changes.2} for the quarter and {note_tables.tables.notes_107.changes.3} for the nine months in the amortization table, an exact tie."
+  },
+  {
+   "notes_item": "narrative_signs_of_operating_pressure_hardware_gross_margin_decrease",
+   "numbers_items": [
+    "earnings_quality_gross_margin_quarterly_trend",
+    "earnings_quality_product_cost_of_revenue_line"
+   ],
+   "outcome": "confirms",
+   "why": "Gross margin is {trend_table.quarters-back-0.ratios.gross_margin}, the lowest of six quarters, and product cost rose faster than product revenue."
+  },
+  {
+   "notes_item": "earnings_quality_subscription_and_support_margin_decrease_from_amortization",
+   "numbers_items": [
+    "earnings_quality_gross_margin_quarterly_trend",
+    "earnings_quality_subscription_and_support_cost_of_revenue_line"
+   ],
+   "outcome": "confirms",
+   "why": "Service-line amortization is {note_tables.tables.notes_107.facts.4} against {note_tables.tables.notes_107.facts.5} a year earlier and gross margin fell to {trend_table.quarters-back-0.ratios.gross_margin}."
+  },
+  {
+   "notes_item": "results_against_expectations_research_and_development_personnel_growth",
+   "numbers_items": [
+    "earnings_quality_research_and_development_expense"
+   ],
+   "outcome": "confirms",
+   "why": "Research and development expense rose and its share-based component rose by {note_tables.tables.notes_175.changes.4}."
+  },
+  {
+   "notes_item": "results_against_expectations_sales_and_marketing_personnel_and_amortization",
+   "numbers_items": [
+    "earnings_quality_selling_and_marketing_expense"
+   ],
+   "outcome": "confirms",
+   "why": "Sales and marketing expense rose; amortization inside it is {note_tables.tables.notes_107.facts.8} against {note_tables.tables.notes_107.facts.9} a year earlier and severance of {note_tables.tables.notes_83.facts.16} sits there too."
+  },
+  {
+   "notes_item": "earnings_quality_general_and_administrative_acquisition_vesting_and_severance",
+   "numbers_items": [
+    "earnings_quality_general_and_administrative_expense"
+   ],
+   "outcome": "confirms",
+   "why": "General and administrative expense nearly doubled on the year-ago quarter, with share-based compensation in the line up {note_tables.tables.notes_175.changes.8}."
+  },
+  {
+   "notes_item": "earnings_quality_contingent_consideration_gain_inside_general_and_administrative",
+   "numbers_items": [
+    "earnings_quality_operating_loss_line",
+    "earnings_quality_general_and_administrative_expense"
+   ],
+   "outcome": "confirms",
+   "why": "The rollforward tags a gain of {note_tables.tables.notes_42.facts.8} in the quarter, matching the prose, and operating income is {ratios.growth.operating_income.this_quarter}."
+  },
+  {
+   "notes_item": "earnings_quality_investment_sale_gains_to_fund_acquisitions",
+   "numbers_items": [
+    "liquidity_and_capital_long_term_investments_balance"
+   ],
+   "outcome": "confirms",
+   "why": "Other, net is {note_tables.tables.notes_187.facts.17} for the nine months against {note_tables.tables.notes_187.facts.18} a year earlier while long-term investments fell; for the quarter alone other income, net dropped by {note_tables.tables.notes_187.changes.9}."
+  },
+  {
+   "notes_item": "liquidity_and_capital_lower_interest_income_from_lower_balances",
+   "numbers_items": [
+    "liquidity_and_capital_long_term_investments_balance",
+    "liquidity_and_capital_short_term_investments_balance"
+   ],
+   "outcome": "confirms",
+   "why": "Interest income fell by {note_tables.tables.notes_187.changes.0} on the year-ago quarter and long-term investments fell by {note_tables.tables.notes_37.changes.19}."
+  },
+  {
+   "notes_item": "liquidity_and_capital_operating_cash_flow_attributed_to_collections",
+   "numbers_items": [
+    "revenue_recognition_days_sales_outstanding_quarterly_trend",
+    "revenue_recognition_receivables_over_revenue_quarterly_trend",
+    "revenue_recognition_accounts_receivable_balance"
+   ],
+   "outcome": "contradicts",
+   "why": "Operating cash flow did rise, to {terms.trailing_four_quarters.operating_cash_flow} over the trailing four quarters, but the collections explanation is not supported: days sales outstanding is {trend_table.quarters-back-0.ratios.days_sales_outstanding}, the highest of six quarters, and the cash-flow statement's receivables line reads {terms.trailing_four_quarters.change_in_receivables.parts.this_year_to_date} this fiscal year against {terms.trailing_four_quarters.change_in_receivables.parts.prior_year_to_date} a year earlier, a smaller release from receivables than last year."
+  },
+  {
+   "notes_item": "liquidity_and_capital_investing_outflow_from_acquisitions_and_investment_sales",
+   "numbers_items": [
+    "liquidity_and_capital_long_term_investments_balance",
+    "liquidity_and_capital_short_term_investments_balance"
+   ],
+   "outcome": "confirms",
+   "why": "Acquisition payments are {terms.cash_flow_families.acquisitions.parts.this_year_to_date} this fiscal year against {terms.cash_flow_families.acquisitions.parts.prior_year_to_date} a year earlier, and long-term investments fell from {note_tables.tables.notes_37.facts.39} to {note_tables.tables.notes_37.facts.35}."
+  }
+ ],
+ "anomalies": [
+  {
+   "id": "earnings_versus_cash_quarterly_net_loss_against_positive_operating_cash_flow",
+   "name": "Net loss in a quarter of strong operating cash flow",
+   "name_ko": "영업현금흐름이 강한 분기의 순손실",
+   "area": "earnings_versus_cash",
+   "what": "The quarter reports a net loss of {ratios.growth.net_income.this_quarter} while operating cash flow is {ratios.growth.operating_cash_flow.this_quarter}; the wedge is non-cash acquisition charges (share-based compensation of {note_tables.tables.notes_175.facts.20}, amortization of {note_tables.tables.notes_107.facts.12}, severance of {note_tables.tables.notes_83.facts.29}), which the prose attributes to the CyberArk and Koi deals.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "earnings_quality_net_loss_line",
+    "earnings_quality_accelerated_vesting_from_cyberark_and_koi",
+    "estimates_and_discretion_cyberark_workforce_optimization_severance"
+   ],
+   "fields": [
+    "ratios.growth.net_income.this_quarter",
+    "ratios.growth.operating_cash_flow.this_quarter",
+    "note_tables.tables.notes_175.facts.20",
+    "note_tables.tables.notes_107.facts.12"
+   ]
+  },
+  {
+   "id": "earnings_versus_cash_cash_over_income_ratio_above_own_history",
+   "name": "Cash-to-income ratio far above the company's recent years",
+   "name_ko": "자사 최근 연도보다 훨씬 높은 현금 대 이익 비율",
+   "area": "earnings_versus_cash",
+   "what": "Operating cash flow is {earnings_versus_cash.operating_cash_flow_over_net_income} times trailing net income, against {earnings_versus_cash.history.years.0.operating_cash_flow_over_net_income} in fiscal 2025 and {earnings_versus_cash.history.years.1.operating_cash_flow_over_net_income} in fiscal 2024, because net income fell {ratios.growth.net_income.trailing_four_quarters|pct} while cash flow rose {ratios.growth.operating_cash_flow.trailing_four_quarters|pct}.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "earnings_quality_net_income_cumulative_line",
+    "earnings_quality_accruals_ratio_annual_trend",
+    "results_against_expectations_acquired_businesses_revenue_and_operating_loss"
+   ],
+   "fields": [
+    "earnings_versus_cash.operating_cash_flow_over_net_income",
+    "earnings_versus_cash.history.years.0.operating_cash_flow_over_net_income",
+    "ratios.growth.net_income.trailing_four_quarters"
+   ]
+  },
+  {
+   "id": "earnings_versus_cash_share_based_compensation_exceeds_net_income",
+   "name": "Share-based compensation larger than net income",
+   "name_ko": "순이익보다 큰 주식보상비",
+   "area": "earnings_versus_cash",
+   "what": "Trailing share-based compensation of {terms.trailing_four_quarters.share_based_compensation} exceeds trailing net income of {terms.trailing_four_quarters.net_income}; after subtracting it and acquisition cash of {free_cash_flow.free_cash_flow_quality_adjusted.inputs.acquisitions.cash_spent}, quality-adjusted free cash flow is {free_cash_flow.free_cash_flow_quality_adjusted} against simple free cash flow of {free_cash_flow.free_cash_flow_simple}.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "earnings_quality_accelerated_vesting_from_cyberark_and_koi",
+    "earnings_quality_cyberark_replacement_awards_future_expense",
+    "earnings_quality_koi_replacement_awards_future_expense"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.share_based_compensation",
+    "terms.trailing_four_quarters.net_income",
+    "free_cash_flow.free_cash_flow_quality_adjusted"
+   ]
+  },
+  {
+   "id": "earnings_versus_cash_receivables_articulation_gap_matches_acquired_receivables",
+   "name": "Receivables articulation gap explained by acquired balance",
+   "name_ko": "인수한 매출채권으로 설명되는 매출채권 연결 차이",
+   "area": "earnings_versus_cash",
+   "what": "The balance-sheet change in receivables of {earnings_versus_cash.working_capital.receivables.balance_sheet_change} exceeds the cash-flow statement's change of {earnings_versus_cash.working_capital.receivables.cash_flow_statement_change} by {earnings_versus_cash.working_capital.receivables.articulation_gap}, close to the {note_tables.tables.notes_77.facts.3} of receivables acquired with CyberArk; the statements articulate once the acquisition is allowed for.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "articulation_and_the_filed_history_cyberark_acquired_receivables_and_deferred_revenue",
+    "revenue_recognition_accounts_receivable_balance"
+   ],
+   "fields": [
+    "earnings_versus_cash.working_capital.receivables.articulation_gap",
+    "note_tables.tables.notes_77.facts.3"
+   ]
+  },
+  {
+   "id": "earnings_versus_cash_income_far_smoother_than_cash",
+   "name": "Income moves much less than cash from quarter to quarter",
+   "name_ko": "분기별 변동이 현금보다 훨씬 작은 이익",
+   "area": "earnings_versus_cash",
+   "what": "The smoothness ratio is {earnings_versus_cash.smoothness}, well below one: quarterly operating cash flow swings with seasonal billings while reported income was steady until this quarter's loss; the prose does not address the pattern.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "earnings_quality_accruals_ratio_quarterly_trend",
+    "earnings_quality_net_loss_line"
+   ],
+   "fields": [
+    "earnings_versus_cash.smoothness"
+   ]
+  },
+  {
+   "id": "earnings_versus_cash_contingent_consideration_gain_props_operating_result",
+   "name": "Non-cash estimate gain inside operating expense",
+   "name_ko": "영업비용 안의 비현금 추정 이익",
+   "area": "earnings_versus_cash",
+   "what": "A gain of {note_tables.tables.notes_42.facts.8} from cutting the QRadar payment estimate sits inside general and administrative expense in a quarter with operating income of {ratios.growth.operating_income.this_quarter}; without it the operating loss would be deeper, and no cash moved.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "earnings_quality_contingent_consideration_gain_inside_general_and_administrative",
+    "structure_and_disclosure_changes_general_and_administrative_scope_and_outlook",
+    "earnings_quality_operating_loss_line"
+   ],
+   "fields": [
+    "note_tables.tables.notes_42.facts.8",
+    "ratios.growth.operating_income.this_quarter"
+   ]
+  },
+  {
+   "id": "earnings_versus_cash_share_issuance_for_acquisition_dilutes_per_share_measures",
+   "name": "Acquisition share issuance swamps repurchases",
+   "name_ko": "자사주 매입을 압도하는 인수 신주 발행",
+   "area": "earnings_versus_cash",
+   "what": "Basic weighted-average shares rose by {note_tables.tables.notes_182.changes.2} to {note_tables.tables.notes_182.facts.4} after {note_tables.tables.notes_75.facts.2} of shares were issued for CyberArk, while {terms.trailing_four_quarters.share_repurchases} of repurchases retired far fewer; per-share measures carry the dilution.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "liquidity_and_capital_common_shares_issued",
+    "liquidity_and_capital_share_repurchases_executed_in_quarter",
+    "structure_and_disclosure_changes_cyberark_purchase_consideration_recorded"
+   ],
+   "fields": [
+    "note_tables.tables.notes_182.changes.2",
+    "note_tables.tables.notes_75.facts.2",
+    "terms.trailing_four_quarters.share_repurchases"
+   ]
+  },
+  {
+   "id": "revenue_recognition_receivables_outrun_revenue_while_management_credits_collections",
+   "name": "Receivables at a six-quarter high while collections are credited",
+   "name_ko": "회수 개선을 내세우는 가운데 여섯 분기 최고치의 매출채권",
+   "area": "revenue_recognition",
+   "what": "Days sales outstanding is {trend_table.quarters-back-0.ratios.days_sales_outstanding}, the highest of six quarters, and receivables over revenue is {trend_table.quarters-back-0.ratios.receivables_over_revenue}; the cash-flow statement's receivables line reads {terms.trailing_four_quarters.change_in_receivables.parts.this_year_to_date} this fiscal year against {terms.trailing_four_quarters.change_in_receivables.parts.prior_year_to_date} a year earlier, a smaller release, yet management attributes higher operating cash flow to increased collections. Acquired receivables of {note_tables.tables.notes_77.facts.3} explain part of the level but not the explanation.",
+   "numbers_vs_prose": "contradicts",
+   "evidence": [
+    "revenue_recognition_days_sales_outstanding_quarterly_trend",
+    "revenue_recognition_receivables_over_revenue_quarterly_trend",
+    "liquidity_and_capital_operating_cash_flow_attributed_to_collections"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.days_sales_outstanding",
+    "trend_table.quarters-back-0.ratios.receivables_over_revenue",
+    "terms.trailing_four_quarters.change_in_receivables.parts.this_year_to_date",
+    "terms.trailing_four_quarters.change_in_receivables.parts.prior_year_to_date"
+   ]
+  },
+  {
+   "id": "revenue_recognition_contract_liabilities_fall_against_revenue",
+   "name": "Deferred revenue growing slower than recognized revenue",
+   "name_ko": "인식 매출보다 느리게 늘어나는 선수수익",
+   "area": "revenue_recognition",
+   "what": "Current contract liabilities over quarterly revenue fell to {trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue}, the lowest of six quarters, from {trend_table.quarters-back-4.ratios.contract_liabilities_over_revenue} a year earlier, even after CyberArk added {note_tables.tables.notes_77.facts.7} of deferred revenue; the prose does not explain the slower build.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "revenue_recognition_contract_liabilities_over_revenue_quarterly_trend",
+    "revenue_recognition_contract_liabilities_noncurrent_balance",
+    "articulation_and_the_filed_history_cyberark_acquired_receivables_and_deferred_revenue"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue",
+    "trend_table.quarters-back-4.ratios.contract_liabilities_over_revenue",
+    "note_tables.tables.notes_77.facts.7"
+   ]
+  },
+  {
+   "id": "revenue_recognition_point_in_time_identity_licenses_enter_product_revenue",
+   "name": "New point-in-time license stream inside product revenue",
+   "name_ko": "제품 매출에 들어온 새로운 시점 인식 라이선스",
+   "area": "revenue_recognition",
+   "what": "Product revenue now includes \"certain identity security offerings\" recognized on delivery and rose {note_tables.tables.notes_30.changes.0} on the year-ago quarter; management says the stream will vary with renewal timing, which widens quarter-to-quarter discretion.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "revenue_recognition_identity_licenses_recognized_on_delivery",
+    "results_against_expectations_product_revenue_growth_from_cyberark_licenses",
+    "revenue_recognition_product_revenue_line"
+   ],
+   "fields": [
+    "note_tables.tables.notes_30.changes.0",
+    "note_tables.tables.notes_30.facts.0"
+   ]
+  },
+  {
+   "id": "revenue_recognition_geographic_explanation_omits_acquisitions",
+   "name": "Geographic growth story leaves out acquisitions",
+   "name_ko": "인수를 빠뜨린 지역별 성장 설명",
+   "area": "revenue_recognition",
+   "what": "The geographic paragraph credits sales-force investment alone for growth in every region, with United States revenue up {note_tables.tables.notes_28.changes.0} in the quarter, while other paragraphs and the impact table credit acquired businesses with \"revenue of $388 million and $391 million\"; the filing's reasons for growth are not consistent.",
+   "numbers_vs_prose": "contradicts",
+   "evidence": [
+    "across_documents_geographic_growth_explained_without_acquisitions",
+    "results_against_expectations_acquired_businesses_revenue_and_operating_loss",
+    "revenue_recognition_americas_revenue_line"
+   ],
+   "fields": [
+    "note_tables.tables.notes_28.changes.0",
+    "note_tables.tables.notes_28.changes.4"
+   ]
+  },
+  {
+   "id": "revenue_recognition_acquired_revenue_inflates_headline_growth",
+   "name": "Headline growth partly purchased",
+   "name_ko": "인수로 부풀려진 표면 성장률",
+   "area": "revenue_recognition",
+   "what": "Revenue grew {ratios.growth.revenue.year_over_year|pct} year over year, a change of {note_tables.tables.notes_30.changes.8}, but the filing states the acquired businesses contributed \"revenue of $388 million and $391 million\" since acquisition, so organic growth is far lower than the headline and cannot be isolated from the tagged facts.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "results_against_expectations_total_revenue_growth_attributed_to_acquisitions",
+    "results_against_expectations_acquired_businesses_revenue_and_operating_loss",
+    "revenue_recognition_total_revenue_line"
+   ],
+   "fields": [
+    "ratios.growth.revenue.year_over_year",
+    "note_tables.tables.notes_30.changes.8",
+    "note_tables.tables.notes_95.facts.0"
+   ]
+  },
+  {
+   "id": "estimates_and_reserves_bad_debt_allowance_lowest_while_receivables_peak",
+   "name": "Thinnest bad-debt allowance at the receivables peak",
+   "name_ko": "매출채권 정점에서 가장 얇아진 대손충당금",
+   "area": "estimates_and_reserves",
+   "what": "The allowance is {terms.balances_now.bad_debt_allowance} on receivables of {terms.balances_now.receivables}, a ratio of {trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio}, the lowest of six quarters and below {trend_table.quarters-back-1.ratios.bad_debt_reserve_ratio} a quarter earlier, while receivables and days sales outstanding are at their highest and {note_tables.tables.notes_77.facts.3} of receivables were acquired; the prose offers no reason, and whole-million rounding makes the step coarse.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "estimates_and_discretion_bad_debt_reserve_ratio_quarterly_trend",
+    "estimates_and_discretion_allowance_for_doubtful_accounts_balance",
+    "structure_and_disclosure_changes_rounding_to_whole_millions",
+    "estimates_and_discretion_credit_loss_expedient_not_expected_material"
+   ],
+   "fields": [
+    "terms.balances_now.bad_debt_allowance",
+    "trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio",
+    "trend_table.quarters-back-1.ratios.bad_debt_reserve_ratio",
+    "terms.balances_a_year_earlier.bad_debt_allowance"
+   ]
+  },
+  {
+   "id": "estimates_and_reserves_contingent_consideration_estimate_cut_raises_income",
+   "name": "Contingent consideration estimate cut booked as a gain",
+   "name_ko": "이익으로 잡힌 조건부 대가 추정치 축소",
+   "area": "estimates_and_reserves",
+   "what": "The QRadar liability fell from {note_tables.tables.notes_42.facts.0} to {note_tables.tables.notes_42.facts.16}, a move of {note_tables.tables.notes_42.changes.4}, of which {note_tables.tables.notes_42.facts.8} is a gain in earnings and {note_tables.tables.notes_42.facts.12} is cash paid; the prose explains it as fewer and smaller qualifying customer transactions, while the undiscounted range remains \"between $0.3 billion and $0.5 billion\".",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "estimates_and_discretion_qradar_contingent_payment_estimate_reduced",
+    "estimates_and_discretion_qradar_undiscounted_payment_range",
+    "earnings_quality_contingent_consideration_gain_inside_general_and_administrative"
+   ],
+   "fields": [
+    "note_tables.tables.notes_42.facts.0",
+    "note_tables.tables.notes_42.facts.16",
+    "note_tables.tables.notes_42.changes.4",
+    "note_tables.tables.notes_42.facts.8",
+    "note_tables.tables.notes_42.facts.10"
+   ]
+  },
+  {
+   "id": "estimates_and_reserves_financing_receivable_allowance_flat_while_weakest_bucket_grows",
+   "name": "Customer-financing allowance unchanged as weakest ratings grow",
+   "name_ko": "최저 신용등급 잔액이 늘어도 변하지 않은 금융채권 충당금",
+   "area": "estimates_and_reserves",
+   "what": "Allowances on financing receivables stayed at {note_tables.tables.notes_54.facts.4} current and {note_tables.tables.notes_54.facts.12} noncurrent while the weakest internal rating bucket rose by {note_tables.tables.notes_56.changes.14} to {note_tables.tables.notes_56.facts.29} and the gross book shrank by {note_tables.tables.notes_56.changes.19}; the note still describes allowance activity as insignificant.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "revenue_recognition_financing_receivables_current_balance",
+    "revenue_recognition_financing_receivables_noncurrent_balance",
+    "estimates_and_discretion_credit_loss_expedient_not_expected_material"
+   ],
+   "fields": [
+    "note_tables.tables.notes_54.facts.4",
+    "note_tables.tables.notes_54.facts.12",
+    "note_tables.tables.notes_56.changes.14",
+    "note_tables.tables.notes_56.facts.29",
+    "note_tables.tables.notes_56.changes.19"
+   ]
+  },
+  {
+   "id": "estimates_and_reserves_tax_expense_on_pretax_loss",
+   "name": "Tax charge on a pre-tax loss and an above-statutory trailing rate",
+   "name_ko": "세전 손실에 부과된 법인세와 법정세율을 웃도는 실효세율",
+   "area": "estimates_and_reserves",
+   "what": "The quarter books tax expense against a pre-tax loss, and trailing tax of {terms.trailing_four_quarters.income_tax_expense} on pretax income of {terms.trailing_four_quarters.pretax_income} is an effective rate of {tax_rate.effective_rate|pct}; the prose attributes the distortion to the CyberArk acquisition and lower excess tax benefits, and no valuation-allowance release flatters income.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "earnings_quality_income_tax_expense_against_pretax_loss",
+    "earnings_quality_effective_tax_rate_attributed_to_cyberark",
+    "estimates_and_discretion_tax_rate_fluctuation_from_cyberark_integration"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.income_tax_expense",
+    "terms.trailing_four_quarters.pretax_income",
+    "tax_rate.effective_rate"
+   ]
+  },
+  {
+   "id": "estimates_and_reserves_goodwill_and_intangibles_dominate_assets_with_open_measurement_period",
+   "name": "Purchased goodwill and intangibles dominate the balance sheet",
+   "name_ko": "재무상태표를 지배하는 인수 영업권과 무형자산",
+   "area": "estimates_and_reserves",
+   "what": "Goodwill is {note_tables.tables.notes_102.facts.2} after {note_tables.tables.notes_102.facts.1} acquired in the nine months and net intangibles are {note_tables.tables.notes_105.facts.38}, against total assets of {terms.balances_now.assets}; the allocation may still change within the measurement period, and substantially all CyberArk goodwill is said to be tax deductible.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "estimates_and_discretion_goodwill_balance",
+    "estimates_and_discretion_intangible_assets_balance",
+    "estimates_and_discretion_acquisition_allocations_open_in_measurement_period",
+    "estimates_and_discretion_cyberark_goodwill_tax_deductible"
+   ],
+   "fields": [
+    "note_tables.tables.notes_102.facts.2",
+    "note_tables.tables.notes_102.facts.1",
+    "note_tables.tables.notes_105.facts.38",
+    "terms.balances_now.assets"
+   ]
+  },
+  {
+   "id": "estimates_and_reserves_long_useful_lives_on_platform_renewals",
+   "name": "Long lives assigned to platform-renewal intangibles",
+   "name_ko": "플랫폼 갱신 무형자산에 부여된 긴 내용연수",
+   "area": "estimates_and_reserves",
+   "what": "Platform renewals of {note_tables.tables.notes_79.facts.1}, the largest CyberArk intangible, carry lives of twelve to fourteen years against five to seven for developed technology of {note_tables.tables.notes_79.facts.0}; the longer the life, the lower the amortization charge, and the choice is management's.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "estimates_and_discretion_cyberark_intangible_useful_lives",
+    "estimates_and_discretion_intangible_assets_balance"
+   ],
+   "fields": [
+    "note_tables.tables.notes_79.facts.1",
+    "note_tables.tables.notes_79.facts.0",
+    "note_tables.tables.notes_109.facts.6"
+   ]
+  },
+  {
+   "id": "estimates_and_reserves_own_share_price_moves_earnings_through_fair_value_option",
+   "name": "Own share price now moves other income",
+   "name_ko": "자사 주가가 기타손익을 움직이는 구조",
+   "area": "estimates_and_reserves",
+   "what": "Under the fair value option the assumed convertible notes produced a loss of {note_tables.tables.notes_187.facts.8} for the nine months and the capped calls, carried at {note_tables.tables.notes_37.facts.67}, a loss of {note_tables.tables.notes_187.facts.11} in the quarter; other income, net fell by {note_tables.tables.notes_187.changes.9} on the year-ago quarter.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "earnings_quality_fair_value_option_on_acquired_convertible_notes",
+    "earnings_quality_exchangeable_notes_fair_value_loss",
+    "earnings_quality_capped_calls_fair_value_carried_in_other_assets",
+    "estimates_and_discretion_convertible_notes_and_capped_calls_join_estimate_list"
+   ],
+   "fields": [
+    "note_tables.tables.notes_187.facts.8",
+    "note_tables.tables.notes_37.facts.67",
+    "note_tables.tables.notes_187.facts.11",
+    "note_tables.tables.notes_187.changes.9"
+   ]
+  },
+  {
+   "id": "estimates_and_reserves_inventory_obsolescence_charge_claim_untestable",
+   "name": "Claimed fall in inventory obsolescence charges cannot be tested",
+   "name_ko": "검증할 수 없는 재고 진부화 비용 감소 주장",
+   "area": "estimates_and_reserves",
+   "what": "Management says inventory excess and obsolete charges fell, but no inventory reserve, write-down or quarter-end inventory balance is tagged, so the claim has no number against it; cost of product revenue rose in the quarter.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "estimates_and_discretion_lower_inventory_excess_and_obsolete_charges",
+    "estimates_and_discretion_inventory_reserve_ratio_quarterly_trend",
+    "earnings_quality_days_sales_of_inventory_quarterly_trend"
+   ],
+   "fields": [
+    "trend_table.years-back-0.ratios.days_sales_of_inventory"
+   ]
+  },
+  {
+   "id": "cost_deferral_soft_asset_share_highest_of_six_quarters",
+   "name": "Soft-asset share at its highest",
+   "name_ko": "가장 높아진 소프트 자산 비중",
+   "area": "cost_deferral",
+   "what": "Assets other than property and cash are {trend_table.quarters-back-0.ratios.soft_asset_share} of the total, up from {trend_table.quarters-back-1.ratios.soft_asset_share} a quarter earlier and the highest of six quarters, because purchased goodwill and intangibles replaced cash and investments spent on acquisitions.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "earnings_quality_soft_asset_share_quarterly_trend",
+    "structure_and_disclosure_changes_total_assets_balance",
+    "structure_and_disclosure_changes_cyberark_purchase_consideration_recorded"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.soft_asset_share",
+    "trend_table.quarters-back-1.ratios.soft_asset_share"
+   ]
+  },
+  {
+   "id": "cost_deferral_gross_margin_lowest_as_acquired_intangible_amortization_enters_cost_of_revenue",
+   "name": "Gross margin at a six-quarter low on acquired amortization",
+   "name_ko": "인수 무형자산 상각으로 여섯 분기 최저가 된 매출총이익률",
+   "area": "cost_deferral",
+   "what": "Gross margin is {trend_table.quarters-back-0.ratios.gross_margin}, the lowest of six quarters and down from {trend_table.quarters-back-4.ratios.gross_margin} a year earlier; amortization in cost of revenue is {note_tables.tables.notes_107.facts.0} for product and {note_tables.tables.notes_107.facts.4} for subscription and support, and {note_tables.tables.notes_109.facts.2} of amortization is scheduled for the next twelve months.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "earnings_quality_gross_margin_quarterly_trend",
+    "earnings_quality_cyberark_amortization_in_cost_of_product_revenue",
+    "earnings_quality_subscription_and_support_margin_decrease_from_amortization",
+    "narrative_signs_of_operating_pressure_hardware_gross_margin_decrease"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.gross_margin",
+    "trend_table.quarters-back-4.ratios.gross_margin",
+    "note_tables.tables.notes_107.facts.0",
+    "note_tables.tables.notes_107.facts.4",
+    "note_tables.tables.notes_109.facts.2"
+   ]
+  },
+  {
+   "id": "cost_deferral_acquisition_charges_recur_across_serial_deals",
+   "name": "Acquisition charges recur with each deal",
+   "name_ko": "거래마다 반복되는 인수 관련 비용",
+   "area": "cost_deferral",
+   "what": "Transaction costs, accelerated vesting, severance of {note_tables.tables.notes_83.facts.28} and amortization of {note_tables.tables.notes_107.facts.12} in the quarter are presented as acquisition-specific, but acquisition cash is {terms.cash_flow_families.acquisitions} over the trailing four quarters against {terms.cash_flow_families.acquisitions.parts.prior_fiscal_year} in fiscal 2025, with Portkey closing after the quarter, so such charges are a standing feature of the income statement.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "earnings_quality_cyberark_transaction_costs_in_general_and_administrative",
+    "earnings_quality_accelerated_vesting_from_cyberark_and_koi",
+    "related_parties_contingencies_and_subsequent_events_portkey_closed_after_quarter",
+    "structure_and_disclosure_changes_koi_acquisition_closed"
+   ],
+   "fields": [
+    "terms.cash_flow_families.acquisitions",
+    "terms.cash_flow_families.acquisitions.parts.prior_fiscal_year",
+    "note_tables.tables.notes_83.facts.28",
+    "note_tables.tables.notes_107.facts.12"
+   ]
+  },
+  {
+   "id": "cost_deferral_capitalized_software_not_tagged",
+   "name": "Software capitalization cannot be tested",
+   "name_ko": "검증할 수 없는 소프트웨어 자본화",
+   "area": "cost_deferral",
+   "what": "No capitalized software development cost is tagged in any period, so the ratio of capitalized to expensed development cannot be formed; research and development expensed over the trailing four quarters is {terms.trailing_four_quarters.research_and_development_expense}.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "earnings_quality_research_and_development_expense",
+    "results_against_expectations_research_and_development_personnel_growth"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.research_and_development_expense"
+   ]
+  },
+  {
+   "id": "cost_deferral_non_gaap_gap_not_measurable_while_pay_tied_to_non_gaap",
+   "name": "Non-GAAP gap unmeasurable though pay is tied to it",
+   "name_ko": "보상이 연동된 비GAAP 격차를 측정할 수 없음",
+   "area": "cost_deferral",
+   "what": "No non-GAAP concept is tagged and the release body is absent, so the gap between non-GAAP and GAAP income cannot be formed from the filings, while the quarter's GAAP result is a loss of {ratios.growth.net_income.this_quarter} and performance awards vest on non-GAAP earnings per share.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "earnings_quality_non_gaap_gap_quarterly_trend",
+    "earnings_quality_non_gaap_gap_annual_trend",
+    "estimates_and_discretion_performance_unit_tranche_vesting_share"
+   ],
+   "fields": [
+    "ratios.growth.net_income.this_quarter"
+   ]
+  },
+  {
+   "id": "cost_deferral_capital_spending_rises_with_land_purchase",
+   "name": "Capital spending roughly doubled",
+   "name_ko": "두 배 가까이 늘어난 설비투자",
+   "area": "cost_deferral",
+   "what": "Capital spending over the trailing four quarters is {terms.trailing_four_quarters.capital_expenditure} against {terms.trailing_four_quarters_a_year_earlier.capital_expenditure} a year earlier, including land bought for the headquarters, so free cash flow carries a heavier property charge.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "liquidity_and_capital_headquarters_land_purchase",
+    "liquidity_and_capital_property_and_equipment_balance"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.capital_expenditure",
+    "terms.trailing_four_quarters_a_year_earlier.capital_expenditure"
+   ]
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_contingent_consideration_payments_in_financing",
+   "name": "Acquisition earn-out payments classified as financing",
+   "name_ko": "재무활동으로 분류된 인수 조건부 대가 지급",
+   "area": "cash_flow_engineering_and_off_balance_sheet",
+   "what": "Payments on the QRadar contingent consideration of {note_tables.tables.notes_42.facts.14} in the nine months and {note_tables.tables.notes_42.facts.12} in the quarter are shown in financing activities, so a cash cost of acquiring that business is outside operating cash flow and outside the company's free cash flow measure; the filing discloses the classification.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "earnings_quality_contingent_consideration_payments_in_financing_activities",
+    "estimates_and_discretion_qradar_undiscounted_payment_range"
+   ],
+   "fields": [
+    "note_tables.tables.notes_42.facts.14",
+    "note_tables.tables.notes_42.facts.12"
+   ]
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_purchase_obligations_roughly_doubled",
+   "name": "Unrecorded purchase obligations roughly doubled",
+   "name_ko": "두 배 가까이 늘어난 미인식 구매약정",
+   "area": "cash_flow_engineering_and_off_balance_sheet",
+   "what": "Unrecorded purchase obligations are {terms.balances_now.unconditional_purchase_obligations} against {terms.balances_a_year_earlier.unconditional_purchase_obligations} a year earlier, with cloud commitments of {note_tables.tables.notes_142.facts.0}, of which {note_tables.tables.notes_142.facts.6} falls beyond four years; the prose explains higher cloud hosting cost but not the growth of the commitment book.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "results_against_expectations_cost_of_subscription_and_support_drivers",
+    "related_parties_contingencies_and_subsequent_events_commitments_and_contingencies_caption"
+   ],
+   "fields": [
+    "terms.balances_now.unconditional_purchase_obligations",
+    "terms.balances_a_year_earlier.unconditional_purchase_obligations",
+    "note_tables.tables.notes_142.facts.0",
+    "note_tables.tables.notes_142.facts.6"
+   ]
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_convertible_notes_absent_from_calculator_debt",
+   "name": "Convertible notes missing from the calculator's debt total",
+   "name_ko": "계산기 부채 합계에서 빠진 전환사채",
+   "area": "cash_flow_engineering_and_off_balance_sheet",
+   "what": "The filing carries convertible notes of {note_tables.tables.notes_37.facts.91} short-term and {note_tables.tables.notes_37.facts.123} long-term at fair value, yet the calculator's total debt is {ratios.solvency.total_debt} and net debt {ratios.solvency.net_debt} because its debt tag list omits convertible debt; leverage, invested capital and return on invested capital here understate the obligation, whose principal is settleable in cash.",
+   "numbers_vs_prose": "contradicts",
+   "evidence": [
+    "liquidity_and_capital_convertible_debt_current_portion",
+    "liquidity_and_capital_convertible_debt_noncurrent_portion",
+    "liquidity_and_capital_assumed_zero_coupon_exchangeable_notes",
+    "liquidity_and_capital_exchangeable_notes_principal_payable_in_cash"
+   ],
+   "fields": [
+    "note_tables.tables.notes_37.facts.91",
+    "note_tables.tables.notes_37.facts.123",
+    "ratios.solvency.total_debt",
+    "ratios.solvency.net_debt"
+   ]
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_lease_liability_carried_stale",
+   "name": "Lease liability in the calculator is stale after the extension",
+   "name_ko": "임차 연장 이후 낡은 값으로 남은 리스부채",
+   "area": "cash_flow_engineering_and_off_balance_sheet",
+   "what": "The calculator carries an operating lease liability of {ratios.solvency.operating_lease_liability} from the prior fiscal year-end and itself flags that the noncurrent lease liability alone at the quarter-end is larger after the headquarters leases were extended; invested capital is understated by the difference.",
+   "numbers_vs_prose": "contradicts",
+   "evidence": [
+    "liquidity_and_capital_headquarters_lease_extension",
+    "structure_and_disclosure_changes_operating_lease_liability_noncurrent",
+    "structure_and_disclosure_changes_operating_lease_right_of_use_asset"
+   ],
+   "fields": [
+    "ratios.solvency.operating_lease_liability",
+    "ratios.profitability.return_on_invested_capital"
+   ]
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_financing_receivables_sold_amount_untagged",
+   "name": "Sales of financing receivables carry no number",
+   "name_ko": "금액이 태깅되지 않은 금융채권 매각",
+   "area": "cash_flow_engineering_and_off_balance_sheet",
+   "what": "The financing-receivables note records that receivables were sold in the period, but no proceeds-from-sale concept is tagged in any period and the readers carried no amount, so whether sales lift operating cash flow cannot be judged; the book itself fell by {note_tables.tables.notes_56.changes.19} gross.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "revenue_recognition_financing_receivables_current_balance",
+    "revenue_recognition_financing_receivables_noncurrent_balance"
+   ],
+   "fields": [
+    "note_tables.tables.notes_56.changes.19",
+    "note_tables.tables.notes_54.changes.3",
+    "note_tables.tables.notes_54.changes.7"
+   ]
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_investment_gains_fund_acquisitions",
+   "name": "Gains on investments sold to fund deals sit in earnings",
+   "name_ko": "인수 자금 마련을 위한 투자자산 매각이익의 손익 반영",
+   "area": "cash_flow_engineering_and_off_balance_sheet",
+   "what": "Other, net is {note_tables.tables.notes_187.facts.17} for the nine months against {note_tables.tables.notes_187.facts.18} a year earlier, a rise of {note_tables.tables.notes_187.changes.8} that the prose attributes mainly to gains on investments sold to fund acquisitions; the gains are in income while the proceeds are in investing, and the prose does not present them as recurring.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "earnings_quality_investment_sale_gains_to_fund_acquisitions",
+    "liquidity_and_capital_investing_outflow_from_acquisitions_and_investment_sales",
+    "liquidity_and_capital_long_term_investments_balance"
+   ],
+   "fields": [
+    "note_tables.tables.notes_187.facts.17",
+    "note_tables.tables.notes_187.facts.18",
+    "note_tables.tables.notes_187.changes.8"
+   ]
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_capped_call_termination_tagged_as_convertible_debt_proceeds",
+   "name": "Capped-call proceeds tagged as convertible-debt proceeds",
+   "name_ko": "전환사채 발행대금으로 태깅된 캡드콜 해지 대금",
+   "area": "cash_flow_engineering_and_off_balance_sheet",
+   "what": "The cash flow statement tags {terms.cash_flow_families.borrowing_issued.parts.this_year_to_date} under proceeds from convertible debt, the same amount the prose gives for terminating part of the capped calls; the amount agrees but the label describes a borrowing the company did not make.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "liquidity_and_capital_capped_calls_partly_terminated_for_cash",
+    "liquidity_and_capital_capped_calls_assumed_and_amended"
+   ],
+   "fields": [
+    "terms.cash_flow_families.borrowing_issued.parts.this_year_to_date"
+   ]
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_interest_expense_zero_with_notes_outstanding",
+   "name": "Zero interest expense with convertible notes outstanding",
+   "name_ko": "전환사채가 있는데도 영인 이자비용",
+   "area": "cash_flow_engineering_and_off_balance_sheet",
+   "what": "Interest expense over the trailing four quarters is {terms.trailing_four_quarters.interest_expense} while convertible notes of {note_tables.tables.notes_37.facts.123} are outstanding; the prose explains the notes carry no coupon and are marked at fair value instead, so interest coverage cannot be formed and the cost of the notes shows up in other income rather than interest.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "liquidity_and_capital_interest_expense_line",
+    "liquidity_and_capital_assumed_zero_coupon_exchangeable_notes",
+    "earnings_quality_fair_value_option_on_acquired_convertible_notes"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.interest_expense",
+    "note_tables.tables.notes_37.facts.123"
+   ]
+  },
+  {
+   "id": "controls_audit_and_filing_signals_no_control_change_in_acquisition_quarter",
+   "name": "Control assertion silent on the acquisition",
+   "name_ko": "대형 인수에 침묵한 내부통제 진술",
+   "area": "controls_audit_and_filing_signals",
+   "what": "The controls item reports no material change in internal control during the quarter in which CyberArk, acquired for {note_tables.tables.notes_75.facts.4}, and Koi were consolidated, and says nothing about including or excluding their processes; no auditor's report is in the bundle to corroborate.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "controls_audit_and_filings_no_control_change_reported_in_acquisition_quarter",
+    "structure_and_disclosure_changes_cyberark_results_consolidated_from_acquisition_date"
+   ],
+   "fields": [
+    "note_tables.tables.notes_75.facts.4"
+   ]
+  },
+  {
+   "id": "controls_audit_and_filing_signals_earnings_release_body_absent",
+   "name": "Earnings release cannot be checked against the 10-Q",
+   "name_ko": "10-Q와 대조할 수 없는 실적발표",
+   "area": "controls_audit_and_filing_signals",
+   "what": "The 8-K earnings release is listed by item code only, its body is absent, and the index contradicts itself about whether any such filing is on record, so no release figure was matched to the quarter's revenue of {ratios.growth.revenue.this_quarter} or net loss of {ratios.growth.net_income.this_quarter}.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "earnings_quality_non_gaap_gap_quarterly_trend",
+    "across_documents_financial_obligation_current_report_body_absent"
+   ],
+   "fields": [
+    "ratios.growth.revenue.this_quarter",
+    "ratios.growth.net_income.this_quarter"
+   ]
+  },
+  {
+   "id": "controls_audit_and_filing_signals_april_current_report_agreement_unidentified",
+   "name": "April 8-K obligation not traceable to the debt note",
+   "name_ko": "부채 주석과 연결되지 않는 사월 8-K 의무",
+   "area": "controls_audit_and_filing_signals",
+   "what": "An 8-K dated 2026-04-13 reports a material agreement and a direct financial obligation, but its body is absent and the debt note describes only an undrawn credit agreement from calendar 2023, while the lease note describes headquarters lease amendments signed the same month; which agreement the filing reports is unknown.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "across_documents_financial_obligation_current_report_body_absent",
+    "liquidity_and_capital_headquarters_lease_extension",
+    "liquidity_and_capital_convertible_notes_face_amount"
+   ],
+   "fields": [
+    "ratios.solvency.operating_lease_liability"
+   ]
+  },
+  {
+   "id": "controls_audit_and_filing_signals_rounding_coarsened_to_whole_millions",
+   "name": "Precision dropped to whole millions",
+   "name_ko": "백만 단위로 거칠어진 표시 정밀도",
+   "area": "controls_audit_and_filing_signals",
+   "what": "Facts from fiscal 2026 filings are tagged to whole millions where fiscal 2025 and earlier printed tenths, so small balances such as the bad-debt allowance of {terms.balances_now.bad_debt_allowance} now move in coarse steps and ratios built on them, like {trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio}, are less precise than their history.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "structure_and_disclosure_changes_rounding_to_whole_millions",
+    "estimates_and_discretion_bad_debt_reserve_ratio_quarterly_trend"
+   ],
+   "fields": [
+    "terms.balances_now.bad_debt_allowance",
+    "trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio"
+   ]
+  },
+  {
+   "id": "controls_audit_and_filing_signals_pro_forma_periods_misaligned",
+   "name": "Pro forma combines misaligned quarters",
+   "name_ko": "분기 말이 어긋난 추정 재무정보",
+   "area": "controls_audit_and_filing_signals",
+   "what": "The pro forma revenue of {note_tables.tables.notes_95.facts.0} for the quarter combines the company's period ended in April with CyberArk's calendar quarter ended a month earlier, so the comparison is not like for like.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "structure_and_disclosure_changes_pro_forma_uses_cyberark_calendar_quarters"
+   ],
+   "fields": [
+    "note_tables.tables.notes_95.facts.0",
+    "note_tables.tables.notes_95.facts.4"
+   ]
+  },
+  {
+   "id": "controls_audit_and_filing_signals_acquisition_impact_disclosure_at_management_discretion",
+   "name": "Disclosure of acquisition impact left to management",
+   "name_ko": "경영진 재량에 맡겨진 인수 영향 공시",
+   "area": "controls_audit_and_filing_signals",
+   "what": "The filing says it may disclose the acquisitions' effect on revenue and costs qualitatively or quantitatively for a year after each deal where it judges that meaningful, so the split between acquired and organic results, already blurred by {note_tables.tables.notes_102.facts.1} of goodwill acquired, may not be available in later quarters.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "structure_and_disclosure_changes_acquisition_impact_disclosure_discretion",
+    "results_against_expectations_acquired_businesses_revenue_and_operating_loss"
+   ],
+   "fields": [
+    "note_tables.tables.notes_102.facts.1"
+   ]
+  },
+  {
+   "id": "cross_document_reconciliation_deferred_tax_liabilities_rise_against_deductible_goodwill_prose",
+   "name": "Deferred tax liabilities rise where the prose points down",
+   "name_ko": "주석은 감소를 가리키는데 늘어난 이연법인세부채",
+   "area": "cross_document_reconciliation",
+   "what": "The prose says substantially all CyberArk goodwill is tax deductible, implying lower future tax and deferred tax liabilities, yet deferred tax liabilities rose with the {note_tables.tables.notes_77.facts.8} the acquisition brought in and deferred tax assets edged down; cash taxes paid are not in the calculator.",
+   "numbers_vs_prose": "contradicts",
+   "evidence": [
+    "estimates_and_discretion_cyberark_goodwill_tax_deductible",
+    "estimates_and_discretion_deferred_tax_liabilities_balance",
+    "estimates_and_discretion_deferred_tax_assets_balance"
+   ],
+   "fields": [
+    "note_tables.tables.notes_77.facts.8"
+   ]
+  },
+  {
+   "id": "cross_document_reconciliation_amortization_prose_matches_note_table",
+   "name": "Amortization prose ties exactly to the note table",
+   "name_ko": "주석 표와 정확히 일치하는 상각 설명",
+   "area": "cross_document_reconciliation",
+   "what": "The management discussion's subscription-and-support amortization increases equal {note_tables.tables.notes_107.changes.2} for the quarter and {note_tables.tables.notes_107.changes.3} for the nine months in the amortization table, a clean tie between prose and numbers.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "results_against_expectations_cost_of_subscription_and_support_drivers",
+    "earnings_quality_subscription_and_support_cost_of_revenue_line"
+   ],
+   "fields": [
+    "note_tables.tables.notes_107.changes.2",
+    "note_tables.tables.notes_107.changes.3"
+   ]
+  },
+  {
+   "id": "cross_document_reconciliation_contingent_gain_prose_matches_level_three_rollforward",
+   "name": "Contingent-consideration gain ties to the rollforward",
+   "name_ko": "공정가치 변동표와 일치하는 조건부 대가 이익",
+   "area": "cross_document_reconciliation",
+   "what": "The gain the management discussion describes equals {note_tables.tables.notes_42.facts.8} in the level-three rollforward, and the liability's fall to {note_tables.tables.notes_42.facts.16} equals that gain plus payments of {note_tables.tables.notes_42.facts.12}.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "earnings_quality_contingent_consideration_gain_inside_general_and_administrative",
+    "estimates_and_discretion_qradar_contingent_payment_estimate_reduced"
+   ],
+   "fields": [
+    "note_tables.tables.notes_42.facts.8",
+    "note_tables.tables.notes_42.facts.16",
+    "note_tables.tables.notes_42.facts.12",
+    "note_tables.tables.notes_42.changes.4"
+   ]
+  },
+  {
+   "id": "industry_lens_customer_concentration_through_distributors",
+   "name": "Revenue and receivables concentrated in a few distributors",
+   "name_ko": "소수 유통사에 집중된 매출과 매출채권",
+   "area": "industry_lens",
+   "what": "The latest tagged facts, from the fiscal 2025 10-K, put four distributors at {concentration.facts.0|pct} of accounts receivable and three customers at {concentration.facts.1|pct}, {concentration.facts.2|pct} and {concentration.facts.3|pct} of revenue; the 10-Q tables carry no update, so the post-acquisition mix is unknown.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "revenue_recognition_accounts_receivable_balance",
+    "revenue_recognition_days_sales_outstanding_quarterly_trend"
+   ],
+   "fields": [
+    "concentration.facts.0",
+    "concentration.facts.1",
+    "concentration.facts.2",
+    "concentration.facts.3"
+   ]
+  },
+  {
+   "id": "industry_lens_channel_receivables_peak_with_thin_allowance",
+   "name": "Channel-stuffing signals present but unexplained",
+   "name_ko": "설명되지 않은 채널 밀어내기 신호",
+   "area": "industry_lens",
+   "what": "Days sales outstanding of {trend_table.quarters-back-0.ratios.days_sales_outstanding} and receivables over revenue of {trend_table.quarters-back-0.ratios.receivables_over_revenue} are the highest of six quarters, the allowance ratio of {trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio} is the lowest, product revenue rose {note_tables.tables.notes_30.changes.0} on hardware demand, and the largest customers are distributors; acquired receivables of {note_tables.tables.notes_77.facts.3} explain part of the level, and nothing in the prose addresses channel inventory.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "revenue_recognition_days_sales_outstanding_quarterly_trend",
+    "estimates_and_discretion_bad_debt_reserve_ratio_quarterly_trend",
+    "revenue_recognition_product_revenue_line",
+    "results_against_expectations_product_revenue_growth_from_cyberark_licenses"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.days_sales_outstanding",
+    "trend_table.quarters-back-0.ratios.receivables_over_revenue",
+    "trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio",
+    "note_tables.tables.notes_30.changes.0"
+   ]
+  },
+  {
+   "id": "industry_lens_vendor_financing_book_shrinks_but_weakens",
+   "name": "Customer-financing book shrinks while its weakest tier grows",
+   "name_ko": "줄어들면서도 최저 등급이 늘어난 고객금융 채권",
+   "area": "industry_lens",
+   "what": "The company finances its own customers: financing receivables are {note_tables.tables.notes_54.facts.6} current and {note_tables.tables.notes_54.facts.14} noncurrent, down {note_tables.tables.notes_54.changes.3} and {note_tables.tables.notes_54.changes.7} since the fiscal year-end, while the weakest rating bucket rose to {note_tables.tables.notes_56.facts.29}; some receivables are sold with amounts untagged, so the risk retained cannot be measured.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "revenue_recognition_financing_receivables_current_balance",
+    "revenue_recognition_financing_receivables_noncurrent_balance"
+   ],
+   "fields": [
+    "note_tables.tables.notes_54.facts.6",
+    "note_tables.tables.notes_54.facts.14",
+    "note_tables.tables.notes_54.changes.3",
+    "note_tables.tables.notes_54.changes.7",
+    "note_tables.tables.notes_56.facts.29"
+   ]
+  },
+  {
+   "id": "industry_lens_cloud_purchase_commitments_far_exceed_cost_base",
+   "name": "Cloud commitments far above the cost base",
+   "name_ko": "매출원가를 크게 웃도는 클라우드 구매약정",
+   "area": "industry_lens",
+   "what": "Cloud purchase commitments of {note_tables.tables.notes_142.facts.0} compare with trailing cost of revenue of {terms.trailing_four_quarters.cost_of_revenue} and with total obligations of {terms.balances_now.unconditional_purchase_obligations}, up from {terms.balances_a_year_earlier.unconditional_purchase_obligations}; whether this exceeds need cannot be judged from the filings, but it has grown far faster than revenue at {ratios.growth.revenue.trailing_four_quarters|pct}.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "results_against_expectations_cost_of_subscription_and_support_drivers",
+    "related_parties_contingencies_and_subsequent_events_commitments_and_contingencies_caption"
+   ],
+   "fields": [
+    "note_tables.tables.notes_142.facts.0",
+    "terms.trailing_four_quarters.cost_of_revenue",
+    "terms.balances_now.unconditional_purchase_obligations",
+    "ratios.growth.revenue.trailing_four_quarters"
+   ]
+  },
+  {
+   "id": "industry_lens_qradar_migration_shortfall_signalled_by_estimate_cut",
+   "name": "Estimate cut signals fewer QRadar migrations",
+   "name_ko": "QRadar 고객 전환 부진을 시사하는 추정치 축소",
+   "area": "industry_lens",
+   "what": "Payments to IBM depend on QRadar customers signing qualified new transactions, and the estimate was cut by a gain of {note_tables.tables.notes_42.facts.8} citing \"the magnitude and likelihood of customers entering into qualified new transactions\"; revenue from migrated customers is not tagged, so the revenue side of the shortfall cannot be seen.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "narrative_signs_of_operating_pressure_fewer_qualified_qradar_transactions_expected",
+    "estimates_and_discretion_qradar_contingent_payment_estimate_reduced"
+   ],
+   "fields": [
+    "note_tables.tables.notes_42.facts.8",
+    "note_tables.tables.notes_42.facts.16"
+   ]
+  },
+  {
+   "id": "industry_lens_inventory_untagged_at_quarter_end",
+   "name": "Inventory and its reserve untagged at the quarter-end",
+   "name_ko": "분기말에 태깅되지 않은 재고와 재고 충당금",
+   "area": "industry_lens",
+   "what": "No inventory balance, reserve or write-down is tagged for the quarter, so days of inventory and obsolescence cannot be tested; the fiscal 2025 annual figure was {trend_table.years-back-0.ratios.days_sales_of_inventory} days, inventory purchase commitments are {note_tables.tables.notes_142.facts.7}, and the prose cites component shortages and tariffs alongside lower obsolescence charges.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "earnings_quality_days_sales_of_inventory_quarterly_trend",
+    "earnings_quality_days_sales_of_inventory_annual_trend",
+    "narrative_signs_of_operating_pressure_memory_and_component_shortages",
+    "estimates_and_discretion_lower_inventory_excess_and_obsolete_charges"
+   ],
+   "fields": [
+    "trend_table.years-back-0.ratios.days_sales_of_inventory",
+    "note_tables.tables.notes_142.facts.7"
+   ]
+  }
+ ],
+ "adjustments": [],
+ "summary_ko": {
+  "earnings_versus_cash": "최근 네 분기 영업현금흐름은 순이익의 {earnings_versus_cash.operating_cash_flow_over_net_income}배로 fiscal 2025의 {earnings_versus_cash.history.years.0.operating_cash_flow_over_net_income}배보다 높아졌는데, 인수 관련 비현금 비용으로 이익은 줄고 현금은 늘었기 때문입니다. 다만 주식보상비 {terms.trailing_four_quarters.share_based_compensation}과 인수대금을 빼면 질 조정 잉여현금흐름은 {free_cash_flow.free_cash_flow_quality_adjusted}로 마이너스입니다.",
+  "revenue_recognition": "분기 매출채권 회수기간은 {trend_table.quarters-back-0.ratios.days_sales_outstanding}일로 여섯 분기 중 가장 길고, 매출 대비 유동 선수수익 비율은 {trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue}로 가장 낮습니다. 매출 성장률 {ratios.growth.revenue.year_over_year|pct} 중 상당 부분은 인수한 사업에서 왔고, 아이덴티티 라이선스를 인도 시점에 인식하는 새로운 판단 영역이 생겼습니다.",
+  "estimates_and_reserves": "대손충당금 비율은 {trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio}로 여섯 분기 중 가장 낮은데 매출채권은 가장 많습니다. QRadar 조건부 대가 추정치를 낮춰 {note_tables.tables.notes_42.facts.8}의 이익이 판관비 안에서 인식되었고, 영업권은 {note_tables.tables.notes_102.facts.2}로 총자산 {terms.balances_now.assets}의 큰 부분을 차지하며 배분은 아직 확정되지 않았습니다.",
+  "cost_deferral": "소프트웨어 개발비 자본화는 태깅되지 않아 검증할 수 없지만, 영업권과 무형자산이 늘면서 소프트 자산 비율은 {trend_table.quarters-back-0.ratios.soft_asset_share}로 가장 높아졌고 매출총이익률은 {trend_table.quarters-back-0.ratios.gross_margin}로 가장 낮아졌습니다. 인수 관련 비용은 거래마다 반복되고 있으며 최근 네 분기 인수 지출은 {terms.cash_flow_families.acquisitions}입니다.",
+  "cash_flow_engineering_and_off_balance_sheet": "조건부 대가 지급 {note_tables.tables.notes_42.facts.14}은 재무활동으로 분류되어 영업현금흐름과 잉여현금흐름에서 빠져 있습니다. 구매약정은 {terms.balances_now.unconditional_purchase_obligations}으로 일 년 전 {terms.balances_a_year_earlier.unconditional_purchase_obligations}에서 크게 늘었고, 전환사채 {note_tables.tables.notes_37.facts.123}은 계산기의 부채 합계에 잡히지 않아 레버리지가 실제보다 낮아 보입니다.",
+  "controls_audit_and_filing_signals": "대형 인수가 있었던 분기인데도 내부통제에 변화가 없다는 문구가 그대로이고 인수 회사의 통제 포함 여부는 언급이 없습니다. 실적발표 8-K 본문이 없어 10-Q와 비교할 수 없고, 표시 단위가 백만 단위로 거칠어졌으며, 감사인 교체나 중대한 취약점은 발견되지 않았습니다.",
+  "cross_document_reconciliation": "방향이 있는 주석 항목 대부분은 숫자와 일치했고 상각비 {note_tables.tables.notes_107.changes.2}와 조건부 대가 이익 {note_tables.tables.notes_42.facts.8}은 표와 정확히 맞았습니다. 이연법인세부채 방향과 회수 개선이라는 현금흐름 설명 두 가지는 숫자와 어긋났고, 분기 후 사건과 재고 관련 항목은 확인할 수 없었습니다.",
+  "industry_lens": "네 유통사가 매출채권의 {concentration.facts.0|pct}를 차지하고 세 고객이 각각 매출의 {concentration.facts.1|pct}, {concentration.facts.2|pct}, {concentration.facts.3|pct}를 차지합니다. 재고는 분기말에 태깅되지 않아 진부화를 검증할 수 없고, 클라우드 구매약정 {note_tables.tables.notes_142.facts.0}은 최근 네 분기 매출원가 {terms.trailing_four_quarters.cost_of_revenue}를 크게 웃돌며, 고객금융 채권은 줄었지만 최저 등급 잔액은 {note_tables.tables.notes_56.facts.29}로 늘었습니다."
+ },
+ "limits": "This analysis finds where the numbers and the explanations disagree, and where the company differs from its own past. It does not judge intent, and it cannot see evidence outside the filings, such as invoices or contracts.",
+ "normalized_quotes": 0,
+ "dropped_items": [
+  {
+   "where": "adjustments[0]",
+   "id": null,
+   "reason": "calculator_field 'note_tables.tables.notes_42.facts.8' is not a dollar amount under terms. or earnings_versus_cash."
+  },
+  {
+   "where": "adjustments[1]",
+   "id": null,
+   "reason": "calculator_field 'note_tables.tables.notes_42.facts.14' is not a dollar amount under terms. or earnings_versus_cash."
+  },
+  {
+   "where": "adjustments[2]",
+   "id": null,
+   "reason": "calculator_field 'note_tables.tables.notes_187.facts.17' is not a dollar amount under terms. or earnings_versus_cash."
+  }
+ ],
+ "dropped_count": 3
+}
