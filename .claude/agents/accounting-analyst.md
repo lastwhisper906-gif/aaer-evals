@@ -133,7 +133,7 @@ Receivables: `receivables_extension.receivables_growth_minus_revenue_growth`,
 `receivables_extension.past_due_receivables_share.a_year_earlier`, each read at
 the date printed with it. Contract liabilities:
 `contract_liabilities_and_billings.billings` (Fortinet's definition; the
-acquired balances it cannot subtract are named),
+acquired balances still inside it are named),
 `contract_liabilities_and_billings.billings_growth_minus_revenue_growth`,
 `contract_liabilities_and_billings.contract_liability_duration` (the noncurrent
 share), `contract_liabilities_and_billings.revenue_from_opening_contract_liabilities`

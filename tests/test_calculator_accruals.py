@@ -279,6 +279,32 @@ def test_the_gap_between_the_first_two_measures_is_worked_by_python(nvidia):
             "over the same average assets, as "
             "`quarterly_cash_flow_and_accruals.balance_sheet_less_cash_flow_accruals`") in paragraph
     assert "it does not by itself say earnings were managed" in paragraph
+    assert instructions_to_compute(paragraph_of(*PARAGRAPHS[0])) == []
+
+
+def test_neither_paragraph_tells_an_analyst_to_do_arithmetic():
+    """Python does every subtraction and division; the analysts read cells. Neither
+    paragraph holds a verb of arithmetic outside a clause that tells the analyst
+    not to, and the check is not a formality: a sentence planted in the accounting
+    analyst's paragraph that hands over one subtraction is caught, in each of the
+    verbs, while the same verb inside a prohibition is let through."""
+    for name, opening in PARAGRAPHS:
+        assert instructions_to_compute(paragraph_of(name, opening)) == [], name
+    paragraph = paragraph_of(*PARAGRAPHS[0])
+    planted = "Subtract the third from the first yourself."
+    assert instructions_to_compute(f"{paragraph} {planted}") == [planted]
+    middle = paragraph.replace("Operating cash flow by quarter runs from",
+                               f"{planted} Operating cash flow by quarter runs from")
+    assert middle != paragraph and instructions_to_compute(middle) == [planted]
+    for order in ("Add up the eight quarters.", "Divide the first by average assets.",
+                  "Multiply the share by revenue.", "Compute the gap for the year before.",
+                  "Calculate the change in the share.", "Work out the difference in dollars.",
+                  "The gap is read beside the third measure; subtract one from the other."):
+        assert instructions_to_compute(f"{paragraph} {order}"), order
+    for refusal in ("Do not subtract the third from the first yourself.",
+                    "Never divide one measure by another.",
+                    "The gap is Python's cell; never work out one of your own."):
+        assert instructions_to_compute(f"{paragraph} {refusal}") == [], refusal
 
 
 def test_free_cash_flow_accruals_are_the_sec_models_in_dollars(nvidia):
@@ -422,6 +448,26 @@ AGENTS = source.FIXTURES.parent.parent / ".claude" / "agents"
 RUNS = source.FIXTURES.parent.parent / "runs"
 PARAGRAPHS = (("accounting-analyst.md", "**Revenue and working capital.**"),
               ("financial-analyst.md", "**Working capital and billings.**"))
+
+
+def paragraph_of(name: str, opening: str) -> str:
+    """One paragraph of an analyst's definition, on one line."""
+    text = (AGENTS / name).read_text(encoding="utf-8")
+    return " ".join(text[text.index(opening):].split("\n\n", 1)[0].split())
+
+
+ARITHMETIC = re.compile(r"\b(subtract|add(s|ed|ing)? up|divid|multipl|comput|calculat|"
+                        r"work(s|ed|ing)? out)", re.IGNORECASE)
+TOLD_NOT_TO = re.compile(r"\b(do not|never)\b", re.IGNORECASE)
+
+
+def instructions_to_compute(paragraph: str) -> list[str]:
+    """Every sentence or clause of a paragraph (cut at a full stop, a semicolon or a
+    colon) that holds a verb of arithmetic and does not tell the analyst not to.
+    Python does the arithmetic; a paragraph that hands any of it to the analyst
+    is refused, whatever else it says."""
+    return [clause for clause in re.split(r"(?<=[.;:?!])\s+", paragraph)
+            if ARITHMETIC.search(clause) and not TOLD_NOT_TO.search(clause)]
 
 
 def named_paths(name: str, opening: str) -> list[str]:
@@ -888,8 +934,9 @@ def test_dells_interest_expense_is_two_scopes_and_its_cost_of_debt_is_its_last_f
     2026's own 1,560 over the average of debt at that year's end and start,
     (7,990 + 23,513 + 5,204 + 19,363) / 2 = 28,035, 0.055645 -- not over the
     trailing balances of 2026-07-31 and 2025-08-01 (31,577.5), a different year.
-    The cell names both periods, and the label says interest expense is on
-    record in two scopes, never that neither is on record."""
+    The cell names both periods, and the label says the years to date state
+    interest expense too, in two scopes, so that no trailing sum is taken --
+    never that they do not state it, and never that neither figure is on record."""
     cut = "2026-09-08"
     nonoperating, debt = "InterestExpenseNonoperating", "InterestExpenseDebt"
     year, to_date, before = "2025-02-01..2026-01-30", "2026-01-31..2026-07-31", "2025-02-01..2025-08-01"
@@ -936,10 +983,16 @@ def test_dells_interest_expense_is_two_scopes_and_its_cost_of_debt_is_its_last_f
     assert cost["formula"] == "interest_expense_last_fiscal_year / average debt over that fiscal year"
     assert cost["inputs"]["interest_expense_last_fiscal_year"]["tag"] == nonoperating
     assert cost["periods"] == {"numerator": year, "denominator": ["2025-01-31", "2026-01-30"]}
+    # the years to date do state interest expense -- 800 under the debt-only tag for
+    # the six months to 2026-07-31, 753 under the whole-line tag for those to
+    # 2025-08-01, each read above -- so the label says that, and never that they do not
     assert cost["fallback"].startswith(
         f"interest expense over the last fiscal year ({year}) over the average of debt at that "
-        f"year's start and end (2025-01-31 and 2026-01-30), which the years to date do not "
-        f"state, because interest expense is on record but its spans fall in two scopes: ")
+        f"year's start and end (2025-01-31 and 2026-01-30), which the years to date state too "
+        f"({to_date} under us-gaap:{debt}; {before} under us-gaap:{nonoperating}), the spans "
+        f"falling in two scopes, so no trailing sum is taken, because interest expense is on "
+        f"record but its spans fall in two scopes: ")
+    assert "do not state" not in cost["fallback"]
     assert "neither interest expense nor interest paid" not in cost["fallback"]
 
 
@@ -1027,10 +1080,10 @@ def test_the_ladder_says_how_each_input_stood_and_neither_only_when_true():
 
     def last_year(expense: dict, paid: dict, start: dict | None = None,
                   to_date: dict | None = None) -> dict:
+        silent = {"2026-01-01..2026-06-30": {"missing": "no row"},
+                  "2025-01-01..2025-06-30": {"missing": "no row"}}
         return {"period": period, "debt_dates": ["2024-12-31", "2025-12-31"],
-                "interest_expense_years_to_date": to_date or {
-                    "2026-01-01..2026-06-30": {"missing": "no row"},
-                    "2025-01-01..2025-06-30": {"missing": "no row"}},
+                "years_to_date": {"interest_expense": to_date or silent, "interest_paid": silent},
                 "interest_expense": expense, "interest_paid": paid,
                 "debt_at_the_end": {"value": 60.0}, "debt_at_the_start": start or {"value": 40.0}}
 
@@ -1097,8 +1150,9 @@ def test_the_last_fiscal_year_is_tried_before_the_risk_free_rate_whenever_it_is_
     paid = {"value": 4.0, "tag": "InterestPaidNet", "period": "trailing"}
 
     def year(start: dict) -> dict:
+        silent = {"2026-01-01..2026-06-30": {"missing": "no row"}}
         return {"period": period, "debt_dates": ["2024-12-31", "2025-12-31"],
-                "interest_expense_years_to_date": {"2026-01-01..2026-06-30": {"missing": "no row"}},
+                "years_to_date": {"interest_expense": silent, "interest_paid": silent},
                 "interest_expense": {"value": 3.0, "tag": "InterestExpense"},
                 "interest_paid": {"missing": "no row"},
                 "debt_at_the_end": {"value": 60.0}, "debt_at_the_start": start}
@@ -1112,11 +1166,13 @@ def test_the_last_fiscal_year_is_tried_before_the_risk_free_rate_whenever_it_is_
     stepped = ladder(year({"value": 40.0}))
     assert stepped["value"] == 3.0 / 50.0
     assert stepped["periods"] == {"numerator": period, "denominator": ["2024-12-31", "2025-12-31"]}
+    # the one year to date planted above states no interest expense, and the label,
+    # built from the walk of those spans, says so of the figure this rung reads
     assert stepped["fallback"].startswith(
         f"interest expense over the last fiscal year ({period}) over the average of debt at "
-        f"that year's start and end (2024-12-31 and 2025-12-31), because interest expense is on "
-        f"record for the last fiscal year ({period}) and not for every span of the trailing "
-        f"four quarters: ")
+        f"that year's start and end (2024-12-31 and 2025-12-31), which the years to date do "
+        f"not state, because interest expense is on record for the last fiscal year ({period}) "
+        f"and not for every span of the trailing four quarters: ")
     assert "interest paid is on record but average debt is missing/zero: " in stepped["fallback"]
     assert "no debt a year earlier" in stepped["fallback"]
     assert "risk-free rate" not in stepped["fallback"]
@@ -1140,9 +1196,12 @@ def test_an_interest_expense_stated_for_the_years_to_date_alone_is_never_called_
     partial = {"missing": "interest_expense over the trailing four quarters needs the prior "
                           "fiscal year: no row"}
     year = {"period": period, "debt_dates": ["2024-12-31", "2025-12-31"],
-            "interest_expense_years_to_date": {
-                "2026-01-01..2026-06-30": {"value": 2.0, "tag": "InterestExpense"},
-                "2025-01-01..2025-06-30": {"value": 1.0, "tag": "InterestExpense"}},
+            "years_to_date": {
+                "interest_expense": {
+                    "2026-01-01..2026-06-30": {"value": 2.0, "tag": "InterestExpense"},
+                    "2025-01-01..2025-06-30": {"value": 1.0, "tag": "InterestExpense"}},
+                "interest_paid": {"2026-01-01..2026-06-30": {"missing": "no row"},
+                                  "2025-01-01..2025-06-30": {"missing": "no row"}}},
             "interest_expense": {"missing": "no row"}, "interest_paid": {"missing": "no row"},
             "debt_at_the_end": {"value": 60.0}, "debt_at_the_start": {"value": 40.0}}
     out = calculator.cost_of_debt_fallback(
@@ -1158,22 +1217,189 @@ def test_an_interest_expense_stated_for_the_years_to_date_alone_is_never_called_
     assert "neither interest expense nor interest paid" not in out["fallback"]
 
 
+def test_the_rung_is_tried_when_trailing_interest_expense_has_no_average_debt():
+    """Planted, the other half of the rung's precondition: interest expense 4 over the
+    trailing four quarters is on record and the trailing debt a year earlier is
+    not. The last fiscal year's own interest expense, 3, over its own debt, 40 and
+    60, is read: 3 / 50 = 0.06, never the risk-free rate plus one point (0.05).
+    The trailing sum is on record, so the label says nothing of the years to date."""
+    period = "2025-01-01..2025-12-31"
+    stated = {"2026-01-01..2026-06-30": {"value": 2.0, "tag": "InterestExpense"},
+              "2025-01-01..2025-06-30": {"value": 1.0, "tag": "InterestExpense"}}
+    silent = {period: {"missing": "no row"} for period in stated}
+    year = {"period": period, "debt_dates": ["2024-12-31", "2025-12-31"],
+            "years_to_date": {"interest_expense": stated, "interest_paid": silent},
+            "interest_expense": {"value": 3.0, "tag": "InterestExpense"},
+            "interest_paid": {"missing": "no row"},
+            "debt_at_the_end": {"value": 60.0}, "debt_at_the_start": {"value": 40.0}}
+    out = calculator.cost_of_debt_fallback(
+        {"interest_expense": {"value": 4.0, "tag": "InterestExpense"},
+         "interest_paid": {"missing": "no row"}},
+        {"value": 100.0}, {"missing": "no debt a year earlier"}, {"value": 0.04},
+        "average_debt: no debt a year earlier", year)
+    assert out["value"] == 3.0 / 50.0
+    assert out["fallback"] == (
+        f"interest expense over the last fiscal year ({period}) over the average of debt at "
+        f"that year's start and end (2024-12-31 and 2025-12-31), because interest expense is on "
+        f"record but average debt is missing/zero: average_debt: no debt a year earlier")
+    assert out["standing"]["interest_expense"]["trailing"] == "on_record"
+
+
+def test_the_rungs_label_says_which_years_to_date_state_its_figure_and_which_do_not():
+    """Planted: the last fiscal year's interest expense is 3 over that year's debt, 40
+    and 60, so the rung reads 3 / 50 = 0.06 each time; what its label says of the
+    years to date follows the rows planted for them. With the earlier year to
+    date stating 1 and the later one silent, it names each. With both stating
+    it and the trailing sum still not taken, it says they state it too, and
+    never that interest expense is on record for the year alone."""
+    period = "2025-01-01..2025-12-31"
+    later, earlier = "2026-01-01..2026-06-30", "2025-01-01..2025-06-30"
+    silent = {"missing": "no row"}
+
+    def ladder(this_year: dict, missing: str) -> dict:
+        year = {"period": period, "debt_dates": ["2024-12-31", "2025-12-31"],
+                "years_to_date": {
+                    "interest_expense": {later: this_year,
+                                         earlier: {"value": 1.0, "tag": "InterestExpense"}},
+                    "interest_paid": {later: silent, earlier: silent}},
+                "interest_expense": {"value": 3.0, "tag": "InterestExpense"},
+                "interest_paid": silent,
+                "debt_at_the_end": {"value": 60.0}, "debt_at_the_start": {"value": 40.0}}
+        return calculator.cost_of_debt_fallback(
+            {"interest_expense": {"missing": missing}, "interest_paid": silent},
+            {"value": 100.0}, {"value": 100.0}, {"value": 0.04},
+            f"interest_expense: {missing}", year)
+
+    opening = (f"interest expense over the last fiscal year ({period}) over the average of "
+               f"debt at that year's start and end (2024-12-31 and 2025-12-31), which the "
+               f"years to date state ")
+    needs = "interest_expense over the trailing four quarters needs the this year to date: no row"
+    mixed = ladder(silent, needs)
+    assert mixed["value"] == 3.0 / 50.0
+    assert mixed["fallback"] == (
+        f"{opening}for {earlier} and not for {later}, because interest expense is on record "
+        f"for the last fiscal year ({period}) and not for every span of the trailing four "
+        f"quarters: interest_expense: {needs}")
+    assert mixed["standing"]["interest_expense"]["trailing"] == "fiscal_year_only"
+
+    unsummed = "the trailing four quarters are not summed for a reason of their own"
+    every = ladder({"value": 2.0, "tag": "InterestExpense"}, unsummed)
+    assert every["value"] == 3.0 / 50.0
+    assert every["fallback"] == (
+        f"{opening}too, because interest expense is on record for every span of the trailing "
+        f"four quarters but no trailing sum is taken: interest_expense: {unsummed}")
+    assert "do not state" not in every["fallback"] and "not for every span" not in every["fallback"]
+    assert every["standing"]["interest_expense"]["trailing"] == "no_sum"
+
+
+def test_a_filing_with_no_last_fiscal_year_to_walk_is_labelled_without_one():
+    """Planted in an annual report's shape: the trailing four quarters are the fiscal
+    year itself, so there is no last fiscal year and no year to date to walk. A
+    missing interest expense and interest paid are then absent, the rate is
+    0.04 + 0.01 = 0.05, and the label says "neither"; with interest paid refused
+    it says that instead."""
+    annual = {"missing": "the trailing four quarters are the fiscal year itself"}
+    none = {"missing": "no row for interest_expense in 2025-01-01..2025-12-31"}
+
+    def ladder(paid: dict) -> dict:
+        return calculator.cost_of_debt_fallback(
+            {"interest_expense": none, "interest_paid": paid}, {"value": 100.0}, {"value": 100.0},
+            {"value": 0.04}, f"interest_expense: {none['missing']}", annual)
+
+    out = ladder({"missing": "no row for interest_paid in 2025-01-01..2025-12-31"})
+    assert out["value"] == pytest.approx(0.05)
+    assert "neither interest expense nor interest paid is on record" in out["fallback"]
+    assert out["standing"] == {"interest_expense": {"trailing": "absent", "spans": []},
+                               "interest_paid": {"trailing": "absent", "spans": []}}
+    refused = ladder({"missing": f"InterestPaidNet is reported as [1.0, 2.0] -- "
+                                 f"{calculator.trends.TWO_VALUES}"})
+    assert "interest paid is on record but refused" in refused["fallback"]
+    assert "neither interest expense nor interest paid" not in refused["fallback"]
+
+
+def test_a_year_to_date_row_is_never_called_not_on_record_where_no_fiscal_year_stands_before():
+    """Planted: a quarterly report whose record holds no fiscal year before its year
+    to date. Interest expense 2 is stated for that year to date. There is no
+    trailing sum and no last fiscal year, so the rate is 0.04 + 0.01 = 0.05; the
+    label names the span that states interest expense, and says "neither" only
+    once that row is taken away."""
+    span = "2026-01-01..2026-06-30"
+    partial = {"missing": "interest_expense over the trailing four quarters needs the prior "
+                          "fiscal year: no row"}
+    nothing = {"missing": "no row for interest_paid in any period"}
+
+    def ladder(to_date: dict) -> dict:
+        year = {"missing": "no complete fiscal year before the year to date is on record",
+                "years_to_date": {"interest_expense": {span: to_date},
+                                  "interest_paid": {span: {"missing": "no row"}}}}
+        return calculator.cost_of_debt_fallback(
+            {"interest_expense": partial, "interest_paid": nothing}, {"value": 100.0},
+            {"value": 100.0}, {"value": 0.04}, f"interest_expense: {partial['missing']}", year)
+
+    out = ladder({"value": 2.0, "tag": "InterestExpense"})
+    assert out["value"] == pytest.approx(0.05)
+    assert (f"interest expense is on record for the years to date ({span}) and no complete "
+            f"fiscal year before them is on record: ") in out["fallback"]
+    assert "neither interest expense nor interest paid" not in out["fallback"]
+    assert "which is not on record" not in out["fallback"]
+    assert out["standing"]["interest_expense"] == {
+        "trailing": "years_to_date_only",
+        "spans": [{"span": "year_to_date", "period": span, "on_record": True,
+                   "tag": "InterestExpense", "scope": "InterestExpense"}]}
+    empty = ladder({"missing": "no row"})
+    assert empty["value"] == pytest.approx(0.05)
+    assert "neither interest expense nor interest paid is on record" in empty["fallback"]
+
+
+def test_interest_paid_stated_for_the_years_to_date_alone_is_not_called_neither():
+    """Planted: no interest expense in any span; interest paid for both years to date
+    and not for the last fiscal year. No trailing sum and no rung can be read, so
+    the rate is 0.04 + 0.01 = 0.05, and the label says where interest paid is on
+    record -- not that neither figure is."""
+    period = "2025-01-01..2025-12-31"
+    spans = ("2026-01-01..2026-06-30", "2025-01-01..2025-06-30")
+    year = {"period": period, "debt_dates": ["2024-12-31", "2025-12-31"],
+            "years_to_date": {
+                "interest_expense": {span: {"missing": "no row"} for span in spans},
+                "interest_paid": {span: {"value": 2.0, "tag": "InterestPaidNet"} for span in spans}},
+            "interest_expense": {"missing": "no row"}, "interest_paid": {"missing": "no row"},
+            "debt_at_the_end": {"value": 60.0}, "debt_at_the_start": {"value": 40.0}}
+    none = {"missing": "no row for interest_expense in any period"}
+    partial = {"missing": "interest_paid over the trailing four quarters needs the prior fiscal "
+                          "year: no row"}
+    out = calculator.cost_of_debt_fallback(
+        {"interest_expense": none, "interest_paid": partial}, {"value": 100.0}, {"value": 100.0},
+        {"value": 0.04}, f"interest_expense: {none['missing']}", year)
+    assert out["value"] == pytest.approx(0.05)
+    assert (f"interest paid is on record for the years to date ({spans[0]} and {spans[1]}) and "
+            f"not for the last fiscal year ({period}): ") in out["fallback"]
+    assert "neither interest expense nor interest paid" not in out["fallback"]
+    assert out["standing"]["interest_paid"]["trailing"] == "years_to_date_only"
+    assert out["standing"]["interest_expense"]["trailing"] == "absent"
+
+
 INTEREST_TAGS = ("InterestExpense", "InterestExpenseNonoperating", "InterestExpenseDebt",
                  "InterestAndDebtExpense")
+PAID_TAGS = ("InterestPaidNet", "InterestPaid")
 
 
-def interest_rows_on_record(run: str, cutoff: str, periods: list) -> list:
-    """Every (tag, period) of interest expense the record holds for the spans named:
-    companyfacts through the independent reader, and the run's own bundle, read here."""
+def rows_on_record(run: str, cutoff: str, tags: tuple, periods: list) -> list:
+    """Every (tag, period) the record holds for the tags and spans named, in the
+    order of the tags: companyfacts through the independent reader, and the run's
+    own bundle, read here."""
     ticker = run.split("/")[0]
     facts = json.loads((RUNS / run / "input_numbers.json").read_text(encoding="utf-8"))["facts"]
     in_bundle = {(fact["tag"], f"{context['start']}..{context['end']}") for fact in facts
                  for context in [fact.get("context") or {}]
-                 if fact["tag"] in INTEREST_TAGS and context.get("start")
+                 if fact["tag"] in tags and context.get("start")
                  and not context.get("segment") and not fact.get("nil")
                  and fact.get("filing_date", "9999") <= cutoff}
-    return [(tag, period) for tag in INTEREST_TAGS for period in periods
+    return [(tag, period) for tag in tags for period in periods
             if (tag, period) in in_bundle or source.reported(ticker, tag, period, cutoff)]
+
+
+def interest_rows_on_record(run: str, cutoff: str, periods: list) -> list:
+    return rows_on_record(run, cutoff, INTEREST_TAGS, periods)
 
 
 def test_johnson_controls_label_names_the_spans_that_state_interest_expense():
@@ -1203,25 +1429,135 @@ def test_johnson_controls_label_names_the_spans_that_state_interest_expense():
     assert "which is not on record" not in cost["fallback"]
 
 
-def test_no_committed_run_is_told_interest_expense_is_not_on_record_when_a_span_states_it(
+def test_esco_label_keeps_what_is_said_of_interest_expense_apart_from_interest_paid(
         committed_calculators):
-    """Every committed run, recomputed: where the cost of debt's label says interest
-    expense is not on record, or that neither it nor interest paid is, no interest
-    tag carries any span of that run's trailing four quarters -- checked against
-    companyfacts and the run's bundle, not against the calculator."""
+    """ESCO's 10-Q for the nine months to 2026-06-30 states no interest expense for
+    them; its 10-K states the year to 2025-09-30, and interest paid is on record
+    for every span, read here. The cost of debt is interest paid over average debt,
+    as published, and its label says how interest expense stands as a sentence of
+    its own -- not "in place of interest expense is on record ...", which reads as
+    said of interest paid."""
+    run = "ESE/0001104659-26-093266"
+    cutoff, payload = committed_calculators[run]
+    year, to_date, before = ("2024-10-01..2025-09-30", "2025-10-01..2026-06-30",
+                             "2024-10-01..2025-06-30")
+    assert rows_on_record(run, cutoff, INTEREST_TAGS, [year]) == [("InterestExpense", year)]
+    assert rows_on_record(run, cutoff, INTEREST_TAGS, [to_date]) == []
+    assert {period for _, period in rows_on_record(run, cutoff, PAID_TAGS, [year, to_date, before])} \
+        == {year, to_date, before}
+    cell = payload["cost_of_capital"]["pre_tax_cost_of_debt"]
+    assert cell["formula"] == "interest_paid / average debt"
+    assert cell["fallback"].startswith(
+        f"interest paid in cash in place of interest expense: interest expense is on record for "
+        f"the last fiscal year ({year}) and not for every span of the trailing four quarters: ")
+    published = json.loads((RUNS / run / "calculator.json").read_text(encoding="utf-8"))
+    assert cell["value"] == published["cost_of_capital"]["pre_tax_cost_of_debt"]["value"]
+
+
+def test_every_clause_of_every_committed_runs_label_is_true_of_the_record(committed_calculators):
+    """Every committed run, recomputed. The cost of debt's label is built from one
+    walk of the record, carried in the cell as `standing`; here each fact of that
+    walk, and then each clause of the label, is checked against companyfacts and
+    the run's bundle, read by this test and never by the calculator:
+
+    - a span is on record for a figure exactly where a row of one of its tags is,
+      and is read under the first such tag in the chain's order;
+    - how each figure stands follows from those rows alone: absent where no span
+      carries one, the last fiscal year only, the years to date only, or every span;
+    - "the years to date do not state" the rung's figure only where no year to date
+      carries a row of it; they "state it too", in two scopes, only where every one
+      does and the debt-only tag and a whole-line tag are both among the spans;
+    - interest expense "is not on record", and "neither" figure is, only where no
+      span carries a row; "on record for the last fiscal year and not for every
+      span" and "on record for the years to date and not for the last fiscal year"
+      each exactly where the rows say so;
+    - where the cell is interest expense over average debt and carries no label,
+      interest expense has a row in every span."""
     assert len(committed_calculators) == len(list(RUNS.glob("*/*/input_manifest.json"))) >= 32
-    said = []
+    tags = {"interest_expense": INTEREST_TAGS, "interest_paid": PAID_TAGS}
+    said = {}
     for run, (cutoff, payload) in committed_calculators.items():
-        label = payload["cost_of_capital"]["pre_tax_cost_of_debt"].get("fallback", "")
-        if "which is not on record" not in label and "neither interest expense" not in label:
-            continue
+        cell = payload["cost_of_capital"]["pre_tax_cost_of_debt"]
         parts = payload["terms"]["trailing_four_quarters"]["revenue"]["parts"]
-        periods = [part["period"] for part in (parts.values() if isinstance(parts, dict) else parts)]
-        assert periods and all(".." in period for period in periods), run
-        assert interest_rows_on_record(run, cutoff, periods) == [], (run, label[:120])
-        said.append(run)
-    # Apple is the one company no interest tag reaches in these spans
-    assert said and {run.split("/")[0] for run in said} == {"AAPL"}
+        if not isinstance(parts, dict):
+            # an annual report: the trailing four quarters are the year itself, and
+            # no committed annual run's cost of debt stands on a fallback
+            assert "fallback" not in cell and "standing" not in cell, run
+            continue
+        year = parts["prior_fiscal_year"]["period"]
+        to_date = [parts["this_year_to_date"]["period"], parts["prior_year_to_date"]["period"]]
+
+        def stated(figure: str, periods: list) -> list:
+            return rows_on_record(run, cutoff, tags[figure], periods)
+
+        def stands(figure: str) -> str:
+            in_year = bool(stated(figure, [year]))
+            in_to_date = {period for _, period in stated(figure, to_date)}
+            return ("every span" if in_year and in_to_date == set(to_date) else
+                    "fiscal_year_only" if in_year else
+                    "years_to_date_only" if in_to_date else "absent")
+
+        label = cell.get("fallback")
+        if not label:
+            assert "standing" not in cell, run
+            if cell.get("formula") == "interest_expense / average debt":
+                assert stands("interest_expense") == "every span", run
+                said.setdefault("no label", set()).add(run.split("/")[0])
+            continue
+        for figure, fact in cell["standing"].items():
+            assert [row["period"] for row in fact["spans"]] == [year] + to_date, run
+            for row in fact["spans"]:
+                found = stated(figure, [row["period"]])
+                assert row["on_record"] is bool(found), (run, figure, row)
+                assert row["tag"] == (found[0][0] if found else None), (run, figure, row)
+            if stands(figure) == "every span":
+                assert fact["trailing"] in ("on_record", "refused", "two_scopes", "no_sum"), \
+                    (run, figure)
+            else:
+                assert fact["trailing"] == stands(figure), (run, figure)
+
+        expense, paid = stands("interest_expense"), stands("interest_paid")
+        rung = ("interest_expense" if label.startswith("interest expense over the last fiscal year")
+                else "interest_paid" if label.startswith("interest paid in cash over the last "
+                                                         "fiscal year") else None)
+        clauses = {
+            "do not state": "which the years to date do not state" in label,
+            "two scopes": "which the years to date state too" in label,
+            "not on record": "interest expense, which is not on record" in label
+                             or "neither interest expense" in label,
+            "neither": "neither interest expense nor interest paid is on record" in label,
+            "fiscal year only": "interest expense is on record for the last fiscal year" in label,
+            "years to date only": "interest expense is on record for the years to date" in label}
+        for clause, present in clauses.items():
+            if present:
+                said.setdefault(clause, set()).add(run.split("/")[0])
+        if rung:
+            # the rung reads the year's figure, so the year carries a row of it; what
+            # the label says of the years to date is what their rows say
+            assert stated(rung, [year]), run
+            assert clauses["do not state"] is (stated(rung, to_date) == []), (run, label[:200])
+        else:
+            assert not clauses["do not state"], (run, label[:200])
+        if clauses["two scopes"]:
+            assert stands(rung) == "every span", run
+            first = {period: stated(rung, [period])[0][0] for period in [year] + to_date}
+            assert {"InterestExpenseDebt"} < set(first.values()), (run, first)
+            for period in to_date:
+                assert f"{period} under us-gaap:{first[period]}" in label, (run, period)
+        assert clauses["not on record"] is (expense == "absent"), (run, label[:200])
+        assert clauses["neither"] is (expense == "absent" and paid == "absent"), (run, label[:200])
+        assert clauses["fiscal year only"] is (expense == "fiscal_year_only"), (run, label[:200])
+        assert clauses["years to date only"] is (expense == "years_to_date_only"), (run, label[:200])
+        if clauses["years to date only"]:
+            named = label.split("is on record for the years to date (")[1].split(")")[0]
+            for period in to_date:
+                assert (period in named) is bool(stated("interest_expense", [period])), (run, period)
+    # every clause is exercised by a committed run: the three labels worked by hand
+    # in the tests above, and Apple's, whose record states neither figure
+    assert "DELL" in said["two scopes"] and {"CARR", "JCI"} <= said["do not state"]
+    assert "CARR" in said["fiscal year only"] and "JCI" in said["years to date only"]
+    assert "AAPL" in said["not on record"] and "AAPL" in said["neither"]
+    assert said["no label"]
 
 
 # --- the two years to date are read like for like within a scope ------------------------------
