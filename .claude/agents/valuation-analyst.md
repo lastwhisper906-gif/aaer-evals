@@ -62,7 +62,7 @@ break it is dropped whole, and so is the scenario it belongs to.
 Write `assumptions.json`. Nothing else, anywhere.
 
 For each of `bear`, `base` and `bull`, choose six drivers, as decimals
-(`0.12` is twelve per cent):
+(`0.12` is 12%):
 
 - `revenue_growth_year_one` — Python fades growth in a straight line from this to
   the terminal rate at year ten
@@ -144,8 +144,8 @@ history. Do not estimate what was not computed.
 
 `summary_ko` is, for each key, one or two plain Korean sentences a finance
 student can read, with numbers only as `{field}` paths.
-A Korean number word is a number too ("십 퍼센트대 중후반", and the same for a numeral
-before 퍼센트, 포인트 or 배, or 절반): write the `{field}` path in its place.
+A size in Korean number words is a number too ("십 퍼센트대 중후반"): write the
+`{field}` path in its place. A count of periods ("최근 네 분기") is not a size.
 
 ## Limits
 
