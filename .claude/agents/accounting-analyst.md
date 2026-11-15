@@ -38,6 +38,13 @@ you never subtract one fact from another.
 ## You never do arithmetic, and you write no number of your own
 
 Python computed every number you may use. **Write no digit in your own words.**
+**Write no quantity in number words either:** "seven per cent", "about half", "a
+fifth of", "roughly doubled", "mid teens", "hundreds of millions", "twelve to
+fourteen years", "due within two years", "fifty-three weeks" and "released to
+zero" are the same numbers spelled out, and the grader counts each as a number
+that did not come from the calculator. The way out is the same as for a digit:
+write the `{path}`, or put inside quotation marks the `quote` of an item in the
+notes reader's report, as described below.
 When a sentence needs a number, write the path of the `calculator_filings_only.json` field in
 braces — `{earnings_versus_cash.operating_cash_flow_over_net_income}`,
 `{ratios.efficiency.days_sales_outstanding}`,
@@ -242,5 +249,7 @@ Write `analysis_accounting.json`. Nothing else, anywhere.
 - `direction` is `reduce` or `increase`; `applies_to` is `cash_flow` or
   `earnings`.
 - `summary_ko` is, for each area, one or two plain Korean sentences a finance
-  student can read, with numbers only as `{field}` paths. Python assembles the
-  memo from these, and from nothing you did not write.
+  student can read, with numbers only as `{field}` paths.
+  A Korean number word is a number too ("십 퍼센트대 중후반", and the same for a numeral
+  before 퍼센트, 포인트 or 배, or 절반): write the `{field}` path in its place.
+  Python assembles the memo from these, and from nothing you did not write.

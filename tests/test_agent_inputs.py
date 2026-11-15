@@ -1459,3 +1459,78 @@ def test_a_run_whose_note_tables_cannot_be_read_says_so_where_the_run_is_checked
     line = next(line for line in payload["missing"] if line.startswith("note_tables: "))
     assert "input_notes.md" in line
     assert line in calculator.filings_only(payload)["missing"]
+
+
+def _number_words_sentence(agent: str) -> str:
+    text = (REPO / ".claude" / "agents" / f"{agent}.md").read_text(encoding="utf-8")
+    start = text.index("**Write no quantity in number words either:**")
+    return " ".join(text[start:text.index("When a sentence needs a", start)].split())
+
+
+def _phrases_the_grader_counted_as_numbers() -> str:
+    """Every `why` of a `number_not_from_calculator` dealbreaker in the published
+    grades: the owner's grader's own words on what a number in words is."""
+    whys = []
+    for grade in sorted((REPO / "runs").glob("*/*/grade.json")):
+        for row in json.loads(grade.read_text(encoding="utf-8")).get("dealbreakers") or []:
+            if row.get("kind") == "number_not_from_calculator":
+                whys.append(row.get("why") or "")
+    assert len(whys) >= 80          # 88 on 2026-11-15, over 32 graded runs
+    return "\n".join(whys)
+
+
+@pytest.mark.parametrize("agent", ["accounting-analyst", "financial-analyst", "valuation-analyst"])
+def test_each_analyst_is_told_a_quantity_in_words_is_a_number_with_the_graders_own_examples(agent):
+    """The three definitions forbid a quantity in number words beside the digit
+    rule. Every example they give is a phrase the owner's grader counted as a
+    number not from the calculator in a published grade, read from the grade
+    files here, so no example is the definition's own invention; and each names
+    the two ways out a digit has."""
+    sentence = _number_words_sentence(agent)
+    examples = re.findall(r'"([^"]+)"', sentence[:sentence.index("are the same numbers spelled out")])
+    assert len(examples) >= 6, examples
+    counted = _phrases_the_grader_counted_as_numbers()
+    assert [phrase for phrase in examples if phrase not in counted] == []
+    assert "the grader counts each as a number that did not come from the calculator" in sentence
+    assert "write the `{path}`" in sentence
+    if agent == "valuation-analyst":
+        assert "quote the MD&A or the earnings release verbatim" in sentence
+    else:
+        assert "the `quote` of an item in the notes reader's report" in sentence
+    # the definition sits beside the digit rule it extends, not in place of it
+    text = (REPO / ".claude" / "agents" / f"{agent}.md").read_text(encoding="utf-8")
+    assert "Write no digit" in text[:text.index("**Write no quantity in number words either:**")]
+
+
+@pytest.mark.parametrize("agent", ["accounting-analyst", "financial-analyst", "valuation-analyst"])
+def test_each_analysts_korean_summary_is_told_the_same(agent):
+    """The Korean sentences are what the one-page view prints. The example is the
+    Korean phrase the grader counted in Generac's grade."""
+    text = (REPO / ".claude" / "agents" / f"{agent}.md").read_text(encoding="utf-8")
+    start = text.index("`summary_ko` is, for each")
+    end = text.find("\n\n", start)
+    paragraph = " ".join(text[start:end if end != -1 else len(text)].split())
+    assert "A Korean number word is a number too" in paragraph
+    assert "write the `{field}` path in its place" in paragraph
+    example = re.search(r'\("([^"]+)"', paragraph).group(1)
+    assert example in _phrases_the_grader_counted_as_numbers()
+
+
+def test_the_path_the_valuation_analyst_is_given_for_a_drivers_size_holds_a_number():
+    """The valuation definition names one path for a driver's size in a reading
+    of the second pass. Carrier's published second-pass calculator carries that
+    driver (0.05, the base case's first-year revenue growth in its
+    assumptions.json); Apple's published valuation is missing whole, which is the
+    case the definition's last clause covers."""
+    sentence = _number_words_sentence("valuation-analyst")
+    path = re.search(r"`\{(valuation\.scenarios\.[a-z_.]+)\|pct\}`", sentence).group(1)
+    carrier = REPO / "runs" / "CARR" / "0001783180-26-000032"
+    cell = json.loads((carrier / "calculator.json").read_text(encoding="utf-8"))
+    for key in path.split("."):
+        cell = cell[key]
+    assumed = json.loads((carrier / "assumptions.json").read_text(encoding="utf-8"))
+    assert cell == assumed["scenarios"]["base"]["revenue_growth_year_one"] == 0.05
+    apple = json.loads((REPO / "runs" / "AAPL" / "0000320193-26-000020" / "calculator.json")
+                       .read_text(encoding="utf-8"))
+    assert "missing" in apple["valuation"]
+    assert "where the calculator does not carry a scenario's drivers" in sentence
