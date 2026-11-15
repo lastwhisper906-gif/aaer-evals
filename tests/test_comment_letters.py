@@ -468,3 +468,22 @@ def test_the_index_keeps_the_rows_of_letters_not_yet_public_and_no_input_prints_
     for accession in FIRST_CONVERSATION:
         assert accession not in text
     assert "UPLOAD" not in text and "CORRESP" not in text
+
+
+def test_a_header_that_names_another_filing_states_no_release_for_this_one():
+    # the header's first line names the accession it belongs to: the closing
+    # letter's own header gives its release, 2024-12-04, and says nothing about
+    # the staff's first letter, whatever date it carries
+    header = f"<SEC-HEADER>{CLOSING}.hdr.sgml : 20241204\n<PRIVATE-TO-PUBLIC>\n".encode()
+    assert fetch_fixtures.released_on(header, CLOSING, "2024-11-04") == "2024-12-04"
+    assert fetch_fixtures.released_on(header, STAFF, "2024-09-26") is None
+
+
+def test_a_release_is_never_recorded_before_the_filing_date_nor_from_a_day_that_is_none():
+    # a letter filed 2024-09-26 cannot have been public on 2024-09-01: the day
+    # recorded is the filing date, so the letter is never placed in an earlier window
+    early = f"<SEC-HEADER>{STAFF}.hdr.sgml : 20240901\n".encode()
+    assert fetch_fixtures.released_on(early, STAFF, "2024-09-26") == "2024-09-26"
+    # the thirteenth month is no day, and states no release
+    no_day = f"<SEC-HEADER>{STAFF}.hdr.sgml : 20241304\n".encode()
+    assert fetch_fixtures.released_on(no_day, STAFF, "2024-09-26") is None
