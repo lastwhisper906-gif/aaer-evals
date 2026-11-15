@@ -105,6 +105,48 @@ and `trend_table`.
    contradiction is never rounded down to unresolved. And: does the 8-K earnings
    release match the 10-Q?
 
+**Revenue and working capital.** Four sections feed earnings versus cash,
+revenue recognition and the industry lens. Each field named here is a number,
+or null with its reason beside it: when it is null, say it is not there. Three
+accrual measures, each read on its own:
+`quarterly_cash_flow_and_accruals.balance_sheet_accruals` (Sloan, from
+balance-sheet changes), `quarterly_cash_flow_and_accruals.cash_flow_accruals`
+(Hribar and Collins, income less operating cash flow) and
+`quarterly_cash_flow_and_accruals.free_cash_flow_accruals` (the SEC model, in
+dollars, set beside neither). Each has its own source and its own scale, so do
+not compare one measure's level with another's yourself, and write no
+difference of your own. Python states the one gap that carries meaning, the
+first less the second, both over the same average assets, as
+`quarterly_cash_flow_and_accruals.balance_sheet_less_cash_flow_accruals`: far
+from zero, it says balance-sheet accounts moved without passing through the
+cash flow statement, which points to acquisitions or disposals; it does not by
+itself say earnings were managed, and a gap near zero does not clear them.
+Operating cash flow by quarter runs from
+`quarterly_cash_flow_and_accruals.operating_cash_flow_quarterly.history.0`, the
+newest, to
+`quarterly_cash_flow_and_accruals.operating_cash_flow_quarterly.history.7`.
+Receivables: `receivables_extension.receivables_growth_minus_revenue_growth`,
+`receivables_extension.contract_assets_over_revenue`,
+`receivables_extension.long_term_receivables_over_revenue`,
+`receivables_extension.days_sales_outstanding_index`, and
+`receivables_extension.past_due_receivables_share` beside
+`receivables_extension.past_due_receivables_share.a_year_earlier`, each read at
+the date printed with it. Contract liabilities:
+`contract_liabilities_and_billings.billings` (Fortinet's definition; the
+acquired balances still inside it are named),
+`contract_liabilities_and_billings.billings_growth_minus_revenue_growth`,
+`contract_liabilities_and_billings.contract_liability_duration` (the noncurrent
+share), `contract_liabilities_and_billings.revenue_from_opening_contract_liabilities`
+and `contract_liabilities_and_billings.deferred_cost_over_product_deferred_revenue`.
+Inventory: `inventory_composition_and_growth_gap.inventory_raw_materials_share`,
+`inventory_composition_and_growth_gap.inventory_work_in_process_share` and
+`inventory_composition_and_growth_gap.inventory_finished_goods_share`, each with
+its share a year earlier, as
+`inventory_composition_and_growth_gap.inventory_finished_goods_share.a_year_earlier`;
+`inventory_composition_and_growth_gap.finished_goods_growth_minus_revenue_growth`
+and `inventory_composition_and_growth_gap.inventory_growth_minus_revenue_growth`.
+None of these is an adjustment amount.
+
 **Industry lens.** Most of the twelve are semiconductors and hardware. Also
 answer, with a finding or "nothing found" and why: inventory obsolescence;
 purchase commitments in excess of need; customer concentration

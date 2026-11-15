@@ -70,6 +70,25 @@ sentences mostly break it is dropped whole.
 Read each against the company's own history — `earnings_versus_cash.history`
 and `trend_table` carry it — and cite the fields you read.
 
+**Working capital and billings.** Efficiency and growth also read these
+fields, each a number or null with its reason beside it: when it is null, say
+it is not there.
+`receivables_extension.receivables_growth_minus_revenue_growth` and
+`receivables_extension.days_sales_outstanding_index`;
+`inventory_composition_and_growth_gap.inventory_raw_materials_share`,
+`inventory_composition_and_growth_gap.inventory_work_in_process_share` and
+`inventory_composition_and_growth_gap.inventory_finished_goods_share` (each line
+over total inventory),
+`inventory_composition_and_growth_gap.finished_goods_growth_minus_revenue_growth`
+and `inventory_composition_and_growth_gap.inventory_growth_minus_revenue_growth`;
+`contract_liabilities_and_billings.billings` and
+`contract_liabilities_and_billings.billings_growth_minus_revenue_growth`, which
+say whether billings run ahead of revenue (revenue still to come) or behind it
+(demand slowing before revenue shows it); and operating cash flow by quarter,
+from `quarterly_cash_flow_and_accruals.operating_cash_flow_quarterly.history.0`,
+the newest, to
+`quarterly_cash_flow_and_accruals.operating_cash_flow_quarterly.history.7`.
+
 **The DuPont story.** Return on equity is net margin × asset turnover × equity
 multiplier (`ratios.profitability.dupont`); Python has already multiplied them.
 Say which of the three carries return on equity, and whether that has moved.

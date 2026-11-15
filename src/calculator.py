@@ -17,9 +17,12 @@ What it reads
   and a refusal when that filing states two values -- so a term this file
   shares with the trend table is the same row in both.
 - **The triggering filing's own facts**, `input_numbers.json` from the run
-  bundle, through `cutoff_guard.load_bundle_file`, for the one family
-  companyfacts cannot carry: a concentration percentage is stated against a
-  customer axis, and companyfacts holds the entity-wide fact alone.
+  bundle, through `cutoff_guard.load_bundle_file`, for the families
+  companyfacts cannot carry because each is stated against an axis and
+  companyfacts holds the entity-wide fact alone: a concentration percentage
+  (customer axis), receivables past due more than ninety days (past-due axis)
+  and product deferred revenue (product axis). Each fact is held to the cutoff
+  by its own filing date.
 - **The triggering filing's own entity-wide facts, where companyfacts lags.**
   SEC's companyfacts can trail a filing by months; for an accession the record
   does not name at all, the bundle's instance facts with no dimension are added
@@ -149,9 +152,54 @@ SHARED_WITH_THE_TREND_TABLE = (
     "research_and_development_expense",
 )
 
+# The terms the revenue and working-capital sections read and nothing else does
+# (docs/HEDGE_FUND_ANALYSIS.md §5.2 rows 17 to 20). The trend table reads none of
+# them, so they live here and move no period of that table. A list of more than
+# one tag is a chain across a rename -- `DeferredRevenueCurrent` before ASC 606,
+# `ContractWithCustomerLiabilityCurrent` after -- read first tag first, and a
+# change between two dates is read under one tag where the record carries one
+# at both (`like_for_like`).
+REVENUE_AND_WORKING_CAPITAL_TERMS: dict[str, tuple[str, tuple[str, ...]]] = {
+    "income_from_continuing_operations": ("duration", (
+        "IncomeLossFromContinuingOperations",
+        "IncomeLossFromContinuingOperationsIncludingPortionAttributableToNoncontrollingInterest")),
+    "income_from_discontinued_operations": ("duration", (
+        "IncomeLossFromDiscontinuedOperationsNetOfTax",
+        "IncomeLossFromDiscontinuedOperationsNetOfTaxAttributableToReportingEntity")),
+    "operating_cash_flow_discontinued": ("duration", (
+        "CashProvidedByUsedInOperatingActivitiesDiscontinuedOperations",)),
+    # Sloan's taxes payable is income taxes payable. `TaxesPayableCurrent` is the
+    # broader taxonomy element (sales, payroll and other taxes too), read only
+    # where the narrower one is not on record, and the cell names which it was.
+    "income_taxes_payable": ("instant", ("AccruedIncomeTaxesCurrent", "TaxesPayableCurrent")),
+    "contract_liabilities_current": ("instant", (
+        "ContractWithCustomerLiabilityCurrent", "DeferredRevenueCurrent")),
+    "contract_liabilities_noncurrent": ("instant", (
+        "ContractWithCustomerLiabilityNoncurrent", "DeferredRevenueNoncurrent")),
+    "contract_liabilities_total": ("instant", ("ContractWithCustomerLiability", "DeferredRevenue")),
+    "contract_liability_revenue_recognized": ("duration", (
+        "ContractWithCustomerLiabilityRevenueRecognized", "DeferredRevenueRevenueRecognized1")),
+    "deferred_cost": ("instant", ("DeferredCostsCurrent",)),
+    "contract_assets_current": ("instant", ("ContractWithCustomerAssetNetCurrent",)),
+    "contract_assets_noncurrent": ("instant", ("ContractWithCustomerAssetNetNoncurrent",)),
+    "contract_assets_total": ("instant", ("ContractWithCustomerAssetNet",)),
+    "long_term_receivables": ("instant", (
+        "AccountsReceivableExcludingAccruedInterestAfterAllowanceForCreditLossNoncurrent",
+        "AccountsReceivableNetNoncurrent")),
+    "inventory_raw_materials": ("instant", (
+        "InventoryRawMaterialsNetOfReserves", "InventoryRawMaterials",
+        "InventoryRawMaterialsAndSuppliesNetOfReserves", "InventoryRawMaterialsAndSupplies",
+        "InventoryRawMaterialsAndPurchasedPartsNetOfReserves")),
+    "inventory_work_in_process": ("instant", (
+        "InventoryWorkInProcessNetOfReserves", "InventoryWorkInProcess")),
+    "inventory_finished_goods": ("instant", (
+        "InventoryFinishedGoodsNetOfReserves", "InventoryFinishedGoods")),
+}
+
 TERMS: dict[str, tuple[str, tuple[str, ...]]] = {
     **{term: trends.CONCEPTS[term] for term in SHARED_WITH_THE_TREND_TABLE},
     **trends.CALCULATOR_TERMS,
+    **REVENUE_AND_WORKING_CAPITAL_TERMS,
 }
 
 # Terms stated in shares. Read from the record under the unit `shares`.
@@ -616,6 +664,166 @@ def _fact(tag: str, key: tuple, settled: dict, *, unit: str = "USD",
 
 # --- trailing four quarters ----------------------------------------------------
 
+# Which tags of a term's chain name the same concept under another name -- and so
+# may be summed or differenced across spans, marked `tags_differ` -- and which are
+# a different scope of it, never mixed. One structure, read by `scope_of` and by
+# tests/test_calculator_accruals.py. A tag in no group is a scope of its own, so a
+# chain with no entry here is read strictly: two tags across the spans of a
+# trailing year are two scopes. The owner may move a tag between groups at a rules
+# version (docs/needs_judgment.md, Settled by default).
+TWO_LINE_DEPRECIATION = " + ".join(DEPRECIATION_LINES)
+SAME_CONCEPT: dict[str, tuple[tuple[str, ...], ...]] = {
+    # the total and continuing operations are two scopes: Johnson Controls'
+    # record holds fiscal 2024 under the second only and its nine months under
+    # both, 572 million total and 216 continuing
+    "operating_cash_flow": (("NetCashProvidedByUsedInOperatingActivities",),
+                            ("NetCashProvidedByUsedInOperatingActivitiesContinuingOperations",)),
+    # renames of one line, and the line stated as its two parts
+    "depreciation_and_amortization": ((
+        "DepreciationDepletionAndAmortization", "DepreciationAndAmortization",
+        "DepreciationAmortizationAndAccretionNet", TWO_LINE_DEPRECIATION),),
+    "dividends_paid": (("PaymentsOfDividends", "PaymentsOfDividendsCommonStock"),),
+    # Fortinet's 10-K tags purchases of property and equipment
+    # PaymentsToAcquireProductiveAssets and its 10-Qs
+    # PaymentsToAcquirePropertyPlantAndEquipment; Arista's the same way
+    "capital_expenditure": (("PaymentsToAcquirePropertyPlantAndEquipment",
+                             "PaymentsToAcquireProductiveAssets"),),
+    # InterestExpenseDebt is a scope of its own for every filer: the taxonomy
+    # defines it as interest on debt alone, a component of interest expense (Dell
+    # puts it on its debt note's total interest expense related to outstanding
+    # debt), where the three below name the whole line. Dell's record shows why
+    # its published sum was not like for like on a second count: the 10-Q states
+    # that debt interest to $0.1 billion (decimals of -8: "$0.8 billion for both
+    # the six months ended") and the 10-K its interest expense to the million
+    # (1,560). Precision would be the narrower rule, but companyfacts carries no
+    # decimals, so the calculator cannot read it for the spans of earlier
+    # filings; the scope is the rule (docs/needs_judgment.md, Settled by default).
+    "interest_expense": (("InterestExpense", "InterestExpenseNonoperating",
+                          "InterestAndDebtExpense"),),
+}
+
+# The scope rule is on in every run; it is a name so that `src/calculator_drift.py`
+# can turn it off for one control recomputation and show that the drift it lists
+# is this rule's and nothing else's.
+SCOPE_RULE = True
+
+
+def scope_of(term: str, tag: str | None) -> str:
+    """The scope a tag belongs to under `term`: its group's first tag, or itself."""
+    for group in SAME_CONCEPT.get(term, ()):
+        if tag in group:
+            return group[0]
+    return str(tag)
+
+
+def read_in_scope(record: Record, term: str, span, scope: str) -> dict:
+    """One span of `term` read under the tags of one scope only -- the first of
+    them the record carries there, the two-line fallback standing for its own
+    name -- or missing."""
+    kind, chain = TERMS[term]
+    tags = tuple(tag for tag in chain if scope_of(term, tag) == scope)
+    found = (trends.term_source(record.document, record.usd, term, _period(span),
+                                {term: (kind, tags)}) if tags
+             else {"missing": f"no tag of {term} is in the scope {scope}"})
+    if "missing" in found and term == "depreciation_and_amortization" \
+            and scope_of(term, TWO_LINE_DEPRECIATION) == scope:
+        found = record.two_line_fallback(term, _period(span)) or found
+    if "missing" not in found and term in CASH_FLOW_TERMS:
+        found["direction"] = direction_of(found["tag"])
+    return found
+
+
+def like_for_like_pair(record: Record, term: str, parts: dict, spans: dict, names: tuple,
+                       scope: str) -> dict:
+    """`parts` with the spans `names` -- a trailing year's two years to date, which
+    one 10-Q states side by side -- read under one tag of `scope` where their tags
+    differ and one tag carries both, so a filer's rename between its 10-Qs is not
+    differenced. Otherwise `parts` as given."""
+    if not names or len({parts[name].get("tag") for name in names}) <= 1:
+        return parts
+    kind, chain = TERMS[term]
+    shared = next((tag for tag in chain if scope_of(term, tag) == scope
+                   and all(record.usd.get(tag, {}).get(spans[name]) for name in names)), None)
+    if shared is None:
+        return parts
+    parts = dict(parts)
+    for name in names:
+        parts[name] = trends.term_source(record.document, record.usd, term,
+                                         _period(spans[name]), {term: (kind, (shared,))})
+        if "missing" not in parts[name] and term in CASH_FLOW_TERMS:
+            parts[name]["direction"] = direction_of(parts[name]["tag"])
+    return parts
+
+
+def one_scope(record: Record, term: str, parts: dict, spans: dict,
+              like_for_like: tuple = ()) -> dict | None:
+    """`parts`, each span read by the record's own rule, held to one scope of `term`.
+
+    All in one scope: returned as they are, tags within a same-concept group
+    differing or not. In two scopes: the first scope (in chain order) with a
+    tag on record in every span is read in every span, so Johnson Controls'
+    operating cash flow a year earlier is 1,568 + 1,586 - 216 under continuing
+    operations, not 1,568 + 1,586 - 572 across the total. In either case the
+    two spans `like_for_like` names are then read under one tag of the scope
+    where one carries both (`like_for_like_pair`). No scope on record in every
+    span: None, and the caller names the term missing. A cell returned may
+    still be `missing` where a filing states two values, as every read is.
+    """
+    present = {scope_of(term, part.get("tag")) for part in parts.values()}
+    kind, chain = TERMS[term]
+    order = list(chain) + [TWO_LINE_DEPRECIATION]
+    if len(present) == 1:
+        scope, = present
+        return like_for_like_pair(record, term, parts, spans, like_for_like, scope)
+    for scope in sorted(present, key=lambda label: order.index(label) if label in order else len(order)):
+        read = {name: read_in_scope(record, term, span, scope) for name, span in spans.items()}
+        if all("missing" not in cell or trends.TWO_VALUES in cell["missing"]
+               for cell in read.values()):
+            return like_for_like_pair(record, term, read, spans, like_for_like, scope)
+    return None
+
+
+def quarters_in_one_scope(record: Record, term: str, spans: list, ends: list) -> list[dict]:
+    """A series of quarters held to one scope of `term`, as `quarter` reads each.
+
+    Where the quarters read fall in two scopes, a quarter readable in one scope
+    only forces that scope on the series (where two quarters force two scopes,
+    the newest such quarter's scope, the series being newest first): every
+    quarter is read in it, and a quarter not on record in it is missing with the
+    reason. Johnson Controls' record holds its
+    quarters from fiscal 2024 under continuing operations alone and the quarter
+    to June 2024 under both, so that quarter is 216 - (-437) = 653 of continuing
+    operations beside them, not 572 - (-449) = 1,021 of the total.
+    """
+    first = [quarter(record, term, spans, end) for end in ends]
+    scopes = {scope_of(term, found["parts"][0].get("tag")) for found in first
+              if "missing" not in found}
+    if not SCOPE_RULE or len(scopes) <= 1:
+        return first
+    kind, chain = TERMS[term]
+    order = list(chain) + [TWO_LINE_DEPRECIATION]
+    forced = []
+    for found, end in zip(first, ends):
+        if "missing" in found:
+            continue
+        readable = [scope for scope in scopes
+                    if "missing" not in quarter(record, term, spans, end, scope=scope)]
+        if len(readable) == 1:
+            forced.append(readable[0])
+    chosen = forced[0] if forced else min(
+        scopes, key=lambda label: order.index(label) if label in order else len(order))
+    out = []
+    for end in ends:
+        found = quarter(record, term, spans, end, scope=chosen)
+        if "missing" in found:
+            found = {"missing": f"no {term} for the quarter ending near {end} in the scope the "
+                                f"series is read in, us-gaap:{chosen}: {found['missing']}"}
+        else:
+            found["scope"] = chosen
+        out.append(found)
+    return out
+
+
 def trailing(record: Record, term: str, periods: dict, *, back: int = 0,
              family: bool = False) -> dict:
     """A flow over the trailing four quarters, or one year earlier with `back=1`."""
@@ -640,6 +848,25 @@ def trailing(record: Record, term: str, periods: dict, *, back: int = 0,
         if "missing" in part:
             return {"missing": f"{term} over the trailing four quarters needs the "
                                f"{name.replace('_', ' ')}: {part['missing']}"}
+    if SCOPE_RULE and not family:
+        # A sum of two scopes is not a trailing year (`one_scope`): the parts are
+        # held to one, and with none on record in every span the term is missing,
+        # never mixed.
+        spans = {"prior_fiscal_year": year, "this_year_to_date": to_date,
+                 "prior_year_to_date": prior_to_date}
+        held = one_scope(record, term, parts, spans,
+                         like_for_like=("this_year_to_date", "prior_year_to_date"))
+        if held is None:
+            named = "; ".join(f"{name.replace('_', ' ')} under us-gaap:{part.get('tag')}"
+                              for name, part in parts.items())
+            return {"missing": f"{term} over the trailing four quarters: {named}; these are "
+                               f"different scopes of {term}, and none is on record in every "
+                               f"span, so the sum would be of two concepts"}
+        parts = held
+        for name, part in parts.items():
+            if "missing" in part:
+                return {"missing": f"{term} over the trailing four quarters needs the "
+                                   f"{name.replace('_', ' ')}: {part['missing']}"}
     value = (parts["prior_fiscal_year"]["value"] + parts["this_year_to_date"]["value"]
              - parts["prior_year_to_date"]["value"])
     out = {"value": value,
@@ -651,16 +878,20 @@ def trailing(record: Record, term: str, periods: dict, *, back: int = 0,
     return out
 
 
-def quarter(record: Record, term: str, spans: list, end: dt.date) -> dict:
+def quarter(record: Record, term: str, spans: list, end: dt.date, *,
+            scope: str | None = None) -> dict:
     """One fiscal quarter's flow: stated, or this year to date minus the last.
 
     A fourth quarter is never stated as a duration -- the 10-K states the year
     -- so it is the year less the nine months, on the same start date, and the
-    derivation is named.
+    derivation is named. With `scope`, every row is read under that scope of the
+    term alone (`quarters_in_one_scope`).
     """
+    def read(span) -> dict:
+        return read_in_scope(record, term, span, scope) if scope else record.term(term, span)
     direct = quarter_ending(spans, end)
     if direct is not None:
-        found = record.term(term, direct)
+        found = read(direct)
         if "missing" not in found:
             return {"value": found["value"], "formula": "the quarter as stated",
                     "parts": [found], "end": direct[1]}
@@ -680,10 +911,30 @@ def quarter(record: Record, term: str, spans: list, end: dt.date) -> dict:
                            f"stated and no shorter year-to-date on the same start is "
                            f"on record to take it from"}
     before = max(earlier, key=lambda span: span[1])
-    whole, part = record.term(term, to_date), record.term(term, before)
+    whole, part = read(to_date), read(before)
     for found in (whole, part):
         if "missing" in found:
             return {"missing": found["missing"]}
+    if SCOPE_RULE and scope is None:
+        # A difference of two scopes is not a quarter. Johnson Controls' record
+        # holds fiscal 2024 only under the continuing-operations tag (1,568
+        # million, restated in the 10-K filed 2025-11-14) and its nine months
+        # under both: 572 million total, 216 million continuing. Subtracting
+        # across the two gave 996; within one scope the quarter is 1,352
+        # (`one_scope`), and with no scope on record in both spans it is
+        # missing, never mixed.
+        held = one_scope(record, term, {"year_to_date": whole, "one_quarter_shorter": part},
+                         {"year_to_date": to_date, "one_quarter_shorter": before})
+        if held is None:
+            return {"missing": f"no {term} for the quarter ending {to_date[1]}: the year to "
+                               f"date is on record under us-gaap:{whole.get('tag')} and the "
+                               f"one a quarter shorter under us-gaap:{part.get('tag')}, "
+                               f"different scopes of {term} with neither on record in both, "
+                               f"so the difference would be of two concepts"}
+        whole, part = held["year_to_date"], held["one_quarter_shorter"]
+        for found in (whole, part):
+            if "missing" in found:
+                return {"missing": found["missing"]}
     return {"value": whole["value"] - part["value"],
             "formula": f"{to_date[0]}..{to_date[1]} less {before[0]}..{before[1]}",
             "parts": [whole, part], "end": to_date[1]}
@@ -854,7 +1105,38 @@ def gather(record: Record, periods: dict) -> dict:
         "cash_flow_families": families,
         "diluted_shares": record.term("diluted_shares", diluted_span),
         "shares_outstanding": record.term("shares_outstanding", now),
+        # a 10-Q's years to date seldom state interest and the 10-K's year does:
+        # the cost of debt's ladder reads this rung under the trailing ones
+        "last_fiscal_year": last_fiscal_year(record, periods),
     }
+
+
+def last_fiscal_year(record: Record, periods: dict) -> dict:
+    """The last complete fiscal year's interest and the debt of that same year: its
+    interest expense and interest paid, and total debt at its end and at its
+    start (the end of the fiscal year before), so the cost of debt's
+    last-fiscal-year rung divides a year's interest by that year's average debt."""
+    if periods["annual_trigger"]:
+        return {"missing": "the trailing four quarters are the fiscal year itself"}
+    year, before = periods["prior_year"], periods.get("two_years_back")
+    to_date = [span for span in (periods["current_to_date"], periods["prior_to_date"]) if span]
+    # the years to date, so the ladder's label can say which spans of the trailing
+    # four quarters state each figure and which do not -- read also where no fiscal
+    # year stands before them, so a row they hold is never called not on record
+    years_to_date = {figure: {f"{span[0]}..{span[1]}": record.term(figure, span)
+                              for span in to_date}
+                     for figure in ("interest_expense", "interest_paid")}
+    if not year:
+        return {"missing": "no complete fiscal year before the year to date is on record",
+                "years_to_date": years_to_date}
+    return {"period": f"{year[0]}..{year[1]}",
+            "debt_dates": [before[1] if before else None, year[1]],
+            "years_to_date": years_to_date,
+            "interest_expense": record.term("interest_expense", year),
+            "interest_paid": record.term("interest_paid", year),
+            "debt_at_the_end": total_debt(record, year[1]),
+            "debt_at_the_start": total_debt(record, before[1]) if before else
+            {"missing": "the fiscal year before it is not on record, so its opening debt is not"}}
 
 
 def ebit(terms: dict) -> dict:
@@ -1071,9 +1353,9 @@ def growth(record: Record, terms: dict, periods: dict) -> dict:
     end = _date(periods["balance_now"])
     out = {}
     for term in ("revenue", "operating_income", "net_income", "operating_cash_flow"):
-        this = quarter(record, term, spans, end)
-        last = quarter(record, term, spans, end - dt.timedelta(days=QUARTER_STEP))
-        year_ago = quarter(record, term, spans, end - dt.timedelta(days=YEAR_STEP))
+        this, last, year_ago = quarters_in_one_scope(
+            record, term, spans, [end, end - dt.timedelta(days=QUARTER_STEP),
+                                  end - dt.timedelta(days=YEAR_STEP)])
         now_ttm = terms["trailing_four_quarters"][term]
         prior_ttm = terms["trailing_four_quarters_a_year_earlier"][term]
         out[term] = {
@@ -1093,6 +1375,22 @@ def _growth(now: dict, before: dict) -> dict:
 
 # --- earnings against cash ----------------------------------------------------------
 
+def scopes_paired(cash_flow: dict, net_income: dict) -> str | None:
+    """The sentence written beside a ratio that pairs operating cash flow of
+    continuing operations with total net income -- Johnson Controls, whose record
+    holds operating cash flow under the continuing-operations tag alone and net
+    income as the total. The pairing is kept as it stands this cycle and named
+    where it occurs (docs/needs_judgment.md, Settled by default)."""
+    if "missing" in cash_flow or "missing" in net_income:
+        return None
+    cash_scopes = {scope_of("operating_cash_flow", tag) for tag in _cash_flow_tags(cash_flow)}
+    if cash_scopes == {"NetCashProvidedByUsedInOperatingActivitiesContinuingOperations"}:
+        return ("operating cash flow is of continuing operations, as the record tags it, and "
+                "net income is the total: a pairing across two scopes, kept as it stands and "
+                "named here (docs/needs_judgment.md)")
+    return None
+
+
 def earnings_versus_cash(record: Record, terms: dict, periods: dict) -> dict:
     """Area 1's numbers: cash over income, accruals, working capital, smoothness, history."""
     ttm = terms["trailing_four_quarters"]
@@ -1108,6 +1406,10 @@ def earnings_versus_cash(record: Record, terms: dict, periods: dict) -> dict:
              "average_assets": average(now["assets"], ago["assets"])},
             lambda v: (v["net_income"] - v["operating_cash_flow"]) / v["average_assets"]),
     }
+    across = scopes_paired(ttm["operating_cash_flow"], ttm["net_income"])
+    if across:
+        for cell in out.values():
+            cell["note"] = across
     absorbed = {}
     for balance, flow, sign in (("receivables", "change_in_receivables", "asset"),
                                 ("inventory", "change_in_inventory", "asset"),
@@ -1135,6 +1437,8 @@ def earnings_versus_cash(record: Record, terms: dict, periods: dict) -> dict:
     out["working_capital"] = absorbed
     out["smoothness"] = smoothness(record, periods)
     out["history"] = annual_history(record, periods)
+    if across:
+        out["history"]["note"] = across
     return out
 
 
@@ -1143,10 +1447,12 @@ def smoothness(record: Record, periods: dict) -> dict:
     spans = durations(record.usd)
     end = _date(periods["balance_now"])
     income, cash, used = [], [], []
-    for back in range(9):
-        when = end - dt.timedelta(days=QUARTER_STEP * back)
-        one = quarter(record, "net_income", spans, when)
-        two = quarter(record, "operating_cash_flow", spans, when)
+    whens = [end - dt.timedelta(days=QUARTER_STEP * back) for back in range(9)]
+    # each series held to one scope of its term (`quarters_in_one_scope`)
+    incomes = quarters_in_one_scope(record, "net_income", spans, whens)
+    cashes = quarters_in_one_scope(record, "operating_cash_flow", spans, whens)
+    scopes = {found["scope"] for found in cashes if "scope" in found}
+    for one, two in zip(incomes, cashes):
         if "missing" in one or "missing" in two:
             break
         income.append(one["value"])
@@ -1160,11 +1466,15 @@ def smoothness(record: Record, periods: dict) -> dict:
     spread_cash = statistics.pstdev(d_cash)
     if spread_cash == 0:
         return {"missing": "operating cash flow did not change across the quarters"}
-    return {"value": statistics.pstdev(d_income) / spread_cash,
-            "formula": "population standard deviation of quarter-to-quarter changes in net "
-                       "income / the same for operating cash flow; below 1 means income "
-                       "moves less than cash",
-            "quarters_read": used, "net_income": income, "operating_cash_flow": cash}
+    out = {"value": statistics.pstdev(d_income) / spread_cash,
+           "formula": "population standard deviation of quarter-to-quarter changes in net "
+                      "income / the same for operating cash flow; below 1 means income "
+                      "moves less than cash",
+           "quarters_read": used, "net_income": income, "operating_cash_flow": cash}
+    if scopes:
+        out["operating_cash_flow_scope"] = (f"every quarter read under us-gaap:{scopes.pop()}, "
+                                            f"the one scope the series is on record in")
+    return out
 
 
 def annual_history(record: Record, periods: dict) -> dict:
@@ -1272,6 +1582,660 @@ def fiscal_year_gap(rows: list) -> str | None:
                     f"{_fiscal_year_end(later)}, so a fiscal year between them is absent "
                     f"from the record")
     return None
+
+
+# --- revenue and working capital: docs/HEDGE_FUND_ANALYSIS.md §5.2 rows 17 to 20 -----------
+#
+# Four sections, one per row, each named by its row: the three accrual measures
+# side by side with quarterly operating cash flow; the receivables extension; the
+# contract liabilities split and billings; the inventory composition and growth
+# gap. Every field is a cell of the shape above -- `value`, `unit`, `formula`,
+# `inputs` -- and each input names its tag, accession and filing date. A field
+# whose input the record does not carry is `{"value": null, "missing": reason}`.
+#
+# Two reads beside the record's first-tag rule, each stated where it is used:
+#
+# - **A change is read like for like.** A balance now and a year earlier are
+#   read under the first tag of the term's chain that the record carries at
+#   both dates, so a rename between two filings (Fortinet's 10-K tags
+#   `DeferredRevenueCurrent` where its 10-Qs tag
+#   `ContractWithCustomerLiabilityCurrent`) does not change the concept under
+#   the subtraction. Where no tag spans both, each date's own first tag is read
+#   and the cell lists the tags under `tags_differ`.
+# - **A line the record does not carry is never a zero.** Not as a numerator,
+#   not inside a sum: the field is missing with the reason. (`_or_absent`, which
+#   trade working capital applies to inventory, and the debt family's "no line
+#   on record" are the calculator's older rules and are left as they are; the
+#   change in debt in current liabilities below reads that family.) Where a
+#   company tags no discontinued operations at all, income and operating cash
+#   flow of continuing operations are the totals themselves, and the cell says
+#   so -- an identity, not a zero.
+#
+# Two inputs come from the triggering filing's own instance (`input_numbers.json`
+# in the run bundle, through `cutoff_guard.load_bundle_file`, each fact held to
+# the cutoff by its own filing date), because companyfacts holds the entity-wide
+# fact alone and both are stated on an axis: receivables past due more than
+# ninety days, and product deferred revenue.
+
+QUARTERS_OF_OPERATING_CASH_FLOW = 8
+
+PAST_DUE_AXIS = "us-gaap:FinancingReceivablesPeriodPastDueAxis"
+PAST_DUE_OVER_NINETY_DAYS = "us-gaap:FinancingReceivablesEqualToGreaterThan90DaysPastDueMember"
+# Tags on the past-due axis that age a financing book, not trade receivables:
+# Cisco's and Dell's loan and lease receivables. The vendor-financing row reads
+# those; the receivables share leaves them out and names them.
+FINANCING_RECEIVABLE_TAGS = ("NotesReceivable", "FinancingReceivable", "LoansAndLeasesReceivable",
+                             "LoansReceivable", "NotesAndLoansReceivable")
+
+PRODUCT_AXIS = ("srt:ProductOrServiceAxis", "us-gaap:ProductMember")
+PRODUCT_DEFERRED_REVENUE_TAGS = ("ContractWithCustomerLiability", "DeferredRevenue",
+                                 "ContractWithCustomerLiabilityCurrent", "DeferredRevenueCurrent")
+
+ACQUIRED_NOT_CARRIED = (
+    "no us-gaap fact in the record states, over a period, the contract liabilities "
+    "acquired in business combinations, so none is subtracted: Fortinet's definition "
+    "subtracts them, and in a period with an acquisition this figure is higher than the "
+    "company's by what the acquisition brought in")
+
+
+def _sourced(cell: dict) -> dict:
+    """An input as these sections cite it: `_brief`, with its accession and filing date."""
+    out = {"value": cell.get("value")}
+    for key in ("id", "tag", "accession", "filed", "period", "as_of", "axis", "formula",
+                "unit", "basis", "note", "tags_differ"):
+        if key in cell:
+            out[key] = cell[key]
+    if "parts" in cell:
+        parts = cell["parts"]
+        items = parts.items() if isinstance(parts, dict) else enumerate(parts)
+        out["parts"] = {str(name): _sourced(part) for name, part in items}
+    if "lines" in cell:
+        out["lines"] = [_sourced(line) for line in cell["lines"]]
+    if "inputs" in cell:
+        out["inputs"] = cell["inputs"]
+    return out
+
+
+def field(formula: str, inputs: dict, compute, *, unit: str = "ratio",
+          denominator: str | None = None) -> dict:
+    """`measure`, with each input sourced, and a missing one written with a null value."""
+    cell = measure(formula, inputs, compute, unit=unit, denominator=denominator)
+    if "missing" in cell:
+        return {"value": None, **cell}
+    cell["inputs"] = {name: _sourced(inputs[name]) for name in inputs}
+    return cell
+
+
+def _missing(reason: str) -> dict:
+    return {"value": None, "missing": reason}
+
+
+def growth_rate(now: dict, before: dict) -> dict:
+    return field("(now - before) / abs(before)", {"now": now, "before": before},
+                 lambda v: (v["now"] - v["before"]) / abs(v["before"]), denominator="before")
+
+
+def growth_gap(name: str, line: dict, revenue: dict) -> dict:
+    """One growth rate less revenue's, both as `growth_rate` prints them."""
+    return field(f"{name} - revenue_growth", {name: line, "revenue_growth": revenue},
+                 lambda v: v[name] - v["revenue_growth"])
+
+
+def like_for_like(record: Record, term: str, dates: list) -> list[dict]:
+    """One balance at each date, under the first tag of the chain on record at all of them.
+
+    A date that is None is a balance the periods do not reach, and is missing.
+    Where no single tag spans every date, each date is read by the record's own
+    first-tag rule and every cell found lists the tags it mixes.
+    """
+    kind, tags = TERMS[term]
+    known = [date for date in dates if date is not None]
+    chosen = next((tag for tag in tags
+                   if known and all(record.usd.get(tag, {}).get((None, date)) for date in known)),
+                  None)
+    out = []
+    for date in dates:
+        if date is None:
+            out.append(record.term(term, None))
+        elif chosen:
+            out.append(trends.term_source(record.document, record.usd, term,
+                                          {"start": None, "end": date}, {term: (kind, (chosen,))}))
+        else:
+            out.append(record.term(term, date))
+    found = sorted({cell["tag"] for cell in out if "tag" in cell})
+    if len(found) > 1:
+        for cell in out:
+            if "tag" in cell:
+                cell["tags_differ"] = found
+    return out
+
+
+def split_total(record: Record, current: str, noncurrent: str, total: str, dates: list,
+                line: str) -> list[dict]:
+    """A balance stated as a current and a noncurrent line, summed, at each date.
+
+    Both lines on record: their sum. Otherwise the total tag, where the record
+    carries it at the date -- Broadcom tags current contract assets and their
+    total and no noncurrent line, and the total is the larger. With neither,
+    the balance is missing with the reason: a line the record does not carry
+    is never read as a zero.
+    """
+    now = like_for_like(record, current, dates)
+    later = like_for_like(record, noncurrent, dates)
+    whole = like_for_like(record, total, dates)
+    out = []
+    for position, date in enumerate(dates):
+        here, there = now[position], later[position]
+        if "missing" not in here and "missing" not in there:
+            out.append({"value": here["value"] + there["value"], "unit": "USD",
+                        "period": date, "formula": "current + noncurrent",
+                        "parts": {"current": here, "noncurrent": there}})
+        elif "missing" not in whole[position]:
+            out.append(dict(whole[position], note=f"the record states no current and noncurrent "
+                                                  f"{line} at {date}; its total line is read"))
+        else:
+            out.append(_missing(f"{line} at {date}: {here.get('missing') or there.get('missing')}"))
+    return out
+
+
+def spans_carrying(record: Record, term: str, periods: dict) -> tuple[list, list]:
+    """Which spans of the trailing four quarters carry a row of `term`, and which do not.
+
+    A line a statement prints only when there is one -- discontinued
+    operations -- is read for presence here, never filled: a span without it is
+    named, not read as a zero. A span whose filing states two values counts as
+    carrying it, so the read that follows refuses it as everywhere.
+    """
+    spans = ([periods["current_to_date"]] if periods["annual_trigger"] else
+             [periods["prior_year"], periods["current_to_date"], periods["prior_to_date"]])
+    carrying, lacking = [], []
+    for span in spans:
+        found = record.term(term, span) if span else {"missing": "no span"}
+        if "missing" in found and trends.TWO_VALUES not in found["missing"]:
+            lacking.append(f"{span[0]}..{span[1]}" if span else "a span not in the record")
+        else:
+            carrying.append(f"{span[0]}..{span[1]}")
+    return carrying, lacking
+
+
+def _cash_flow_tags(cell: dict) -> set:
+    parts = cell.get("parts")
+    items = parts.values() if isinstance(parts, dict) else (parts or [])
+    return {part.get("tag") for part in items} | ({cell["tag"]} if "tag" in cell else set())
+
+
+def continuing_income(record: Record, terms: dict, periods: dict) -> dict:
+    """Income from continuing operations over the trailing four quarters.
+
+    Tagged, it is read. Untagged, it is net income only where the record carries
+    no discontinued-operations line for any span of the period: then the two are
+    one figure. With a discontinued line on record and no continuing line, it is
+    missing -- this file does not take one from the other for you.
+    """
+    found = trailing(record, "income_from_continuing_operations", periods)
+    if "missing" not in found:
+        return dict(found, basis="income from continuing operations, as tagged")
+    carrying, _ = spans_carrying(record, "income_from_discontinued_operations", periods)
+    if carrying:
+        return {"missing": f"the record carries a discontinued-operations line for the period "
+                           f"and no income from continuing operations: {found['missing']}"}
+    net = terms["trailing_four_quarters"]["net_income"]
+    if "missing" in net:
+        return net
+    return dict(net, basis="net income: the record tags neither income from continuing "
+                           "operations nor a discontinued-operations line for the period, so "
+                           "the two are one figure")
+
+
+def quarterly_cash_flow_and_accruals(record: Record, terms: dict, periods: dict) -> dict:
+    """Row 17: quarterly operating cash flow, and the three accrual measures side by side.
+
+    The three are kept apart and their thresholds are never compared
+    (docs/HEDGE_FUND_ANALYSIS.md §2.2 and §2.11):
+
+    - Sloan's balance-sheet accruals, [(change in current assets - change in
+      cash) - (change in current liabilities - change in debt in current
+      liabilities - change in income taxes payable) - depreciation and
+      amortization] / average total assets;
+    - Hribar and Collins's cash-flow accruals, [income from continuing operations
+      - (operating cash flow - operating cash flow of discontinued operations)]
+      / average total assets;
+    - the SEC Accounting Quality Model's total accruals, income before
+      extraordinary items less free cash flow, which has capital expenditure in
+      it, in dollars as the model states it.
+
+    A large gap between the first two points to acquisitions or disposals.
+    """
+    ttm = terms["trailing_four_quarters"]
+    now, ago = periods["balance_now"], periods["balance_year_ago"]
+    balances_now, balances_ago = terms["balances_now"], terms["balances_a_year_earlier"]
+    average_assets = average(balances_now["assets"], balances_ago["assets"])
+
+    def change(name: str, at_now: dict, at_ago: dict) -> dict:
+        return field(f"{name} now - {name} a year earlier",
+                     {"now": at_now, "a_year_earlier": at_ago},
+                     lambda v: v["now"] - v["a_year_earlier"], unit="USD")
+
+    cash = like_for_like(record, "cash", [now, ago])
+    taxes = like_for_like(record, "income_taxes_payable", [now, ago])
+    debt = [record.family("debt_current", date) for date in (now, ago)]
+    changes = {
+        "change_in_current_assets": change("current_assets", balances_now["current_assets"],
+                                           balances_ago["current_assets"]),
+        "change_in_cash": change("cash", *cash),
+        "change_in_current_liabilities": change("current_liabilities",
+                                                balances_now["current_liabilities"],
+                                                balances_ago["current_liabilities"]),
+        "change_in_debt_in_current_liabilities": change("debt_current", *debt),
+        "change_in_income_taxes_payable": change("income_taxes_payable", *taxes),
+    }
+    balance_sheet = field(
+        "((change_in_current_assets - change_in_cash) - (change_in_current_liabilities "
+        "- change_in_debt_in_current_liabilities - change_in_income_taxes_payable) "
+        "- depreciation_and_amortization) / average assets",
+        {**changes, "depreciation_and_amortization": ttm["depreciation_and_amortization"],
+         "average_assets": average_assets},
+        lambda v: ((v["change_in_current_assets"] - v["change_in_cash"])
+                   - (v["change_in_current_liabilities"]
+                      - v["change_in_debt_in_current_liabilities"]
+                      - v["change_in_income_taxes_payable"])
+                   - v["depreciation_and_amortization"]) / v["average_assets"],
+        denominator="average_assets")
+    balance_sheet["check"] = ("cash is cash and cash equivalents, as the formula's change in "
+                              "cash reads; money moved into short-term investments shows here "
+                              "as a rise in current assets")
+
+    income = continuing_income(record, terms, periods)
+    cash_flow = ttm["operating_cash_flow"]
+    if "missing" not in cash_flow and \
+            _cash_flow_tags(cash_flow) == {"NetCashProvidedByUsedInOperatingActivitiesContinuingOperations"}:
+        continuing_cash = dict(cash_flow, basis="operating cash flow of continuing operations, "
+                                                "as tagged")
+    else:
+        carrying, lacking = spans_carrying(record, "operating_cash_flow_discontinued", periods)
+        income_discontinued, _ = spans_carrying(record, "income_from_discontinued_operations",
+                                                periods)
+        if not carrying and income_discontinued:
+            # Western Digital's fiscal 2025: 246 million of income from discontinued
+            # operations, and operating cash flow as the total with no
+            # discontinued-operations cash flow line. The total is not the
+            # continuing figure, and nothing on record says how much of it is.
+            continuing_cash = {"missing": f"operating cash flow is the total, with no operating "
+                                          f"cash flow of discontinued operations tagged, while "
+                                          f"the record carries a discontinued-operations income "
+                                          f"line for {', '.join(income_discontinued)}; operating "
+                                          f"cash flow of continuing operations is not on record"}
+        elif not carrying:
+            continuing_cash = cash_flow if "missing" in cash_flow else dict(
+                cash_flow, basis="operating cash flow: the record tags no operating cash flow of "
+                                 "discontinued operations and no discontinued-operations income "
+                                 "for any span of the period, so the two are one figure")
+        elif lacking:
+            continuing_cash = {"missing": f"operating cash flow of discontinued operations is "
+                                          f"on record for {', '.join(carrying)} and not for "
+                                          f"{', '.join(lacking)}; a span without it is not "
+                                          f"read as a zero"}
+        else:
+            continuing_cash = field(
+                "operating_cash_flow - operating_cash_flow_discontinued",
+                {"operating_cash_flow": cash_flow,
+                 "operating_cash_flow_discontinued": trailing(
+                     record, "operating_cash_flow_discontinued", periods)},
+                lambda v: v["operating_cash_flow"] - v["operating_cash_flow_discontinued"],
+                unit="USD")
+    cash_flow_accruals = field(
+        "(income_from_continuing_operations - operating_cash_flow_of_continuing_operations) "
+        "/ average assets",
+        {"income_from_continuing_operations": income,
+         "operating_cash_flow_of_continuing_operations": continuing_cash,
+         "average_assets": average_assets},
+        lambda v: (v["income_from_continuing_operations"]
+                   - v["operating_cash_flow_of_continuing_operations"]) / v["average_assets"],
+        denominator="average_assets")
+    # The same cash side: the SEC model subtracts free cash flow from income
+    # before extraordinary items, and a total operating cash flow beside a
+    # discontinued-operations income line is refused here as it is above.
+    free_cash_flow_accruals = field(
+        "income_from_continuing_operations - (operating_cash_flow_of_continuing_operations "
+        "- capital_expenditure)",
+        {"income_from_continuing_operations": income,
+         "operating_cash_flow_of_continuing_operations": continuing_cash,
+         "capital_expenditure": ttm["capital_expenditure"]},
+        lambda v: v["income_from_continuing_operations"]
+        - (v["operating_cash_flow_of_continuing_operations"] - v["capital_expenditure"]),
+        unit="USD")
+    free_cash_flow_accruals["basis"] = (
+        "income before extraordinary items is income from continuing operations: extraordinary "
+        "items left US GAAP with ASU 2015-01; the operating cash flow is the continuing figure "
+        "the Hribar and Collins measure reads, or missing with it")
+
+    return {
+        "what_this_is": ("three accrual measures, each named for its source and kept apart: "
+                         "their thresholds are never compared; and operating cash flow by "
+                         "quarter, a year to date less the one before it where the quarter is "
+                         "not stated"),
+        "balance_sheet_accruals": balance_sheet,
+        "cash_flow_accruals": cash_flow_accruals,
+        "free_cash_flow_accruals": free_cash_flow_accruals,
+        # the one comparison the measures allow, worked here so no analyst
+        # subtracts: both are over the same average assets
+        "balance_sheet_less_cash_flow_accruals": field(
+            "balance_sheet_accruals - cash_flow_accruals",
+            {"balance_sheet_accruals": balance_sheet, "cash_flow_accruals": cash_flow_accruals},
+            lambda v: v["balance_sheet_accruals"] - v["cash_flow_accruals"]),
+        "operating_cash_flow_quarterly": operating_cash_flow_by_quarter(record, periods),
+    }
+
+
+def operating_cash_flow_by_quarter(record: Record, periods: dict) -> dict:
+    """The newest quarter's operating cash flow, with the eight quarters to it as history.
+
+    A 10-Q states its year to date, so a quarter it does not state is that year
+    to date less the year to date one quarter shorter on the same start, and the
+    fourth quarter is the year less nine months (`quarter`). Each quarter names
+    both rows it was differenced from.
+    """
+    spans = durations(record.usd)
+    end = _date(periods["balance_now"])
+    history = []
+    series = quarters_in_one_scope(
+        record, "operating_cash_flow", spans,
+        [end - dt.timedelta(days=QUARTER_STEP * back) for back in range(QUARTERS_OF_OPERATING_CASH_FLOW)])
+    for back, found in enumerate(series):
+        if "missing" in found:
+            history.append({"quarters_back": back, **_missing(found["missing"])})
+            continue
+        parts = found["parts"]
+        inputs = ({"stated_quarter": _sourced(parts[0])} if len(parts) == 1 else
+                  {"year_to_date": _sourced(parts[0]),
+                   "year_to_date_one_quarter_shorter": _sourced(parts[1])})
+        history.append({"quarters_back": back, "value": found["value"], "unit": "USD",
+                        "end": found["end"], "formula": found["formula"], "inputs": inputs})
+    return {**{key: value for key, value in history[0].items() if key != "quarters_back"},
+            "history": history}
+
+
+# --- receivables ---------------------------------------------------------------------------
+
+def instance_facts(bundle: Path | None, cutoff: dt.date) -> list | dict:
+    """The triggering filing's own facts in USD, filed at or before the cutoff."""
+    if bundle is None:
+        return {"missing": "no run bundle was given, so the filing's own facts on an axis "
+                           "were not read"}
+    try:
+        numbers = json.loads(cutoff_guard.load_bundle_file(bundle, "input_numbers.json"))
+    except cutoff_guard.CutoffGuardError as exc:
+        return {"missing": str(exc)}
+    kept = []
+    for fact in numbers.get("facts", []):
+        if (fact.get("superseded_by") or fact.get("nil") or fact.get("unit") != "iso4217:USD"
+                or not isinstance(fact.get("number"), (int, float))
+                or isinstance(fact.get("number"), bool)):
+            continue
+        if not fact.get("filing_date") or cutoff_guard.parse_date(
+                fact["filing_date"], "filing_date") > cutoff:
+            continue
+        kept.append(fact)
+    return kept
+
+
+def _on_axis(fact: dict, axis: str, member: str) -> str | None:
+    """The instant of a fact stated on one axis member and no other dimension, or None."""
+    context = fact.get("context") or {}
+    if context.get("typed_segment") or not context.get("instant"):
+        return None
+    if context.get("segment") != [{"dimension": axis, "member": member}]:
+        return None
+    return context["instant"]
+
+
+def axis_balance(facts: list | dict, tags: tuple | None, axis: str, member: str, *,
+                 at: str | None = None, through: str | None = None, what: str) -> dict:
+    """One balance the filing states on one axis member: at a date, or the newest through one.
+
+    `tags` is the order of preference among the tags that may carry it; None
+    takes any tag, and refuses when two different tags state it at one date.
+    Several filings stating the same fact: the latest filing at or before the
+    cutoff wins; one filing stating two values: refused, as `trends.as_filed` refuses.
+    """
+    if isinstance(facts, dict):
+        return _missing(f"{what}: {facts['missing']}")
+    dated = [(instant, fact) for fact in facts
+             for instant in [_on_axis(fact, axis, member)] if instant
+             and (tags is None or fact["tag"] in tags)
+             and (instant == at if at else instant <= through)]
+    if not dated:
+        where = f"at {at}" if at else f"at or before {through}"
+        among = f" under {', '.join(tags)}" if tags else ""
+        return _missing(f"{what}: the filing states no fact on {axis} = {member}{among} {where}")
+    newest = max(instant for instant, _ in dated)
+    rows = [fact for instant, fact in dated if instant == newest]
+    available = sorted({fact["tag"] for fact in rows})
+    if tags:
+        tag = next(tag for tag in tags if tag in available)
+    elif len(available) == 1:
+        tag = available[0]
+    else:
+        return _missing(f"{what}: {', '.join(available)} each state it at {newest}, and this "
+                        f"does not choose between them")
+    rows = [fact for fact in rows if fact["tag"] == tag]
+    latest = max(fact["filing_date"] for fact in rows)
+    rows = [fact for fact in rows if fact["filing_date"] == latest]
+    values = sorted({fact["number"] for fact in rows})
+    if len(values) != 1:
+        return _missing(f"{what}: {tag} at {newest} is reported as {values} by the filing of "
+                        f"{latest} -- {trends.TWO_VALUES}")
+    fact = rows[0]
+    return {"value": float(values[0]), "tag": tag, "id": fact["id"],
+            "accession": fact.get("source_accession"), "filed": latest, "period": newest,
+            "axis": f"{axis} = {member}", "unit": "USD"}
+
+
+def past_due_share(record: Record, facts: list | dict, through: str) -> dict:
+    """Receivables past due more than ninety days over receivables, at the newest date
+    at or before `through` on which the filing states the first."""
+    set_aside = sorted({fact["tag"] for fact in (facts if isinstance(facts, list) else [])
+                        if _on_axis(fact, PAST_DUE_AXIS, PAST_DUE_OVER_NINETY_DAYS)
+                        and fact["tag"].startswith(FINANCING_RECEIVABLE_TAGS)})
+    trade = [fact for fact in facts if not fact["tag"].startswith(FINANCING_RECEIVABLE_TAGS)] \
+        if isinstance(facts, list) else facts
+    over = axis_balance(trade, None, PAST_DUE_AXIS, PAST_DUE_OVER_NINETY_DAYS, through=through,
+                        what="receivables past due more than ninety days")
+    receivables = record.term("receivables", over["period"]) if "period" in over else \
+        {"missing": "no date to read receivables at"}
+    cell = field("receivables past due more than ninety days / receivables",
+                 {"past_due_over_ninety_days": over, "receivables": receivables},
+                 lambda v: v["past_due_over_ninety_days"] / v["receivables"],
+                 denominator="receivables")
+    cell["as_of"] = over.get("period")
+    if "period" in over:
+        if over["period"] != through:
+            cell["note"] = (f"the newest date at or before {through} on which the filing states "
+                            f"receivables past due, which a quarterly report seldom restates")
+        cell["check"] = ("the tag is the filer's own choice and is named in the inputs; the "
+                         "axis member is what says the amount is past due more than ninety days")
+    if set_aside:
+        cell["set_aside"] = (f"{', '.join(set_aside)} on the past-due axis age a financing book "
+                             f"rather than trade receivables, and are left out")
+    return cell
+
+
+def receivables_extension(record: Record, terms: dict, periods: dict, facts: list | dict) -> dict:
+    """Row 18: receivables against revenue, beyond days sales outstanding."""
+    now, ago = periods["balance_now"], periods["balance_year_ago"]
+    revenue = terms["trailing_four_quarters"]["revenue"]
+    revenue_before = terms["trailing_four_quarters_a_year_earlier"]["revenue"]
+    receivables_now = terms["balances_now"]["receivables"]
+    receivables_ago = terms["balances_a_year_earlier"]["receivables"]
+    revenue_growth = growth_rate(revenue, revenue_before)
+    receivables_growth = growth_rate(receivables_now, receivables_ago)
+    contract_assets = split_total(record, "contract_assets_current", "contract_assets_noncurrent",
+                                  "contract_assets_total", [now], "contract assets")[0]
+    long_term = record.term("long_term_receivables", now)
+    past_due = past_due_share(record, facts, now)
+    if past_due["as_of"]:
+        target = _date(past_due["as_of"]) - dt.timedelta(days=YEAR_STEP)
+        earlier = past_due_share(record, facts, (target + dt.timedelta(days=TOLERANCE)).isoformat())
+        past_due["a_year_earlier"] = earlier if (
+            earlier["as_of"] and abs((_date(earlier["as_of"]) - target).days) <= TOLERANCE) \
+            else _missing(f"the filing states no receivables past due more than ninety days "
+                          f"within {TOLERANCE} days of {target}")
+    else:
+        past_due["a_year_earlier"] = _missing(
+            "no receivables past due more than ninety days are read at the period end, so "
+            "there is no date a year before it to read them at")
+    return {
+        "receivables_growth_minus_revenue_growth": growth_gap(
+            "receivables_growth", receivables_growth, revenue_growth),
+        "contract_assets_over_revenue": field(
+            "contract_assets / revenue", {"contract_assets": contract_assets, "revenue": revenue},
+            lambda v: v["contract_assets"] / v["revenue"], denominator="revenue"),
+        "long_term_receivables_over_revenue": field(
+            "long_term_receivables / revenue", {"long_term_receivables": long_term,
+                                                "revenue": revenue},
+            lambda v: v["long_term_receivables"] / v["revenue"], denominator="revenue"),
+        "past_due_receivables_share": past_due,
+        "days_sales_outstanding_index": field(
+            "(receivables / revenue) / (receivables a year earlier / revenue a year earlier)",
+            {"receivables": receivables_now, "revenue": revenue,
+             "receivables_a_year_earlier": receivables_ago,
+             "revenue_a_year_earlier": revenue_before},
+            lambda v: (v["receivables"] / v["revenue"])
+            / (v["receivables_a_year_earlier"] / v["revenue_a_year_earlier"])),
+        "note": ("revenue is the trailing four quarters, and each balance is read at the period "
+                 "end and a year earlier; Beneish's index is days_sales_outstanding_index"),
+    }
+
+
+# --- contract liabilities and billings -----------------------------------------------------
+
+def contract_liabilities_and_billings(record: Record, terms: dict, periods: dict,
+                                      facts: list | dict) -> dict:
+    """Row 19: contract liabilities split, billings, and what turns them into revenue.
+
+    Billings is Fortinet's own definition: revenue plus the change in current and
+    noncurrent contract liabilities, less contract liabilities acquired in
+    business combinations, over the trailing four quarters.
+    """
+    now, ago = periods["balance_now"], periods["balance_year_ago"]
+    two_back = periods.get("two_years_back_to_date")
+    two = two_back[1] if two_back else None
+    opening_year = periods.get("prior_year")
+    opening = opening_year[1] if opening_year else None
+    names = ("contract_liabilities_current", "contract_liabilities_noncurrent",
+             "contract_liabilities_total")
+    this_year = split_total(record, *names, [now, ago], "contract liabilities")
+    last_year = split_total(record, *names, [ago, two], "contract liabilities")
+    revenue = terms["trailing_four_quarters"]["revenue"]
+    revenue_before = terms["trailing_four_quarters_a_year_earlier"]["revenue"]
+
+    def billings(revenue_cell: dict, pair: list) -> dict:
+        change = field("contract_liabilities at the end - contract_liabilities a year before",
+                       {"at_the_end": pair[0], "a_year_before": pair[1]},
+                       lambda v: v["at_the_end"] - v["a_year_before"], unit="USD")
+        cell = field("revenue + change_in_contract_liabilities",
+                     {"revenue": revenue_cell, "change_in_contract_liabilities": change},
+                     lambda v: v["revenue"] + v["change_in_contract_liabilities"], unit="USD")
+        cell["definition"] = ("Fortinet's: revenue plus the change in deferred revenue from the "
+                              "beginning to the end of the period, less deferred revenue "
+                              "balances acquired from business combinations during the period")
+        cell["contract_liabilities_acquired_in_business_combinations"] = _missing(
+            ACQUIRED_NOT_CARRIED)
+        return cell
+
+    billed, billed_before = billings(revenue, this_year), billings(revenue_before, last_year)
+    current = this_year[0]
+    noncurrent = (current.get("parts") or {}).get("noncurrent") or {
+        "missing": current.get("missing") or f"the record states no noncurrent line at {now}"}
+    if "tag" not in noncurrent and "missing" not in noncurrent:
+        noncurrent = {"missing": noncurrent.get("note", f"no noncurrent line at {now}")}
+    recognized = record.term("contract_liability_revenue_recognized", periods["current_to_date"])
+    opening_balance = split_total(record, *names, [opening], "contract liabilities")[0]
+    deferred = like_for_like(record, "deferred_cost", [now, ago])
+    product = axis_balance(facts, PRODUCT_DEFERRED_REVENUE_TAGS, *PRODUCT_AXIS, at=now,
+                           what="product deferred revenue")
+    duration = field("contract_liabilities_noncurrent / contract_liabilities",
+                     {"contract_liabilities_noncurrent": noncurrent, "contract_liabilities": current},
+                     lambda v: v["contract_liabilities_noncurrent"] / v["contract_liabilities"],
+                     denominator="contract_liabilities")
+    from_opening = field(
+        "revenue recognized from the opening contract liabilities / contract liabilities at the "
+        "start of the fiscal year",
+        {"revenue_recognized_from_opening_balance": recognized,
+         "contract_liabilities_at_the_start_of_the_fiscal_year": opening_balance},
+        lambda v: v["revenue_recognized_from_opening_balance"]
+        / v["contract_liabilities_at_the_start_of_the_fiscal_year"],
+        denominator="contract_liabilities_at_the_start_of_the_fiscal_year")
+    if not periods["annual_trigger"]:
+        from_opening["note"] = ("over the fiscal year to date, as a 10-Q states it, against the "
+                                "balance at the start of the fiscal year")
+
+    def shown(cell: dict) -> dict:
+        return _missing(cell["missing"]) if "missing" in cell else _sourced(cell)
+
+    return {
+        "billings": billed,
+        "billings_a_year_earlier": billed_before,
+        "billings_growth_minus_revenue_growth": growth_gap(
+            "billings_growth", growth_rate(billed, billed_before),
+            growth_rate(revenue, revenue_before)),
+        "contract_liability_duration": duration,
+        "revenue_from_opening_contract_liabilities": from_opening,
+        "deferred_cost_over_product_deferred_revenue": field(
+            "deferred_cost / product_deferred_revenue",
+            {"deferred_cost": deferred[0], "product_deferred_revenue": product},
+            lambda v: v["deferred_cost"] / v["product_deferred_revenue"],
+            denominator="product_deferred_revenue"),
+        "balances": {
+            "contract_liabilities_now": shown(this_year[0]),
+            "contract_liabilities_a_year_earlier": shown(this_year[1]),
+            "deferred_cost_now": shown(deferred[0]),
+            "deferred_cost_a_year_earlier": shown(deferred[1]),
+        },
+        "note": ("an increase in current deferred revenue predicts higher margins the next "
+                 "year, the opposite sign to ordinary accruals (Prakash and Sinha)"),
+    }
+
+
+# --- inventory -----------------------------------------------------------------------------
+
+INVENTORY_LINES = (("raw_materials", "inventory_raw_materials"),
+                   ("work_in_process", "inventory_work_in_process"),
+                   ("finished_goods", "inventory_finished_goods"))
+
+
+def inventory_composition_and_growth_gap(record: Record, terms: dict, periods: dict) -> dict:
+    """Row 20: the shares of raw materials, work in process and finished goods, and how
+    inventory and finished goods grew against revenue.
+
+    A share is its line over the balance sheet's inventory line (`InventoryNet`)
+    at the same date. A line the company does not state is missing, never a
+    zero, and the shares of the lines it does state need not add to one where a
+    reserve or another line sits between them and the total.
+    """
+    dates = [periods["balance_now"], periods["balance_year_ago"]]
+    lines = {name: like_for_like(record, term, dates) for name, term in INVENTORY_LINES}
+    inventory = [terms["balances_now"]["inventory"], terms["balances_a_year_earlier"]["inventory"]]
+    out = {}
+    for name, cells in lines.items():
+        shares = [field(f"{name} / inventory",
+                        {name: cells[position], "inventory": inventory[position]},
+                        lambda v, name=name: v[name] / v["inventory"],
+                        denominator="inventory") for position in range(2)]
+        out[f"inventory_{name}_share"] = dict(shares[0], a_year_earlier=shares[1])
+    revenue_growth = growth_rate(terms["trailing_four_quarters"]["revenue"],
+                                 terms["trailing_four_quarters_a_year_earlier"]["revenue"])
+    finished = lines["finished_goods"]
+    out["finished_goods_growth_minus_revenue_growth"] = growth_gap(
+        "finished_goods_growth", growth_rate(finished[0], finished[1]), revenue_growth)
+    out["inventory_growth_minus_revenue_growth"] = growth_gap(
+        "inventory_growth", growth_rate(terms["balances_now"]["inventory"],
+                                        terms["balances_a_year_earlier"]["inventory"]),
+        revenue_growth)
+    out["note"] = ("each balance is read at the period end and a year earlier, revenue over the "
+                   "trailing four quarters; a build of raw materials can mean demand, a build "
+                   "of finished goods seldom does")
+    return out
 
 
 # --- the four free-cash-flow measures -------------------------------------------------
@@ -1614,45 +2578,215 @@ COST_OF_DEBT_QUESTION = ("docs/needs_judgment.md: the pre-tax cost of debt when 
                          "carries no interest expense")
 
 
+# The last-fiscal-year rung is on in every run; like `SCOPE_RULE` it is a name so
+# that `src/calculator_drift.py` can turn it off for a control recomputation.
+LAST_FISCAL_YEAR_RUNG = True
+
+
+def _refused(cell: dict) -> bool:
+    """A term on record that one filing states two values for (trends.TWO_VALUES)."""
+    return "missing" in cell and trends.TWO_VALUES in cell["missing"]
+
+
+def _in_two_scopes(cell: dict) -> bool:
+    """A term on record whose spans fall in two scopes with none in every span
+    (`one_scope`): on record, and not summed."""
+    return "missing" in cell and "different scopes" in cell["missing"]
+
+
+INTEREST_FIGURES = {"interest_expense": "interest expense", "interest_paid": "interest paid"}
+
+
+def interest_walk(ttm: dict, last_year: dict | None) -> dict:
+    """The facts every clause of the cost of debt's label is built from: for interest
+    expense and for interest paid, how the trailing sum stands and, span by span
+    (the last fiscal year and each year to date), whether a row is on record, under
+    which tag and in which scope.
+
+    `trailing` is one of: `on_record`; `refused` (one filing's two values for one
+    period); `two_scopes` (every span on record, in two scopes with none in every
+    span); `no_sum` (every span on record and the sum not taken for another
+    reason); `fiscal_year_only` (the last fiscal year on record and not every year
+    to date); `years_to_date_only` (a year to date on record and not the last
+    fiscal year); `absent` (no span carries a row). An annual report's trailing
+    four quarters are the fiscal year itself, so it has no spans to walk and a
+    missing sum is `absent`; a quarterly report with no fiscal year on record
+    before its years to date has those years to date walked all the same."""
+    walked = last_year if last_year and "missing" not in last_year else None
+    years_to_date = (last_year or {}).get("years_to_date") or {}
+    out = {}
+    for figure in INTEREST_FIGURES:
+        trailing = ttm.get(figure) or {"missing": f"{figure} is not gathered"}
+        cells = [("last_fiscal_year", walked["period"], walked[figure])] if walked else []
+        cells += [("year_to_date", period, cell)
+                  for period, cell in (years_to_date.get(figure) or {}).items()]
+        spans = []
+        for name, period, cell in cells:
+            stated = "missing" not in cell or trends.TWO_VALUES in cell["missing"]
+            spans.append({"span": name, "period": period, "on_record": stated,
+                          "tag": cell.get("tag"),
+                          "scope": scope_of(figure, cell["tag"]) if "tag" in cell else None})
+        year = any(span["on_record"] for span in spans if span["span"] == "last_fiscal_year")
+        to_date = any(span["on_record"] for span in spans if span["span"] == "year_to_date")
+        out[figure] = {
+            "trailing": ("on_record" if "missing" not in trailing else
+                         "refused" if _refused(trailing) else
+                         "two_scopes" if _in_two_scopes(trailing) else
+                         "no_sum" if year and all(span["on_record"] for span in spans) else
+                         "fiscal_year_only" if year else
+                         "years_to_date_only" if to_date else "absent"),
+            "spans": spans}
+    return out
+
+
+def _periods(fact: dict, span: str, on_record: bool) -> list:
+    return [row["period"] for row in fact["spans"]
+            if row["span"] == span and row["on_record"] is on_record]
+
+
+def standing_words(figure: str, fact: dict, trailing: dict, why: str) -> str:
+    """How a figure whose trailing sum is missing stands, in words, from the walk."""
+    name, kind = INTEREST_FIGURES[figure], fact["trailing"]
+    reason = why if figure == "interest_expense" else trailing["missing"]
+    if kind == "refused":
+        return f"{name} is on record but refused: {trailing['missing']}"
+    if kind == "two_scopes":
+        return f"{name} is on record but its spans fall in two scopes: {trailing['missing']}"
+    if kind == "no_sum":
+        return (f"{name} is on record for every span of the trailing four quarters but no "
+                f"trailing sum is taken: {reason}")
+    if kind == "fiscal_year_only":
+        year, = _periods(fact, "last_fiscal_year", True)
+        return (f"{name} is on record for the last fiscal year ({year}) and not for every "
+                f"span of the trailing four quarters: {reason}")
+    if kind == "years_to_date_only":
+        year = _periods(fact, "last_fiscal_year", False)
+        return (f"{name} is on record for the years to date "
+                f"({' and '.join(_periods(fact, 'year_to_date', True))}) and "
+                + (f"not for the last fiscal year ({year[0]})" if year else
+                   "no complete fiscal year before them is on record") + f": {reason}")
+    return (f"interest expense, which is not on record: {why}" if figure == "interest_expense"
+            else f"interest paid is not on record: {trailing['missing']}")
+
+
+def years_to_date_clause(fact: dict) -> str:
+    """What the label says of the years to date for the figure the last-fiscal-year
+    rung reads, from the walk: that they do not state it, only where none does;
+    which state it and which do not; that they state it too; or, where they state
+    it and the spans fall in two scopes, that no trailing sum is taken. Nothing where the trailing sum is
+    itself on record or refused -- the reason that follows says why it stood aside."""
+    stated = [row for row in fact["spans"] if row["span"] == "year_to_date" and row["on_record"]]
+    silent = _periods(fact, "year_to_date", False)
+    if fact["trailing"] == "two_scopes":
+        named = "; ".join(f"{row['period']} under us-gaap:{row['tag']}" for row in stated)
+        return (f", which the years to date state too ({named}), the spans falling in two "
+                f"scopes, so no trailing sum is taken")
+    if fact["trailing"] == "no_sum":
+        return ", which the years to date state too"
+    if fact["trailing"] != "fiscal_year_only":
+        return ""
+    if not stated:
+        return ", which the years to date do not state"
+    return (f", which the years to date state for {' and '.join(row['period'] for row in stated)} "
+            f"and not for {' and '.join(silent)}")
+
+
 def cost_of_debt_fallback(ttm: dict, debt_now: dict, debt_ago: dict, rf: dict,
-                          why: str) -> dict:
-    """The ladder under a missing interest expense over average debt: interest paid
-    over average debt, or else the risk-free rate plus one point, each labelled a
-    fallback. Never silent: the cell says what it stands in for, and the label
-    says which input was missing and how -- interest expense on record but no
-    average debt; interest expense or interest paid on record but refused (one
-    filing's two values for one period, trends.TWO_VALUES); interest paid on
-    record but no average debt; or no fact at all, the only case that says
-    "neither" -- because each is a different fact about the company."""
+                          why: str, last_year: dict | None = None) -> dict:
+    """The ladder under a missing interest expense over average debt, each rung
+    labelled a fallback:
+
+    1. interest paid over the trailing four quarters, over average debt;
+    2. the last fiscal year, where a 10-Q's years to date do not let a trailing
+       sum be taken and the 10-K's year is on record, in the trailing ladder's
+       own order -- that year's interest expense, else that year's interest
+       paid -- over the average of debt at that year's start and end, never the
+       trailing balances: a year's interest over that year's debt. It has its
+       own numerator and its own two debt dates, so it is tried before the last
+       rung whenever those are on record, also where a trailing figure is on
+       record and the trailing average debt is not;
+    3. the risk-free rate plus one point.
+
+    Never silent: the cell says what it stands in for and names the periods of
+    its numerator and denominator. Every clause of its label is built from one
+    walk of the record (`interest_walk`, carried in the cell as `standing`), so
+    the clauses cannot contradict one another: how interest expense stands, how
+    interest paid stands, and what the years to date state of the figure a rung
+    reads. "Neither" is said only when no span carries a row of either figure."""
     expense = ttm.get("interest_expense") or {"missing": "interest_expense is not gathered"}
     paid = ttm.get("interest_paid") or {"missing": "interest_paid is not gathered"}
-    # A refused term -- one filing's two values for one period -- is on record,
-    # and the label says so before the ladder steps down from it.
-    expense_refused = "missing" in expense and trends.TWO_VALUES in expense["missing"]
-    paid_refused = "missing" in paid and trends.TWO_VALUES in paid["missing"]
-    expense_words = (f"interest expense is on record but refused: {expense['missing']}"
-                     if expense_refused else
-                     f"interest expense, which is not on record: {why}")
+    walk = interest_walk(ttm, last_year)
+    expense_kind, paid_kind = walk["interest_expense"]["trailing"], walk["interest_paid"]["trailing"]
+    expense_words = (standing_words("interest_expense", walk["interest_expense"], expense, why)
+                     if "missing" in expense else "")
+    year = last_year if (LAST_FISCAL_YEAR_RUNG and last_year and "missing" not in last_year) \
+        else None
+    year_expense = year["interest_expense"] if year and "missing" not in year["interest_expense"] \
+        else None
+    year_paid = year["interest_paid"] if year and "missing" not in year["interest_paid"] else None
+
+    def over_the_year(name: str, numerator: dict) -> dict:
+        debt = average(year["debt_at_the_end"], year["debt_at_the_start"])
+        if "missing" not in debt:
+            debt = dict(debt, formula="(debt at the end of the fiscal year + debt at its start) / 2",
+                        parts={"at_the_end": year["debt_at_the_end"],
+                               "at_the_start": year["debt_at_the_start"]})
+        cell = measure(f"{name}_last_fiscal_year / average debt over that fiscal year",
+                       {f"{name}_last_fiscal_year": numerator,
+                        "average_debt_over_that_fiscal_year": debt},
+                       lambda v: v[f"{name}_last_fiscal_year"]
+                       / v["average_debt_over_that_fiscal_year"],
+                       denominator="average_debt_over_that_fiscal_year")
+        if "missing" not in cell:
+            cell["periods"] = {"numerator": year["period"], "denominator": year["debt_dates"]}
+        return cell
+
+    # What the trailing rungs found; `reason` is what a later rung's label gives
+    # for standing in, `because` what the last rung's does.
     if "missing" not in expense:
-        because = f"interest expense is on record but average debt is missing/zero: {why}"
+        reason = f"interest expense is on record but average debt is missing/zero: {why}"
+        because = reason
     elif "missing" not in paid:
         cell = measure("interest_paid / average debt",
                        {"interest_paid": paid, "average_debt": average(debt_now, debt_ago)},
                        lambda v: v["interest_paid"] / v["average_debt"],
                        denominator="average_debt")
         if "missing" not in cell:
-            cell["fallback"] = f"interest paid in cash in place of {expense_words}"
+            # "interest expense, which is not on record" follows on; a sentence of
+            # how interest expense does stand is set apart, so it is not read as
+            # said of interest paid
+            cell["fallback"] = ("interest paid in cash in place of "
+                                + ("" if expense_kind == "absent" else "interest expense: ")
+                                + expense_words)
+            cell["standing"] = walk
             return cell
+        reason = f"interest paid is on record but average debt is missing/zero: {cell['missing']}"
         because = ("interest paid is on record but average debt is missing/zero, so the "
                    f"cost of debt is the risk-free rate plus one point: {cell['missing']}")
-        if expense_refused:
-            because = f"{expense_words}; {because}"
-    elif paid_refused or expense_refused:
-        paid_words = (f"interest paid is on record but refused: {paid['missing']}"
-                      if paid_refused else f"interest paid is not on record: {paid['missing']}")
-        because = f"{expense_words}; {paid_words}" if expense_refused else paid_words
+        if expense_kind != "absent":
+            reason, because = f"{expense_words}; {reason}", f"{expense_words}; {because}"
     else:
-        because = f"neither interest expense nor interest paid is on record: {why}"
+        reason = expense_words
+        paid_words = standing_words("interest_paid", walk["interest_paid"], paid, why)
+        if expense_kind == "absent" and paid_kind == "absent":
+            because = f"neither interest expense nor interest paid is on record: {why}"
+        else:
+            because = f"{expense_words}; {paid_words}" if expense_kind != "absent" else paid_words
+    if year_expense is not None or year_paid is not None:
+        figure, numerator, words = (
+            ("interest_expense", year_expense, "interest expense") if year_expense is not None
+            else ("interest_paid", year_paid, "interest paid in cash"))
+        cell = over_the_year(figure, numerator)
+        if "missing" not in cell:
+            cell["fallback"] = (f"{words} over the last fiscal year ({year['period']}) over the "
+                                f"average of debt at that year's start and end "
+                                f"({year['debt_dates'][0]} and {year['debt_dates'][1]})"
+                                f"{years_to_date_clause(walk[figure])}, because {reason}")
+            cell["standing"] = walk
+            return cell
+        because = (f"{reason}; {words} is on record for the last fiscal year but that "
+                   f"year's average debt is missing/zero, so the cost of debt is the risk-free "
+                   f"rate plus one point: {cell['missing']}")
     if "missing" in rf:
         return {"missing": f"{why}; and no risk-free rate for the fallback: {rf['missing']}"}
     return {"value": rf["value"] + FALLBACK_SPREAD_OVER_RISK_FREE,
@@ -1661,6 +2795,7 @@ def cost_of_debt_fallback(ttm: dict, debt_now: dict, debt_ago: dict, rf: dict,
                       "spread": {"value": FALLBACK_SPREAD_OVER_RISK_FREE,
                                  "note": "one point, the default of docs/needs_judgment.md"}},
             "fallback": f"the risk-free rate plus one point, because {because}",
+            "standing": walk,
             "needs_judgment": COST_OF_DEBT_QUESTION}
 
 
@@ -1676,7 +2811,8 @@ def cost_of_capital(terms: dict, sections: dict, market_data: dict, cutoff: dt.d
 
     if "missing" in debt_now:
         cost_of_debt = cost_of_debt_fallback(ttm, debt_now, debt_ago, rf,
-                                             f"average_debt: {debt_now['missing']}")
+                                             f"average_debt: {debt_now['missing']}",
+                                             terms.get("last_fiscal_year"))
     elif debt_now["value"] == 0 and ("missing" in debt_ago or debt_ago["value"] == 0):
         cost_of_debt = {"value": 0.0, "note": "no debt on the balance sheet, so it carries no weight"}
     else:
@@ -1688,7 +2824,8 @@ def cost_of_capital(terms: dict, sections: dict, market_data: dict, cutoff: dt.d
                                denominator="average_debt")
         if "missing" in cost_of_debt:
             cost_of_debt = cost_of_debt_fallback(ttm, debt_now, debt_ago, rf,
-                                                 cost_of_debt["missing"])
+                                                 cost_of_debt["missing"],
+                                                 terms.get("last_fiscal_year"))
     if "pre_tax_cost_of_debt" in overrides:
         chosen = overrides["pre_tax_cost_of_debt"]
         if isinstance(chosen.get("value"), (int, float)) and chosen.get("quote"):
@@ -2291,6 +3428,16 @@ def calculate(*, ticker: str, cutoff, period_end: str, form: str, accession: str
             value, earnings["history"]),
     }
 
+    facts = instance_facts(bundle, cutoff)
+    revenue_and_working_capital = {
+        "quarterly_cash_flow_and_accruals": quarterly_cash_flow_and_accruals(record, terms, periods),
+        "receivables_extension": receivables_extension(record, terms, periods, facts),
+        "contract_liabilities_and_billings": contract_liabilities_and_billings(
+            record, terms, periods, facts),
+        "inventory_composition_and_growth_gap": inventory_composition_and_growth_gap(
+            record, terms, periods),
+    }
+
     missing = [f"{term}: {terms['trailing_four_quarters'][term]['missing']}"
                for term in CORE_TERMS if term in terms["trailing_four_quarters"]
                and "missing" in terms["trailing_four_quarters"][term]]
@@ -2331,6 +3478,7 @@ def calculate(*, ticker: str, cutoff, period_end: str, form: str, accession: str
                                                   "solvency", "growth")},
         "ebit": sections["ebit"], "tax_rate": sections["tax_rate"],
         "earnings_versus_cash": earnings,
+        **revenue_and_working_capital,
         "free_cash_flow": free,
         "concentration": concentration(bundle),
         "note_tables": tables,
