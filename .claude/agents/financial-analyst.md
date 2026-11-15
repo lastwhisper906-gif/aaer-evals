@@ -164,5 +164,6 @@ Write `analysis_financial.json`. Nothing else, anywhere.
 `summary_ko` is, for each key, one or two plain Korean sentences a finance
 student can read, with numbers only as `{field}` paths.
 A size in Korean number words is a number too ("십 퍼센트대 중후반"): write the
-`{field}` path in its place. A count of periods ("최근 네 분기") is not a size.
+`{field}` path in its place. The name of a window the calculator reads ("최근 네
+분기") is not a size.
 Python assembles the memo from these, and from nothing you did not write.
