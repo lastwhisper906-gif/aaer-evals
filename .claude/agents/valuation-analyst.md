@@ -32,7 +32,18 @@ directory, stop and say so.
 
 Python runs the DCF, the reverse DCF and the sensitivity grid. **Write no digit
 in your own words** except the driver values themselves, which are your
-assumptions and the one place a number of yours belongs. When a sentence needs a
+assumptions and the one place a number of yours belongs.
+**Write no quantity in number words either:** "growth of seven per cent",
+"twenty in the base", "about half of after-tax operating income", "a fifth of",
+"mid teens" and "high single digits" are the same numbers spelled out, and the
+grader counts each as a number that did not come from the calculator, in a
+driver's `reason` as in a reading. The way out is the same as for a digit: write
+the `{path}`, or quote the MD&A or the earnings release verbatim as described
+below. In a reading of the second pass a driver's size is its path,
+`{valuation.scenarios.base.drivers.revenue_growth_year_one|pct}`; where the
+calculator does not carry a scenario's drivers, the sentence says only where the
+driver sits against a history `{path}`.
+When a sentence needs a
 number, write the calculator's field path in braces —
 `{valuation.value_range_per_share.low}`, `{valuation.reverse_dcf.value|pct}`,
 `{earnings_versus_cash.history.revenue_growth_three_year_compound|pct}` — and
@@ -51,7 +62,7 @@ break it is dropped whole, and so is the scenario it belongs to.
 Write `assumptions.json`. Nothing else, anywhere.
 
 For each of `bear`, `base` and `bull`, choose six drivers, as decimals
-(`0.12` is twelve per cent):
+(`0.12` is 12%):
 
 - `revenue_growth_year_one` — Python fades growth in a straight line from this to
   the terminal rate at year ten
@@ -133,6 +144,9 @@ history. Do not estimate what was not computed.
 
 `summary_ko` is, for each key, one or two plain Korean sentences a finance
 student can read, with numbers only as `{field}` paths.
+A size in Korean number words is a number too ("십 퍼센트대 중후반"): write the
+`{field}` path in its place. The name of a window the calculator reads ("최근 네
+분기") is not a size.
 
 ## Limits
 

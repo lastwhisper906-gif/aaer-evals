@@ -1459,3 +1459,176 @@ def test_a_run_whose_note_tables_cannot_be_read_says_so_where_the_run_is_checked
     line = next(line for line in payload["missing"] if line.startswith("note_tables: "))
     assert "input_notes.md" in line
     assert line in calculator.filings_only(payload)["missing"]
+
+
+ANALYSTS = ("accounting-analyst", "financial-analyst", "valuation-analyst")
+NUMBER_WORDS_OPENING = "**Write no quantity in number words either:** "
+# What follows the examples, word for word. Nothing here says the gate reads a
+# number word: it does not, and a sentence that claimed it would fail this text.
+NUMBER_WORDS_REST = {
+    "accounting-analyst": (
+        " are the same numbers spelled out, and the grader counts each as a number that did not "
+        "come from the calculator. The way out is the same as for a digit: write the `{path}`, or "
+        "put inside quotation marks the `quote` of an item in the notes reader's report, as "
+        "described below."),
+    "valuation-analyst": (
+        " are the same numbers spelled out, and the grader counts each as a number that did not "
+        "come from the calculator, in a driver's `reason` as in a reading. The way out is the same "
+        "as for a digit: write the `{path}`, or quote the MD&A or the earnings release verbatim as "
+        "described below. In a reading of the second pass a driver's size is its path, "
+        "`{valuation.scenarios.base.drivers.revenue_growth_year_one|pct}`; where the calculator "
+        "does not carry a scenario's drivers, the sentence says only where the driver sits against "
+        "a history `{path}`."),
+}
+NUMBER_WORDS_REST["financial-analyst"] = NUMBER_WORDS_REST["accounting-analyst"]
+# The digit rule each definition already held, which the new sentence must follow at once.
+DIGIT_RULE = {
+    "accounting-analyst": "**Write no digit in your own words.**",
+    "financial-analyst": "**Write no digit in your own words.**",
+    "valuation-analyst": ("**Write no digit in your own words** except the driver values "
+                          "themselves, which are your assumptions and the one place a number of "
+                          "yours belongs."),
+}
+KOREAN_SENTENCE = ('A size in Korean number words is a number too ("십 퍼센트대 중후반"): write '
+                   'the `{field}` path in its place. The name of a window the calculator reads '
+                   '("최근 네 분기") is not a size.')
+# Each example, and the published grade whose dealbreaker counted it as a number
+# not from the calculator: read by eye in that run's grade.json, and held to it below.
+COUNTED_IN = {
+    "seven per cent": "AAPL/0000320193-26-000020-note-tables-2026-10-29",
+    "growth of seven per cent": "AAPL/0000320193-26-000020-note-tables-2026-10-29",
+    "a fifth of": "AAPL/0000320193-26-000020-note-tables-2026-10-29",
+    "about half": "LFUS/0001628280-26-050481-note-tables-2026-11-08",
+    "about half of after-tax operating income": "LFUS/0001628280-26-050481-note-tables-2026-11-08",
+    "mid teens": "LFUS/0001628280-26-050481-note-tables-2026-11-08",
+    "hundreds of millions": "LFUS/0001628280-26-050481-note-tables-2026-11-08",
+    "roughly doubled": "CSCO/0000858877-26-000078",
+    "twelve to fourteen years": "PANW/0001327567-26-000015-note-tables-2026-11-08",
+    "high single digits": "PANW/0001327567-26-000015-note-tables-2026-11-08",
+    "twenty in the base": "CIEN/0001628280-26-040767-note-tables-2026-11-14",
+    "fifty-three weeks": "STX/0001137789-26-000159",
+}
+
+
+def _definition(agent: str) -> str:
+    return " ".join((REPO / ".claude" / "agents" / f"{agent}.md").read_text(encoding="utf-8").split())
+
+
+def _number_words_sentence(agent: str) -> str:
+    text = _definition(agent)
+    start = text.index(NUMBER_WORDS_OPENING)
+    return text[start:text.index(" When a sentence needs a number", start)]
+
+
+def _phrases_the_grader_quoted_as_numbers(run: str | None = None) -> list[str]:
+    """Every phrase a `number_not_from_calculator` dealbreaker quotes in a
+    published grade (one run's, when a run is named): what stands between
+    quotation marks in its `why`. An apostrophe inside a word (the analyst's)
+    opens and closes nothing."""
+    quoted, rows = [], 0
+    for grade in sorted((REPO / "runs").glob("*/*/grade.json")):
+        if run is not None and grade.parent != REPO / "runs" / run:
+            continue
+        for row in json.loads(grade.read_text(encoding="utf-8")).get("dealbreakers") or []:
+            if row.get("kind") == "number_not_from_calculator":
+                rows += 1
+                why = row.get("why") or ""
+                quoted += re.findall(r"(?<!\w)'(.+?)'(?!\w)", why) + re.findall(r'"([^"]+)"', why)
+    assert rows >= (80 if run is None else 1)      # 88 on 2026-11-15, over 32 graded runs
+    return quoted
+
+
+def _examples(sentence: str) -> list[str]:
+    listed = sentence[len(NUMBER_WORDS_OPENING):sentence.index(" are the same numbers spelled out")]
+    examples = re.findall(r'"([^"]+)"', listed)
+    # the list is nothing but its examples: "a", "b" and "c"
+    assert listed == ", ".join(f'"{e}"' for e in examples[:-1]) + f' and "{examples[-1]}"'
+    return examples
+
+
+@pytest.mark.parametrize("agent", ANALYSTS)
+def test_each_analyst_is_told_a_quantity_in_words_is_a_number_with_the_graders_own_examples(agent):
+    """The three definitions forbid a quantity in number words beside the digit
+    rule. Every example is two words or more and stands inside one phrase the
+    owner's grader quoted when it counted a number not from the calculator, read
+    from the grade files here; the rest of the sentence is held word for word,
+    so it cannot come to deny the ways out or to claim the gate reads such words;
+    and it follows the digit rule directly."""
+    sentence = _number_words_sentence(agent)
+    examples = _examples(sentence)
+    assert len(examples) >= 6
+    for example in examples:
+        # a size the grader counted, by the table above, and quoted in that run's grade
+        assert example in COUNTED_IN, example
+        assert any(example in phrase
+                   for phrase in _phrases_the_grader_quoted_as_numbers(COUNTED_IN[example])), example
+    assert len(set(examples)) == len(examples)
+    assert sentence == (NUMBER_WORDS_OPENING + ", ".join(f'"{e}"' for e in examples[:-1])
+                        + f' and "{examples[-1]}"' + NUMBER_WORDS_REST[agent])
+    text = _definition(agent)
+    assert text[:text.index(NUMBER_WORDS_OPENING)].endswith(DIGIT_RULE[agent] + " ")
+    # number words are spoken of in these two sentences and nowhere else in the definition
+    assert len(re.findall(r"number words?", text, flags=re.IGNORECASE)) == 2
+
+
+def test_a_fragment_of_the_graders_explanation_is_not_one_of_its_quoted_phrases():
+    """What the example test reads: the grader's quoted phrases, not its prose."""
+    quoted = _phrases_the_grader_quoted_as_numbers()
+    for words in ("no calculator path", "own words", "several dozen"):
+        assert not any(words in phrase for phrase in quoted), words
+    assert any("mid teens" in phrase for phrase in quoted)
+
+
+@pytest.mark.parametrize("agent", ANALYSTS)
+def test_each_analysts_korean_summary_is_told_the_same(agent):
+    """The Korean sentences are what the one-page view prints. The sentence is
+    held word for word and stands in the `summary_ko` paragraph once."""
+    text = _definition(agent)
+    start = text.index("`summary_ko` is, for each")
+    assert KOREAN_SENTENCE in text[start:start + 420]
+    assert text.count("Korean number words") == 1
+
+
+def test_the_korean_sentences_two_examples_are_one_summary_the_grader_read():
+    """Generac's published `summary_ko.market_implied_growth` carries both: the
+    grader struck that sentence for "십 퍼센트대 중후반" and for nothing else, and
+    "최근 네 분기" stands in the same sentence beside the calculator path of that
+    window, quoted by no dealbreaker of any run."""
+    size, window = re.findall(r'\("([^"]+)"\)', KOREAN_SENTENCE)
+    generac = REPO / "runs" / "GNRC" / "0001437749-26-025669"
+    summary = json.loads((generac / "analysis_valuation.json").read_text(encoding="utf-8"))[
+        "summary_ko"]["market_implied_growth"]
+    assert size in summary
+    assert window + " 성장률 {ratios.growth.revenue.trailing_four_quarters.value|pct}" in summary
+    struck = [row for row in json.loads((generac / "grade.json").read_text(encoding="utf-8"))[
+        "dealbreakers"] if row.get("where") == "analysis_valuation.json summary_ko.market_implied_growth"]
+    assert len(struck) == 1 and struck[0]["kind"] == "number_not_from_calculator"
+    assert re.findall(r"(?<!\w)'(.+?)'(?!\w)", struck[0]["why"]) == [size]
+    assert not any(window in phrase for phrase in _phrases_the_grader_quoted_as_numbers())
+
+
+def test_the_path_the_valuation_analyst_is_given_for_a_drivers_size_holds_a_number():
+    """The valuation definition names one path for a driver's size in a reading
+    of the second pass. Carrier's published second-pass calculator carries that
+    driver (0.05, the base case's first-year revenue growth in its
+    assumptions.json); Apple's published valuation is missing whole, which is the
+    case the sentence's last clause covers."""
+    path = re.search(r"`\{(valuation\.scenarios\.[a-z_.]+)\|pct\}`",
+                     NUMBER_WORDS_REST["valuation-analyst"]).group(1)
+    carrier = REPO / "runs" / "CARR" / "0001783180-26-000032"
+    cell = json.loads((carrier / "calculator.json").read_text(encoding="utf-8"))
+    for key in path.split("."):
+        cell = cell[key]
+    assumed = json.loads((carrier / "assumptions.json").read_text(encoding="utf-8"))
+    assert cell == assumed["scenarios"]["base"]["revenue_growth_year_one"] == 0.05
+    apple = json.loads((REPO / "runs" / "AAPL" / "0000320193-26-000020" / "calculator.json")
+                       .read_text(encoding="utf-8"))
+    assert "missing" in apple["valuation"]
+
+
+def test_no_analyst_definition_spells_a_percentage_out_as_its_own_example():
+    """The valuation definition explained a decimal as "twelve per cent", the
+    very form the new sentence forbids; it now writes the digits, which a
+    definition may."""
+    assert "twelve per cent" not in _definition("valuation-analyst")
+    assert "(`0.12` is 12%)" in _definition("valuation-analyst")
