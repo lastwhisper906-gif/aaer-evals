@@ -22,6 +22,7 @@ from pathlib import Path
 import pytest
 
 from src import edgar_client, fetch_fixtures, on_demand
+from tests.event_store import EVENT_FIXTURES, RECORD as EVENT_RECORD
 from tests.planted_edgar import DIRECT, SAMPLE_CONTACT, serve
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
@@ -96,6 +97,12 @@ def planted_edgar() -> dict[str, tuple[bytes, str]]:
                          for e in entries if e["role"] in types)
         bodies[folder + f"{accession}-index-headers.html"] = (header.encode(), "")
     bodies[f"/submissions/CIK{CIK}.json"] = (raw_index(), "")
+    # the headers of NVIDIA's three comment letters, which the store reads for the
+    # day each was made public: EDGAR documents committed with the event fixtures
+    for key, entry in EVENT_RECORD["files"].items():
+        if entry["ticker"] == TICKER:
+            bodies[urllib.parse.urlsplit(entry["url"]).path] = (
+                (EVENT_FIXTURES / key).read_bytes(), "")
     return bodies
 
 
@@ -762,3 +769,218 @@ def test_a_header_page_that_fails_otherwise_is_not_passed_over():
     fetcher = _OldFolder(edgar_client.EdgarError("https://www.sec.gov/...: HTTP 503"))
     with pytest.raises(edgar_client.EdgarError, match="503"):
         fetch_fixtures.document_types(fetcher, "0001092492", "0001193125-13-084624")
+
+
+# --- the event filings of the window, fetched on demand --------------------------
+#
+# Planted around NVIDIA's 10-Q of 2026-08-26, whose window opens after its 10-Q of
+# 2026-05-20: an 8-K with item 2.05, a notice of late filing, a staff letter filed
+# before the window and made public inside it, and a response filed inside the
+# window and made public after the 10-Q. The bodies and the release days are
+# planted values; what is asserted is where each one lands.
+
+EXIT_8K, NOTICE, LETTER, RESPONSE = ("0001045810-26-000060", "0001045810-26-000070",
+                                     "0000000000-26-000100", "0001045810-26-000055")
+# an 8-K whose items carry 1.01 beside 1.02, the shape of DELL's real
+# 0001193125-26-265877: the Exhibit 10 path reads every 8-K carrying 1.01
+TERMINATED_8K = "0001045810-26-000062"
+TERMINATED_SENTENCE = "On June 20, 2026, the Company terminated the supply agreement."
+EXIT_SENTENCE = "On June 9, 2026, the Company committed to a plan to close one of its sites."
+NOTICE_SENTENCE = "The Company is unable to file its Form 10-Q within the prescribed period."
+LETTER_SENTENCE = "We have reviewed your filing and have the following comment."
+
+
+def archive(accession: str, name: str) -> str:
+    return f"/Archives/edgar/data/{int(CIK)}/{accession.replace('-', '')}/{name}"
+
+
+def plant_the_window(server) -> None:
+    plant_rows(server,
+               {"accessionNumber": EXIT_8K, "filingDate": "2026-06-10", "reportDate": "2026-06-09",
+                "form": "8-K", "items": "2.05,9.01", "primaryDocument": "nvda-20260609.htm",
+                "primaryDocDescription": "8-K", "isXBRL": 0,
+                "acceptanceDateTime": "2026-06-10T20:05:00.000Z"},
+               {"accessionNumber": NOTICE, "filingDate": "2026-08-21", "reportDate": "2026-07-26",
+                "form": "NT 10-Q", "items": "", "primaryDocument": "nt10q.htm",
+                "primaryDocDescription": "NT 10-Q", "isXBRL": 0,
+                "acceptanceDateTime": "2026-08-21T21:00:00.000Z"},
+               {"accessionNumber": LETTER, "filingDate": "2026-04-02", "reportDate": "",
+                "form": "UPLOAD", "items": "", "primaryDocument": "filename1.pdf",
+                "primaryDocDescription": "", "isXBRL": 0,
+                "acceptanceDateTime": "2026-04-02T14:00:00.000Z"},
+               {"accessionNumber": RESPONSE, "filingDate": "2026-05-25", "reportDate": "",
+                "form": "CORRESP", "items": "", "primaryDocument": "filename1.htm",
+                "primaryDocDescription": "", "isXBRL": 0,
+                "acceptanceDateTime": "2026-05-25T15:00:00.000Z"})
+    plant_rows(server,
+               {"accessionNumber": TERMINATED_8K, "filingDate": "2026-06-22",
+                "reportDate": "2026-06-20", "form": "8-K", "items": "1.01,1.02,9.01",
+                "primaryDocument": "nvda-20260620.htm", "primaryDocDescription": "8-K",
+                "isXBRL": 0, "acceptanceDateTime": "2026-06-22T20:05:00.000Z"})
+    server.bodies.update({
+        archive(TERMINATED_8K, "nvda-20260620.htm"): (
+            f"<html><body><p>Item 1.01 Entry into a Material Definitive Agreement.</p>"
+            f"<p>The Company entered into a new supply agreement.</p>"
+            f"<p>Item 1.02 Termination of a Material Definitive Agreement.</p>"
+            f"<p>{TERMINATED_SENTENCE}</p><p>Item 9.01 Financial Statements and Exhibits.</p>"
+            f"<p>SIGNATURES</p></body></html>".encode(), ""),
+        archive(EXIT_8K, "nvda-20260609.htm"): (
+            f"<html><body><p>Item 2.05 Costs Associated with Exit or Disposal Activities.</p>"
+            f"<p>{EXIT_SENTENCE}</p><p>Item 9.01 Financial Statements and Exhibits.</p>"
+            f"<p>SIGNATURES</p></body></html>".encode(), ""),
+        archive(NOTICE, "nt10q.htm"): (
+            f"<html><body><p>PART III — NARRATIVE</p><p>{NOTICE_SENTENCE}</p></body></html>"
+            .encode(), ""),
+        archive(LETTER, f"{LETTER}.hdr.sgml"): (
+            f"<SEC-HEADER>{LETTER}.hdr.sgml : 20260630\n<ACCEPTANCE-DATETIME>20260402100000\n"
+            "<PRIVATE-TO-PUBLIC>\n".encode(), ""),
+        archive(LETTER, f"{LETTER}-index-headers.html"): (
+            b"<TYPE>LETTER\n<SEQUENCE>1\n<FILENAME>filename1.pdf\n"
+            b"<TYPE>TEXT-EXTRACT\n<SEQUENCE>2\n<FILENAME>filename2.txt\n", ""),
+        archive(LETTER, "filename2.txt"): (
+            f"<DOCUMENT>\n<TYPE>TEXT-EXTRACT\n<TEXT>\n      April 2, 2026\n\n"
+            f"       {LETTER_SENTENCE}\n</TEXT>\n</DOCUMENT>\n".encode(), ""),
+        # made public after the 10-Q: its header is read, and nothing else is asked
+        archive(RESPONSE, f"{RESPONSE}.hdr.sgml"): (
+            f"<SEC-HEADER>{RESPONSE}.hdr.sgml : 20260915\n<PRIVATE-TO-PUBLIC>\n".encode(), ""),
+    })
+
+
+def test_the_store_on_demand_holds_the_window_s_event_filings_with_their_own_roles(
+        tmp_path, server):
+    plant_the_window(server)
+    held = on_demand.fetch_store(client(tmp_path, server), TICKER, accession=ACCESSION)
+    manifest = fetch_fixtures.load_manifest(held["store"] / TICKER)
+    assert manifest["event_filings"]["for"] == ACCESSION
+    assert manifest["event_filings"]["after"] == "0001045810-26-000052"   # 2026-05-20
+    rows = {(entry["role"], entry["accession"]): entry for entry in manifest["documents"]
+            if entry["accession"] in (EXIT_8K, NOTICE, LETTER, RESPONSE)}
+    assert sorted(rows) == [("event_body", EXIT_8K), ("late_notice", NOTICE),
+                            ("staff_letter", LETTER)]
+    assert ("event_body", TERMINATED_8K) in {(e["role"], e["accession"])
+                                             for e in manifest["documents"]}
+    got = {key: (entry["form"], entry["filing_date"], entry.get("acceptance_datetime"),
+                 entry.get("released")) for key, entry in rows.items()}
+    assert got == {
+        ("event_body", EXIT_8K): ("8-K", "2026-06-10", "2026-06-10T16:05:00-04:00", None),
+        ("late_notice", NOTICE): ("NT 10-Q", "2026-08-21", "2026-08-21T17:00:00-04:00", None),
+        ("staff_letter", LETTER): ("UPLOAD", "2026-04-02", "2026-04-02T10:00:00-04:00",
+                                   "2026-06-30"),
+    }
+    # the release is recorded, not stored as a document; the response made public
+    # after the 10-Q is recorded nowhere
+    releases = manifest["event_filings"]["releases"]
+    assert releases[LETTER]["released"] == "2026-06-30"
+    assert releases[LETTER]["header_url"].endswith(f"/{LETTER}.hdr.sgml")
+    assert RESPONSE not in releases
+    assert archive(RESPONSE, "filename1.htm") not in server.hits
+    before = sum(server.hits.values())
+    on_demand.fetch_store(client(tmp_path, server), TICKER, accession=ACCESSION)
+    assert sum(server.hits.values()) - before == 1          # the index alone, as before
+
+
+def test_the_bundle_from_the_store_on_demand_carries_them_and_the_release_rule_is_the_gates(
+        tmp_path, server):
+    """The bundle carries the window's documents under their ids. The owner's two
+    checks at the end read filing dates and acceptance stamps and never a
+    letter's `released`, so their pass shows the filing-date rule and nothing
+    about the release; the release rule is shown by the gate and the extraction
+    check, which refuse the same letter once its release is not before the
+    cutoff or is not on record."""
+    from evals.common import PASS
+    from evals.regression import mechanical
+    from src import assemble_bundle
+    plant_the_window(server)
+    held = on_demand.fetch_store(client(tmp_path, server), TICKER, accession=ACCESSION)
+    run = tmp_path / "runs" / TICKER / ACCESSION
+    bundle = assemble_bundle.build(TICKER, "10-Q", accession=ACCESSION,
+                                   fixtures_root=held["store"], prior_runs=run.parent.parent)
+    assemble_bundle.write(bundle, run)
+    text = (run / "input_8k.md").read_text(encoding="utf-8")
+    for identifier, sentence in ((f"{EXIT_8K}:8k_event:2", EXIT_SENTENCE),
+                                 (f"{TERMINATED_8K}:8k_event:4", TERMINATED_SENTENCE),
+                                 (f"{NOTICE}:late_notice:2", NOTICE_SENTENCE),
+                                 (f"{LETTER}:staff_letter:2", LETTER_SENTENCE)):
+        assert f"[{identifier}]\n{sentence}\n" in text
+    # the Exhibit 10 path reads the earnings 8-K's submission and not an event
+    # 8-K's body: the 8-K carrying 1.01 in the window has no header on record,
+    # and it is neither counted nor asked for one
+    from src import exhibits
+    fetched_store = exhibits.extract_on_trigger(TICKER, cutoff="2026-08-26",
+                                            fixtures_root=held["store"])
+    committed = exhibits.extract_on_trigger(TICKER, cutoff="2026-08-26")
+    assert fetched_store["eight_k_count"] == committed["eight_k_count"] == 1
+    assert TERMINATED_8K not in {t["accession"] for t in fetched_store["triggers"]}
+    assert RESPONSE not in text
+    assert ("## event filings made public after the 10-Q 0001045810-26-000052 filed "
+            "2026-05-20, through 2026-08-26") in text
+    documents = {row["accession"]: row for row in bundle["manifest"]["documents"]
+                 if row["accession"] in (EXIT_8K, NOTICE, LETTER)}
+    assert {accession: row["contributed_to"] for accession, row in documents.items()} == \
+        {EXIT_8K: ["input_8k.md"], NOTICE: ["input_8k.md"], LETTER: ["input_8k.md"]}
+    assert documents[LETTER]["released"] == "2026-06-30"
+    assert RESPONSE not in json.dumps(bundle["manifest"])
+    # the owner's checks, by filing date: the letter was filed 2026-04-02
+    for check in (mechanical.check_nothing_after_cutoff, mechanical.check_inputs_on_record):
+        result = check(run)
+        assert result.status == PASS, (check.__name__, result.failures)
+    # the release rule. The gate: the letter was made public 2026-06-30 (its
+    # planted header), so a read at that day is refused though it was filed
+    # twelve weeks before, and a read the day after is served
+    from src import cutoff_guard, extraction_checks
+    stored = held["store"] / TICKER / documents[LETTER]["path"]
+    with pytest.raises(cutoff_guard.NotYetPublicError):
+        cutoff_guard.load_bytes(stored, "2026-06-30", fixtures_root=held["store"])
+    assert LETTER_SENTENCE.encode() in cutoff_guard.load_bytes(
+        stored, "2026-07-01", fixtures_root=held["store"])
+    # the extraction check: the bundle as built passes its cutoff gate, and the
+    # same bundle whose manifest says the letter was made public on the cutoff's
+    # own day, or says nothing of its release, fails it on that row
+    def cutoff_line(change) -> str:
+        manifest = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
+        [row] = [one for one in manifest["documents"] if one["accession"] == LETTER]
+        change(row)
+        texts = extraction_checks.read_bundle(run)
+        [line] = extraction_checks.check_cutoff(manifest, texts).lines()
+        return line
+
+    assert cutoff_line(lambda row: None).startswith("cutoff: pass — ")
+    on_the_day = cutoff_line(lambda row: row.update(released="2026-08-26"))
+    assert on_the_day.startswith("cutoff: FAIL — ")
+    assert "was made public 2026-08-26, not before the cutoff 2026-08-26" in on_the_day
+    unrecorded = cutoff_line(lambda row: row.pop("released"))
+    assert unrecorded.startswith("cutoff: FAIL — ")
+    assert "is a UPLOAD with no release on record" in unrecorded
+
+
+def test_an_empty_window_fetched_on_demand_leaves_the_published_file_as_it_was(tmp_path, server):
+    """NVIDIA's window for the 10-Q of 2026-08-26 holds nothing: its three comment
+    letters, filed July to September 2025, were made public 2026-01-13 (each
+    header's first line, committed under tests/fixtures/event_filings/), before
+    the 10-Q of 2026-05-20 the window opens after. So the store fetched on demand
+    records the three releases and carries no letter, and the bundle built from
+    it is the published run's file, byte for byte; that the window was drawn and
+    found empty is the manifest's record, where the committed store's says it
+    was fetched without event filings."""
+    from src import assemble_bundle
+    held = on_demand.fetch_store(client(tmp_path, server), TICKER, accession=ACCESSION)
+    record = fetch_fixtures.load_manifest(held["store"] / TICKER)["event_filings"]
+    assert {accession: release["released"] for accession, release in
+            record["releases"].items()} == {"0000000000-25-007684": "2026-01-13",
+                                            "0001045810-25-000192": "2026-01-13",
+                                            "0000000000-25-009788": "2026-01-13"}
+    assert not [entry for entry in fetch_fixtures.load_manifest(held["store"] / TICKER)
+                ["documents"] if entry["form"] in ("UPLOAD", "CORRESP")]
+    published = (FIXTURES.parent.parent / "runs" / TICKER / ACCESSION / "input_8k.md").read_bytes()
+    fetched_bundle = assemble_bundle.build(TICKER, "10-Q", accession=ACCESSION,
+                                           fixtures_root=held["store"],
+                                           prior_runs=tmp_path / "no-runs")
+    assert fetched_bundle["texts"]["input_8k.md"].encode("utf-8") == published
+    window = fetched_bundle["manifest"]["event_filings"]
+    assert (window["state"], window["carried"], window["listed"]) == ("fetched", [], [])
+    assert window["opens_after"]["accession"] == "0001045810-26-000052"
+    assert "no comment letter filed in the 2 years before the window opened" in window["note"]
+    committed = assemble_bundle.build(TICKER, "10-Q", accession=ACCESSION,
+                                      prior_runs=tmp_path / "no-runs")
+    assert committed["manifest"]["event_filings"]["state"] == "not_fetched"
+    assert committed["texts"]["input_8k.md"].encode("utf-8") == published

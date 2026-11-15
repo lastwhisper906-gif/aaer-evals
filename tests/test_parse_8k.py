@@ -684,3 +684,346 @@ def test_the_late_filing_list_is_a_recount_of_the_stored_file(ticker):
                if row["form"] in ("NT 10-K", "NT 10-Q", "NT 10-K/A", "NT 10-Q/A")]
     assert {row["accession"] for row in by_hand} == \
         {row["accession"] for row in parse_8k.late_filings(raw)}
+
+
+# --- event 8-Ks: a real one of each item --------------------------------------
+#
+# Each found through its company's submissions index -- the `items` field of the
+# row in the committed `tests/fixtures/{ticker}/submissions.json` -- and its
+# body fetched from EDGAR on 2026-10-28 into `tests/fixtures/event_filings/`
+# (address and sha256 in `record.json`), then read by eye. The words asserted
+# are the filing's, compared with each run of whitespace read as one space,
+# because the filings write non-breaking and thin spaces where a reader sees one.
+
+from tests import event_store  # noqa: E402
+
+EVENT_8KS = {
+    # ticker, accession, document: the index's items, what the body says, and the
+    # number of paragraphs each item holds where it was counted by eye
+    ("STX", "0001193125-25-141454", "d77702d8k.htm"): ("1.02,2.04,8.01,9.01", {
+        "1.02": ["Item 1.02. Termination of a Material Definitive Agreement.",
+                 "On June 11, 2025 (the “Redemption Date”), the Seagate HDD Cayman (“Seagate "
+                 "HDD”), a direct subsidiary of Seagate Technology Holdings public limited "
+                 "company (the “Company”), redeemed all of its remaining outstanding 4.875% "
+                 "Senior Notes due 2027"],
+        "2.04": ["Item 2.04 Triggering Events That Accelerate or Increase a Direct Financial "
+                 "Obligation or an Obligation under an Off-Balance Sheet Arrangement.",
+                 "The information set forth in Item 1.02 of this Current Report on Form 8-K "
+                 "is incorporated by reference into this Item 2.04."]},
+     {"1.02": 2, "2.04": 2}),
+    ("STX", "0001137789-23-000021", "stx-20230329.htm"): ("2.05,5.02", {
+        "2.05": ["Item 2.05 Costs Associated with Exit or Disposal Activities.",
+                 "On March 29, 2023, Seagate Technology Holdings plc (the “Company”) committed "
+                 "to an expansion of the October 2022 Restructuring Plan"]},
+     {"2.05": 3}),
+    ("POWL", "0000950123-11-096524", "h85596e8vk.htm"): ("2.02,2.06,4.02,9.01", {
+        "2.06": ["Item 2.06 Material Impairments.",
+                 "In connection with the Company’s ongoing procedures relating to its fiscal "
+                 "year end review, the Company’s management, on November 8, 2011 concluded "
+                 "that the Company will record an impairment of the remaining intangible "
+                 "assets recorded in connection with the acquisition of Powell Canada totaling "
+                 "$7.2 million, or $0.61 per diluted share."],
+        "4.02": ["Item 4.02 Non-Reliance on Previously Issued Financial Statements or a "
+                 "Related Audit Report or Completed Interim Review.",
+                 "On November 8, 2011, the Audit Committee of the board of directors (the "
+                 "“Audit Committee”) of Powell Industries, Inc. (the “Company”), based on "
+                 "consultation with management, concluded that the Company’s unaudited "
+                 "interim consolidated financial statements for the quarters ended March 31 "
+                 "and June 30, 2011"]},
+     # the 2.06 is two paragraphs, the heading and the impairment; the 4.02 runs
+     # on into a table of restated figures and is not counted here
+     {"2.06": 2}),
+    ("SMCI", "0001375365-24-000045", "smci-20241206.htm"): ("3.01,9.01", {
+        "3.01": ["Item 3.01",
+                 "Notice of Delisting or Failure to Satisfy a Continued Listing Rule or "
+                 "Standard; Transfer of Listing",
+                 "On December 6, 2024, Super Micro Computer, Inc. (the “Company”) received a "
+                 "letter (the “Letter”) from the Nasdaq Stock Market (“Nasdaq”) informing the "
+                 "Company that Nasdaq has granted the Company’s request for an exception to "
+                 "Nasdaq’s Listing Rule 5250(c)(1) through February 25, 2025."]},
+     # read by eye: the heading, its title, three paragraphs, the forward-looking
+     # heading and its paragraph
+     {"3.01": 7}),
+    ("WDC", "0001193125-26-055920", "d107707d8k.htm"): ("3.03", {
+        "3.03": ["Item 3.03 Material Modification to Rights of Security Holders.",
+                 "As previously disclosed, Western Digital Corporation (the “Company”) "
+                 "previously issued and sold shares of the Company’s Series A Convertible "
+                 "Perpetual Preferred Stock",
+                 "On February 17, 2026, in connection with the Mandatory Conversion, the Company "
+                 "converted all shares issued and outstanding of Preferred Stock into shares of "
+                 "Common Stock, pursuant to and in accordance with Section 8.2 of the "
+                 "Certificate of Designations."]},
+     # read by eye: the heading, two paragraphs, and the one that points at exhibit 3.1
+     {"3.03": 4}),
+}
+
+
+def _folded(text: str) -> str:
+    return " ".join(text.split())
+
+
+@pytest.mark.parametrize("key", sorted(EVENT_8KS), ids=lambda key: f"{key[0]}-{key[1]}")
+def test_a_real_event_8k_is_split_into_the_items_its_index_row_names(key):
+    ticker, accession, name = key
+    items, said, totals = EVENT_8KS[key]
+    row = event_store.row_of(ticker, accession)
+    assert row["items"] == items
+    body = parse_8k.body_items(parse_8k.document_text(
+        event_store.recorded(accession, name).decode("utf-8")))
+    for code, paragraphs in said.items():
+        total = totals.get(code)
+        assert code in parse_8k.fetch_fixtures.EVENT_ITEMS + parse_8k.VERBATIM_ITEMS
+        got = [_folded(paragraph) for paragraph in body[code]["paragraphs"]]
+        # every paragraph read by eye is there, in order: a zip alone would stop
+        # at the shorter list and pass a body that lost one
+        assert len(got) >= len(paragraphs), (code, len(got), got[:3])
+        for want, have in zip(paragraphs, got):
+            assert have.startswith(want), (code, have[:200])
+        if total is not None:
+            assert len(got) == total, (code, len(got))
+
+
+def test_a_table_of_contents_line_does_not_take_its_items_body():
+    """Powell's 8-K lists its four items before the first of them. Read the first
+    occurrence, its impairment would be the heading alone and the reason for it
+    gone; the body is the occurrence that carries more than one line."""
+    body = parse_8k.body_items(parse_8k.document_text(event_store.recorded(
+        "0000950123-11-096524", "h85596e8vk.htm").decode("utf-8")))
+    assert len(body["2.06"]["paragraphs"]) == 2
+    assert "Powell Canada" in body["2.06"]["text"]
+    assert "should\nno longer be relied upon" in body["4.02"]["text"]
+
+
+def test_an_auditor_change_carries_its_body_and_the_former_auditors_letter(tmp_path):
+    """Littelfuse's 8-K 0000889331-23-000135, filed 2023-08-16, items "4.01": its
+    header types `exhibit161.htm` EX-16.1, and the letter, read by eye, is Grant
+    Thornton's of August 16, 2023. It falls in the window of the 10-Q of
+    2023-11-01 (0000889331-23-000157), after the 10-Q of 2023-08-02. The staff's
+    letter filed 2023-10-30 (0000000000-23-011863) was made public 2023-12-12, after
+    that 10-Q, so the store holds nothing of it."""
+    root, problems, _ = event_store.fetched(tmp_path, "LFUS", "0000889331-23-000157")
+    assert problems == []
+    rows = event_store.manifest_rows(root, "LFUS")
+    assert {(entry["role"], entry["path"]) for entry in rows
+            if entry["accession"] == "0000889331-23-000135"} == {
+        ("event_body", "events/0000889331-23-000135/lfus-20230815.htm"),
+        ("auditor_letter", "events/0000889331-23-000135/exhibit161.htm")}
+    assert "0000000000-23-011863" not in {entry["accession"] for entry in rows}
+    events, text = event_store.section(root, "LFUS", "0000889331-23-000157")
+    body, letter = events["carried"]
+    assert (body["role"], letter["role"]) == ("event_body", "auditor_letter")
+    assert _folded(body["paragraphs"][0]) == "Item 4.01"
+    assert any(_folded(paragraph).startswith(
+        "As a result of this process, on August 15, 2023, the Committee approved the "
+        "dismissal of Grant Thornton as the Company’s auditor and appointed Deloitte & "
+        "Touche LLP") for paragraph in body["paragraphs"])
+    assert ("We have read Item 4.01 of Form 8-K of Littelfuse, Inc. dated August 16, 2023, "
+            "and agree with the statements concerning our Firm contained therein."
+            in [_folded(paragraph) for paragraph in letter["paragraphs"]])
+    assert letter["paragraph_ids"][0] == "0000889331-23-000135:auditor_letter:1"
+    assert body["paragraph_ids"][0] == "0000889331-23-000135:8k_event:1"
+    assert ("### 8-K 0000889331-23-000135 filed 2023-08-16, item 4.01: the body of item "
+            "4.01, verbatim") in text
+    assert ("### 8-K 0000889331-23-000135 filed 2023-08-16: exhibit 16, the former "
+            "auditor's letter (exhibit161.htm), verbatim") in text
+
+
+SECOND_LETTER = "exhibit162.htm"
+SECOND_LETTER_SENTENCES = ("We were previously the auditors of a subsidiary of the Company.",
+                           "We agree with the statements in Item 4.01 that concern us.")
+
+
+class NamesASecondAuditorLetter(event_store.RecordedEdgar):
+    """The record, with a second exhibit 16 planted in the 8-K's own listing after
+    the first, and a planted two-paragraph letter served for it."""
+
+    def get(self, url):
+        if url.endswith("/000088933123000135/0000889331-23-000135-index-headers.html"):
+            return super().get(url) + (
+                f"&lt;DOCUMENT&gt;\n&lt;TYPE&gt;EX-16.2\n&lt;SEQUENCE&gt;9\n"
+                f"&lt;FILENAME&gt;{SECOND_LETTER}\n&lt;/DOCUMENT&gt;\n").encode()
+        if url.endswith(f"/000088933123000135/{SECOND_LETTER}"):
+            self.asked.append(url)
+            return ("<html><body>" + "".join(f"<p>{sentence}</p>"
+                                             for sentence in SECOND_LETTER_SENTENCES)
+                    + "</body></html>").encode()
+        return super().get(url)
+
+
+def test_two_auditor_letters_in_one_8k_never_share_a_paragraph_id(tmp_path):
+    """Grant Thornton's letter as recorded is twelve blocks of text, counted by
+    eye in `exhibit161.htm`: the page's title "Document", the date, four lines
+    of address, "Re: Littelfuse, Inc.", the file number, the salutation, the one
+    sentence, "Very truly yours," and the signature. A second exhibit 16 in the
+    same 8-K continues the count at thirteen, so no id names two paragraphs."""
+    root, problems, _ = event_store.fetched(tmp_path, "LFUS", "0000889331-23-000157",
+                                            edgar=NamesASecondAuditorLetter())
+    assert problems == []
+    assert {entry["path"] for entry in event_store.manifest_rows(root, "LFUS")
+            if entry["role"] == "auditor_letter"} == {
+        "events/0000889331-23-000135/exhibit161.htm",
+        f"events/0000889331-23-000135/{SECOND_LETTER}"}
+    events, text = event_store.section(root, "LFUS", "0000889331-23-000157")
+    body, first, second = events["carried"]
+    assert (first["document"], second["document"]) == ("exhibit161.htm", SECOND_LETTER)
+    assert first["paragraph_ids"] == [
+        f"0000889331-23-000135:auditor_letter:{number}" for number in range(1, 13)]
+    assert second["paragraph_ids"] == ["0000889331-23-000135:auditor_letter:13",
+                                       "0000889331-23-000135:auditor_letter:14"]
+    assert [_folded(paragraph) for paragraph in second["paragraphs"]] == \
+        list(SECOND_LETTER_SENTENCES)
+    every = body["paragraph_ids"] + first["paragraph_ids"] + second["paragraph_ids"]
+    assert len(set(every)) == len(every)
+    for identifier in every:
+        assert text.count(f"[{identifier}]") == 1
+    assert f"[0000889331-23-000135:auditor_letter:13]\n{SECOND_LETTER_SENTENCES[0]}\n" in text
+
+
+def planted_row(accession, form, day, accepted, items=""):
+    return {"accessionNumber": accession, "filingDate": day, "reportDate": "", "form": form,
+            "items": items, "primaryDocument": "document.htm", "primaryDocDescription": form,
+            "acceptanceDateTime": accepted}
+
+
+def test_an_8k_accepted_after_the_trigger_on_its_own_day_is_outside_the_window():
+    """Planted rows, EDGAR's shape. The 10-Q is accepted 2024-11-01 at 20:15
+    universal time. An impairment 8-K accepted at noon that day stood before it
+    and is in its window; an exit-costs 8-K and a late notice accepted at 21:00
+    did not and are not. The window opens at the 10-Q accepted 2024-08-01 at
+    20:10: a delisting 8-K accepted ten minutes before that belongs to the
+    earlier window, one accepted ten minutes after it to this one."""
+    from src import fetch_fixtures
+    previous = planted_row("0000111111-24-000010", "10-Q", "2024-08-01",
+                           "2024-08-01T20:10:00.000Z")
+    trigger = planted_row("0000111111-24-000020", "10-Q", "2024-11-01",
+                          "2024-11-01T20:15:00.000Z")
+    before_the_opening = planted_row("0000111111-24-000009", "8-K", "2024-08-01",
+                                     "2024-08-01T20:00:00.000Z", "3.01")
+    after_the_opening = planted_row("0000111111-24-000011", "8-K", "2024-08-01",
+                                    "2024-08-01T20:20:00.000Z", "3.01,9.01")
+    at_noon = planted_row("0000111111-24-000019", "8-K", "2024-11-01",
+                          "2024-11-01T12:00:00.000Z", "2.06")
+    that_evening = planted_row("0000111111-24-000021", "8-K", "2024-11-01",
+                               "2024-11-01T21:00:00.000Z", "2.05,9.01")
+    notice_that_evening = planted_row("0000111111-24-000022", "NT 10-Q", "2024-11-01",
+                                      "2024-11-01T21:00:00.000Z")
+    rows = [previous, trigger, before_the_opening, after_the_opening, at_noon, that_evening,
+            notice_that_evening]
+    window = fetch_fixtures.event_window(rows, trigger)
+    assert window["previous"]["accessionNumber"] == previous["accessionNumber"]
+    assert [row["accessionNumber"] for row in window["eight_ks"]] == [
+        after_the_opening["accessionNumber"], at_noon["accessionNumber"]]
+    assert window["notices"] == []
+    # and the evening's filings are the next report's: a 10-Q accepted the day after
+    later = planted_row("0000111111-25-000003", "10-K", "2025-02-20", "2025-02-20T21:00:00.000Z")
+    window = fetch_fixtures.event_window(rows + [later], later)
+    assert [row["accessionNumber"] for row in window["eight_ks"]] == [
+        that_evening["accessionNumber"]]
+    assert [row["accessionNumber"] for row in window["notices"]] == [
+        notice_that_evening["accessionNumber"]]
+
+
+def test_a_body_that_heads_no_item_its_index_row_names_is_carried_whole(tmp_path):
+    """Logitech's 8-K 0001032975-25-000071, filed 2025-10-02, is indexed under item
+    3.01 and its body heads Item 5.03, an amendment to its articles. The window is
+    the 10-Q of 2025-10-29 (0001032975-25-000080), after the 10-Q of 2025-07-30."""
+    root, problems, _ = event_store.fetched(tmp_path, "LOGI", "0001032975-25-000080")
+    assert problems == []
+    events, text = event_store.section(root, "LOGI", "0001032975-25-000080")
+    [entry] = events["carried"]
+    assert ("### 8-K 0001032975-25-000071 filed 2025-10-02, item 3.01: its body heads no "
+            "item 3.01, so the whole body is carried, verbatim") in text
+    assert any(_folded(paragraph).startswith(
+        "Logitech International S.A. (the “Company”) amended Article 27 of its Articles of "
+        "Incorporation") for paragraph in entry["paragraphs"])
+
+
+def test_an_event_8k_filed_after_the_cutoff_is_refused_by_the_gate(tmp_path):
+    root, _, _ = event_store.fetched(tmp_path, "LFUS", "0000889331-23-000157")
+    [body] = [entry for entry in event_store.manifest_rows(root, "LFUS")
+              if entry["role"] == "event_body"]
+    with pytest.raises(cutoff_guard.CutoffViolationError):
+        cutoff_guard.load_bytes(root / "LFUS" / body["path"], "2023-08-15", fixtures_root=root)
+
+
+def test_a_store_fetched_without_event_filings_says_so_and_names_the_windows_8ks():
+    """The committed stores were fetched before the event filings were. AMD's
+    committed index holds the 8-K 0001193125-26-226746 of 2026-05-15, items
+    "1.01,1.02,2.03,5.02,5.07,9.01", inside the window of its 10-Q of 2026-08-05
+    (0000002488-26-000123), which opens after the 10-Q 0000002488-26-000076 of
+    2026-05-06; the bundle's manifest names it and the file carries no text of it.
+    The window's opening is derived here from the index with `json` alone -- the
+    newest 10-K or 10-Q filed before the trigger's day -- and held to the literal
+    read by eye, and the window is recounted between the two dates; nothing the
+    code under test returned bounds it."""
+    trigger = cutoff_guard.one_document("AMD", "10-Q", "primary_html")
+    assert (trigger["accession"], trigger["filing_date"]) == ("0000002488-26-000123", "2026-08-05")
+    raw = json.loads(cutoff_guard.load_index(cutoff_guard.one_document(
+        "AMD", "submissions", "submissions_index")["full_path"]))
+    reports_before = sorted((row["filing_date"], row["accession"], row["form"])
+                            for row in raw["filings"]
+                            if row["form"] in ("10-K", "10-Q") and row["filing_date"] < "2026-08-05")
+    opens_after, opening_accession, opening_form = reports_before[-1]
+    assert (opens_after, opening_accession, opening_form) == \
+        ("2026-05-06", "0000002488-26-000076", "10-Q")
+    events = parse_8k.event_filings("AMD", cutoff=trigger["filing_date"], trigger=trigger)
+    assert events["state"] == "not_fetched"
+    assert events["carried"] == []
+    assert events["previous"] == {"form": "10-Q", "accession": "0000002488-26-000076",
+                                  "filing_date": "2026-05-06", "items": []}
+    listed = [(row["form"], row["filing_date"], row["items"]) for row in events["listed"]]
+    by_hand = [("8-K", row["filing_date"], row["items"].split(","))
+               for row in raw["filings"] if row["form"] in ("8-K", "8-K/A")
+               and opens_after < row["filing_date"] <= "2026-08-05"
+               and {"1.02", "2.04", "2.05", "2.06", "3.01", "3.03", "4.01"}
+               & set(row["items"].split(","))]
+    assert listed == sorted(by_hand, key=lambda one: one[1])
+    assert [row["accession"] for row in events["listed"]] == ["0001193125-26-226746"]
+    # a store with no window record adds nothing to the file, so a run built
+    # from one rebuilds byte for byte; the window is the manifest's to record
+    assert parse_8k.render_event_filings(events) == []
+    record = parse_8k.window_record(events)
+    assert (record["state"], record["note"]) == ("not_fetched", parse_8k.NOT_FETCHED)
+    assert [row["accession"] for row in record["listed"]] == ["0001193125-26-226746"]
+
+
+# Every committed run's `input_8k.md`, rebuilt from the committed store of its
+# company and held to the published file byte for byte: the expected value is
+# the file under `runs/`. The stores were fetched before event filings were, so
+# each file has to end where it ended.
+#
+# Two published files do not rebuild on main either, and for a reason older
+# than this change: each was published before the item-code list said of an
+# amendment that the index does not name what it amends, and the rebuilt list
+# carries that clause -- on Littelfuse's 8-K/A 0001437749-18-005267 of
+# 2018-03-23, the first of the lines the published file lacks. Each is a strict
+# expected failure, so the day the two agree again the mark turns red.
+PUBLISHED_BEFORE_THE_AMENDMENT_CLAUSE = {
+    ("LFUS", "0001628280-26-050481"), ("STX", "0001137789-26-000159")}
+COMMITTED_RUNS = sorted(
+    (path.parent.parent.name, path.parent.name)
+    for path in (cutoff_guard.REPO_ROOT / "runs").glob("*/*/input_manifest.json"))
+REBUILT_RUNS = [
+    pytest.param(ticker, name, marks=pytest.mark.xfail(
+        strict=True, reason="published before the amendment clause; differs on main too"))
+    if (ticker, name) in PUBLISHED_BEFORE_THE_AMENDMENT_CLAUSE else pytest.param(ticker, name)
+    for ticker, name in COMMITTED_RUNS]
+
+
+def test_the_rebuild_covers_every_committed_run():
+    """28 run directories on 2026-11-14, counted with `ls runs/*/*/input_manifest.json`;
+    a floor, so a run published later joins the list and none can drop out of it."""
+    assert len(COMMITTED_RUNS) >= 28
+    assert PUBLISHED_BEFORE_THE_AMENDMENT_CLAUSE <= set(COMMITTED_RUNS)
+
+
+@pytest.mark.parametrize("ticker,name", REBUILT_RUNS)
+def test_a_committed_run_rebuilds_its_8k_file_byte_for_byte(ticker, name, tmp_path):
+    from src import assemble_bundle
+    run = cutoff_guard.REPO_ROOT / "runs" / ticker / name
+    manifest = json.loads(cutoff_guard.load_bundle_file(run, "input_manifest.json"))
+    bundle = assemble_bundle.build(ticker, manifest["form"], accession=manifest["accession"],
+                                   prior_runs=tmp_path / "no-runs",
+                                   rules_version=manifest.get("rules_version"))
+    assert bundle["texts"]["input_8k.md"].encode("utf-8") == \
+        (run / "input_8k.md").read_bytes()

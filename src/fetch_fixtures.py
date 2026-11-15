@@ -54,7 +54,10 @@ that form has to be the one named: two filings of one form on one day are
 picked by accession, and the named one may be the other. Either is exit 2,
 never a store reported complete. The store also gets the companyfacts record
 as of the same date (`src/fetch_companyfacts.py`), because the trend table is
-built from it and a store without it is not one extract can build from.
+built from it and a store without it is not one extract can build from, and
+the event filings made public since the company's previous periodic report --
+event 8-K bodies, auditors' letters, late-filing notices and comment letters
+(`fetch_event_filings`, under "event filings" below).
 
 Exit 0 all requested fixtures present, 2 a fetch or parse failed, 3 the wrong
 interpreter, 4 a fixture on disk disagrees with its manifest.
@@ -684,6 +687,22 @@ def held_to_the_trigger(out: Path, ticker: str, filing: dict,
     try:
         rows = cutoff_guard.documents(ticker, fixtures_root=out)
         for row in rows:
+            if row.get("role") in EVENT_ROLES:
+                # an event filing is held only when it stood at the trigger, and
+                # a letter only when it was public before the trigger's day
+                if row.get("accession") not in known:
+                    problems.append(f"{row['full_path']} is from {row.get('accession')}, "
+                                    f"which did not stand when {filing['accessionNumber']} "
+                                    "was accepted")
+                elif row.get("form") in LETTER_FORMS and not row.get("released"):
+                    problems.append(f"{row['full_path']} is a {row.get('form')} with no "
+                                    "release on record, so nothing shows it was public "
+                                    f"before {filing['accessionNumber']}'s day")
+                elif str(row.get("released") or "") >= filing["filingDate"]:
+                    problems.append(f"{row['full_path']} was made public "
+                                    f"{row.get('released')}, not before "
+                                    f"{filing['accessionNumber']}'s day")
+                continue
             if row.get("form") not in ("submissions", fetch_companyfacts.FORM):
                 continue
             path = row["full_path"]
@@ -735,7 +754,8 @@ def store_up_to(fetcher, ticker: str, cik: str, filing: dict, out: Path,
     whole = (manifest.get("as_of") == filing["filingDate"]
              and (filing["form"], "primary_html", filing["accessionNumber"]) in roles
              and any(form == "companyfacts" for form, _, _ in roles)
-             and any(form == "submissions" for form, _, _ in roles))
+             and any(form == "submissions" for form, _, _ in roles)
+             and (manifest.get(EVENT_RECORD) or {}).get("for") == filing["accessionNumber"])
     if whole:
         problems = [f"changed: {line}" if not line.startswith(("changed:", "missing:")) else line
                     for line in verify_existing(ticker_dir, manifest)]
@@ -757,6 +777,8 @@ def store_up_to(fetcher, ticker: str, cik: str, filing: dict, out: Path,
         if held != {filing["accessionNumber"]}:
             problems = [f"the store's {filing['form']} is "
                         f"{', '.join(sorted(held)) or 'missing'}, not {filing['accessionNumber']}"]
+    if not problems:
+        problems = fetch_event_filings(fetcher, ticker, cik, filing, out, filings)
     # a store finished off here keeps the index, documents and companyfacts it
     # already held, so it is held to the rule as a whole one is
     return problems or stale(out, ticker, filing, known)
@@ -765,6 +787,310 @@ def store_up_to(fetcher, ticker: str, cik: str, filing: dict, out: Path,
 def stale(out: Path, ticker: str, filing: dict, known: frozenset[str]) -> list[str]:
     return [f"{line}; the store was built under another rule, so remove {out} and fetch again"
             for line in held_to_the_trigger(out, ticker, filing, known)]
+
+
+# --- event filings -------------------------------------------------------------
+#
+# The filings forensic practice reads beside the periodic reports
+# (`docs/HEDGE_FUND_ANALYSIS.md` §2.7 and §5.1 rows 6 and 7): the body of an 8-K
+# reporting a terminated agreement (1.02), an accelerated obligation (2.04), exit
+# costs (2.05), an impairment (2.06), a listing notice (3.01) or a change to
+# holders' rights (3.03); the former auditor's letter (EX-16) of an 8-K reporting
+# an auditor change (4.01), with that 8-K's body; the notifications of late
+# filing (NT 10-K, NT 10-Q); and the SEC staff's comment letters (UPLOAD) and the
+# company's responses (CORRESP).
+#
+# **Which ones: those made public since the last periodic report.** A store up to
+# one filing fetches the event filings that became public after the company's
+# previous 10-K or 10-Q stood and before the filing itself was accepted -- the
+# filings `known_at` the trigger and not `known_at` the report before it. Each
+# event filing so reaches exactly one run, the first periodic report after it was
+# public; the earlier ones reached the earlier runs, whose flags come forward in
+# `input_prior_predictions.md`, and `input_8k.md`'s item-code list still names
+# every 8-K the index holds. The notes reader diffs a report against the prior
+# period, and this is the same rule for the filings around it.
+#
+# **A comment letter is public when EDGAR releases it, not when it was filed.**
+# EDGAR's `filingDate` of an UPLOAD or a CORRESP is the day the letter was sent
+# in private; the conversation is made public weeks or months after the review
+# closes, and the filing's own SGML header states the day
+# (`<SEC-HEADER>{accession}.hdr.sgml : YYYYMMDD`, under `<PRIVATE-TO-PUBLIC>`).
+# ADTRAN's staff letter printed September 25, 2024 has the EDGAR filing date
+# 2024-09-26 and was made public 2024-12-04, after ADTRAN's 10-Q of 2024-11-12:
+# a store read by filing date would have handed that 10-Q's reader a letter
+# nobody outside the company and the SEC could see. So each letter's header is
+# read and its release recorded (`RELEASES`), every letter row carries `released`,
+# the gate refuses one made public after the cutoff
+# (`cutoff_guard.RELEASED_LATER_FORMS`), and of a letter released on or after the
+# trigger's day the store holds neither the document nor the release, since a
+# release is a day with no time and the trigger's own day does not show it came
+# first. Its row in the store's index is another matter: the index is EDGAR's
+# list by filing date, so the row of a letter filed before the trigger and made
+# public after it is there (ADTRAN's store for the 10-Q of 2024-11-12 holds the
+# rows of three letters made public 2024-12-04). No input prints a letter's
+# index row -- `input_8k.md` lists 8-Ks and late-filing notices from the index,
+# and letters only from the documents the store holds -- and
+# `docs/needs_judgment.md` carries the question of dropping such rows. The date
+# printed on a letter decides nothing.
+#
+# The letters looked at are those filed in the two years before the window
+# opens (`LETTER_LOOKBACK_YEARS`), since a letter's release can only be known
+# from its header: NVIDIA's of July 2025 waited until January 2026, and a lag
+# past two years is outside what this fetches.
+#
+# Each document is a row of the store's manifest with a role of its own, its
+# EDGAR `filingDate`, its acceptance stamp, and for a letter `released`; the
+# manifest's `event_filings` records which filing the window was drawn for and
+# the report it opens after, so a bundle can say what the store does not hold.
+
+EVENT_ITEMS = ("1.02", "2.04", "2.05", "2.06", "3.01", "3.03")
+AUDITOR_CHANGE_ITEM = "4.01"
+EVENT_8K_FORMS = ("8-K", "8-K/A")
+LATE_NOTICE_FORMS = ("NT 10-K", "NT 10-Q", "NT 10-K/A", "NT 10-Q/A")
+LETTER_FORMS = cutoff_guard.RELEASED_LATER_FORMS
+PERIODIC_FORMS = ("10-K", "10-Q")
+LETTER_LOOKBACK_YEARS = 2
+# The roles an event filing's documents carry in a store's manifest.
+EVENT_BODY, AUDITOR_LETTER, LATE_NOTICE = "event_body", "auditor_letter", "late_notice"
+STAFF_LETTER, COMPANY_RESPONSE = "staff_letter", "company_response"
+LETTER_ROLE = {"UPLOAD": STAFF_LETTER, "CORRESP": COMPANY_RESPONSE}
+EVENT_ROLES = (EVENT_BODY, AUDITOR_LETTER, LATE_NOTICE, STAFF_LETTER, COMPANY_RESPONSE)
+EVENT_RECORD = "event_filings"
+# Under the record, the day EDGAR made each letter public, read off its header:
+# a release is a fact about the filing's dissemination, not a document of the
+# company's, so it is recorded with the header's address and hash and the
+# header itself is not stored.
+RELEASES = "releases"
+EVENT_DIRECTORY = "events"
+# EDGAR's dissemination stamp on a filing's SGML header: the accession, then the
+# day the header was made public.
+RELEASE_STAMP = re.compile(
+    r"<SEC-HEADER>\s*(\d{10}-\d{2}-\d{6})\.hdr\.sgml\s*:\s*(\d{4})(\d{2})(\d{2})")
+
+
+def codes_of(items) -> list[str]:
+    """The index's `items` field as item codes."""
+    return [part.strip() for part in str(items or "").split(",") if part.strip()]
+
+
+def as_index_row(stored: dict) -> dict:
+    """A row of a stored index (`submissions_record`), or a store's manifest row,
+    in EDGAR's own shape, so `known_at` reads it as it reads the live index: the
+    Eastern stamp the store writes turned back into the universal time EDGAR
+    writes, or None when none is on record."""
+    stamp, raw = stored.get("acceptance_datetime"), None
+    if isinstance(stamp, str) and stamp:
+        try:
+            instant = dt.datetime.fromisoformat(stamp)
+        except ValueError:
+            instant = None
+        if instant is not None and instant.tzinfo is not None:
+            raw = instant.astimezone(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+    return {"accessionNumber": stored["accession"], "filingDate": stored["filing_date"],
+            "reportDate": stored.get("report_date") or "", "form": stored.get("form"),
+            "items": stored.get("items") or "",
+            "primaryDocument": stored.get("primary_document"),
+            "primaryDocDescription": stored.get("primary_doc_description") or "",
+            "acceptanceDateTime": raw}
+
+
+def previous_report(rows: list[dict], filing: dict) -> dict | None:
+    """The company's last 10-K or 10-Q that stood when `filing` was accepted."""
+    return max((row for row in known_at(rows, filing)
+                if row["form"] in PERIODIC_FORMS
+                and row["accessionNumber"] != filing["accessionNumber"]),
+               key=lambda row: (row["filingDate"], row["accessionNumber"]), default=None)
+
+
+def years_before(day: str, years: int) -> str:
+    when = dt.date.fromisoformat(day)
+    try:
+        return when.replace(year=when.year - years).isoformat()
+    except ValueError:                      # the 29th of February
+        return when.replace(year=when.year - years, day=28).isoformat()
+
+
+def event_window(rows: list[dict], filing: dict) -> dict:
+    """The event filings of `filing`'s window, out of index rows in EDGAR's shape.
+
+    `previous` is the report the window opens after (None for a company with no
+    earlier 10-K or 10-Q on record); `eight_ks` and `notices` the 8-Ks carrying
+    an event item or an auditor change, and the late-filing notices, that stood
+    at `filing` and not at `previous`; `letters` every comment letter that stood
+    at `filing` by its filing date and was filed after `letters_filed_after`,
+    whose release decides whether it is in the window (`public_in_window`).
+    """
+    known = known_at(rows, filing)
+    previous = previous_report(rows, filing)
+    before = ({row["accessionNumber"] for row in known_at(rows, previous)}
+              if previous is not None else set())
+    fresh = [row for row in known if row["accessionNumber"] not in before
+             and row["accessionNumber"] != filing["accessionNumber"]]
+    wanted = set(EVENT_ITEMS) | {AUDITOR_CHANGE_ITEM}
+    floor = years_before(previous["filingDate"] if previous is not None
+                         else filing["filingDate"], LETTER_LOOKBACK_YEARS)
+    order = lambda row: (row["filingDate"], row["accessionNumber"])  # noqa: E731
+    return {
+        "previous": previous,
+        "eight_ks": sorted((row for row in fresh if row["form"] in EVENT_8K_FORMS
+                            and wanted & set(codes_of(row.get("items")))), key=order),
+        "notices": sorted((row for row in fresh if row["form"] in LATE_NOTICE_FORMS),
+                          key=order),
+        "letters": sorted((row for row in known if row["form"] in LETTER_FORMS
+                           and row["filingDate"] > floor), key=order),
+        "letters_filed_after": floor,
+    }
+
+
+def public_in_window(released: str, previous: dict | None, filing: dict) -> bool:
+    """Whether a letter made public on `released` belongs to `filing`'s window:
+    public before the trigger's day (a release has no time, so the trigger's own
+    day is not shown to come first) and not before the previous report's day
+    (whose run, by the same rule, could not show it)."""
+    return (released < filing["filingDate"]
+            and (previous is None or released >= previous["filingDate"]))
+
+
+def released_on(header: bytes, accession: str, filing_date: str) -> str | None:
+    """The day EDGAR made a filing public, from its SGML header, or None when the
+    header does not state it for this accession. Never before the filing date."""
+    found = RELEASE_STAMP.search(header.decode("utf-8", "replace"))
+    if found is None or found.group(1) != accession:
+        return None
+    try:
+        day = dt.date(*(int(part) for part in found.group(2, 3, 4))).isoformat()
+    except ValueError:
+        return None
+    return max(day, filing_date)
+
+
+def letter_document(form: str, types: list[tuple[str, str]], primary) -> str | None:
+    """The letter's text: EDGAR's own text copy of it, else the document typed as
+    the letter, else the primary document; None when every one is a PDF."""
+    kinds = ("TEXT-EXTRACT", form, "LETTER")
+    for kind in kinds:
+        for typed, name in types:
+            if typed == kind and not name.lower().endswith(".pdf"):
+                return name
+    if isinstance(primary, str) and primary and not primary.lower().endswith(".pdf"):
+        return primary
+    return None
+
+
+def fetch_event_filings(fetcher, ticker: str, cik: str, filing: dict, out: Path,
+                        filings: list[dict]) -> list[str]:
+    """The event filings of `filing`'s window, fetched into the store at
+    `out/ticker` beside what it holds. `filings` is the index rows that stood when
+    `filing` was accepted (`known_at`). A document already on record is not
+    fetched again. The problems come back, an empty list when every one is held.
+    """
+    ticker_dir = out / ticker
+    manifest = load_manifest(ticker_dir)
+    documents = list(manifest.get("documents", []))
+    held = {(entry.get("accession"), entry.get("role"), entry.get("url"))
+            for entry in documents}
+    window = event_window(filings, filing)
+    previous = window["previous"]
+    problems: list[str] = []
+
+    def url_of(row: dict, name: str) -> str:
+        return ARCHIVE_URL.format(cik_int=int(cik),
+                                  accession=row["accessionNumber"].replace("-", ""), name=name)
+
+    def keep(row: dict, role: str, name: str, raw: bytes | None = None,
+             released: str | None = None) -> None:
+        url = url_of(row, name)
+        if (row["accessionNumber"], role, url) in held:
+            return
+        raw = fetcher.get(url) if raw is None else raw
+        path, encoding = store(ticker_dir / EVENT_DIRECTORY / row["accessionNumber"] / name,
+                               raw)
+        entry = {"form": row["form"], "role": role, "accession": row["accessionNumber"],
+                 "filing_date": row["filingDate"],
+                 "acceptance_datetime": eastern_stamp(row.get("acceptanceDateTime")),
+                 "report_date": row.get("reportDate") or "",
+                 "items": row.get("items") or "", "url": url,
+                 "path": str(path.relative_to(ticker_dir)), "stored": encoding,
+                 "bytes": len(raw), "sha256": sha256(raw)}
+        if released is not None:
+            entry["released"] = released
+        documents.append(entry)
+        held.add((row["accessionNumber"], role, url))
+        print(f"  {ticker} {row['form']:8s} {role:16s} {len(raw):>9,d} B  "
+              f"{row['accessionNumber']}/{name}")
+
+    for row in window["eight_ks"]:
+        primary = row.get("primaryDocument")
+        if not primary:
+            problems.append(f"{ticker}: {row['form']} {row['accessionNumber']} names no "
+                            "primary document in the index")
+            continue
+        keep(row, EVENT_BODY, primary)
+        if AUDITOR_CHANGE_ITEM in codes_of(row.get("items")):
+            for typed, name in document_types(fetcher, cik, row["accessionNumber"]):
+                if typed.startswith("EX-16"):
+                    keep(row, AUDITOR_LETTER, name)
+    for row in window["notices"]:
+        primary = row.get("primaryDocument")
+        if not primary:
+            problems.append(f"{ticker}: {row['form']} {row['accessionNumber']} names no "
+                            "primary document in the index")
+            continue
+        keep(row, LATE_NOTICE, primary)
+    on_record = (manifest.get(EVENT_RECORD) or {}).get(RELEASES) or {}
+    releases: dict[str, dict] = {}
+    for row in window["letters"]:
+        name = f"{row['accessionNumber']}.hdr.sgml"
+        known_release = on_record.get(row["accessionNumber"])
+        if isinstance(known_release, dict) and known_release.get("released"):
+            release = known_release
+        else:
+            url = url_of(row, name)
+            raw = fetcher.get(url)
+            released = released_on(raw, row["accessionNumber"], row["filingDate"])
+            if released is None:
+                problems.append(f"{ticker}: the header of {row['form']} "
+                                f"{row['accessionNumber']} states no day it was made public")
+                continue
+            release = {"form": row["form"], "filing_date": row["filingDate"],
+                       "released": released, "header_url": url, "header_bytes": len(raw),
+                       "header_sha256": sha256(raw)}
+        released = release["released"]
+        if released >= filing["filingDate"]:
+            continue    # not public when the trigger was accepted: not in the store
+        releases[row["accessionNumber"]] = release
+        if not public_in_window(released, previous, filing):
+            continue
+        text = letter_document(row["form"], document_types(fetcher, cik, row["accessionNumber"]),
+                               row.get("primaryDocument"))
+        if text is not None:        # None: EDGAR holds the letter as a PDF only
+            keep(row, LETTER_ROLE[row["form"]], text, released=released)
+
+    record = {
+        "for": filing["accessionNumber"],
+        "after": previous["accessionNumber"] if previous is not None else None,
+        "letters_filed_after": window["letters_filed_after"],
+        "letter_lookback_years": LETTER_LOOKBACK_YEARS,
+        RELEASES: dict(sorted(releases.items())),
+        "note": ("the 8-K bodies of items " + ", ".join(EVENT_ITEMS) + " and "
+                 + AUDITOR_CHANGE_ITEM + " with its EX-16 letter, the late-filing notices, "
+                 "and the comment letters made public after the report named in `after` "
+                 "stood and before the filing named in `for` was accepted; a letter's "
+                 "release is its header's, a letter not public by then is not held, and "
+                 "only letters filed within `letter_lookback_years` of the window's "
+                 "opening were looked at"),
+    }
+    manifest = dict(manifest, documents=sorted(
+        documents, key=lambda entry: (entry["form"], entry["role"], entry.get("accession") or "",
+                                      entry["path"])))
+    # The record says the window is whole, so a store that fell short of it
+    # carries none, and is fetched again rather than used as it is.
+    manifest.pop(EVENT_RECORD, None)
+    if not problems:
+        manifest[EVENT_RECORD] = record
+    ticker_dir.mkdir(parents=True, exist_ok=True)
+    (ticker_dir / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+    return problems
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)

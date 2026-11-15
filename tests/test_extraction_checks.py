@@ -8,6 +8,7 @@ where it must fail, exit non-zero, and say which gate it was.
 
 from __future__ import annotations
 
+import datetime as dt
 import functools
 import json
 from pathlib import Path
@@ -216,6 +217,57 @@ def test_a_document_dated_after_the_cutoff_fails_the_cutoff_gate(tmp_path):
     failures = gate_lines(lines, "cutoff")
     assert len(failures) == 1
     assert "was filed 2027-01-01, after the cutoff" in failures[0]
+
+
+# A comment letter is filed in private and made public later: the manifest row of
+# one says both days, and the cutoff holds it to the later one. The row planted
+# here is ADTRAN's staff letter in shape (an UPLOAD with the role the store gives
+# it), with dates set against this bundle's own cutoff.
+def plant_a_letter(bundle: Path, **dates) -> str:
+    """One UPLOAD row filed sixty days before the cutoff; the cutoff comes back."""
+    found = {}
+
+    def damage(payload):
+        cutoff = dt.date.fromisoformat(payload["cutoff"])
+        found["cutoff"] = cutoff
+        row = dict(payload["documents"][0], form="UPLOAD", role="staff_letter",
+                   accession="0000000000-24-010922", path="events/0000000000-24-010922/"
+                   "filename2.txt", filing_date=(cutoff - dt.timedelta(days=60)).isoformat())
+        row.pop("acceptance_datetime", None)
+        for key, days in dates.items():
+            row[key] = (cutoff - dt.timedelta(days=days)).isoformat()
+        payload["documents"].append(row)
+    rewrite(bundle, "input_manifest.json", damage)
+    return found["cutoff"].isoformat()
+
+
+def test_a_letter_with_no_release_on_record_fails_the_cutoff_gate(tmp_path):
+    """Its filing date is sixty days inside the cutoff and proves nothing: that
+    is the day it was filed in private."""
+    bundle = good_bundle(tmp_path)
+    plant_a_letter(bundle)
+    code, lines = extraction_checks.run(bundle)
+    assert code != 0
+    [failure] = gate_lines(lines, "cutoff")
+    assert failure.startswith("cutoff: FAIL — ")
+    assert "is a UPLOAD with no release on record" in failure
+    assert failure.count("0000000000-24-010922") == 1
+
+
+def test_a_letter_made_public_on_the_cutoff_day_fails_the_cutoff_gate(tmp_path):
+    """A release is a day with no time, so the cutoff's own day does not show the
+    letter came first; the day before does."""
+    bundle = good_bundle(tmp_path)
+    cutoff = plant_a_letter(bundle, released=0)
+    [failure] = gate_lines(extraction_checks.run(bundle)[1], "cutoff")
+    assert f"was made public {cutoff}, not before the cutoff {cutoff}" in failure
+
+
+def test_a_letter_made_public_the_day_before_the_cutoff_passes_the_cutoff_gate(tmp_path):
+    bundle = good_bundle(tmp_path)
+    plant_a_letter(bundle, released=1)
+    [line] = gate_lines(extraction_checks.run(bundle)[1], "cutoff")
+    assert line.startswith("cutoff: pass — "), line
 
 
 def test_an_empty_notes_file_fails_the_notes_gate(tmp_path):
