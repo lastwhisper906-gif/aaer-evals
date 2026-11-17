@@ -923,10 +923,11 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
                     first = next(iter(_figures(row[_label_of(row)[0] + 1:])), None)
                     for name, word in excluded_candidates(label):
                         excluded.append({"line": name, "paragraph_id": paragraph_id,
-                                         "label": label, "cell": first["text"] if first else "",
+                                         "label": label, "cell": "", "word": word,
+                                         "first_printed": {"text": first["text"] if first else "",
+                                                           "note": "column unknown"},
                                          "reason": f"the label carries {word!r}, another measure "
-                                                   f"than the line; the table is unread: {reason}",
-                                         "word": word})
+                                                   f"than the line; the table is unread: {reason}"})
             continue
         columns = header["columns"]
         if is_a_statement_of_cash_flows(rows):
@@ -1020,10 +1021,12 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
                                                    f"than the line"})
                     if shown and align_figures(shown, columns) is None:
                         excluded.append({"line": name, "paragraph_id": paragraph_id,
-                                         "label": placed[1], "cell": shown[0]["text"],
-                                         "word": word,
+                                         "label": placed[1], "cell": "", "word": word,
+                                         "first_printed": {"text": shown[0]["text"],
+                                                           "note": "column unknown"},
                                          "reason": f"the label carries {word!r}, another measure "
-                                                   f"than the line"})
+                                                   f"than the line; the row's figures fit no "
+                                                   f"column"})
                 use_columns = columns
                 if header.get("sub") and len(shown) == len(columns) * len(header["sub"]):
                     use_columns = _expand(columns, header["sub"])     # Reported, Adjustments, ...
@@ -1232,7 +1235,7 @@ def _identity(cell: dict, rows: dict, parent_fact: dict, nci_fact: dict | None =
     tagged = (Decimal(str(nci_fact["value"])) if nci_fact and "missing" not in nci_fact
               else None)
     added = _income_added(nci["label"], Decimal(str(nci["value"])), tagged)
-    # The tolerance is one step, which is exact: each of the three printed figures is the true
+    # Untagged, the tolerance is one step, which is exact: each of the three printed figures is the true
     # figure rounded to the nearest step, so their residual is at most 1.5 steps, and the figures
     # all lie on the step's lattice, so a residual counted in whole steps is at most 1.
     step = max(cell["scale_value"] * Decimal(10) ** -cell["decimals"],
@@ -1240,6 +1243,13 @@ def _identity(cell: dict, rows: dict, parent_fact: dict, nci_fact: dict | None =
     residuals = [total - (kept + a) for a in added]
     residual = min(residuals, key=abs)
     holds = [r for r in residuals if abs(r) <= step]
+    if tagged is not None and "missing" not in parent_fact:
+        # the report tags the interest: the consolidated row is held exactly to NetIncomeLoss plus
+        # the tag at its own printed precision, with no slack for the printed rows' rounding
+        expected = Decimal(str(parent_fact["value"])) + tagged
+        residual = total - expected
+        holds = [residual] if agrees_at_the_release_precision(
+            cell["value"], float(expected), cell["scale_value"], cell["decimals"]) else []
     cells = [{"role": role, "label": c["label"], "cell": c["cell"], "paragraph_id": c["paragraph_id"]}
              for role, c in (("consolidated", {"label": cell["label"], "cell": cell["cell"],
                                                "paragraph_id": cell["paragraph_id"]}),

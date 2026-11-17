@@ -3693,10 +3693,72 @@ def test_release_versus_report_an_excluded_row_in_an_unread_table_is_listed_too(
 
 def test_release_versus_report_an_excluded_row_whose_figures_fit_no_column_is_still_listed():
     """Three figures under a header of two columns: the row cannot be placed at the period, but it
-    carries the line's words and another measure's, so it is listed with its first figure.
-    Kills the mutant that lists only the rows it can place."""
+    carries the line's words and another measure's, so it is listed with no `cell` (its column is
+    unknown) and its first figure beside, as `first_printed`. Kills the mutant that lists only the
+    rows it can place, and the one that calls the first figure the period's."""
     out = _run([_row("Net revenue", "1,000"),
                 "| Non-GAAP net income | $ | 812 |  | $ | 700 |  | $ | 600 |"],
                _fact(revenue=1e9, net_income=1e8))
-    assert [(e["label"], e["cell"], e["word"]) for e in out["net_income"]["excluded_rows"]] == [
-        ("Non-GAAP net income", "812", "non-gaap")]
+    entry, = out["net_income"]["excluded_rows"]
+    assert (entry["label"], entry["cell"], entry["word"]) == ("Non-GAAP net income", "", "non-gaap")
+    assert entry["first_printed"] == {"text": "812", "note": "column unknown"}
+    assert "fit no column" in entry["reason"]
+
+
+# --- round fifteen: the tag makes the identity exact; a listed figure is never the wrong column's -------
+
+@pytest.mark.parametrize("consolidated,verdict", [("541", "agrees"), ("542", "differs"),
+                                                  ("540", "differs")])
+def test_release_versus_report_a_tagged_interest_makes_the_identity_exact(consolidated, verdict):
+    """NetIncomeLoss 501, tagged interest 40, the printed parent 501 and interest 40: the
+    consolidated row is held exactly to 541 at its printed precision, not within one step of the
+    printed rows. Kills the mutant that gives a tagged table the untagged one-step slack."""
+    out = _run(_nci_table(consolidated, _PLAIN, "40"),
+               _fact(net_income=501e6, revenue=6e9, net_income_to_noncontrolling=40e6))
+    cell = out["net_income"]["comparisons"][0]
+    assert cell["verdict"] == verdict, consolidated
+    if verdict == "differs":
+        assert abs(cell["difference"]) == 1e6 and cell["identity"]["residual"] == cell["difference"]
+
+
+def test_release_versus_report_an_untagged_interest_keeps_the_one_step_slack():
+    out = _run(_nci_table("542", _PLAIN, "40"), _fact(net_income=501e6, revenue=6e9))
+    assert out["net_income"]["comparisons"][0]["verdict"] == "agrees"
+    out = _run(_nci_table("543", _PLAIN, "40"), _fact(net_income=501e6, revenue=6e9))
+    assert out["net_income"]["comparisons"][0]["verdict"] == "differs"
+
+
+def test_release_versus_report_an_excluded_figure_is_never_listed_from_the_wrong_column():
+    """The refuter's header prints the prior year first: `Organic revenue | 880 | 990 | 12` has
+    three figures under two columns, so 880 (the prior year's) must not be the listed `cell`;
+    with two figures 990 is the period's. An undated table lists no cell at all. Kills the
+    mutant that lists the first figure as the cell."""
+    header = ["|  | Three Months Ended |", "|  | June 30, 2025 |  | June 30, 2026 |",
+              "|  | (in millions) |"]
+    fact = _fact(revenue=1e9)
+
+    def read(rows):
+        return rvr.compare_release(["p:0"], ["\n".join(header + rows)], "2026-06-30", fact)[
+            "lines"]["revenue"]["excluded_rows"]
+
+    three, = read(["| Net revenue | $ | 900 |  |  | $ | 1,000 |",
+                   "| Organic revenue | $ | 880 |  |  | $ | 990 |  | 12 |"])
+    assert three["cell"] == "" and "span_months" not in three
+    assert three["first_printed"] == {"text": "880", "note": "column unknown"}
+    two, = read(["| Net revenue | $ | 900 |  |  | $ | 1,000 |",
+                 "| Organic revenue | $ | 880 |  |  | $ | 990 |"])
+    assert (two["cell"], two["span_months"]) == ("990", 3) and "first_printed" not in two
+    undated = "\n".join(["|  | Q2 FY27 | Q1 FY27 |", "| (in millions) |  |  |",
+                         "| Net revenue | 5 | 4 |", "| Organic revenue | 7 | 6 |"])
+    only, = rvr.compare_release(["p:0"], [undated], "2026-06-30", fact)["lines"]["revenue"][
+        "excluded_rows"]
+    assert only["cell"] == "" and only["first_printed"] == {"text": "7", "note": "column unknown"}
+
+
+@pytest.mark.parametrize("ticker", sorted(STATEMENTS))
+def test_release_versus_report_no_committed_excluded_entry_without_a_span_carries_a_cell(ticker):
+    entries = [e for entry in _planted_full(ticker, STATEMENTS[ticker][0], {})["lines"].values()
+               for e in entry.get("excluded_rows", []) if "word" in e]
+    assert all(e["cell"] == "" and e["first_printed"]["note"] == "column unknown"
+               for e in entries if "span_months" not in e)
+    assert all(e["cell"] for e in entries if "span_months" in e)
