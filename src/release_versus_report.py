@@ -629,7 +629,7 @@ _CAPEX_NOT = re.compile(r"financ|debt|\btax|insurance|contingent|consideration|r
                         r"\bleases?\b")
 _CAPEX_MORE = re.compile(r"intangible|software|securit|investment|business|real estate|capitalized|"
                          r"\bnet\b|deposit|loan|payable|accrued|unpaid|non-?cash|"
-                         r"proceeds|sale\b")
+                         r"proceeds|sale\b|discontinued")
 
 
 def capex_synonym(label: str) -> str | None:
@@ -661,7 +661,8 @@ def is_per_share_heading(text: str) -> bool:
 def eps_label(label: str) -> bool:
     """A row label that is diluted earnings per share by its own words: it says diluted and
     per share (`Net income attributable to common shareholders per common share - diluted`)."""
-    words = normal_label(label)
+    words = re.sub(r"basic\s*(?:and|&|,|/)\s*diluted|diluted\s*(?:and|&|,|/)\s*basic", "diluted",
+                   normal_label(label))                      # basic and diluted are equal
     return bool(re.search(r"\bdiluted\b", words) and _PER_SHARE_WORDS.search(words)
                 and not _NOT_EPS.search(words))
 
@@ -878,7 +879,11 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
                 continue
             seen.add(line)
             figures = _figures(row[placed[0] + 1:])
-            if per_share and line not in PER_SHARE:
+            # a per share block has no closing mark: a row in it is a per share row only if its
+            # figures are printed to cents; any other row is compared, hint `unidentified`
+            cents = bool(figures) and all(f["decimals"] == 2 for f in figures)
+            unclear = per_share and line not in PER_SHARE and not cents
+            if per_share and line not in PER_SHARE and cents:
                 excluded.append({"line": line, "paragraph_id": paragraph_id, "label": placed[1],
                                  "cell": figures[0]["text"] if figures else "",
                                  "reason": "a per share row, which is not dollars"})
@@ -934,6 +939,8 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
                     hint = "unidentified" if label_hint == "gaap" else "not_gaap"
                 elif label_hint in ("gaap", "unidentified"):
                     hint = label_hint
+                if unclear and hint == "gaap":
+                    hint = "unidentified"
                 cells.append({
                     "line": line, "months": column["months"], "paragraph_id": paragraph_id,
                     "label": placed[1], "cell": figure["text"], "value": figure["value"],
@@ -982,13 +989,42 @@ def _printed_as(line: str, label: str, value: Decimal) -> Decimal:
     return abs(value) if line in BY_SIZE else value
 
 
+def _income_added(label: str, printed: Decimal) -> list[Decimal]:
+    """What the noncontrolling interest adds to the parent's row to make the consolidated net
+    income, read from the row's label and the figure's sign (parentheses = negative). One
+    value when the row says which way it goes, two (both ways) when it does not.
+
+    - `Less: ...` is income deducted, whether printed 40 or (40): it is added back, `+40`
+      (`Less: ... loss` is not stated, and tried both ways).
+    - `(income) loss ...`: parentheses mean income, a bare figure a loss.
+    - `income (loss) ...`: the figure's own sign.
+    - `loss ...` with no income: a loss, `-40`, printed either way.
+    - anything else (`Net income attributable to noncontrolling interests`): a bare figure
+      is income; a parenthesised one is not stated, and is tried both ways.
+    """
+    words = " ".join(label.lower().split())
+    size = abs(printed)
+    if re.match(r"^less\b", words):
+        return [size, -size] if re.search(r"\bloss\b", words) else [size]
+    if re.search(r"\(income\)\s*(?:/\s*)?loss", words):
+        return [size] if printed < 0 else [-size]
+    if re.search(r"income\s*(?:/\s*)?\(loss\)", words):
+        return [printed]
+    if re.search(r"\bloss\b", words) and not re.search(r"\bincome\b", words):
+        return [-size]
+    return [printed] if printed >= 0 else [size, -size]
+
+
 def _identity(cell: dict, rows: dict, parent_fact: dict) -> dict:
     """A consolidated net income in a table that prints the noncontrolling interest, with no
-    ProfitLoss on record: held to the table's own identity, consolidated less noncontrolling is
-    the parent's row, at the printed precision. A row that breaks it differs, with the three
-    cells; a table that does not print all three is a fact not on record."""
-    held = ("the table's own identity: consolidated net income less the noncontrolling interest "
-            "is the parent's row, which is held to NetIncomeLoss")
+    ProfitLoss on record: held to the table's own identity, consolidated is the parent's row
+    plus the noncontrolling interest's income, at the printed precision. The sign of the
+    noncontrolling figure is read from its row (`_income_added`), never tried both ways unless
+    the row does not say, and then the cell is `block_not_identified` and never `agrees`. A row
+    that breaks the identity differs, with the three cells; a table that does not print all
+    three is a fact not on record."""
+    held = ("the table's own identity: consolidated net income is the parent's row plus the "
+            "noncontrolling interest's income, and the parent's row is held to NetIncomeLoss")
     nci, parent = rows.get("noncontrolling"), rows.get("parent")
     if nci is None or parent is None:
         return {"verdict": "report_fact_missing", "held_to": held,
@@ -996,12 +1032,16 @@ def _identity(cell: dict, rows: dict, parent_fact: dict) -> dict:
                                       "both the noncontrolling interest and the parent's row "
                                       "for the period"}}
     total = Decimal(str(cell["release"]["value"]))
-    taken, kept = Decimal(str(nci["value"])), Decimal(str(parent["value"]))
+    kept = Decimal(str(parent["value"]))
+    added = _income_added(nci["label"], Decimal(str(nci["value"])))
+    # The tolerance is one step, which is exact: each of the three printed figures is the true
+    # figure rounded to the nearest step, so their residual is at most 1.5 steps, and the figures
+    # all lie on the step's lattice, so a residual counted in whole steps is at most 1.
     step = max(cell["scale_value"] * Decimal(10) ** -cell["decimals"],
                Decimal(str(nci["step"])), Decimal(str(parent["step"])))
-    # a noncontrolling interest printed in parentheses is a deduction, or a loss added back
-    options = [total - taken] if taken >= 0 else [total + taken, total - taken]
-    residual = min((o - kept for o in options), key=abs)
+    residuals = [total - (kept + a) for a in added]
+    residual = min(residuals, key=abs)
+    holds = [r for r in residuals if abs(r) <= step]
     cells = [{"role": role, "label": c["label"], "cell": c["cell"], "paragraph_id": c["paragraph_id"]}
              for role, c in (("consolidated", {"label": cell["label"], "cell": cell["cell"],
                                                "paragraph_id": cell["paragraph_id"]}),
@@ -1013,10 +1053,13 @@ def _identity(cell: dict, rows: dict, parent_fact: dict) -> dict:
     parent_difference = Decimal(parent["printed"]) * parent["scale"] - Decimal(str(parent_fact["value"]))
     parent_agrees = agrees_at_the_release_precision(
         Decimal(parent["printed"]), parent_fact["value"], parent["scale"], parent["decimals"])
-    broken = abs(residual) > step
+    broken = not holds
     difference = residual if broken else parent_difference
-    entry.update(difference=float(difference), sign=_sign(difference),
-                 verdict="agrees" if parent_agrees and not broken else "differs",
+    verdict = "differs" if broken or not parent_agrees else "agrees"
+    if verdict == "agrees" and len(added) > 1:
+        verdict = "block_not_identified"
+        entry["reason"] = "the sign of the noncontrolling figure is not stated"
+    entry.update(difference=float(difference), sign=_sign(difference), verdict=verdict,
                  identity={"cells": cells, "residual": float(residual), "step": float(step),
                            "parent_agrees_with_the_report": parent_agrees})
     return entry
