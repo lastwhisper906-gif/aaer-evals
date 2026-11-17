@@ -2780,7 +2780,7 @@ def test_a_note_tables_change_in_a_balance_is_the_movement_of_its_line_in_any_cl
 
 def test_a_consideration_total_conflicts_with_its_parts_and_the_parts_do_not_conflict():
     def plant(*names):
-        changes = [{**usd(unit="iso4217:USD", value=(1_000_000.0, 2_000_000.0, 5_000_000.0)[i]), "concept": f"us-gaap:{name}",
+        changes = [{**usd(unit="iso4217:USD", value=(-1_000_000.0, -2_000_000.0, -5_000_000.0)[i]), "concept": f"us-gaap:{name}",
                     "from": {"instant": "2025-06-30"}, "to": {"instant": "2026-06-30"}} for i, name in enumerate(names)]
         return with_year({"period_end": "2026-06-30", "note_tables": {"tables": {"notes_1": {"changes": changes}}}})
     base = "BusinessCombinationContingentConsiderationLiability"
@@ -3111,7 +3111,12 @@ def test_the_whole_totals_of_other_statements_are_refused_as_earnings():
                            "lfus:BusinessAcquisitionProFormaIncomeLossFromContinuingOperationsBeforeTax")):
         assert calculator._cell_at(held, path)["concept"] == concept
         assert reading(held, path, False, "earnings") == (None, calculator.TOTAL_OF_THE_STATEMENT), path
-    assert calculator._cell_at(held, "note_tables.tables.notes_52.facts.4")["value"] == 117_064_000
+    cell = calculator._cell_at(held, "note_tables.tables.notes_52.facts.4")
+    assert cell["value"] == 117_064_000 and cell["fact"] == "0001628280-26-050481:f-565"
+    html = (REPO / "tests" / "fixtures" / "LFUS" / "10-Q" / "lfus-20260627.htm").read_text(encoding="utf-8")
+    tag = re.search(r'<ix:nonFraction[^>]*id="f-565"[^>]*>([^<]*)', html)
+    assert tag and 'scale="3"' in tag.group(0) and "BusinessAcquisitionProFormaIncomeLossFromContinuingOperationsBeforeTax" in tag.group(0)
+    assert float(tag.group(1).replace(",", "")) * 10 ** 3 == cell["value"]          # 117,064 at scale 3
     assert reading(held, "note_tables.tables.notes_159.facts.68", False, "earnings") == (
         None, calculator.OCI_IS_NOT_EARNINGS)
     for concept in ("us-gaap:OperatingExpenses", "us-gaap:CostsAndExpenses",
@@ -3173,7 +3178,9 @@ def test_cien_operating_and_nonoperating_expenses_is_a_total():
     "terms.trailing_four_quarters.revenue.inputs.this_year_to_date",
     "ratios.growth.revenue.trailing_four_quarters.inputs.before.parts.0",
     "ratios.growth.operating_income.inputs.prior_fiscal_year",
-    "ratios.growth.revenue.inputs.parts.2"])
+    "ratios.growth.revenue.inputs.parts.2",
+    *(f"terms.trailing_four_quarters.{total}.inputs.{after}" for total in ("revenue", "net_income")
+      for after in ("fiscal_year", "trailing_four_quarters", "prior_year", "quarter"))])
 def test_a_total_s_inputs_escape_only_when_the_next_segment_names_an_item(path):
     """The refuter's synthetic paths: after `inputs` comes a generic reading of the total itself (now, before, a span,
     parts, an index), so the total is not escaped."""
@@ -3265,3 +3272,87 @@ def test_no_published_applied_adjustment_is_refused_by_the_direction_rule_alone(
                                                  item.get("applies_to", "cash_flow")) is None, run.name
             standing += amount is not None
     assert (checked, standing) == (11, 1)
+
+
+def test_the_item_inputs_after_a_total_are_the_calculators_own_list(todays_views):
+    """Every segment the calculator prints after a total's `inputs` in any view as printed today is either an item on
+    the list or the total itself (its revenue, its ebit)."""
+    after = set()
+
+    def walk(node, path):
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if key == "inputs" and path and path[-1] in calculator.STATEMENT_TOTAL_NAMES and isinstance(value, dict):
+                    after.update((path[-1], inner) for inner in value)
+                walk(value, path + [key])
+        elif isinstance(node, list):
+            for position, value in enumerate(node):
+                walk(value, path + [str(position)])
+    for _, held in todays_views:
+        walk(held, [])
+    assert {inner for _, inner in after} >= {"depreciation_and_amortization", "change_in_contract_liabilities", "ebit", "revenue"}
+    for total, inner in sorted(after):
+        escapes = calculator.names_an_item_in_inputs(["inputs", inner])
+        assert escapes == (inner in {"depreciation_and_amortization", "change_in_contract_liabilities",
+                                     "interest_expense"}), (total, inner)
+    assert calculator.ITEM_INPUTS == {"depreciation_and_amortization", "change_in_contract_liabilities", "interest_expense"}
+
+
+def test_a_consideration_change_takes_reduce_only_and_only_when_it_fell():
+    """Generac's contingent consideration current rose by 94.683 million (notes_99.changes.4): no cash moved, both
+    directions refused. NVIDIA's consideration payable fell by 2,935 million (notes_60.changes.6): paid, `reduce`
+    stands and `increase` is refused."""
+    rise = calculator._cell_at(held := calculator_drift.recompute(RUNS / "GNRC/0001437749-26-025669", STORE),
+                               "note_tables.tables.notes_99.changes.4")
+    assert rise["value"] == 94_683_000 and rise["concept"].endswith("BusinessCombinationContingentConsiderationLiabilityCurrent")
+    for direction in ("reduce", "increase"):
+        assert calculator.repeats_a_movement(held, "note_tables.tables.notes_99.changes.4", direction) == calculator.A_RISE_MOVED_NO_CASH
+        assert analysis_check.adjustment_problem(held)(
+            {"direction": direction, "applies_to": "cash_flow", "quote": "q",
+             "calculator_field": "note_tables.tables.notes_99.changes.4"}).endswith(calculator.A_RISE_MOVED_NO_CASH)
+    nvda = printed(NVDA_RUN)
+    path = "note_tables.tables.notes_60.changes.6"
+    assert calculator._cell_at(nvda, path)["value"] == -2_935_000_000
+    assert calculator.repeats_a_movement(nvda, path, "reduce") is None
+    assert calculator.repeats_a_movement(nvda, path, "increase") == calculator.A_PAYMENT_IS_TAKEN_OUT_WITH_REDUCE
+    out = calculator.quality_adjusted({"value": 100e9}, {"value": 0.0}, {"value": 0.0, "formula": "x"},
+                                      [adjustment(path, "increase", "cash_flow"),
+                                       {**adjustment(path, "reduce", "cash_flow"), "name": "paid"}], nvda)
+    row, = out["adjustments_applied"]
+    assert row["name"] == "paid" and row["amount"] == 2_935_000_000 and out["value"] == 100e9 - 2_935e6
+    assert calculator.A_PAYMENT_IS_TAKEN_OUT_WITH_REDUCE in out["adjustments_refused"][0]["reason"]
+
+
+def test_an_amount_of_zero_moves_nothing_and_takes_no_movement_key():
+    """The refuter's Seagate case: the supplier finance change set to zero, then the real payables line. The zero is
+    refused with "moves nothing" and never takes the payables key, so the line stands. Palo Alto's zero consideration
+    cells are refused the same way."""
+    held = printed(STX_RUN)
+    path = "note_tables.tables.notes_91.changes.1"
+    zeroed = copy.deepcopy(held)
+    cell = calculator._cell_at(zeroed, path)
+    assert cell["concept"].endswith("SupplierFinanceProgramObligation")
+    cell["value"] = 0.0
+    payables = "terms.trailing_four_quarters.change_in_payables"
+    line_value = calculator.field_value(zeroed, payables)
+    assert line_value
+    out = calculator.quality_adjusted({"value": 100e9}, {"value": 0.0}, {"value": 0.0, "formula": "x"},
+                                      [adjustment(path, "reduce", "cash_flow"),
+                                       {**adjustment(payables, "reduce" if line_value > 0 else "increase", "cash_flow"),
+                                        "name": "the real line"}], zeroed)
+    row, = out["adjustments_applied"]
+    assert row["name"] == "the real line" and row["amount"] == abs(line_value)
+    zero, = out["adjustments_refused"]
+    assert calculator.MOVES_NOTHING in zero["reason"] and "moves nothing" in zero["reason"]
+    assert TWICE not in zero["reason"]
+    problem = analysis_check.adjustment_problem(zeroed)(
+        {"direction": "reduce", "applies_to": "cash_flow", "calculator_field": path, "quote": "q"})
+    assert "moves nothing" in problem
+    # earnings has no such rule: a zero is listed as it always was
+    assert reading(zeroed, path, False, "earnings")[0] == 0.0
+    panw = printed(PALO_RUN)
+    zeros = [p for p, c in usd_cells(panw) if p.startswith("note_tables") and ".changes." in p
+             and "ConsiderationLiability" in str(c.get("concept")) and c["value"] == 0.0]
+    assert len(zeros) == 4
+    for zero_path in zeros:
+        assert reading(panw, zero_path, False, "cash_flow") == (None, calculator.MOVES_NOTHING), zero_path

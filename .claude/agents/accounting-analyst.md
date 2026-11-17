@@ -253,7 +253,9 @@ for a movement that raised operating cash flow (receivables or inventory fell, p
 supplier finance obligation rose, receivables were sold), and `increase` only for one that lowered
 it; the amount is the line's whole size. Python reads the direction from the cell's sign, and drops
 the wrong one with "repeats a movement free cash flow already holds; a cash_flow adjustment takes
-a line's effect out". Everything else is refused as
+a line's effect out". A change in an acquisition consideration liability takes `reduce` only, and only
+when the liability fell (it was paid); a rise moved no cash and is refused. An amount of zero moves
+nothing and is refused. Everything else is refused as
 a `cash_flow` amount with the reason "a cash_flow amount is a working-capital change line of the statement, or a supplier finance, receivables sold or acquisition consideration change": a balance-sheet change (the calculator's `balance_sheet_change`,
 `articulation_gap`, `share_of_net_income` input), a total (the change in current liabilities,
 billings), a note table's other changes (a reserve, an accrual, an inventory obligation, a

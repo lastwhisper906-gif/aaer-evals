@@ -2901,16 +2901,15 @@ STATEMENT_TOTAL_CONCEPTS = (
     r"netcashprovidedbyusedin\w*|earningspershare\w*|incomelossfromcontinuingoperations")
 
 
-GENERIC_INPUT_SEGMENTS = {"now", "before", "this_year_to_date", "prior_year_to_date", "prior_fiscal_year",
-                          "this_quarter", "last_quarter", "a_year_earlier", "parts", "lines"}
+# The item inputs the calculator prints after a total's name (read from every view as printed today:
+# EBITDA's depreciation, billings' change in contract liabilities, interest coverage's interest expense). Every other
+# segment after a total's `inputs` (revenue, ebit, now, before, a span, parts, an index) is the total itself.
+ITEM_INPUTS = {"depreciation_and_amortization", "change_in_contract_liabilities", "interest_expense"}
 
 
 def names_an_item_in_inputs(after: list[str]) -> bool:
-    """True when the segments after a total's name are `inputs` and then a segment that names an item."""
-    if len(after) < 2 or after[0] != "inputs":
-        return False
-    item = after[1]
-    return item not in GENERIC_INPUT_SEGMENTS and not item.isdigit()
+    """True when the segments after a total's name are `inputs` and then an item input of the calculator's list."""
+    return len(after) >= 2 and after[0] == "inputs" and after[1] in ITEM_INPUTS
 
 
 OCI_IS_NOT_EARNINGS = "other comprehensive income is not earnings"
@@ -3268,6 +3267,29 @@ def movement_effect(fields: dict, path: str, amount: float | None = None) -> flo
     return STATEMENT_LINE_EFFECT_SIGN[source.partition(":")[2]] * float(value)
 
 
+A_RISE_MOVED_NO_CASH = "a rise in consideration moved no cash"
+A_PAYMENT_IS_TAKEN_OUT_WITH_REDUCE = ("a fall in consideration is a payment, taken out with `reduce`; "
+                                      "`increase` would add cash that was never received")
+MOVES_NOTHING = "an amount of zero moves nothing"
+
+
+def consideration_problem(fields: dict, path: str, direction) -> str | None:
+    """A change in an acquisition consideration liability takes `reduce` only, and only when the liability fell (it
+    was paid). A rise moved no cash. None for any other cell."""
+    cell = _cell_at(fields, path)
+    if not isinstance(cell, dict):
+        return None
+    source = cash_flow_source(path, cell)
+    if source is None or not source.startswith("item:"):
+        return None
+    value = field_value(fields, path)
+    if not isinstance(value, (int, float)) or isinstance(value, bool) or value == 0:
+        return None
+    if value > 0:
+        return A_RISE_MOVED_NO_CASH
+    return A_PAYMENT_IS_TAKEN_OUT_WITH_REDUCE if direction == "increase" else None
+
+
 def repeats_a_movement(fields: dict, path, direction, applies_to: str = "cash_flow") -> str | None:
     """`REPEATS_A_MOVEMENT` when a cash_flow adjustment points the way the line's own effect already points.
     A working-capital line is already inside operating cash flow: a receivables build lowered it, a payables
@@ -3275,6 +3297,9 @@ def repeats_a_movement(fields: dict, path, direction, applies_to: str = "cash_fl
     it; the amount is the line's size, never more."""
     if applies_to != "cash_flow" or not isinstance(path, str):
         return None
+    consideration = consideration_problem(fields, path, direction)
+    if consideration:
+        return consideration
     effect = movement_effect(fields, path)
     if not effect:
         return None
@@ -3338,6 +3363,8 @@ def adjustment_reading(fields: dict, path, recurs: bool = False,
     amount = field_value(fields, path)
     if amount is None:
         return None, "its value is not a number"
+    if amount == 0 and applies_to == "cash_flow":
+        return None, MOVES_NOTHING
     return amount, None
 
 
