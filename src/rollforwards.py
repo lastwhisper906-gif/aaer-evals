@@ -81,7 +81,7 @@ that fell by impairment would read as a release) and `NotesReceivableGross`. Eve
 absent from the committed instances, which tag `AllowanceForDoubtfulAccountsReceivable...`.
 Schedule II's other accounts (a filer's own members, such as Omnicell's
 `omcl:AccountsReceivableAndUnbilledReceivablesMember`) are the series of the family
-`schedule_two_other`, each with its `member`; only the deferred tax asset valuation allowance
+`schedule_two_other`, each with its `member`; only a deferred tax valuation allowance, told by its name,
 is left out. `RestructuringCosts` and `RestructuringCostsAndAssetImpairmentCharges` are the
 restructuring provision. Left out because they are no row of the family's own rollforward: the
 measurement-period adjustments `BusinessCombinationProvisionalInformationInitialAccounting
@@ -331,7 +331,16 @@ SCHEDULE_TWO_AXIS = "us-gaap:ValuationAllowancesAndReservesTypeAxis"
 # keyed by its member. The deferred tax asset valuation allowance is no reserve of this
 # section's and is left out.
 SCHEDULE_TWO_OTHER = "schedule_two_other"
-SCHEDULE_TWO_LEFT_OUT = ("us-gaap:ValuationAllowanceOfDeferredTaxAssetsMember",)
+
+
+def _is_a_tax_valuation_member(member: str) -> bool:
+    """A Schedule II account whose name says valuation allowance together with a deferred tax
+    or a tax asset, in any namespace: the valuation allowance of deferred tax assets, which is
+    no reserve of this section's."""
+    local = member.rsplit(":", 1)[-1].lower()
+    return "valuationallowance" in local and ("deferredtax" in local or "taxasset" in local)
+
+
 SCHEDULE_TWO_MEMBERS = {
     "us-gaap:AllowanceForCreditLossMember": "allowance_for_credit_losses",
     "us-gaap:InventoryValuationReserveMember": "inventory_reserve",
@@ -373,7 +382,9 @@ WHAT_THIS_IS = (
     "`prior_period_revision_over_current_expense` is the table's change-in-estimate line "
     "over the charge; `release` is true when the charge is negative or the ending "
     "reserve fell while its gross base rose, with `release_because` saying which (goodwill "
-    "has no release: it is null). "
+    "has no release: it is null; where no charge row was resolved it is null too, not read). "
+    "Several charge elements in one period with equal values are one charge, with different "
+    "values none is summed and the period is not complete. "
     "Each cell prints the fact ids it came from. For supplier finance and goodwill the "
     "charged_to_expense line is the additions line of the table")
 
@@ -457,7 +468,7 @@ def classify(one: dict):
             del axes[SCHEDULE_TWO_AXIS]
             return (SCHEDULE_TWO_MEMBERS[member], SCHEDULE_ROLE[local], "schedule_two",
                     _axes_key(axes))
-        if member and member not in SCHEDULE_TWO_LEFT_OUT:
+        if member and not _is_a_tax_valuation_member(member):
             return SCHEDULE_TWO_OTHER, SCHEDULE_ROLE[local], "schedule_two", _axes_key(axes)
         return None
     if local in ROLE_OF and SCHEDULE_TWO_AXIS not in axes:
@@ -628,17 +639,35 @@ def _period(group: dict, start: str, end: str, tables: dict, signs: dict) -> dic
     charged, usage = roles["charged"], roles["usage"]
     other = roles["other"] + roles["revision"]
     begin, end_value = _dec(opening["value"]), _dec(closing["value"])
-    charge = _flow_total(charged, signs)
+    # Several charge elements in one period (`RestructuringCharges` beside `RestructuringCosts`)
+    # are the same charge named twice when their values are equal, and counted once; when
+    # they differ the section does not know which is the charge, sums none, and says so.
+    by_concept: dict[str, list[dict]] = {}
+    for one in charged:
+        by_concept.setdefault(one["concept"], []).append(one)
+    totals = {_flow_total(rows, signs) for rows in by_concept.values()}
+    overlapping = len(totals) > 1
+    charge = Decimal(0) if overlapping else (totals.pop() if totals else Decimal(0))
+    charge_read = bool(charged) and not overlapping
     spent = _flow_total(usage, signs)
     rest = _flow_total(other, signs, True)
     expected = begin + charge + rest - spent
     difference = end_value - expected
-    ordered = [opening] + charged + other + usage
+    ordered = [opening] + (charged if charge_read else []) + other + usage
     out["beginning"] = {"value": float(begin), "concept": opening["concept"],
                         "instant": opening["instant"], "facts": [opening["fact"]]}
-    out["charged_to_expense"] = _cell(charged, charge, signs) if charged else {
-        "missing": "the table states no charge or additions row among the elements of "
-                   "this section"}
+    if overlapping:
+        out["charged_to_expense"] = {
+            "missing": "the period carries more than one charge element with different values "
+                       "(overlapping charge elements not resolved): "
+                       + ", ".join(sorted(by_concept)),
+            "facts": [one["fact"] for one in charged], "rows": [_row(one) for one in charged]}
+    elif charged:
+        out["charged_to_expense"] = _cell(charged, charge, signs)
+    else:
+        out["charged_to_expense"] = {
+            "missing": "the table states no charge or additions row among the elements of "
+                       "this section"}
     out["other"] = _cell(other, rest, signs, True) if other else {
         "missing": "the table states no other row among the elements of this section"}
     out["usage"] = _cell(usage, spent, signs) if usage else {
@@ -652,13 +681,16 @@ def _period(group: dict, start: str, end: str, tables: dict, signs: dict) -> dic
                          "facts": [one["fact"] for one in ordered] + [closing["fact"]]}
     unplaced = [one for one in group["unplaced_pool"]
                 if not _dated(one) or (one.get("start") == start and one.get("end") == end)]
-    out["complete"] = not unplaced
     out["rows_not_placed"] = [_row(one) for one in unplaced]
+    if overlapping:
+        out["rows_not_placed"] += [dict(_row(one), why="overlapping charge elements not resolved")
+                                   for one in charged]
+    out["complete"] = not out["rows_not_placed"]
     # the measures
     out["provision_over_usage"] = (
         _ratio(charge, spent, [one["fact"] for one in charged + usage],
-               why="the usage of the span is zero") if charged and usage else
-        {"missing": "the table states no charge row or no usage row"})
+               why="the usage of the span is zero") if charge_read and usage else
+        {"missing": "the table states no resolved charge row or no usage row"})
     if spent and A_YEAR[0] <= span["days"] <= A_YEAR[1]:
         out["coverage_years"] = _ratio(begin, spent, [opening["fact"]] + [
             one["fact"] for one in usage], why="the usage of the span is zero")
@@ -670,7 +702,7 @@ def _period(group: dict, start: str, end: str, tables: dict, signs: dict) -> dic
     out["prior_period_revision_over_current_expense"] = (
         _ratio(_flow_total(revision, signs, True), charge,
                [one["fact"] for one in revision + charged],
-               why="the charge of the span is zero") if revision and charged else
+               why="the charge of the span is zero") if revision and charge_read else
         {"missing": "the table has no change-in-estimate row or no charge row"})
     base_end = _gross_base(group["family"], _axes_key(group["axes"]), closing["instant"], tables)
     base_begin = _gross_base(group["family"], _axes_key(group["axes"]), opening["instant"],
@@ -690,13 +722,21 @@ def _period(group: dict, start: str, end: str, tables: dict, signs: dict) -> dic
                                "of the purchase price allocation")
         return out
     because = []
-    if charged and charge < 0:
+    if charge < 0:
         because.append("charged_to_expense_negative")
     if (end_value < begin and "value" in base_end and "value" in base_begin
             and _dec(base_end["value"]) > _dec(base_begin["value"])):
         because.append("reserve_fell_while_gross_base_rose")
-    out["release"] = bool(because)
     out["release_because"] = because
+    if because:
+        out["release"] = True
+    elif not charge_read:
+        # no charge row was read, so a release by a negative charge was never looked for
+        out["release"] = None
+        out["release_note"] = ("not read: the table states no resolved charge row, and the "
+                               "gross base did not show the reserve falling while it rose")
+    else:
+        out["release"] = False
     return out
 
 

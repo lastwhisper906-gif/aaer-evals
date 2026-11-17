@@ -1676,3 +1676,146 @@ def test_a_row_of_a_standard_schedule_two_account_is_no_row_of_a_filers_own_acco
 
 
 SCHEDULE_AXIS = "us-gaap:ValuationAllowancesAndReservesTypeAxis"
+
+
+# --- Broadcom's Schedule II: a filer's own addition row ----------------------------------
+
+BROADCOM = ("AVGO", "0001730168-25-000121", "2025-12-18")
+AVGO_ADDITION = "avgo:SECSchedule1209ValuationAllowancesAndReservesAddition"
+
+
+def test_broadcoms_schedule_two_accounts_are_not_complete_and_name_the_addition_row():
+    """Broadcom's 10-K filed 2025-12-18, Schedule II note 75, in millions. The additions of both
+    accounts are `avgo:SECSchedule1209ValuationAllowancesAndReservesAddition`, the filer's own
+    element, so the identity has no charge row and each of the six periods is short by it:
+    allowance for distributor credit 418, 351 and 502 (fiscal 2025, 2024, 2023: 94 + 418 - 439 =
+    73, 133 + 351 - 390 = 94, 125 + 502 - 494 = 133), allowance for doubtful accounts and sales
+    returns 11, 17 and 5 (11 + 11 - 19 = 3, 4 + 17 - 10 = 11, 1 + 5 - 2 = 4)."""
+    result = rollforwards.build(tables_of(*BROADCOM))
+    series = {one["member"]: one for one in result["schedule_two_other"]["series"]}
+    assert set(series) == {"avgo:AllowanceForDistributorCreditMember",
+                           "avgo:AllowanceForDoubtfulAccountsAndSalesReturnsMember"}
+    wanted = {"avgo:AllowanceForDistributorCreditMember": (418e6, 351e6, 502e6),
+              "avgo:AllowanceForDoubtfulAccountsAndSalesReturnsMember": (11e6, 17e6, 5e6)}
+    for member, added in wanted.items():
+        years = series[member]["periods"]
+        assert [year["period"]["end"] for year in years] == ["2025-11-02", "2024-11-03",
+                                                              "2023-10-29"]
+        for year, value in zip(years, added):
+            assert year["foots"] is False and year["difference"]["value"] == value
+            assert year["complete"] is False
+            assert [(row["concept"], row["value"]) for row in year["rows_not_placed"]] == [
+                (AVGO_ADDITION, value)]
+            # no charge row was placed, so a release was never looked for
+            assert year["release"] is None and "not read" in year["release_note"]
+
+
+def test_a_filers_own_addition_row_is_not_a_charge_and_a_release_is_not_read():
+    """Planted: a filer-own addition of -200 beside a deduction, the table not reading a charge:
+    1,000 - 200 - 100 = 700 against a stated 900 leaves the -200 unplaced, `release` null."""
+    own = {SCHEDULE_AXIS: "x:ReturnsMember"}
+    result = rollforwards.build(planted([
+        fact("ValuationAllowancesAndReservesBalance", 1_000, at=OPENING, axes=own, number="r1"),
+        fact("x:SECSchedule1209Addition", -200, **YEAR, axes=own, number="r2"),
+        fact("ValuationAllowancesAndReservesDeductions", 100, **YEAR, axes=own, number="r3"),
+        fact("ValuationAllowancesAndReservesBalance", 700, at=CLOSING, axes=own, number="r4")]))
+    year = result["schedule_two_other"]["series"][0]["periods"][0]
+    assert year["foots"] is False and year["complete"] is False
+    assert [row["value"] for row in year["rows_not_placed"]] == [-200]
+    assert year["release"] is None
+
+
+def test_a_period_whose_charge_was_read_has_a_release_that_is_true_or_false():
+    result = rollforwards.build(planted(table_of(
+        "AllowanceForDoubtfulAccountsReceivableCurrent", "ProvisionForDoubtfulAccounts",
+        "AllowanceForDoubtfulAccountsReceivableWriteOffs", opening=500, closing=520, charge=50,
+        spent=30)))
+    year = period_of(series_of(result, "allowance_for_credit_losses", "notes_1"), CLOSING)
+    assert year["release"] is False
+
+
+# --- the deferred tax valuation allowance is told by its name ---------------------------
+
+@pytest.mark.parametrize("member", [
+    "abc:DeferredTaxAssetValuationAllowanceMember",
+    "us-gaap:ValuationAllowanceOfDeferredTaxAssetsMember",
+    "x:TaxAssetValuationAllowanceMember"])
+def test_a_deferred_tax_valuation_member_in_any_namespace_makes_no_series(member):
+    axes = {SCHEDULE_AXIS: member}
+    result = rollforwards.build(planted([
+        fact("ValuationAllowancesAndReservesBalance", 1_000, at=OPENING, axes=axes, number="t1"),
+        fact("ValuationAllowancesAndReservesChargedToCostAndExpense", -200, **YEAR, axes=axes,
+             number="t2"),
+        fact("ValuationAllowancesAndReservesBalance", 800, at=CLOSING, axes=axes, number="t3")]))
+    assert all("series" not in result[family] for family in rollforwards.FAMILIES)
+
+
+@pytest.mark.parametrize("ticker,accession,cutoff", [
+    BROADCOM, ("LFUS", "0001628280-26-009585", "2026-02-19"),
+    ("LOGI", "0001032975-26-000021", "2026-05-21"),
+    ("NVDA", "0001045810-26-000021", "2026-02-25"), OMNICELL])
+def test_the_real_reserve_members_of_a_schedule_two_are_still_series(ticker, accession, cutoff):
+    """Broadcom's distributor credit, Littelfuse's sales discounts and allowances, Logitech's
+    customer incentive programs and others, NVIDIA's sales returns, Omnicell's receivables: no
+    name says valuation allowance beside a deferred tax or a tax asset."""
+    result = rollforwards.build(tables_of(ticker, accession, cutoff))
+    members = {one["member"] for one in result["schedule_two_other"].get("series", [])}
+    assert members
+    assert not any("valuationallowance" in one.lower() and "tax" in one.lower()
+                   for one in members)
+
+
+# --- several charge elements in one period -----------------------------------------------
+
+def restructuring(*charges: tuple[str, int], closing: int) -> dict:
+    rows = [fact("RestructuringReserve", 100, at=OPENING, number="b1"),
+            fact("PaymentsForRestructuring", 30, **YEAR, number="u1"),
+            fact("RestructuringReserve", closing, at=CLOSING, number="b2")]
+    rows += [fact(name, value, **YEAR, number=f"c{at}") for at, (name, value) in
+             enumerate(charges)]
+    return period_of(series_of(rollforwards.build(planted(rows)), "restructuring_reserve",
+                               "notes_1"), CLOSING)
+
+
+def test_the_same_charge_tagged_under_two_elements_is_counted_once():
+    """100 + 70 - 30 = 140, with 70 tagged as both `RestructuringCosts` and `RestructuringCharges`."""
+    year = restructuring(("RestructuringCosts", 70), ("RestructuringCharges", 70), closing=140)
+    assert year["charged_to_expense"]["value"] == 70
+    assert len(year["charged_to_expense"]["facts"]) == 2
+    assert year["foots"] is True and year["complete"] is True and year["release"] is False
+    assert year["provision_over_usage"]["value"] == pytest.approx(70 / 30)
+
+
+def test_charge_elements_with_different_values_are_not_summed():
+    """`RestructuringCharges` 50 beside `RestructuringCostsAndAssetImpairmentCharges` 70: which is
+    the charge is not known, so neither is summed to 120 and the period is not complete."""
+    year = restructuring(("RestructuringCharges", 50),
+                         ("RestructuringCostsAndAssetImpairmentCharges", 70), closing=140)
+    assert "overlapping charge elements" in year["charged_to_expense"]["missing"]
+    assert year["expected_ending"]["value"] == 70           # 100 - 30, no charge
+    assert year["complete"] is False
+    assert sorted(row["value"] for row in year["rows_not_placed"]) == [50, 70]
+    assert all(row["why"] == "overlapping charge elements not resolved"
+               for row in year["rows_not_placed"])
+    assert "missing" in year["provision_over_usage"] and year["release"] is None
+
+
+# --- the dash rule's parenthesis ---------------------------------------------------------
+
+def test_an_opening_parenthesis_before_a_dash_is_no_text_of_the_cell():
+    assert one_cell(f"<td>(-{number_cell('a', '5')}</td>") == {"a": "negative"}
+    assert one_cell(f"<td>( − {number_cell('b', '5')}</td>") == {"b": "negative"}
+
+
+@pytest.mark.parametrize("member", ["x:ValuationAllowanceForReturnsMember",
+                                    "x:SalesTaxReserveMember", "x:DeferredRevenueAllowanceMember"])
+def test_a_member_with_only_half_of_the_tax_valuation_name_is_an_account(member):
+    axes = {SCHEDULE_AXIS: member}
+    result = rollforwards.build(planted([
+        fact("ValuationAllowancesAndReservesBalance", 1_000, at=OPENING, axes=axes, number="t1"),
+        fact("ValuationAllowancesAndReservesChargedToCostAndExpense", -200, **YEAR, axes=axes,
+             number="t2"),
+        fact("ValuationAllowancesAndReservesBalance", 800, at=CLOSING, axes=axes, number="t3")]))
+    (series,) = result["schedule_two_other"]["series"]
+    assert series["member"] == member and series["periods"][0]["foots"] is True
+    assert series["periods"][0]["release"] is True
