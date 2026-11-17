@@ -91,6 +91,62 @@ def inline_tables(html: bytes) -> dict[str, list[str]]:
     return out
 
 
+def _row_tokens(row: ET.Element) -> list[tuple[str, str | None]]:
+    """The text of one table row in document order, with each inline numeric fact as a
+    marker: ("text", the text) and ("fact", its id)."""
+    tokens: list[tuple[str, str | None]] = []
+
+    def walk(node: ET.Element) -> None:
+        if node.text:
+            tokens.append(("text", node.text))
+        for child in node:
+            if child.tag == f"{{{IX}}}nonFraction":
+                tokens.append(("fact", child.get("id")))
+            else:
+                walk(child)
+            if child.tail:
+                tokens.append(("text", child.tail))
+
+    walk(row)
+    return tokens
+
+
+def printed_signs(html: bytes) -> dict[str, str]:
+    """For each numeric fact of an inline document's tables, whether the number is
+    printed in parentheses -- "negative" -- or without, "positive": the sign the
+    reader of the table sees, which is the contribution of the row to its table
+    whatever sign the filer tagged (a printed "1" tagged `sign="-"`, a printed
+    "(1)" tagged +1). The parenthesis opens in the text just before the fact and
+    closes in the text just after it, across the cell boundary the renderer shows
+    as "(1,647 | )". A fact outside a table row is not listed."""
+    root = ET.fromstring(html)
+    out: dict[str, str] = {}
+    for row in root.iter(f"{{{XHTML}}}tr"):
+        tokens = _row_tokens(row)
+        for at, (kind, fact_id) in enumerate(tokens):
+            if kind != "fact" or fact_id is None:
+                continue
+            before, after = "", ""
+            for earlier in reversed(tokens[:at]):
+                if earlier[0] == "fact":
+                    break
+                before = earlier[1] + before
+            for later in tokens[at + 1:]:
+                if later[0] == "fact":
+                    break
+                after += later[1]
+            clean = str.maketrans("", "", " \t\r\n\u00a0$")
+            negative = before.translate(clean).endswith("(") and after.translate(clean).startswith(")")
+            out[fact_id] = "negative" if negative else "positive"
+    return out
+
+
+# The rows whose printed sign is carried with the table: a foreign-currency translation
+# row is tagged "gain (loss)", and filers differ over whether a printed increase of the
+# reserve is the positive or the negative value (`src/rollforwards.py`).
+SIGN_WORDS = ("translation", "foreigncurrency")
+
+
 # What a concept's name says when the number is a price of the company's own
 # shares or is worked out from one. Words, not the bare "price": a commodity
 # hedge (`PriceRiskDerivativeAssetsAtFairValue`) or a contract's transaction
@@ -255,6 +311,7 @@ def tables(paragraphs: list[tuple[str, str]], html: bytes, instance: bytes, *,
              for fact in instance_facts.facts(instance, accession=accession)
              if fact["kind"] == "numeric"}
     found, unmatched, untagged, prices, later = {}, [], [], {}, {}
+    signs, printed = {}, None
     for paragraph, text in paragraphs:
         if not paragraph.startswith(f"{accession}:notes:") or not text.startswith("|"):
             continue
@@ -280,13 +337,20 @@ def tables(paragraphs: list[tuple[str, str]], html: bytes, instance: bytes, *,
             if same not in seen:
                 seen.add(same)
                 cells.append(cell(fact))
+                local = fact["name"].rsplit(":", 1)[-1].lower()
+                if fact["value"] and any(word in local for word in SIGN_WORDS):
+                    if printed is None:
+                        printed = printed_signs(html)
+                    if one in printed:
+                        signs[fact["id"]] = printed[one]
         if cells:
             found[key(paragraph)] = {"paragraph": paragraph, "facts": cells}
             moved = changes(cells)
             if moved:
                 found[key(paragraph)]["changes"] = moved
     return {"tables": found, "unmatched": unmatched, "not_in_the_instance": untagged,
-            "left_out_as_a_price": prices, "left_out_ending_after_the_cutoff": later}
+            "left_out_as_a_price": prices, "left_out_ending_after_the_cutoff": later,
+            "printed_signs": signs}
 
 
 WHAT_THIS_IS = ("for each table of the triggering filing's notes that reached the readers "

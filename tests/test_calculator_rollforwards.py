@@ -54,12 +54,30 @@ is from a source that is not the code it judges, and the arithmetic is written o
   30, ending 420 (500 - 50 - 30 = 420). And **a planted fall while the base rose**:
   an inventory reserve 200 + 10 - 60 = 150 beside a gross inventory of 1,000 then
   1,200.
+- **The printed sign of a translation row**, read by eye in four committed filings (the
+  rendered table as `input_notes.md` prints it): Cisco's 10-K filed 2025-09-03, total
+  column, "Foreign exchange and other" printed 3 and tagged -3 (`sign="-"`): 65 - 9 - 9 + 3
+  = 50; Johnson Controls' 10-Q filed 2026-07-29, "Currency translation" printed (1) and
+  tagged +1: 120 + 94 + 3 - 1 - 70 = 146; Logitech's 10-Q filed 2026-07-29, "Effects of
+  foreign currency translation" printed 94 and tagged -94: 50,242 + 8,496 + 94 - 9,553 =
+  49,279; Lennox's 10-K filed 2026-02-17, "Changes in foreign currency translation rates
+  and other" printed (0.8) and tagged -0.8: 142.8 - 41.2 + 59.0 - 1.4 - 0.8 = 158.4.
+- **Rows no role holds**, read by eye: Cisco's goodwill note (Splunk and other
+  acquisitions on `BusinessAcquisitionAxis`; Americas 24,035 + 11,619 + 573 - 58 = 36,169,
+  of which Python places 24,035 and (58)), Carrier's warranty note ("Reclassified to held
+  for sale (7)", `carr:StandardAndExtendedProductDecreaseDueToDivestiture`), Dell's
+  allowance note (fiscal 2024: 201 - 49 + 92 - 74 = 170, the (74) being `dell:...Other`),
+  and TTM's supplier finance note (17,218 + 12,579 - 17,480 + 218 = 12,535 in thousands,
+  the 218 the filer's exchange-rate effect).
 """
 
 from __future__ import annotations
 
+import datetime as dt
+import gzip
 import json
 import re
+import xml.etree.ElementTree as ET
 from decimal import Decimal
 from pathlib import Path
 
@@ -106,6 +124,30 @@ def series_of(result: dict, family: str, table: str) -> dict:
 
 def period_of(series: dict, end: str) -> dict:
     return next(one for one in series["periods"] if one["period"]["end"] == end)
+
+
+IX = "{http://www.xbrl.org/2013/inlineXBRL}"
+XHTML = "{http://www.w3.org/1999/xhtml}"
+
+
+def printed_ids(ticker: str, accession: str, row: str, printed: str) -> list[str]:
+    """The ids the inline document itself gives the number printed as `printed` in the table
+    row whose first cell begins `row`, read here with the standard library from the committed
+    filing and with nothing of `src/`: every `ix:nonFraction` whose text is `printed`."""
+    path = next(FIXTURES / ticker / entry["path"] for entry in json.loads(
+        (FIXTURES / ticker / "manifest.json").read_text(encoding="utf-8"))["documents"]
+                if entry["accession"] == accession and entry["role"] == "primary_html")
+    raw = path.read_bytes() if path.exists() else gzip.open(f"{path}.gz").read()
+    raw = gzip.decompress(raw) if raw[:2] == b"\x1f\x8b" else raw
+    found = []
+    for tr in ET.fromstring(raw).iter(f"{XHTML}tr"):
+        text = " ".join("".join(tr.itertext()).replace("\u200b", " ").split())
+        if not text.startswith(row):
+            continue
+        found += [f"{accession}:{one.get('id')}" for one in tr.iter(f"{IX}nonFraction")
+                  if "".join(one.itertext()).strip() == printed]
+    assert found, (row, printed)
+    return found
 
 
 def ids(accession: str, *numbers: str) -> list[str]:
@@ -171,13 +213,21 @@ def test_generacs_warranty_foots_and_prints_its_fact_ids(generac):
     assert year["foots"] is True
     assert year["difference"]["value"] == 0
     assert year["expected_ending"]["value"] == 131_922_000
-    assert year["beginning"]["facts"] == ids(GNRC_ACCESSION, "c140005329")
-    assert year["usage"]["facts"] == ids(GNRC_ACCESSION, "c140005332")
-    assert year["charged_to_expense"]["facts"] == ids(GNRC_ACCESSION, "c140005335")
-    assert year["other"]["facts"] == ids(GNRC_ACCESSION, "c140005338")
-    assert year["ending"]["facts"] == ids(GNRC_ACCESSION, "c140005341")
-    assert year["difference"]["facts"] == ids(GNRC_ACCESSION, "c140005329", "c140005335",
-                                              "c140005338", "c140005332", "c140005341")
+    # the ids are the ones the inline document gives the numbers as printed, read apart from src/
+    row = "Balance at beginning of period"
+    (beginning,) = year["beginning"]["facts"]
+    assert beginning in printed_ids("GNRC", GNRC_ACCESSION, row, "110,987")
+    (usage,) = year["usage"]["facts"]
+    assert usage in printed_ids("GNRC", GNRC_ACCESSION, "Payments", "86,448")
+    (charge,) = year["charged_to_expense"]["facts"]
+    assert charge in printed_ids("GNRC", GNRC_ACCESSION, "Provision for warranty issued",
+                                 "100,589")
+    (revision,) = year["other"]["facts"]
+    assert revision in printed_ids("GNRC", GNRC_ACCESSION,
+                                   "Changes in estimates for pre-existing warranties", "6,794")
+    (ending,) = year["ending"]["facts"]
+    assert ending in printed_ids("GNRC", GNRC_ACCESSION, "Balance at end of period", "131,922")
+    assert year["difference"]["facts"] == [beginning, charge, revision, usage, ending]
     assert year["complete"] is True and year["rows_not_placed"] == []
 
 
@@ -220,20 +270,42 @@ def test_generacs_extended_warranty_table_is_not_the_standard_warranty_family(ge
 def test_generacs_schedule_two_is_read_by_the_member_of_its_type_axis(generac):
     allowance = period_of(series_of(generac, "allowance_for_credit_losses", "notes_195"),
                           "2025-12-31")
-    # 35,465 + 1,398 - 2,359 + 0 = 34,504 (the 2,359 is `ChargedToOtherAccounts`, signed)
+    # 35,465 + 1,398 - 2,359 = 34,504 (the 2,359 is `ChargedToOtherAccounts`, signed)
     assert allowance["beginning"]["value"] == 35_465_000
     assert allowance["charged_to_expense"]["value"] == 1_398_000
-    assert allowance["other"]["value"] == -2_359_000 + 0
+    assert allowance["other"]["value"] == -2_359_000
     assert allowance["ending"]["value"] == 34_504_000
     assert allowance["foots"] is True
     inventory = period_of(series_of(generac, "inventory_reserve", "notes_195"), "2025-12-31")
-    # 48,173 + 23,375 - 2,282 + 0 = 69,266
+    # 48,173 + 23,375 - 2,282 = 69,266
     assert (inventory["beginning"]["value"], inventory["ending"]["value"]) == (
         48_173_000, 69_266_000)
     assert inventory["foots"] is True
     # the valuation allowance of deferred tax assets is no reserve family of this section
     assert all("tax" not in json.dumps(one).lower() for one in
                generac["inventory_reserve"]["series"])
+
+
+def test_a_net_change_row_is_no_role_and_a_table_with_one_is_not_complete(generac):
+    """`ValuationAllowancesAndReservesPeriodIncreaseDecrease` is a net change, like its two
+    excluded siblings, and lands in `rows_not_placed`: Generac's allowance reads, in dollars,
+
+      2025: 35,465,000 + 1,398,000 - 2,359,000 = 34,504,000, the net change row 0
+      2024: 33,925,000 + 4,524,000 - 3,509,000 = 34,940,000 against 35,465,000, row 525,000
+      2023: 27,664,000 + 7,443,000 - 1,206,000 = 33,901,000 against 33,925,000, row 24,000
+
+    so 2024 and 2023 do not foot and are marked not complete, the row named."""
+    assert "ValuationAllowancesAndReservesPeriodIncreaseDecrease" not in rollforwards.CONFIRMED_IN
+    series = series_of(generac, "allowance_for_credit_losses", "notes_195")
+    for end, gap, row in (("2025-12-31", 0, 0), ("2024-12-31", 525_000, 525_000),
+                          ("2023-12-31", 24_000, 24_000)):
+        year = period_of(series, end)
+        assert year["difference"]["value"] == gap
+        assert year["foots"] is (gap == 0)
+        assert year["complete"] is False
+        # one row, that year's: a zero row counts, and another year's row does not
+        assert [(one["concept"], one["value"]) for one in year["rows_not_placed"]] == [
+            ("us-gaap:ValuationAllowancesAndReservesPeriodIncreaseDecrease", row)]
 
 
 def test_generacs_goodwill_is_one_series_per_column_and_never_summed(generac):
@@ -259,8 +331,10 @@ def test_generacs_goodwill_is_one_series_per_column_and_never_summed(generac):
         assert year["other"]["value"] == other * 1000
         assert year["ending"]["value"] == closing * 1000
         assert year["foots"] is True
-    assert period_of(series[None], "2025-12-31")["ending"]["facts"] == ids(
-        GNRC_ACCESSION, "c140005123")
+        # a sibling's row on another member of the axis is no row of this one
+        assert year["complete"] is True and year["rows_not_placed"] == []
+    assert period_of(series[None], "2025-12-31")["ending"]["facts"][0] in printed_ids(
+        "GNRC", GNRC_ACCESSION, "Balance as of December 31, 2025", "1,467,094")
 
 
 # --- Ciena's allowance and inventory reserve --------------------------------------------
@@ -274,10 +348,17 @@ def test_cienas_allowance_foots_in_each_year(ciena):
     assert year["usage"]["value"] == 2_894_000
     assert year["ending"]["value"] == 11_212_000
     assert year["foots"] is True
-    assert year["beginning"]["facts"] == ids(CIEN_ACCESSION, "f-1037")
-    assert year["charged_to_expense"]["facts"] == ids(CIEN_ACCESSION, "f-1039")
-    assert year["usage"]["facts"] == ids(CIEN_ACCESSION, "f-1040")
-    assert year["ending"]["facts"] == ids(CIEN_ACCESSION, "f-1041")
+    # the ids the inline document gives the printed numbers, read apart from src/
+    row = "November 1, 2025"
+    # the 9,880 is printed twice (the 2024 ending, f-1037, and the 2025 beginning, f-1038), the
+    # same fact of the same context tagged twice, and the section keeps the first
+    assert year["beginning"]["facts"][0] in (
+        printed_ids("CIEN", CIEN_ACCESSION, row, "9,880")
+        + printed_ids("CIEN", CIEN_ACCESSION, "November 2, 2024", "9,880"))
+    assert year["charged_to_expense"]["facts"][0] in printed_ids("CIEN", CIEN_ACCESSION, row,
+                                                                 "4,226")
+    assert year["usage"]["facts"][0] in printed_ids("CIEN", CIEN_ACCESSION, row, "2,894")
+    assert year["ending"]["facts"][0] in printed_ids("CIEN", CIEN_ACCESSION, row, "11,212")
     # 11,654 + 7,996 - 9,770 = 9,880, and 10,958 + 5,718 - 5,022 = 11,654
     assert period_of(series, "2024-11-02")["foots"] is True
     assert period_of(series, "2023-10-28")["foots"] is True
@@ -343,33 +424,6 @@ def test_the_sign_of_usage_is_as_the_filer_tagged_it():
         "ProductWarrantyAccrualPayments", opening=1_000, closing=1_100, charge=400, spent=-300)))
     year = period_of(series_of(flipped, "product_warranty", "notes_1"), CLOSING)
     assert year["foots"] is False and year["difference"]["value"] == -600
-
-
-def test_a_translation_row_is_read_with_the_sign_that_makes_the_table_foot():
-    """Filers differ over the sign of a reserve's translation row (Cisco and Johnson Controls
-    tag a printed increase as negative): 1,000 + 400 - 300 - 20 = 1,080 with the row tagged
-    +20 reads only if the row is reversed; tagged -20 it foots as it stands."""
-    for tagged, sign in ((20, "reversed"), (-20, "as_tagged")):
-        result = rollforwards.build(planted(table_of(
-            "ProductWarrantyAccrual", "ProductWarrantyAccrualWarrantiesIssued",
-            "ProductWarrantyAccrualPayments", opening=1_000, closing=1_080, charge=400,
-            spent=300, other=tagged,
-            other_concept="StandardProductWarrantyAccrualForeignCurrencyTranslationGainLoss")))
-        year = period_of(series_of(result, "product_warranty", "notes_1"), CLOSING)
-        assert year["foots"] is True and year["translation_sign"] == sign
-        assert year["other"]["value"] == -20
-
-
-def test_a_row_that_is_no_translation_is_never_reversed_to_make_a_table_foot():
-    """The same 1,000 + 400 - 300 + 20 = 1,120 against a stated 1,080 with the 20 tagged as a
-    change in estimate (an element whose sign is not in doubt) does not foot."""
-    result = rollforwards.build(planted(table_of(
-        "ProductWarrantyAccrual", "ProductWarrantyAccrualWarrantiesIssued",
-        "ProductWarrantyAccrualPayments", opening=1_000, closing=1_080, charge=400, spent=300,
-        other=20, other_concept="ProductWarrantyAccrualPreexistingIncreaseDecrease")))
-    year = period_of(series_of(result, "product_warranty", "notes_1"), CLOSING)
-    assert year["foots"] is False and year["translation_sign"] == "as_tagged"
-    assert year["difference"]["value"] == -40
 
 
 def test_revenue_recognized_out_of_contract_liabilities_is_read_as_a_magnitude():
@@ -689,3 +743,452 @@ def test_the_calculator_reads_a_runs_note_tables_into_the_section():
     assert "missing" in quarter["coverage_years"]
     view = calculator.filings_only(payload)
     assert view["rollforwards"]["product_warranty"] == payload["rollforwards"]["product_warranty"]
+
+
+# --- a translation row contributes the sign the filing prints ----------------------------
+
+def one_period(ticker: str, accession: str, cutoff: str, family: str, table: str,
+               end: str, *, axes: dict | None = None) -> dict:
+    result = rollforwards.build(tables_of(ticker, accession, cutoff))
+    series = next(one for one in result[family]["series"]
+                  if one["table"] == table and one["axes"] == (axes or {}))
+    return period_of(series, end)
+
+
+def translation_row(year: dict) -> dict:
+    (row,) = [one for one in year["other"]["rows"] if "Translation" in one["concept"]]
+    return row
+
+
+def test_ciscos_printed_3_tagged_minus_3_adds_3():
+    """Cisco's 10-K filed 2025-09-03, total column, in millions: Foreign exchange and other
+    printed 3 (the instance tags -3, `sign="-"`), 65 - 9 (provisions) - 9 (recoveries
+    (write-offs), net) + 3 = 50."""
+    year = one_period("CSCO", "0000858877-25-000111", "2025-09-03",
+                      "allowance_for_credit_losses", "notes_97", "2025-07-26")
+    row = translation_row(year)
+    assert (row["value"], row["contribution"]) == (-3_000_000, 3_000_000)
+    assert row["sign_source"] == "printed" and row["sign_disagrees"] is True
+    assert year["other"]["sign_source"] == "printed"
+    assert year["other"]["value"] == 3_000_000
+    assert (year["beginning"]["value"], year["ending"]["value"]) == (65_000_000, 50_000_000)
+    assert year["foots"] is True and year["difference"]["value"] == 0
+
+
+def test_johnson_controls_printed_1_in_parentheses_tagged_plus_1_takes_1_away():
+    """Johnson Controls' 10-Q filed 2026-07-29: Currency translation printed (1), tagged +1;
+    120 + 94 + 3 - 1 - 70 = 146."""
+    year = one_period("JCI", "0000833444-26-000087", "2026-07-29", "product_warranty",
+                      "notes_35", "2026-06-30")
+    row = translation_row(year)
+    assert (row["value"], row["contribution"]) == (1_000_000, -1_000_000)
+    assert row["sign_source"] == "printed" and row["sign_disagrees"] is True
+    assert year["other"]["value"] == (3 - 1) * 1_000_000
+    assert (year["beginning"]["value"], year["ending"]["value"]) == (120_000_000, 146_000_000)
+    assert year["foots"] is True
+
+
+def test_logitechs_printed_94_tagged_minus_94_adds_94():
+    """Logitech's 10-Q filed 2026-07-29, in thousands: Effects of foreign currency
+    translation printed 94 (tagged -94); 50,242 + 8,496 + 94 - 9,553 = 49,279."""
+    year = one_period("LOGI", "0001032975-26-000050", "2026-07-29", "product_warranty",
+                      "notes_17", "2026-06-30")
+    row = translation_row(year)
+    assert (row["value"], row["contribution"]) == (-94_000, 94_000)
+    assert row["sign_source"] == "printed" and row["sign_disagrees"] is True
+    assert (year["beginning"]["value"], year["ending"]["value"]) == (50_242_000, 49_279_000)
+    assert year["foots"] is True
+
+
+def test_lennoxs_printed_and_tagged_signs_agree():
+    """Lennox's 10-K filed 2026-02-17, in millions: Changes in foreign currency translation
+    rates and other printed (0.8) and tagged -0.8; 142.8 - 41.2 + 59.0 - 1.4 - 0.8 = 158.4."""
+    year = one_period("LII", "0001069202-26-000028", "2026-02-17", "product_warranty",
+                      "notes_50", "2024-12-31")
+    row = translation_row(year)
+    assert row["value"] == pytest.approx(-0.8e6) and row["contribution"] == pytest.approx(-0.8e6)
+    assert row["sign_source"] == "printed" and row["sign_disagrees"] is False
+    assert year["beginning"]["value"] == pytest.approx(142.8e6)
+    assert year["ending"]["value"] == pytest.approx(158.4e6)
+    assert year["foots"] is True
+
+
+def with_signs(tables: dict, signs: dict) -> dict:
+    tables["printed_signs"] = {f"{ACCESSION}:{key}": value for key, value in signs.items()}
+    return tables
+
+
+TRANSLATION = "StandardProductWarrantyAccrualForeignCurrencyTranslationGainLoss"
+
+
+def test_a_translation_row_with_no_printed_sign_keeps_its_tagged_value_and_says_so():
+    """The refuter's planted table: 1,000 + 400 - 300 + 20 = 1,120 against a stated 1,080, the
+    20 a translation row tagged +20 with nothing printed to read. The table is not made to
+    foot by reversing the row: stated ending less the rows is 1,080 - 1,120 = -40."""
+    result = rollforwards.build(planted(table_of(
+        "ProductWarrantyAccrual", "ProductWarrantyAccrualWarrantiesIssued",
+        "ProductWarrantyAccrualPayments", opening=1_000, closing=1_080, charge=400, spent=300,
+        other=20, other_concept=TRANSLATION)))
+    year = period_of(series_of(result, "product_warranty", "notes_1"), CLOSING)
+    assert year["foots"] is False and year["difference"]["value"] == -40
+    assert year["other"]["sign_source"] == "tagged"
+    assert year["other"]["rows"][0]["sign_source"] == "tagged"
+    assert "sign_disagrees" not in year["other"]["rows"][0]
+
+
+def test_a_printed_sign_decides_the_contribution_whatever_the_tag_and_the_footing():
+    """Tagged +20 and printed (20): 1,000 + 400 - 20 - 300 = 1,080 foots. Tagged +20 and
+    printed 20 against a stated 1,080 reads 1,120 and does not foot, though reversing the
+    row would have made it."""
+    rows = table_of("ProductWarrantyAccrual", "ProductWarrantyAccrualWarrantiesIssued",
+                    "ProductWarrantyAccrualPayments", opening=1_000, closing=1_080,
+                    charge=400, spent=300, other=20, other_concept=TRANSLATION)
+    negative = with_signs(planted(rows), {"o1": "negative"})
+    year = period_of(series_of(rollforwards.build(negative), "product_warranty", "notes_1"),
+                     CLOSING)
+    assert year["foots"] is True and year["other"]["value"] == -20
+    assert year["other"]["sign_source"] == "printed" and year["other"]["sign_disagrees"]
+    positive = with_signs(planted(rows), {"o1": "positive"})
+    year = period_of(series_of(rollforwards.build(positive), "product_warranty", "notes_1"),
+                     CLOSING)
+    assert year["foots"] is False and year["difference"]["value"] == -40
+    assert year["other"]["sign_source"] == "printed" and not year["other"]["sign_disagrees"]
+
+
+def test_the_printed_sign_is_read_from_the_inline_document():
+    """`note_tables.printed_signs` on a planted row: (1,647 | ) is negative, 1,647 positive, a
+    dollar sign before the parenthesis changes nothing."""
+    cells = ('<tr><td>A</td><td>(</td><td><ix:nonFraction id="a" name="x:Y" contextRef="c" '
+             'unitRef="usd">1,647</ix:nonFraction></td><td>)</td></tr>'
+             '<tr><td>B</td><td><ix:nonFraction id="b" name="x:Y" contextRef="c" unitRef="usd" '
+             'sign="-">1</ix:nonFraction></td></tr>'
+             '<tr><td>C</td><td>$ (<ix:nonFraction id="c" name="x:Y" contextRef="c" '
+             'unitRef="usd">2</ix:nonFraction></td><td>)</td></tr>')
+    html = ('<html xmlns="http://www.w3.org/1999/xhtml" '
+            'xmlns:ix="http://www.xbrl.org/2013/inlineXBRL"><body><table>' + cells
+            + "</table></body></html>").encode()
+    assert note_tables.printed_signs(html) == {"a": "negative", "b": "positive", "c": "negative"}
+
+
+# --- a row no role holds makes a table not complete --------------------------------------
+
+def test_ciscos_acquisition_rows_make_its_goodwill_note_not_complete():
+    """Cisco's 10-K filed 2025-09-03, note 71, in millions, Americas: 24,035 + 11,619 (Splunk)
+    + 573 (other acquisitions) - 58 = 36,169. The Splunk and other-acquisition rows are on
+    `BusinessAcquisitionAxis`, a member beside the segment, and are not summed into the
+    segment's role: 24,035 - 58 = 23,977 against 36,169 is 12,192 short."""
+    year = one_period("CSCO", "0000858877-25-000111", "2025-09-03", "goodwill", "notes_71",
+                      "2024-07-27", axes={"us-gaap:StatementBusinessSegmentsAxis":
+                                          "csco:AmericasSegmentMember"})
+    assert year["foots"] is False and year["difference"]["value"] == 12_192_000_000
+    assert year["complete"] is False
+    assert sorted(row["value"] for row in year["rows_not_placed"]) == [573e6, 11_619e6]
+
+
+def test_carriers_held_for_sale_row_makes_its_warranty_note_not_complete():
+    """Carrier's 10-K filed 2026-02-05, note 56, 2025, in millions: 786 + 364 + 32 - 282 - 7
+    (reclassified to held for sale) = 893; the 7 is `carr:StandardAndExtendedProduct
+    DecreaseDueToDivestiture`, so the rows Python places make 900 and the table reads 7 under."""
+    year = one_period("CARR", "0001783180-26-000008", "2026-02-05", "product_warranty",
+                      "notes_56", "2025-12-31")
+    assert year["foots"] is False and year["difference"]["value"] == -7_000_000
+    assert year["complete"] is False
+    assert [row["concept"] for row in year["rows_not_placed"]] == [
+        "carr:StandardAndExtendedProductDecreaseDueToDivestiture"]
+
+
+def test_dells_other_row_makes_its_allowance_note_not_complete():
+    """Dell's 10-K filed 2026-03-16, note 40, fiscal 2024 (year to February 2, 2024), in
+    millions: 201 - 49 (charge-offs, net of recoveries) + 92 + (74) = 170; the (74) is
+    `dell:FinancingReceivableOtherExpenseReversal`."""
+    year = one_period("DELL", "0001571996-26-000008", "2026-03-16", "allowance_for_credit_losses",
+                      "notes_40", "2024-02-02", axes={
+                          "us-gaap:AccountsNotesLoansAndFinancingReceivableByReceivableTypeAxis":
+                          "us-gaap:LoansAndFinanceReceivablesMember"})
+    assert year["foots"] is False and year["difference"]["value"] == -74_000_000
+    assert year["complete"] is False
+    assert [(row["concept"], row["value"]) for row in year["rows_not_placed"]] == [
+        ("dell:FinancingReceivableOtherExpenseReversal", -74_000_000)]
+
+
+def test_ttms_exchange_rate_row_makes_its_supplier_finance_note_not_complete():
+    """TTM's 10-K filed 2026-02-17, note 56, 2025, in thousands: 17,218 + 12,579 - 17,480 +
+    218 = 12,535; the 218 is `ttmi:EffectOfForeignCurrencyExchangeRates`."""
+    year = one_period("TTMI", "0001193125-26-051976", "2026-02-17",
+                      "supplier_finance_obligations", "notes_56", "2025-12-29")
+    assert year["foots"] is False and year["difference"]["value"] == 218_000
+    assert year["complete"] is False
+    assert [row["concept"] for row in year["rows_not_placed"]] == [
+        "ttmi:EffectOfForeignCurrencyExchangeRates"]
+
+
+def all_filings():
+    """Every committed filing with an inline document and an instance (72), as a pair of its
+    ticker and accession and the cutoff of its own filing date."""
+    for manifest in sorted(FIXTURES.glob("*/manifest.json")):
+        documents = json.loads(manifest.read_text(encoding="utf-8"))["documents"]
+        roles: dict[str, dict] = {}
+        for entry in documents:
+            roles.setdefault(entry["accession"], {})[entry["role"]] = entry
+        for accession, found in sorted(roles.items()):
+            if {"primary_html", "xbrl_instance"} <= set(found):
+                yield manifest.parent.name, accession, found["primary_html"]["filing_date"]
+
+
+# Each period over the 72 committed filings that reads `foots` false and `complete` true, with
+# the table read by eye. The printed table foots in each: NSSC's Schedule II
+# (10-K filed 2026-08-24, thousands), the account "Allowance for credit losses", columns
+# beginning, charged to costs and expenses, "Deductions/(recoveries)", end:
+#   year to June 30, 2025:   32 + 0 - 7 = 25      (printed (7), tagged `Recoveries` +7)
+#   year to June 30, 2024:  131 + 0 - 99 = 32      (printed (99), tagged `Recoveries` +99)
+# The filer tags a deduction with the element of recoveries, and the section reads a
+# recoveries row as tagged: 32 + 7 = 39 is 14 over 25, and 131 + 99 = 230 is 198 over 32.
+EXPECTED_FALSE_AND_COMPLETE = [
+    ("NSSC", "0001104659-26-100081", "allowance_for_credit_losses", "notes_82", "2025-06-30",
+     -14_000),
+    ("NSSC", "0001104659-26-100081", "allowance_for_credit_losses", "notes_82", "2024-06-30",
+     -198_000),
+]
+
+
+def test_over_all_committed_filings_a_table_that_does_not_foot_is_complete_only_where_the_filing_says_so():
+    seen, false_and_complete, filings = 0, [], 0
+    for ticker, accession, cutoff in all_filings():
+        filings += 1
+        result = rollforwards.build(tables_of(ticker, accession, cutoff))
+        for family in rollforwards.FAMILIES:
+            for series in result[family].get("series", []):
+                for year in series["periods"]:
+                    if "foots" not in year:
+                        continue
+                    seen += 1
+                    if year["foots"] is False and year["complete"] is True:
+                        false_and_complete.append((
+                            ticker, accession, family, series["table"], year["period"]["end"],
+                            year["difference"]["value"]))
+    assert filings == 72
+    assert seen > 400
+    assert false_and_complete == EXPECTED_FALSE_AND_COMPLETE
+
+
+# --- the same figure twice, a row with no dated span -------------------------------------
+
+def test_one_figure_tagged_twice_in_two_contexts_is_counted_once():
+    """The same 400 provision for the same dates tagged twice: 1,000 + 400 - 300 = 1,100, not
+    1,500."""
+    rows = table_of("ProductWarrantyAccrual", "ProductWarrantyAccrualWarrantiesIssued",
+                    "ProductWarrantyAccrualPayments", opening=1_000, closing=1_100, charge=400,
+                    spent=300)
+    rows.append(fact("ProductWarrantyAccrualWarrantiesIssued", 400, **YEAR, number="c2"))
+    year = period_of(series_of(rollforwards.build(planted(rows)), "product_warranty",
+                               "notes_1"), CLOSING)
+    assert year["charged_to_expense"]["value"] == 400
+    assert year["charged_to_expense"]["facts"] == [f"{ACCESSION}:c1"]
+    assert year["foots"] is True and year["complete"] is True
+
+
+def test_a_duration_with_no_dated_span_is_a_row_not_placed_and_never_a_crash():
+    rows = table_of("ProductWarrantyAccrual", "ProductWarrantyAccrualWarrantiesIssued",
+                    "ProductWarrantyAccrualPayments", opening=1_000, closing=1_100, charge=400,
+                    spent=300)
+    rows.append(fact("ProductWarrantyAccrualPayments", 55, start=None, end=None, number="f1"))
+    year = period_of(series_of(rollforwards.build(planted(rows)), "product_warranty",
+                               "notes_1"), CLOSING)
+    assert year["foots"] is True and year["usage"]["value"] == 300
+    assert year["complete"] is False
+    assert [row["fact"] for row in year["rows_not_placed"]] == [f"{ACCESSION}:f1"]
+
+
+def test_a_conflicting_figure_for_one_span_is_no_period():
+    rows = table_of("ProductWarrantyAccrual", "ProductWarrantyAccrualWarrantiesIssued",
+                    "ProductWarrantyAccrualPayments", opening=1_000, closing=1_100, charge=400,
+                    spent=300)
+    rows.append(fact("ProductWarrantyAccrualWarrantiesIssued", 450, **YEAR, number="c2"))
+    year = period_of(series_of(rollforwards.build(planted(rows)), "product_warranty",
+                               "notes_1"), CLOSING)
+    assert "twice" in year["missing"] and "foots" not in year
+
+
+# --- goodwill has no release -------------------------------------------------------------
+
+def test_a_negative_acquisition_adjustment_is_no_release_of_goodwill():
+    """100 - 30 (impairment, usage) - 6 (a purchase accounting adjustment) = 64."""
+    result = rollforwards.build(planted([
+        fact("Goodwill", 100, at=OPENING, number="g1"),
+        fact("GoodwillImpairmentLoss", 30, **YEAR, number="g2"),
+        fact("GoodwillPurchaseAccountingAdjustments", -6, **YEAR, number="g3"),
+        fact("Goodwill", 64, at=CLOSING, number="g4")]))
+    year = period_of(series_of(result, "goodwill", "notes_1"), CLOSING)
+    assert year["foots"] is True and year["usage"]["value"] == 30
+    assert year["release"] is None and year["release_because"] == []
+    assert "not a reserve" in year["release_note"]
+
+
+# --- the bounds of each rule -------------------------------------------------------------
+
+def span_table(start: str, end: str, *, opening_at: str, charge=400, spent=300,
+               closing=1_100, other=None, other_concept=None) -> dict:
+    rows = [fact("ProductWarrantyAccrual", 1_000, at=opening_at, number="b1"),
+            fact("ProductWarrantyAccrualWarrantiesIssued", charge, start=start, end=end,
+                 number="c1"),
+            fact("ProductWarrantyAccrualPayments", spent, start=start, end=end, number="u1"),
+            fact("ProductWarrantyAccrual", closing, at=end, number="b2")]
+    if other_concept:
+        rows.append(fact(other_concept, other, start=start, end=end, number="o1"))
+    return planted(rows)
+
+
+@pytest.mark.parametrize("start,end,days,year", [
+    ("2025-01-17", "2025-12-31", 348, False), ("2025-01-16", "2025-12-31", 349, False),
+    ("2025-01-15", "2025-12-31", 350, True), ("2025-01-01", "2025-12-31", 364, True),
+    ("2024-12-27", "2025-12-31", 369, True),
+    ("2024-12-12", "2025-12-31", 384, False), ("2024-12-17", "2025-12-31", 379, True),
+    ("2024-12-16", "2025-12-31", 380, True), ("2024-12-15", "2025-12-31", 381, False)])
+def test_coverage_is_read_over_spans_of_350_to_380_days_only(start, end, days, year):
+    opening = (dt.date.fromisoformat(start) - dt.timedelta(days=1)).isoformat()
+    result = rollforwards.build(span_table(start, end, opening_at=opening))
+    period = period_of(series_of(result, "product_warranty", "notes_1"), end)
+    assert period["period"]["days"] == days
+    assert ("value" in period["coverage_years"]) is year
+
+
+def test_a_balance_two_days_off_is_the_balance_and_five_days_off_is_none():
+    near = rollforwards.build(span_table(YEAR["start"], YEAR["end"], opening_at="2024-12-29"))
+    assert period_of(series_of(near, "product_warranty", "notes_1"), CLOSING)["foots"] is True
+    for far in ("2024-12-27", "2024-12-20", "2025-01-10"):
+        result = rollforwards.build(span_table(YEAR["start"], YEAR["end"], opening_at=far))
+        period = period_of(series_of(result, "product_warranty", "notes_1"), CLOSING)
+        assert "beginning" in period["missing"], far
+
+
+def test_a_series_on_two_axes_is_not_grouped_by_the_first_alone():
+    """Goodwill by segment and product: North with product A and with product B are two series,
+    each 100 + 20 = 120 and 200 + 5 = 205."""
+    def axes(product):
+        return {"us-gaap:StatementBusinessSegmentsAxis": "x:NorthMember",
+                "us-gaap:ProductOrServiceAxis": product}
+    a, b = axes("x:AMember"), axes("x:BMember")
+    result = rollforwards.build(planted([
+        fact("Goodwill", 100, at=OPENING, axes=a, number="a1"),
+        fact("GoodwillAcquiredDuringPeriod", 20, **YEAR, axes=a, number="a2"),
+        fact("Goodwill", 120, at=CLOSING, axes=a, number="a3"),
+        fact("Goodwill", 200, at=OPENING, axes=b, number="b1"),
+        fact("GoodwillAcquiredDuringPeriod", 5, **YEAR, axes=b, number="b2"),
+        fact("Goodwill", 205, at=CLOSING, axes=b, number="b3")]))
+    series = result["goodwill"]["series"]
+    assert [one["axes"]["us-gaap:ProductOrServiceAxis"] for one in series] == [
+        "x:AMember", "x:BMember"]
+    assert all(one["periods"][0]["foots"] and one["periods"][0]["complete"] for one in series)
+
+
+def test_a_gross_base_on_a_superset_or_a_subset_of_the_axes_is_no_base():
+    segment = {"us-gaap:StatementBusinessSegmentsAxis": "x:NorthMember"}
+    both = {**segment, "us-gaap:ProductOrServiceAxis": "x:AMember"}
+    schedule = [fact("ValuationAllowancesAndReservesBalance", 200, at=OPENING,
+                     axes={**INVENTORY_TYPE, **segment}, number="b1"),
+                fact("ValuationAllowancesAndReservesChargedToCostAndExpense", 10, **YEAR,
+                     axes={**INVENTORY_TYPE, **segment}, number="c1"),
+                fact("ValuationAllowancesAndReservesBalance", 210, at=CLOSING,
+                     axes={**INVENTORY_TYPE, **segment}, number="b2")]
+    for base_axes in (both, None):
+        result = rollforwards.build(planted(schedule, [
+            fact("InventoryGross", 1_000, at=OPENING, axes=base_axes, number="g1"),
+            fact("InventoryGross", 1_200, at=CLOSING, axes=base_axes, number="g2")]))
+        year = period_of(series_of(result, "inventory_reserve", "notes_1"), CLOSING)
+        assert "missing" in year["ending_over_gross_base"]
+    result = rollforwards.build(planted(schedule, [
+        fact("InventoryGross", 1_000, at=OPENING, axes=segment, number="g1"),
+        fact("InventoryGross", 1_200, at=CLOSING, axes=segment, number="g2")]))
+    year = period_of(series_of(result, "inventory_reserve", "notes_1"), CLOSING)
+    assert year["ending_over_gross_base"]["value"] == pytest.approx(210 / 1_200)
+
+
+def test_a_row_of_another_member_is_no_row_of_this_series_but_a_row_on_more_axes_is():
+    """North's own rollforward, a South row beside it (a series of its own, with balances), and
+    an acquisition row on North and a deal: only the last is a row North's table does not place."""
+    north = {"us-gaap:StatementBusinessSegmentsAxis": "x:NorthMember"}
+    south = {"us-gaap:StatementBusinessSegmentsAxis": "x:SouthMember"}
+    deal = {**north, "us-gaap:BusinessAcquisitionAxis": "x:DealMember"}
+    rows = [fact("Goodwill", 100, at=OPENING, axes=north, number="n1"),
+            fact("GoodwillAcquiredDuringPeriod", 20, **YEAR, axes=north, number="n2"),
+            fact("Goodwill", 120, at=CLOSING, axes=north, number="n3"),
+            fact("Goodwill", 50, at=OPENING, axes=south, number="s1"),
+            fact("GoodwillAcquiredDuringPeriod", 10, **YEAR, axes=south, number="s2"),
+            fact("Goodwill", 60, at=CLOSING, axes=south, number="s3")]
+    clean = rollforwards.build(planted(rows))
+    for one in clean["goodwill"]["series"]:
+        assert one["periods"][0]["complete"] is True
+    dealt = rollforwards.build(planted(rows + [
+        fact("GoodwillAcquiredDuringPeriod", 7, **YEAR, axes=deal, number="d1")]))
+    by = {one["axes"]["us-gaap:StatementBusinessSegmentsAxis"]: one["periods"][0]
+          for one in dealt["goodwill"]["series"]}
+    assert by["x:NorthMember"]["complete"] is False
+    assert [row["fact"] for row in by["x:NorthMember"]["rows_not_placed"]] == [f"{ACCESSION}:d1"]
+    assert by["x:SouthMember"]["complete"] is True
+
+
+def test_a_row_with_no_stem_of_the_family_is_still_a_row_not_placed():
+    rows = table_of("ProductWarrantyAccrual", "ProductWarrantyAccrualWarrantiesIssued",
+                    "ProductWarrantyAccrualPayments", opening=1_000, closing=1_100, charge=400,
+                    spent=300)
+    rows.append(fact("zzz:SomethingTheFilerAddedThatNamesNothing", 5, **YEAR, number="z1"))
+    year = period_of(series_of(rollforwards.build(planted(rows)), "product_warranty",
+                               "notes_1"), CLOSING)
+    assert year["complete"] is False and year["rows_not_placed"][0]["fact"] == f"{ACCESSION}:z1"
+
+
+def test_the_release_flag_needs_a_charge_below_zero_and_a_fall_with_a_base_that_rose():
+    zero = rollforwards.build(planted(table_of(
+        "AllowanceForDoubtfulAccountsReceivableCurrent", "ProvisionForDoubtfulAccounts",
+        "AllowanceForDoubtfulAccountsReceivableWriteOffs", opening=500, closing=470, charge=0,
+        spent=30)))
+    year = period_of(series_of(zero, "allowance_for_credit_losses", "notes_1"), CLOSING)
+    assert year["foots"] is True and year["release"] is False
+    # the base level: 200 + 10 - 60 = 150 fell, and a base of 1,000 then 1,000 did not rise
+    level = period_of(series_of(inventory_reserve(150, (1_000, 1_000)), "inventory_reserve",
+                                "notes_1"), CLOSING)
+    assert level["release"] is False
+    # the reserve level: 200 + 10 - 10 = 200 did not fall while the base rose
+    flat = rollforwards.build(planted(
+        [fact("ValuationAllowancesAndReservesBalance", 200, at=OPENING, axes=INVENTORY_TYPE,
+              number="b1"),
+         fact("ValuationAllowancesAndReservesChargedToCostAndExpense", 10, **YEAR,
+              axes=INVENTORY_TYPE, number="c1"),
+         fact("ValuationAllowancesAndReservesDeductions", 10, **YEAR, axes=INVENTORY_TYPE,
+              number="u1"),
+         fact("ValuationAllowancesAndReservesBalance", 200, at=CLOSING, axes=INVENTORY_TYPE,
+              number="b2")],
+        [fact("InventoryGross", 1_000, at=OPENING, number="g1"),
+         fact("InventoryGross", 1_200, at=CLOSING, number="g2")]))
+    assert period_of(series_of(flat, "inventory_reserve", "notes_1"), CLOSING)["release"] is False
+
+
+def test_a_negative_revision_has_its_sign_in_the_ratio_over_the_charge():
+    """100 - 6 of change in estimate: -6 / 100."""
+    result = rollforwards.build(planted(table_of(
+        "ProductWarrantyAccrual", "ProductWarrantyAccrualWarrantiesIssued",
+        "ProductWarrantyAccrualPayments", opening=1_000, closing=1_094, charge=100,
+        spent=0 + 0, other=-6,
+        other_concept="ProductWarrantyAccrualPreexistingIncreaseDecrease")))
+    year = period_of(series_of(result, "product_warranty", "notes_1"), CLOSING)
+    assert year["prior_period_revision_over_current_expense"]["value"] == pytest.approx(-0.06)
+
+
+def test_a_row_of_a_note_table_element_on_schedule_twos_type_axis_is_no_note_row():
+    result = rollforwards.build(planted([
+        fact("InventoryValuationReserves", 200, at=OPENING, axes=INVENTORY_TYPE, number="b1"),
+        fact("InventoryWriteDown", 10, **YEAR, axes=INVENTORY_TYPE, number="c1"),
+        fact("InventoryValuationReserves", 210, at=CLOSING, axes=INVENTORY_TYPE, number="b2")]))
+    assert "missing" in result["inventory_reserve"]
+
+
+def test_a_balance_split_at_a_date_is_no_row_of_the_span():
+    """The current and noncurrent parts of the ending balance are instants, not flows."""
+    rows = table_of("ProductWarrantyAccrual", "ProductWarrantyAccrualWarrantiesIssued",
+                    "ProductWarrantyAccrualPayments", opening=1_000, closing=1_100, charge=400,
+                    spent=300)
+    rows += [fact("ProductWarrantyAccrualClassifiedCurrent", 600, at=CLOSING, number="k1"),
+             fact("ProductWarrantyAccrualNoncurrent", 500, at=CLOSING, number="k2")]
+    year = period_of(series_of(rollforwards.build(planted(rows)), "product_warranty",
+                               "notes_1"), CLOSING)
+    assert year["foots"] is True and year["complete"] is True and year["rows_not_placed"] == []

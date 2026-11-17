@@ -42,11 +42,25 @@ family's base row at the same two dates and on the same axes, a ratio of two fac
 printed with both fact ids, and left out when the filing states two different
 values for it.
 
-**What a table may hold that this does not place.** A row the filer tags in its own
-namespace, or a us-gaap element this table leaves out, cannot be put in a role; such
-a duration row of the same table, axes and span, whose name names the family, is
-listed under `rows_not_placed` and `complete` is false. A table that does not foot
-and is not complete is a table Python could not read in full, not a finding.
+**The sign of a translation row is the one the filing prints.** A foreign-currency
+translation row is tagged "gain (loss)", and filers differ over whether a printed
+increase of the reserve is the positive or the negative value: Cisco prints 3 and
+tags -3, Johnson Controls prints (1) and tags +1, Logitech's 10-Q prints 94 and tags
+-94, Lennox prints (0.8) and tags -0.8. The row contributes the sign the inline table
+prints (parentheses round the number, read by `note_tables.printed_signs` and carried
+as `printed_signs`), `sign_source` "printed" and `sign_disagrees` where the tag differs;
+where no printed sign was read it contributes its tagged value, `sign_source` "tagged".
+Whether the table foots never decides a sign.
+
+**What a table may hold that no role places.** Every duration row of the table, over the
+period's span, on the series' axes or on more (an acquisition member beside the
+segment), that no role of the series holds and that no other series with balances of its
+own holds, is listed under `rows_not_placed` and makes `complete` false: a row the
+filer tagged in its own namespace, a us-gaap element this table leaves out (a net change),
+a row on an extra axis (never summed into a role), a row with no dated span. A zero row
+counts. A table that does not foot and is not complete is a table Python could not read
+in full, not a finding. One figure the filing tags twice, for the same dates and value, is
+one row.
 
 **The elements, and how each was confirmed.** `ELEMENTS` and `SCHEDULE_TWO` below are
 the us-gaap elements of each role, and `CONFIRMED_IN` names the ticker whose committed
@@ -55,16 +69,19 @@ greps. An element nobody confirmed is not in the table. Left out for that reason
 because its sign or meaning is not fixed: the extended-warranty elements
 (`ExtendedProductWarrantyAccrual...`, deferred revenue, not a reserve), the current
 and noncurrent splits of a balance (`...Current`, `...Noncurrent`, `ProductWarrantyAccrualClassifiedCurrent`),
-`ProductWarrantyAccrualPeriodIncreaseDecrease` and `RestructuringReservePeriodIncreaseDecrease`
-(a net change that a filer states beside or instead of its components),
+`ProductWarrantyAccrualPeriodIncreaseDecrease`, `RestructuringReservePeriodIncreaseDecrease`
+and `ValuationAllowancesAndReservesPeriodIncreaseDecrease` (a net change that a filer states
+beside or instead of its components),
 `FinancingReceivableAllowanceForCreditLossLoanSold`, the cumulative catch-up and
 time-frame elements of contract liabilities (signed changes to revenue, no balance
 leaving), `GoodwillGross` as a gross base (it excludes impairments, so a goodwill
 that fell by impairment would read as a release) and `NotesReceivableGross`. Every
 `AccountsReceivableAllowanceForCreditLoss...` element the current taxonomy names was
 absent from the committed instances, which tag `AllowanceForDoubtfulAccountsReceivable...`.
-`ValuationAllowancesAndReservesPeriodIncreaseDecrease` is read as a component (Generac
-states 525 and 0 beside the other rows and its table foots only with it).
+`ValuationAllowancesAndReservesPeriodIncreaseDecrease`, a net change like its two
+siblings above, is a row no role holds. Goodwill has no
+`release` (it is not a reserve, its impairment is its usage, a negative purchase
+accounting adjustment is not a release): the cell is null and says why.
 """
 
 from __future__ import annotations
@@ -224,7 +241,6 @@ SCHEDULE_TWO = {
         "ValuationAllowancesAndReservesAdjustments",
         "ValuationAllowancesAndReservesRecoveries",
         "ValuationAllowancesAndReservesReservesOfBusinessesAcquired",
-        "ValuationAllowancesAndReservesPeriodIncreaseDecrease",
     ),
     "revision": (),
     "base": (),
@@ -286,7 +302,6 @@ CONFIRMED_IN = {
     "ValuationAllowancesAndReservesChargedToCostAndExpense": "ADTN",
     "ValuationAllowancesAndReservesChargedToOtherAccounts": "CLS",
     "ValuationAllowancesAndReservesDeductions": "ADTN",
-    "ValuationAllowancesAndReservesPeriodIncreaseDecrease": "GNRC",
     "ValuationAllowancesAndReservesRecoveries": "LII",
     "ValuationAllowancesAndReservesReservesOfBusinessesAcquired": "CSCO",
 }
@@ -300,30 +315,15 @@ SCHEDULE_TWO_MEMBERS = {
 }
 # the elements read as a magnitude, whichever sign the filer tagged
 MAGNITUDE = ("ContractWithCustomerLiabilityRevenueRecognized",)
-# what a row of the family's own table names, to know which row it is that this table
-# could not place
-STEMS = {
-    "allowance_for_credit_losses": ("allowance", "doubtful", "creditloss", "loanloss"),
-    "product_warranty": ("warrant",),
-    "inventory_reserve": ("inventor",),
-    "restructuring_reserve": ("restructuring",),
-    "contract_liabilities": ("contractwithcustomerliab",),
-    "supplier_finance_obligations": ("supplierfinance",),
-    "goodwill": ("goodwill",),
-}
-SCHEDULE_TWO_STEMS = ("valuationallowancesandreserves",)
 FLOW_ROLES = ("charged", "usage", "other", "revision")
-# Foreign-currency translation of a reserve (a liability or a contra-asset) is tagged "gain
-# (loss)", and filers differ over whether the printed increase of the reserve is the positive
-# or the negative value: Cisco's 10-K and Johnson Controls' tag the printed +1 as -1, Lennox's
-# and Logitech's 10-K tag it as printed, and Logitech's 10-Qs the other way. Goodwill is an
-# asset and its gain adds, in every committed table. So these rows are read as tagged, and
-# read with the sign reversed only where that, and nothing else, makes the table foot.
-TRANSLATION_EITHER_WAY = (
-    "FinancingReceivableAllowanceForCreditLossForeignCurrencyTranslation",
-    "StandardProductWarrantyAccrualForeignCurrencyTranslationGainLoss",
-    "StandardAndExtendedProductWarrantyAccrualForeignCurrencyTranslationGainLoss",
-)
+# A foreign-currency translation row is tagged "gain (loss)", and filers differ over whether a
+# printed increase of the reserve is the positive or the negative value: Cisco prints "1"
+# and tags it `sign="-"`, Johnson Controls prints "(1)" and tags +1, Logitech's 10-Q prints
+# "94" and tags -94, Lennox prints "(0.8)" and tags -0.8. So such a row contributes the sign
+# the filing prints (parentheses round the number, as `note_tables.printed_signs` reads
+# them), and where no printed sign was read, the tagged value, with `sign_source` saying
+# which. Whether the table foots is never what decides a sign.
+TRANSLATION_WORD = "translation"
 DAYS_TO_THE_BALANCE = 3                 # a balance tagged this near the day it stands for
 A_YEAR = (350, 380)                     # days: the span `coverage_years` is read over
 USD = "iso4217:USD"
@@ -333,15 +333,20 @@ WHAT_THIS_IS = (
     "charged_to_expense + other - usage = ending, worked out by Python from the facts of the "
     "filing's own table (never summed across two tables or two sets of axes). `foots` says "
     "whether the table's rows add to its ending, `difference` is the stated ending less "
-    "their sum, `complete` is false when the table holds a row Python could not place (a "
-    "row the filer tagged in its own namespace; it is listed under `rows_not_placed`, and "
-    "a table that does not foot and is not complete was not read in full). "
-    "`provision_over_usage` is the charge over the usage; `coverage_years` is the "
-    "beginning balance over the usage of a year; `ending_over_gross_base` is the "
-    "ending reserve over the gross base the filing tags; "
+    "their sum, and `complete` is false when the table holds any other row of the same span "
+    "that no role holds (a row the filer tagged in its own namespace, a row on an extra axis "
+    "such as an acquisition, a row with no dated span, a net change); each is listed under "
+    "`rows_not_placed`, and a `foots` false beside a `complete` false is a table not read in "
+    "full. A foreign-currency translation row contributes the sign the filing prints "
+    "(parentheses round the number), `sign_source` printed, and the tagged value where no "
+    "printed sign was read, `sign_source` tagged; a row whose printed and tagged signs "
+    "differ says `sign_disagrees`. `provision_over_usage` is the charge over the usage; "
+    "`coverage_years` is the beginning balance over the usage of a year; "
+    "`ending_over_gross_base` is the ending reserve over the gross base the filing tags; "
     "`prior_period_revision_over_current_expense` is the table's change-in-estimate line "
     "over the charge; `release` is true when the charge is negative or the ending "
-    "reserve fell while its gross base rose, with `release_because` saying which. "
+    "reserve fell while its gross base rose, with `release_because` saying which (goodwill "
+    "has no release: it is null). "
     "Each cell prints the fact ids it came from. For supplier finance and goodwill the "
     "charged_to_expense line is the additions line of the table")
 
@@ -370,8 +375,41 @@ def _date(text: str) -> dt.date:
     return dt.date.fromisoformat(text[:10])
 
 
-def _row(one: dict) -> dict:
-    return {"concept": one["concept"], "value": one["value"], "fact": one["fact"]}
+def _dated(one: dict) -> bool:
+    """A duration with a start and an end the filing dates; a `forever` context, or one the
+    instance does not carry, has none."""
+    return isinstance(one.get("start"), str) and isinstance(one.get("end"), str)
+
+
+def _is_translation(one: dict) -> bool:
+    return TRANSLATION_WORD in (_local(one["concept"]) or "").lower()
+
+
+def _contribution(one: dict, signs: dict) -> tuple[Decimal, str | None, bool]:
+    """What a row adds to (or, in the usage role, takes from) the identity, where its sign
+    came from ("printed", "tagged", or None for a row whose sign is no question), and whether
+    the printed sign differs from the tagged one."""
+    value = _dec(one["value"])
+    if _local(one["concept"]) in MAGNITUDE:
+        return abs(value), None, False
+    if _is_translation(one) and value != 0:
+        printed = signs.get(one["fact"])
+        if printed:
+            read = -abs(value) if printed == "negative" else abs(value)
+            return read, "printed", (read < 0) != (value < 0)
+        return value, "tagged", False
+    return value, None, False
+
+
+def _row(one: dict, signs: dict | None = None) -> dict:
+    out = {"concept": one["concept"], "value": one["value"], "fact": one["fact"]}
+    if signs is not None and _is_translation(one) and one["value"] != 0:
+        contribution, source, disagrees = _contribution(one, signs)
+        out["contribution"] = float(contribution)
+        out["sign_source"] = source
+        if source == "printed":
+            out["sign_disagrees"] = disagrees
+    return out
 
 
 def _usable(one: dict) -> bool:
@@ -400,8 +438,10 @@ def _natural(key: str) -> int:
 
 
 def _series_in(key: str, table: dict) -> list[dict]:
-    """Every series of one table: the facts a role holds, by family, kind and axes."""
+    """Every series of one table: the facts a role holds, by family, kind and axes. One figure
+    the filing tags twice, in two contexts of the same dates and value, is one row."""
     groups: dict[tuple, dict] = {}
+    seen: set = set()
     for one in table["facts"]:
         if not _usable(one):
             continue
@@ -411,31 +451,45 @@ def _series_in(key: str, table: dict) -> list[dict]:
         family, role, kind, axes = placed
         group = groups.setdefault((family, kind, axes), {"roles": {}, "table": key,
                                                          "paragraph": table.get("paragraph")})
+        if role != "balance" and "instant" not in one and not _dated(one):
+            group.setdefault("undated", []).append(one)
+            continue
+        same = (family, kind, axes, one["concept"], one.get("instant"), one.get("start"),
+                one.get("end"), _dec(one["value"]))
+        group.setdefault("ids", set()).add(one["fact"])
+        if same in seen:
+            continue
+        seen.add(same)
         group["roles"].setdefault(role, []).append(one)
     out = []
     for (family, kind, axes), group in groups.items():
         group.update(family=family, kind=kind, axes=dict(axes))
-        group["unplaced"] = _unplaced(table, family, kind, axes)
         out.append(group)
     return sorted(out, key=lambda group: (group["kind"], _axes_key(group["axes"])))
 
 
-def _unplaced(table: dict, family: str, kind: str, axes: tuple) -> list[dict]:
-    """Duration rows of this table, on this series' axes, that no role holds and whose name
-    names the family."""
-    stems = SCHEDULE_TWO_STEMS if kind == "schedule_two" else STEMS[family]
-    found = []
+def _unplaced_pool(table: dict, group: dict, accounted: set) -> list[dict]:
+    """Every duration row of this table that no role of this series holds, on this series' axes
+    or on a superset of them (an acquisition member of a segment), that another series with
+    balances of its own has not taken: a row the filer tagged in its own namespace, a row on
+    an extra axis, a net change, a row with no dated span."""
+    found, seen = [], set()
     for one in table["facts"]:
-        if not _usable(one) or "instant" in one or classify(one) is not None:
-            continue
-        concept = one["concept"].lower()
-        if not any(stem in concept for stem in stems):
+        if not _usable(one) or "instant" in one or one["fact"] in accounted:
             continue
         own = dict(one.get("axes") or {})
-        if kind == "schedule_two":
-            if SCHEDULE_TWO_MEMBERS.get(own.pop(SCHEDULE_TWO_AXIS, None)) != family:
+        member = own.pop(SCHEDULE_TWO_AXIS, None)
+        if group["kind"] == "schedule_two":
+            if SCHEDULE_TWO_MEMBERS.get(member) != group["family"]:
                 continue
-        if _axes_key(own) == axes:
+        elif member is not None:
+            continue
+        if not set(group["axes"].items()) <= set(own.items()):
+            continue
+        same = (one["concept"], _axes_key(own), one.get("start"), one.get("end"),
+                _dec(one["value"]))
+        if same not in seen:
+            seen.add(same)
             found.append(one)
     return found
 
@@ -452,16 +506,20 @@ def _balance_names(family: str, kind: str) -> tuple[str, ...]:
     return SCHEDULE_TWO["balance"] if kind == "schedule_two" else ELEMENTS[family]["balance"]
 
 
-def _cell(rows: list[dict], total: Decimal) -> dict:
-    return {"value": float(total), "facts": [one["fact"] for one in rows],
-            "rows": [_row(one) for one in rows]}
+def _cell(rows: list[dict], total: Decimal, signs: dict) -> dict:
+    out = {"value": float(total), "facts": [one["fact"] for one in rows],
+           "rows": [_row(one, signs) for one in rows]}
+    sources = [row["sign_source"] for row in out["rows"] if "sign_source" in row]
+    if sources:
+        out["sign_source"] = "tagged" if "tagged" in sources else "printed"
+        out["sign_disagrees"] = any(row.get("sign_disagrees") for row in out["rows"])
+    return out
 
 
-def _flow_total(rows: list[dict]) -> Decimal:
+def _flow_total(rows: list[dict], signs: dict) -> Decimal:
     total = Decimal(0)
     for one in rows:
-        total += abs(_dec(one["value"])) if _local(one["concept"]) in MAGNITUDE else \
-            _dec(one["value"])
+        total += _contribution(one, signs)[0]
     return total
 
 
@@ -493,7 +551,7 @@ def _gross_base(family: str, axes: tuple, instant: str, tables: dict) -> dict:
             "table": key, "facts": [one["fact"]]}
 
 
-def _period(group: dict, start: str, end: str, tables: dict) -> dict:
+def _period(group: dict, start: str, end: str, tables: dict, signs: dict) -> dict:
     span = {"start": start, "end": end, "days": (_date(end) - _date(start)).days}
     roles = {role: [one for one in group["roles"].get(role, [])
                     if one.get("start") == start and one.get("end") == end]
@@ -529,37 +587,30 @@ def _period(group: dict, start: str, end: str, tables: dict) -> dict:
     charged, usage = roles["charged"], roles["usage"]
     other = roles["other"] + roles["revision"]
     begin, end_value = _dec(opening["value"]), _dec(closing["value"])
-    charge, spent, rest = _flow_total(charged), _flow_total(usage), _flow_total(other)
+    charge = _flow_total(charged, signs)
+    spent = _flow_total(usage, signs)
+    rest = _flow_total(other, signs)
     expected = begin + charge + rest - spent
     difference = end_value - expected
-    translation = sum((_dec(one["value"]) for one in other
-                       if _local(one["concept"]) in TRANSLATION_EITHER_WAY), Decimal(0))
-    sign = "as_tagged"
-    if difference != 0 and translation != 0 and difference + 2 * translation == 0:
-        sign = "reversed"
-        rest -= 2 * translation
-        expected = begin + charge + rest - spent
-        difference = end_value - expected
     ordered = [opening] + charged + other + usage
     out["beginning"] = {"value": float(begin), "concept": opening["concept"],
                         "instant": opening["instant"], "facts": [opening["fact"]]}
-    out["charged_to_expense"] = _cell(charged, charge) if charged else {
+    out["charged_to_expense"] = _cell(charged, charge, signs) if charged else {
         "missing": "the table states no charge or additions row among the elements of "
                    "this section"}
-    out["other"] = _cell(other, rest) if other else {
+    out["other"] = _cell(other, rest, signs) if other else {
         "missing": "the table states no other row among the elements of this section"}
-    out["usage"] = _cell(usage, spent) if usage else {
+    out["usage"] = _cell(usage, spent, signs) if usage else {
         "missing": "the table states no usage row among the elements of this section"}
     out["ending"] = {"value": float(end_value), "concept": closing["concept"],
                      "instant": closing["instant"], "facts": [closing["fact"]]}
     out["identity"] = "beginning + charged_to_expense + other - usage = ending"
-    out["translation_sign"] = sign
     out["expected_ending"] = {"value": float(expected), "facts": [one["fact"] for one in ordered]}
     out["foots"] = difference == 0
     out["difference"] = {"value": float(difference),
                          "facts": [one["fact"] for one in ordered] + [closing["fact"]]}
-    unplaced = [one for one in group["unplaced"]
-                if one.get("start") == start and one.get("end") == end]
+    unplaced = [one for one in group["unplaced_pool"]
+                if not _dated(one) or (one.get("start") == start and one.get("end") == end)]
     out["complete"] = not unplaced
     out["rows_not_placed"] = [_row(one) for one in unplaced]
     # the measures
@@ -576,7 +627,7 @@ def _period(group: dict, start: str, end: str, tables: dict) -> dict:
                         else f"the span is {span['days']} days, and coverage is read over a year")}
     revision = roles["revision"]
     out["prior_period_revision_over_current_expense"] = (
-        _ratio(_flow_total(revision), charge,
+        _ratio(_flow_total(revision, signs), charge,
                [one["fact"] for one in revision + charged],
                why="the charge of the span is zero") if revision and charged else
         {"missing": "the table has no change-in-estimate row or no charge row"})
@@ -590,6 +641,13 @@ def _period(group: dict, start: str, end: str, tables: dict) -> dict:
         out["ending_over_gross_base"] = ratio
     else:
         out["ending_over_gross_base"] = {"missing": base_end["missing"]}
+    if group["family"] == "goodwill":
+        out["release"] = None
+        out["release_because"] = []
+        out["release_note"] = ("goodwill has no release: it is not a reserve, its impairment is "
+                               "its usage, and a negative acquisition adjustment is a revision "
+                               "of the purchase price allocation")
+        return out
     because = []
     if charged and charge < 0:
         because.append("charged_to_expense_negative")
@@ -601,21 +659,26 @@ def _period(group: dict, start: str, end: str, tables: dict) -> dict:
     return out
 
 
-def _family(name: str, tables: dict) -> dict:
+def _family(name: str, tables: dict, signs: dict) -> dict:
     series = []
     for key in sorted(tables, key=_natural):
-        for group in _series_in(key, tables[key]):
+        groups = _series_in(key, tables[key])
+        balanced = [group for group in groups if group["roles"].get("balance")]
+        accounted = {fact_id for group in balanced for fact_id in group.get("ids", ())}
+        for group in balanced:
             if group["family"] != name:
                 continue
             spans = sorted({(one["start"], one["end"]) for role in FLOW_ROLES
-                            for one in group["roles"].get(role, []) if "start" in one},
+                            for one in group["roles"].get(role, [])},
                            key=lambda span: (span[1], span[0]), reverse=True)
             spans = [span for span in spans if _date(span[1]) > _date(span[0])]
             if not spans:
                 continue
+            pool = _unplaced_pool(tables[key], group, accounted)
+            group["unplaced_pool"] = pool
             series.append({"table": key, "paragraph": group["paragraph"], "kind": group["kind"],
                            "axes": group["axes"],
-                           "periods": [_period(group, start, end, tables)
+                           "periods": [_period(group, start, end, tables, signs)
                                        for start, end in spans]})
     if not series:
         names = ", ".join(ELEMENTS[name]["balance"]
@@ -634,4 +697,6 @@ def build(note_table_facts: dict) -> dict:
         reason = note_table_facts.get("missing", "no note table was read")
         return {"what_this_is": WHAT_THIS_IS, **{name: {"missing": reason} for name in FAMILIES}}
     tables = note_table_facts["tables"]
-    return {"what_this_is": WHAT_THIS_IS, **{name: _family(name, tables) for name in FAMILIES}}
+    signs = note_table_facts.get("printed_signs", {})
+    return {"what_this_is": WHAT_THIS_IS,
+            **{name: _family(name, tables, signs) for name in FAMILIES}}
