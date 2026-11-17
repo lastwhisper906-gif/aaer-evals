@@ -2369,9 +2369,7 @@ def quality_adjusted(simple: dict, compensation: dict, acquisitions: dict,
     acquired = -family_cash_effect(acquisitions)          # cash spent on acquisitions
     value = simple["value"] - compensation["value"] - acquired
     period_end = (fields or {}).get("period_end")
-    # the view as the gate reads it: free cash flow's own acquisitions are in it
-    view = {**(fields or {}), "free_cash_flow": {"free_cash_flow_quality_adjusted": {
-        "inputs": {"acquisitions": {"cash_spent": acquired}}}}}
+    view = fields
     applied, to_earnings, refused = [], [], []
     for position, item in enumerate(adjustments or []):
         field = item.get("calculator_field")
@@ -2379,6 +2377,9 @@ def quality_adjusted(simple: dict, compensation: dict, acquisitions: dict,
         target = item.get("applies_to", "cash_flow")
         recurs = item.get("recurs") is True
         amount, why_not = adjustment_reading(view, field, recurs, target)
+        if amount is not None and target == "cash_flow":
+            why_not = counted_twice(field, [row["calculator_field"] for row in applied])
+            amount = None if why_not else amount
         if direction not in ("reduce", "increase") or target not in ("cash_flow", "earnings") \
                 or amount is None:
             refused.append({"position": position, "name": item.get("name"),
@@ -2392,6 +2393,7 @@ def quality_adjusted(simple: dict, compensation: dict, acquisitions: dict,
         cell = _cell_at(fields, field)
         year = trailing_year_start(fields)
         own = period_text(cell)
+        derived = None if own else derived_span(cell, _date(period_end), year)
         row = {"position": position, "name": item.get("name"), "calculator_field": field,
                "direction": direction, "applies_to": target, "recurs": recurs,
                "amount": abs(amount), "signed_value": amount, "class": cell_class(field, cell)[0],
@@ -2399,7 +2401,7 @@ def quality_adjusted(simple: dict, compensation: dict, acquisitions: dict,
                "free_cash_flow_covers": f"the four quarters {year}..{period_end}",
                "its_own_span": (f"{own} within the four quarters ending {period_end}" if own else
                                 f"no dates of its own"
-                                + (f"; {derived_span(cell)[1]}" if derived_span(cell) else "")
+                                + (f"; {derived[1]}" if derived else "")
                                 + f"; the table of CELL_CLASSES places it in the four quarters "
                                   f"ending {period_end}"),
                "quote": item.get("quote")}
@@ -2506,58 +2508,54 @@ INSIDE_FREE_CASH_FLOW_CONCEPTS = (
     (r"PaymentsToAcquireBusinesses\w*", "payments to acquire businesses are subtracted in free cash flow"),
     (r"GoodwillAcquiredDuringPeriod", "goodwill acquired in the period carries acquisitions"),
 )
-# A CHANGE between two balances of an asset whose additions are investing outflows carries what
-# free cash flow already counts. Only the asset's CARRYING AMOUNTS count: the us-gaap gross and net
-# amounts below (matched on the local name), and an extension concept (any other namespace) whose
-# local name holds a family's words and none of the words of a quantity that is not a carrying
-# amount. A flow fact of the same concept is not a change and is not refused here. A change of
-# property, plant and equipment and of capitalised software always carries capital expenditure;
-# a change of goodwill or intangible assets carries acquisitions, and is refused only where the
-# view's free cash flow subtracts acquisitions (a non-zero amount over its trailing year), because
-# otherwise the analyst adjusts for spending that free cash flow does not count.
-ALWAYS, WHEN_ACQUISITIONS_ARE_SUBTRACTED = "always", "when acquisitions are subtracted"
-US_GAAP_CARRYING_AMOUNTS = (
-    (r"PropertyPlantAndEquipment(?:Gross|Net)", ALWAYS),
-    (r"PropertyPlantAndEquipmentAndFinanceLeaseRightOfUseAsset(?:Before|After)AccumulatedDepreciationAndAmortization", ALWAYS),
-    (r"PropertyPlantAndEquipmentExcludingLessorAssetUnderOperatingLeaseBeforeAccumulatedDepreciation", ALWAYS),
-    (r"CapitalizedComputerSoftware(?:Gross|Net)", ALWAYS),
-    (r"Goodwill", WHEN_ACQUISITIONS_ARE_SUBTRACTED),
-    (r"IntangibleAssets(?:Net|Gross)ExcludingGoodwill", WHEN_ACQUISITIONS_ARE_SUBTRACTED),
-    (r"FiniteLivedIntangibleAssets(?:Gross|Net)", WHEN_ACQUISITIONS_ARE_SUBTRACTED),
-    (r"IndefiniteLivedIntangibleAssetsExcludingGoodwill", WHEN_ACQUISITIONS_ARE_SUBTRACTED),
+# A NOTE-TABLE CHANGE (a cell with a concept, `from` and `to`) may be a cash-flow amount only when its
+# concept is a working-capital or financing-like balance whose change free cash flow either carries
+# in operating cash flow or leaves out: an ALLOW-LIST, because a list of what to refuse leaks a name
+# at a time. Matched case-insensitively on the concept's local name, in any namespace, by the words
+# below; a name with one of the excluded words anywhere, or a total of assets, is refused. Earnings
+# adjustments are not held to it.
+CASH_FLOW_CHANGE_ALLOWED = (
+    (r"receivable", "receivables, trade, unbilled or other, and receivables sold or factored"),
+    (r"contractwithcustomer(?:asset|liabilit)|contractasset|contractliabilit|deferredrevenue",
+     "contract assets and liabilities, and deferred revenue"),
+    (r"inventor", "inventory and its components"),
+    (r"prepaid|otherassetscurrent", "prepaid and other current assets"),
+    (r"payable|accrued", "payables, accrued liabilities and their components"),
+    (r"supplierfinance", "supplier finance obligations"),
+    (r"transferoffinancialassets|factor", "receivables sold or factored"),
+    (r"contingentconsideration|considerationpayable|deferredconsideration|purchaseconsideration",
+     "deferred or contingent acquisition consideration"),
 )
-# The words of an extension concept that name a family; a right-of-use asset is in the property
-# family only where its name holds PropertyPlantAndEquipment (a lease asset alone is non-cash).
-EXTENSION_FAMILY_WORDS = (
-    ("PropertyPlantAndEquipment", ALWAYS), ("CapitalizedComputerSoftware", ALWAYS),
-    ("Goodwill", WHEN_ACQUISITIONS_ARE_SUBTRACTED), ("IntangibleAssets", WHEN_ACQUISITIONS_ARE_SUBTRACTED),
-)
-# Words that make a concept something other than a carrying amount; the basis phrases
-# (`AfterAccumulatedDepreciationAndAmortization`, `BeforeAccumulatedDepreciation`) name the basis
-# of a carrying amount and are set aside before the words are looked for.
-NOT_A_CARRYING_AMOUNT = r"Accumulated|Depreciation|Amortization|Impair|DeferredTax|HeldForSale|DisposalGroup"
-CARRYING_BASIS_PHRASE = r"(?:After|Before)Accumulated(?:DepreciationAndAmortization|Depreciation|Amortization)"
+CASH_FLOW_CHANGE_EXCLUDED = (
+    r"cash|restricted|investments|securities|fairvaluedisclosure|noncurrent|propertyplant|machinery|"
+    r"building|land|constructioninprogress|furniture|equipment|goodwill|intangible|software|rightofuse"
+    r"|^assets")
+NOT_ON_THE_LIST = ("not a balance whose change free cash flow carries in operating cash flow or leaves "
+                   "out; name a calculator cell instead")
 
 # A cell that is a change in cash, or in a total that includes cash, CONTAINS free cash flow: a change
-# in cash is the sum of every cash flow. By the cell's name in the calculator's view, and by the
-# concept of a note-table change.
+# in cash is the sum of every cash flow. By the cell's name in the calculator's view.
 CONTAINS_FREE_CASH_FLOW_NAMES = (
     (r"change_in_cash(?:_and_\w+)?", "a change in cash is the sum of every cash flow"),
     (r"change_in_(?:current_|total_)?assets", "a change in a total that includes cash"),
 )
-CONTAINS_FREE_CASH_FLOW_CONCEPTS = (
-    (r"Cash|CashAndCashEquivalents\w*|CashCashEquivalents\w*|CashAndShortTermInvestments\w*",
-     "a change in cash is the sum of every cash flow"),
-    (r"Assets|AssetsCurrent", "a change in a total that includes cash"),
+# A note-table CASH TOTAL, and every investing-activity flow, contains or is already inside free cash
+# flow: refused as a cash-flow amount, case-insensitively.
+CONTAINS_OR_INSIDE = "contains or is already inside free cash flow"
+CASH_TOTALS_AND_INVESTING_FLOWS = (
+    r"netcashprovidedbyusedin(?:operating|investing|financing)activities\w*",
+    r"cash\w*periodincreasedecrease\w*",
+    r"paymentstoacquire\w*",
+    r"paymentsforproceedsfrom\w*",
+    r"proceedsfromsaleof\w*(?:property|business|intangible)\w*",
 )
 
-# A non-cash charge is never the amount of a cash-flow adjustment: it is an earnings adjustment.
-NON_CASH_CHARGE_NAMES = (
-    (r"\w*impairment\w*|\w*write_down\w*|\w*write_off\w*", "a non-cash charge; it is an earnings adjustment"),
-)
-NON_CASH_CHARGE_CONCEPTS = (
-    (r"\w*Impairment\w*|\w*WriteDown\w*|\w*WriteOff\w*", "a non-cash charge; it is an earnings adjustment"),
-)
+# A non-cash charge is never the amount of a cash-flow adjustment: it is an earnings adjustment. It is
+# matched case-insensitively and anchored to the quantity measured: the words count where they are part
+# of the charge, not where they follow "Excluding" (a gain or loss excluding other-than-temporary
+# impairments is not a charge).
+NON_CASH_CHARGE_WORDS = r"impairment|write_?down|write_?off"
+NON_CASH_CHARGE = "a non-cash charge; it is an earnings adjustment"
 # Lines inside operating cash flow (net income, depreciation and amortisation, the changes in
 # working capital) are NOT in this table: adjusting for one of them is a legitimate analytic
 # choice, and operating cash flow itself is the only figure free cash flow starts from.
@@ -2696,43 +2694,25 @@ def _date(text) -> dt.date | None:
         return None
 
 
-def acquisitions_subtracted(fields: dict) -> bool:
-    """Whether the view's free cash flow subtracts acquisitions, a non-zero amount over its trailing
-    year (`free_cash_flow.free_cash_flow_quality_adjusted.inputs.acquisitions.cash_spent`)."""
-    node = fields or {}
-    for part in ("free_cash_flow", "free_cash_flow_quality_adjusted", "inputs", "acquisitions", "cash_spent"):
-        node = node.get(part) if isinstance(node, dict) else None
-    return isinstance(node, (int, float)) and not isinstance(node, bool) and node != 0
-
-
-def asset_change_problem(local: str, namespace: str, fields: dict) -> str | None:
-    """Why a change of this concept is a change in an asset whose additions free cash flow already
-    counts, or None: the us-gaap carrying amounts by name; an extension concept by the words of a
-    family (and none of the words of a quantity that is not a carrying amount)."""
-    when = None
-    if namespace == "us-gaap":
-        for pattern, rule in US_GAAP_CARRYING_AMOUNTS:
-            if re.fullmatch(pattern, local):
-                when = rule
-    else:
-        bare = re.sub(CARRYING_BASIS_PHRASE, "", local)
-        if not re.search(NOT_A_CARRYING_AMOUNT, bare):
-            for word, rule in EXTENSION_FAMILY_WORDS:
-                if word in bare:
-                    when = rule
-    if when is None:
+def cash_flow_change_problem(cell: dict) -> str | None:
+    """Why a note-table change cell may not be a cash-flow amount, or None: its concept is not on the
+    allow-list of balances whose change free cash flow carries in operating cash flow or leaves out."""
+    concept = cell.get("concept")
+    if not (isinstance(concept, str) and isinstance(cell.get("from"), dict) and isinstance(cell.get("to"), dict)):
         return None
-    if when == WHEN_ACQUISITIONS_ARE_SUBTRACTED and not acquisitions_subtracted(fields):
+    local = concept.rpartition(":")[2].lower()
+    if not re.search(CASH_FLOW_CHANGE_EXCLUDED, local) \
+            and any(re.search(pattern, local) for pattern, _ in CASH_FLOW_CHANGE_ALLOWED):
         return None
-    return ("a change in the carrying amount of an asset whose additions are investing outflows "
-            "carries what free cash flow already counts (capital expenditure or acquisitions)")
+    return NOT_ON_THE_LIST
 
 
-def inside_free_cash_flow(path: str, cell: dict, fields: dict | None = None) -> str | None:
+def inside_free_cash_flow(path: str, cell: dict, fields: dict | None = None,
+                          applies_to: str = "cash_flow") -> str | None:
     """Why a cell is already inside free cash flow, or contains it, or None, with the label that
-    says which: a segment of its path names one of free cash flow's parts, a note-table fact's
-    concept is one, or a change of a carrying amount carries them (`asset_change_problem`); or the
-    cell is a change in cash or in a total that includes cash."""
+    says which: a segment of its path names one of free cash flow's parts or a change in cash, a
+    note-table fact's concept is one of the parts, and, for a cash-flow amount, a cash total or an
+    investing-activity flow."""
     segments = path.split(".")
     for segment in segments:
         for pattern, why in INSIDE_FREE_CASH_FLOW_NAMES:
@@ -2744,32 +2724,27 @@ def inside_free_cash_flow(path: str, cell: dict, fields: dict | None = None) -> 
                 return f"{CONTAINS}: {why}"
     concept = cell.get("concept")
     if isinstance(concept, str):
-        namespace, _, local = concept.rpartition(":")
+        local = concept.rpartition(":")[2]
         for pattern, why in INSIDE_FREE_CASH_FLOW_CONCEPTS:
             if re.fullmatch(pattern, local):
                 return f"{ALREADY_INSIDE}: {why}"
-        if isinstance(cell.get("from"), dict) and isinstance(cell.get("to"), dict):
-            for pattern, why in CONTAINS_FREE_CASH_FLOW_CONCEPTS:
-                if re.fullmatch(pattern, local):
-                    return f"{CONTAINS}: {why}"
-            why = asset_change_problem(local, namespace, fields or {})
-            if why:
-                return f"{ALREADY_INSIDE}: {why}"
+        if applies_to == "cash_flow" and any(
+                re.fullmatch(pattern, local, re.IGNORECASE) for pattern in CASH_TOTALS_AND_INVESTING_FLOWS):
+            return CONTAINS_OR_INSIDE
     return None
 
 
 def non_cash_charge(path: str, cell: dict) -> str | None:
-    """Why a cell is a non-cash charge (an impairment, a write-down, a write-off), or None."""
-    for segment in path.split("."):
-        for pattern, why in NON_CASH_CHARGE_NAMES:
-            if re.fullmatch(pattern, segment):
-                return why
+    """Why a cell is a non-cash charge (an impairment, a write-down, a write-off), or None: the words
+    count where they are part of the measured quantity, not after "Excluding"."""
+    names = [segment.lower() for segment in path.split(".")]
     concept = cell.get("concept")
     if isinstance(concept, str):
-        local = concept.rpartition(":")[2]
-        for pattern, why in NON_CASH_CHARGE_CONCEPTS:
-            if re.fullmatch(pattern, local):
-                return why
+        names.append(concept.rpartition(":")[2].lower())
+    for name in names:
+        measured = name.split("excluding")[0]
+        if re.search(NON_CASH_CHARGE_WORDS, measured):
+            return NON_CASH_CHARGE
     return None
 
 
@@ -2809,11 +2784,47 @@ def _own_dates(cell: dict, kind: str):
     return None if early is None or late is None else (early, late)
 
 
+BALANCE_PAIRS = (("now", "a_year_earlier"), ("at_the_end", "a_year_before"))
+
+
+def balance_dates(cell: dict):
+    """The two dates (earlier, later) of the balances a cell's inputs carry, or None."""
+    inputs = cell.get("inputs")
+    if isinstance(inputs, dict):
+        for later, earlier in BALANCE_PAIRS:
+            if isinstance(inputs.get(later), dict) and isinstance(inputs.get(earlier), dict):
+                late, early = (_date(inputs[side].get("period")) for side in (later, earlier))
+                if late is not None and early is not None:
+                    return early, late
+    return None
+
+
+def hold_change_to_the_period(early: dt.date, late: dt.date, period_end, year) -> tuple[str, str]:
+    """The one judgment of a change between two balances, for a cell with dates of its own and for a
+    cell whose inputs carry them: ("year", why) when the later is the period's end and the earlier the
+    day before the trailing year's first day; ("shorter", why) when the earlier is a date inside the
+    trailing year; ("outside", why) otherwise, "its balances are not the period's"."""
+    if period_end is None or year is None:
+        return "outside", f"{NOT_THE_PERIOD}: the view names no period end and trailing year to hold it to"
+    where = f"{early} and {late}"
+    if late != period_end:
+        return "outside", f"its balances are not the period's: {where} end {late}, and the period ends {period_end}"
+    floor = year - dt.timedelta(days=1)
+    if early < floor:
+        return "outside", f"its balances are not the period's: {early} is before {floor}, the day before the trailing year {year}..{period_end}"
+    if early >= late:
+        return "outside", f"its balances are not the period's: {where} are not in order"
+    if early == floor:
+        return "year", f"its balances, {where}, are the year's: the later the period's end, the earlier the day before the trailing year"
+    return "shorter", f"its balances, {where}, are a part of the year: the earlier is inside the trailing year"
+
+
 def period_problem(path: str, cell: dict, kind: str, fields: dict) -> str | None:
-    """Why a flow or a change is not of the period free cash flow covers, or None. The
-    cell's own dates are held to the trailing year the view prints and to the triggering
-    period's end; a cell with no dates of its own is the trailing four quarters or the year
-    to date by the table, unless a segment of its path marks it an earlier period's."""
+    """Why a flow or a change is not of the period free cash flow covers, or None. A flow with dates
+    of its own begins no earlier than the trailing year and ends at the period's end; a change, own
+    dates or the dates of its inputs, is held by `hold_change_to_the_period`; a cell with neither is the
+    trailing four quarters or the year to date, unless a segment of its path marks it an earlier
+    period's."""
     period_end = _date((fields or {}).get("period_end"))
     year = trailing_year_start(fields)
     own = cell_period(cell)
@@ -2822,6 +2833,10 @@ def period_problem(path: str, cell: dict, kind: str, fields: dict) -> str | None
             for pattern, why in PRIOR_PERIOD_SEGMENTS:
                 if re.fullmatch(pattern, segment):
                     return f"{NOT_THE_PERIOD}: {why} ({segment})"
+        dates = balance_dates(cell) if kind == CHANGE else None
+        if dates is not None:
+            verdict, why = hold_change_to_the_period(*dates, period_end, year)
+            return why if verdict == "outside" else None
         return None
     if period_end is None or year is None:
         return f"{NOT_THE_PERIOD}: the view names no period end and trailing year to hold it to"
@@ -2831,71 +2846,83 @@ def period_problem(path: str, cell: dict, kind: str, fields: dict) -> str | None
                                          "not dates, is not a change between two balances"
                                          if kind == CHANGE else "its span is not two dates"))
     early, late = dates
+    if kind == CHANGE:
+        verdict, why = hold_change_to_the_period(early, late, period_end, year)
+        return why if verdict == "outside" else None
     if late != period_end:
         return f"{NOT_THE_PERIOD}: it ends {late}, and the period ends {period_end}"
-    floor = year - dt.timedelta(days=1) if kind == CHANGE else year
-    if early < floor:
-        return (f"{NOT_THE_PERIOD}: it begins {early}, before {floor}, the first day the "
+    if early < year:
+        return (f"{NOT_THE_PERIOD}: it begins {early}, before {year}, the first day the "
                 f"trailing year {year}..{period_end} allows")
-    if early >= late and (kind == CHANGE or early > late):
+    if early > late:
         return f"{NOT_THE_PERIOD}: its two dates are not in order"
     return None
 
 
-def _year_span(early: dt.date, late: dt.date, period_end: dt.date | None) -> tuple[str, str]:
-    """A span between two dates, read against the period: a year ending at the period's end, or not."""
-    days = (late - early).days
-    where = f"{early} and {late}"
-    if period_end is not None and late != period_end:
-        return "shorter", f"its balances are not the period's: {where} end {late}, and the period ends {period_end}"
-    if not 350 <= days <= 380:
-        return "shorter", f"its two dates, {where}, are {days} days apart"
-    return "year", f"its two dates, {where}, are {days} days apart and the later is the period's end"
+def _part_period(part) -> str | None:
+    """The duration a part states: its own, or that of its first line."""
+    if isinstance(part, dict):
+        if isinstance(part.get("period"), str) and ".." in part["period"]:
+            return part["period"]
+        for line in part.get("lines") or []:
+            if isinstance(line, dict) and isinstance(line.get("period"), str) and ".." in line["period"]:
+                return line["period"]
+    return None
 
 
-def derived_span(cell: dict, period_end: dt.date | None = None) -> tuple[str, str] | None:
-    """What a cell with no dates of its own says of its span, read from its own formula, inputs,
-    lines and parts, never from the name of its section: ("year" or "shorter", the line that says
-    so), or None where the cell says nothing. Two balances (`now` and `a_year_earlier`, or `at_the_end`
-    and `a_year_before`) are a year when the later is the period's end and the earlier a year before it;
-    a sum of `prior_fiscal_year + this_year_to_date - prior_year_to_date` is the trailing year; dated
-    lines or parts that are durations are a year when they end at the period's end and last about one;
-    a formula `X now - X a year earlier` with no dates says a year; a cell of other cells is the span
-    its inputs agree on."""
-    inputs = cell.get("inputs")
-    if isinstance(inputs, dict):
-        for later, earlier in (("now", "a_year_earlier"), ("at_the_end", "a_year_before")):
-            if isinstance(inputs.get(later), dict) and isinstance(inputs.get(earlier), dict):
-                late, early = (_date(inputs[side].get("period")) for side in (later, earlier))
-                if late is not None and early is not None:
-                    return _year_span(early, late, period_end)
-    formula = cell.get("formula")
-    if isinstance(formula, str):
-        if "prior_fiscal_year + this_year_to_date - prior_year_to_date" in formula:
-            return "year", "its formula sums a fiscal year and a year to date less the year to date a year earlier"
-        if re.fullmatch(r"(\w+) now - \1 a year earlier", formula):
-            return "year", "its formula is the balance now less the balance a year earlier"
+def _duration(period: str, period_end, year) -> tuple[str, str]:
+    """A dated duration against the trailing year: the year itself, a part of it, or not the period's."""
+    start, _, end = period.partition("..")
+    early, late = _date(start), _date(end)
+    if early is None or late is None or period_end is None or year is None:
+        return "outside", f"its dates {period} cannot be held to a trailing year"
+    if late != period_end or early < year:
+        return "outside", f"its dates {period} are not the period's: the trailing year is {year}..{period_end}"
+    return (("year" if early == year else "shorter"),
+            f"its dates {period} are {'the whole' if early == year else 'a part of the'} trailing year {year}..{period_end}")
+
+
+def derived_span(cell: dict, period_end: dt.date | None = None,
+                 year: dt.date | None = None) -> tuple[str, str] | None:
+    """What a cell with no dates of its own says of its span, from DATES in its own inputs, lines and
+    parts, never from a formula's wording or the name of a section: ("year", "shorter" or "outside",
+    the line that says so), or None where nothing in the cell is dated. Two balances are judged as a
+    change with dates of its own is (`hold_change_to_the_period`); a sum of a fiscal year and a year to
+    date less the year to date a year earlier is the trailing year when the dates of those three parts
+    run from the day after the prior year to date ends to the period's end; dated lines or parts are
+    each a duration against the trailing year; a cell of other cells is the span its inputs agree on."""
+    dates = balance_dates(cell)
+    if dates is not None:
+        return hold_change_to_the_period(*dates, period_end, year)
+    parts = cell.get("parts")
+    if isinstance(parts, dict) and {"prior_fiscal_year", "this_year_to_date", "prior_year_to_date"} <= set(parts):
+        periods = {key: _part_period(parts[key]) for key in ("this_year_to_date", "prior_year_to_date")}
+        if all(periods.values()):
+            ended = _date(periods["prior_year_to_date"].partition("..")[2])
+            this_year = periods["this_year_to_date"].partition("..")[2]
+            if ended is not None and year is not None and ended + dt.timedelta(days=1) == year \
+                    and period_end is not None and _date(this_year) == period_end:
+                return "year", f"its parts run from the day after {ended} to {this_year}, the trailing year {year}..{period_end}"
+            return "outside", "its parts' dates are not the trailing year's"
+        return None
     dated = []
     for key in ("lines", "parts"):
         group = cell.get(key)
         group = list(group.values()) if isinstance(group, dict) else group
         if isinstance(group, list):
-            dated += [item["period"] for item in group
-                      if isinstance(item, dict) and isinstance(item.get("period"), str) and ".." in item["period"]]
+            dated += [period for period in (_part_period(item) for item in group) if period]
     if dated:
-        spans = []
-        for period in dated:
-            start, _, end = period.partition("..")
-            early, late = _date(start), _date(end)
-            if early is None or late is None:
-                return None
-            spans.append(_year_span(early, late, period_end))
-        return ("year" if all(kind == "year" for kind, _ in spans) else "shorter"), spans[0][1]
+        judged = [_duration(period, period_end, year) for period in dated]
+        kinds = {kind for kind, _ in judged}
+        kind = "year" if kinds == {"year"} else "outside" if "outside" in kinds else "shorter"
+        return kind, judged[0][1]
+    inputs = cell.get("inputs")
     if isinstance(inputs, dict):
-        found = [derived_span(child, period_end) for child in inputs.values() if isinstance(child, dict)
-                 and child.get("unit") == "USD"]
+        found = [derived_span(child, period_end, year) for child in inputs.values()
+                 if isinstance(child, dict) and child.get("unit") == "USD"]
         if found and all(item is not None for item in found):
-            kind = "year" if all(item[0] == "year" for item in found) else "shorter"
+            kinds = {item[0] for item in found}
+            kind = "year" if kinds == {"year"} else "outside" if "outside" in kinds else "shorter"
             return kind, "its inputs agree: " + found[0][1]
     return None
 
@@ -2903,12 +2930,13 @@ def derived_span(cell: dict, period_end: dt.date | None = None) -> tuple[str, st
 def recurrence_problem(path: str, cell: dict, kind: str, fields: dict) -> str | None:
     """Why an amount cannot recur, or None: it must cover the whole trailing year. A cell with
     dates of its own begins on the year's first day (a change, the day before it); a cell with none
-    must say a year in its own formula, inputs, lines or parts (`derived_span`): one that says
-    nothing is refused, its span not read, and one named the year to date is refused as such."""
+    must show a year in the dates of its own inputs, lines or parts (`derived_span`): one with no dates
+    is refused, its span not read, and a part named the year to date is refused as such. A formula's
+    wording and a section's name never decide."""
     year = trailing_year_start(fields)
     own = cell_period(cell)
     if own is None or own[0] is None:
-        derived = derived_span(cell, _date((fields or {}).get("period_end")))
+        derived = derived_span(cell, _date((fields or {}).get("period_end")), year)
         if derived is not None:
             return None if derived[0] == "year" else f"{MUST_COVER_THE_YEAR}: {derived[1]}"
         for segment in path.split("."):
@@ -2920,6 +2948,25 @@ def recurrence_problem(path: str, cell: dict, kind: str, fields: dict) -> str | 
     first = None if year is None else year - dt.timedelta(days=1) if kind == CHANGE else year
     if dates is None or dates[0] != first:
         return f"{MUST_COVER_THE_YEAR}: it begins {dates[0] if dates else None}, not {first}"
+    return None
+
+
+def note_table_of(path) -> str | None:
+    """The table a note-table path names (`note_tables.tables.notes_38`), or None."""
+    match = re.match(r"note_tables\.tables\.([^.]+)\.", path) if isinstance(path, str) else None
+    return match.group(1) if match else None
+
+
+def counted_twice(path: str, earlier: list) -> str | None:
+    """Why a cash-flow adjustment counts an amount twice, or None: it cites a field an earlier
+    cash-flow adjustment cited, or a second cell of the same note table (a table's cells contain
+    each other). `earlier` holds the fields of the cash-flow adjustments before it."""
+    if path in earlier:
+        return f"it counts one amount twice: an earlier cash_flow adjustment cites {path!r}"
+    table = note_table_of(path)
+    if table is not None and any(note_table_of(other) == table for other in earlier):
+        return (f"it counts one amount twice: an earlier cash_flow adjustment is from the same note "
+                f"table, {table}, whose cells contain each other; one adjustment for each table")
     return None
 
 
@@ -2947,7 +2994,7 @@ def adjustment_reading(fields: dict, path, recurs: bool = False,
         return None, "it names no cell of the analysts' view"
     if not isinstance(cell, dict) or cell.get("unit") not in USD_UNITS:
         return None, "it is not a dollar cell (a dict whose unit is USD)"
-    inside = inside_free_cash_flow(path, cell, fields)
+    inside = inside_free_cash_flow(path, cell, fields, applies_to)
     if inside:
         return None, inside
     charge = non_cash_charge(path, cell)
@@ -2958,6 +3005,10 @@ def adjustment_reading(fields: dict, path, recurs: bool = False,
         return None, why
     if kind == BALANCE:
         return None, f"{BALANCE_REFUSAL}: {why}"
+    if applies_to == "cash_flow" and kind == CHANGE:
+        problem = cash_flow_change_problem(cell)
+        if problem:
+            return None, problem
     problem = period_problem(path, cell, kind, fields)
     if problem:
         return None, problem
