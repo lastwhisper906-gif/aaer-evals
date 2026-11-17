@@ -542,6 +542,37 @@ def render_event_filings(events: dict) -> list[str]:
     return out
 
 
+def release_item(release: dict, accession: str) -> dict:
+    """The earnings release as `input_8k.md` carries it: its paragraphs (a table is
+    one paragraph of pipe rows) and the id of each. `extract` and `earnings_release`
+    both build it here, so a reader of the table rows holds the structure the file
+    was written from and never a second parse of the text."""
+    return {
+        "paragraphs": release["paragraphs"],
+        "paragraph_ids": [f"{accession}:8k_2_02:{index}"
+                          for index in range(1, len(release["paragraphs"]) + 1)],
+        "dropped": release["dropped"],
+    }
+
+
+def earnings_release(ticker: str, *, cutoff=None, fixtures_root=cutoff_guard.FIXTURES) -> dict:
+    """Item 2.02 alone, read through the same gate and the same cleaning as `extract`.
+
+    Returns `accession`, `filing_date` and `item_2_02` (`release_item`). Refuses, as
+    `extract` does, with `CutoffGuardError` when no 8-K filed at or before the cutoff
+    is on record.
+    """
+    cutoff = cutoff_guard.resolve_cutoff(cutoff, ticker, fixtures_root=fixtures_root)
+    held = cutoff_guard.one_document(ticker, "8-K", "primary_html", fixtures_root=fixtures_root)
+    exhibit = cutoff_guard.one_document(ticker, "8-K", "exhibit_99_1",
+                                        fixtures_root=fixtures_root)
+    exhibit_html = cutoff_guard.load_document(exhibit["full_path"], cutoff,
+                                              fixtures_root=fixtures_root)
+    release = clean_text.clean_stream(exhibit_html)
+    return {"accession": held["accession"], "filing_date": held["filing_date"],
+            "item_2_02": release_item(release, held["accession"])}
+
+
 def extract(ticker: str, *, cutoff=None, fixtures_root=cutoff_guard.FIXTURES,
             trigger: dict | None = None) -> dict:
     """The index lists, the release, the held 8-K's verbatim items and the event
@@ -599,12 +630,7 @@ def extract(ticker: str, *, cutoff=None, fixtures_root=cutoff_guard.FIXTURES,
         "held_items": item_codes(held.get("items", "")),
         "filings": filings,
         "late_filings": late,
-        "item_2_02": {
-            "paragraphs": release["paragraphs"],
-            "paragraph_ids": [f"{accession}:8k_2_02:{index}"
-                              for index in range(1, len(release["paragraphs"]) + 1)],
-            "dropped": release["dropped"],
-        },
+        "item_2_02": release_item(release, accession),
         "verbatim_items": verbatim,
         "body_item_codes": sorted(items),
         "event_filings": event_filings(ticker, cutoff=cutoff, fixtures_root=fixtures_root,

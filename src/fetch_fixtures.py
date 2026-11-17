@@ -255,6 +255,25 @@ def every_filing(fetcher: Fetcher, cik: str) -> list[dict]:
     recent list within a few years, so a history read from it alone would begin
     wherever that happened to be.
     """
+    return registrant_and_filings(fetcher, cik)[1]
+
+
+def registrant_of(data) -> dict:
+    """The registrant's own tickers and SIC code, off the index's top level.
+
+    A field the record does not carry, or carries in another shape, is None: a
+    reader of this asks for them to price a run, and what it cannot read means
+    no prices with that reason, not a failed run.
+    """
+    held = data if isinstance(data, dict) else {}
+    tickers, sic = held.get("tickers"), held.get("sic")
+    return {"tickers": ([str(t).strip().upper() for t in tickers]
+                        if isinstance(tickers, list) else None),
+            "sic": str(sic).strip() if isinstance(sic, (str, int)) and str(sic).strip() else None}
+
+
+def registrant_and_filings(fetcher: Fetcher, cik: str) -> tuple[dict, list[dict]]:
+    """`every_filing`'s rows and, from the same one read of the index, the registrant."""
     data = fetcher.get_json(SUBMISSIONS_URL.format(cik=cik))
     pages = [data["filings"]["recent"]]
     for older in data["filings"].get("files", []):
@@ -267,7 +286,7 @@ def every_filing(fetcher: Fetcher, cik: str) -> list[dict]:
             if row["accessionNumber"] not in seen:
                 seen.add(row["accessionNumber"])
                 rows.append(row)
-    return rows
+    return registrant_of(data), rows
 
 
 def submissions_record(ticker: str, cik: str, as_of: str,

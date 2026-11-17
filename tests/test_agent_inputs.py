@@ -1632,3 +1632,66 @@ def test_no_analyst_definition_spells_a_percentage_out_as_its_own_example():
     definition may."""
     assert "twelve per cent" not in _definition("valuation-analyst")
     assert "(`0.12` is 12%)" in _definition("valuation-analyst")
+
+
+# --- the earnings release printed beside the report ---------------------------------------
+
+def test_release_versus_report_reaches_the_analysts_in_the_filings_only_view():
+    """`calculator_filings_only.json` is what the accounting and financial analysts
+    read. The section holds no price, so it is in that view whole. Dell's committed release
+    row `Net income | $ | 4,133` (millions, read by eye in
+    `runs/DELL/0001571996-26-000046/input_8k.md`) is read here against Dell's quarterly
+    `NetIncomeLoss` through `tests/companyfacts_source.py`, which imports nothing from
+    `src/`, and the section's cell must say the same two numbers."""
+    from src import calculator
+    from tests import companyfacts_source as source
+    expected = source.one_value("DELL", "NetIncomeLoss", "2026-05-02..2026-07-31", "2026-09-08")
+    assert expected == 4_133 * 1_000_000
+    out = calculator.calculate(ticker="DELL", cutoff="2026-09-08", period_end="2026-07-31",
+                               form="10-Q", accession="0001571996-26-000046")
+    view = calculator.filings_only(out)
+    assert "release_versus_report" not in calculator.PRICED_SECTIONS
+    assert view["release_versus_report"] == out["release_versus_report"]
+    cells = [c for c in view["release_versus_report"]["lines"]["net_income"]["comparisons"]
+             if c["span_months"] == 3]
+    assert {c["release"]["cell"] for c in cells} == {"4,133"}
+    assert {c["release"]["value"] for c in cells} == {4_133 * 1_000_000.0} == {expected}
+    assert {c["report"]["value"] for c in cells} == {expected}
+    assert {c["verdict"] for c in cells} == {"agrees"}
+    assert view["release_versus_report"]["lines"]["net_income"]["statement"]["verdict"] == "agrees"
+
+
+def test_release_versus_report_is_pointed_at_in_the_accounting_analysts_cross_document_area():
+    """One sentence in the accounting analyst's definition, in the cross-document
+    reconciliation area, and no other prompt names it: the readers' prompts are
+    unchanged because a reader never sees the calculator."""
+    prompt = (PROMPTS / "accounting-analyst.md").read_text(encoding="utf-8")
+    area = prompt.split("**Cross-document reconciliation**", 1)[1].split(
+        "**Revenue and working capital.**", 1)[0]
+    assert "does the 8-K earnings\n   release match the 10-Q?" in area
+    assert "`release_versus_report`" in area
+    assert prompt.count("`release_versus_report`") == 1
+    for name in ("numbers-reader", "notes-text-reader"):
+        assert "release_versus_report" not in (PROMPTS / f"{name}.md").read_text(encoding="utf-8")
+
+
+def test_the_accounting_analysts_reserve_rollforward_paragraph_names_the_fields_and_the_quote_rule():
+    """The paragraph that points the analyst at `rollforwards.<family>`: the fields it may cite,
+    its reading of a `foots` false beside a `complete` false, the sign source of every row of
+    `other` (a zero row included), and that the reason a reserve moved is quoted from a notes
+    reader's item, never from the filing the analyst does not see."""
+    text = (REPO / ".claude" / "agents" / "accounting-analyst.md").read_text(encoding="utf-8")
+    opening = text.index("**Reserve rollforwards.**")
+    paragraph = " ".join(text[opening:].split("\n\n", 1)[0].split())
+    for name in ("foots", "complete", "difference", "sign_source", "release",
+                 "provision_over_usage", "rows_not_placed", "coverage_years",
+                 "ending_over_gross_base", "prior_period_revision_over_current_expense"):
+        assert f"`{name}`" in paragraph, name
+    assert ("so a `foots` false beside a `complete` false is a table Python did not read in "
+            "full and no finding") in paragraph
+    assert "Every row in `other`, a zero row included, carries `sign_source`" in paragraph
+    assert "`difference` is the stated ending less the rows" in paragraph
+    assert ("put inside quotation marks the `quote` of an item in the notes reader's report"
+            in paragraph)
+    assert "quote the filing's own words" not in paragraph
+    assert "do not write any arithmetic of your own" in paragraph

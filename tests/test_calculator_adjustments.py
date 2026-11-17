@@ -572,6 +572,9 @@ def classes_of(path: str, cell: dict) -> set[str]:
     return found
 
 
+PER_DAY_RATES = ("revenue_per_day_of_receivables",)
+
+
 def check_every_cell_is_in_exactly_one_class(views):
     counted = {"flow": 0, "change": 0, "balance": 0, "root": 0}
     for name, held in views:
@@ -579,6 +582,12 @@ def check_every_cell_is_in_exactly_one_class(views):
             if refused_root(path, cell):
                 counted["root"] += 1
                 assert reading(held, path)[0] is None, (name, path)
+                continue
+            if path.rpartition(".")[2] in PER_DAY_RATES:
+                # a dollar rate per day is no amount over a span and no balance: the table does not place it, and
+                # the rule refuses it as unplaced (declared when the receivables' turnover cells joined the view)
+                amount, reason = reading(held, path, False, "earnings")
+                assert amount is None and "does not place it" in reason, (name, path, reason)
                 continue
             found = classes_of(path, cell)
             assert len(found) == 1, (name, path, found)
@@ -1705,7 +1714,7 @@ def test_the_sections_the_adjustment_rule_reads_hold_every_section_with_a_dollar
                 holding.add(path.split(".")[0])
     assert holding <= set(calculator.ADJUSTMENT_SECTIONS), holding - set(calculator.ADJUSTMENT_SECTIONS)
     assert {"ebit", "tax_rate", "terms", "ratios", "note_tables"} <= holding
-    assert set(calculator.ADJUSTMENT_SECTIONS) - holding <= {"concentration", "trend_table"}
+    assert set(calculator.ADJUSTMENT_SECTIONS) - holding <= {"concentration", "trend_table", "rollforwards"}
 
 
 def test_the_row_names_free_cash_flows_span_and_its_own_beside_it():

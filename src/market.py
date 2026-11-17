@@ -839,8 +839,15 @@ def fetch_prices(*, symbols, start, end, into, environ, backend=None,
     # Every series is asked for before one is written: a source that fails on
     # the third symbol leaves no folder holding two.
     fetched = {}
+    dropped = {}
     for symbol in symbols:
         frame = chosen.history(symbol, start, end, **credential)
+        # The window's end is the filing date, the cutoff: a source that serves a
+        # row after it is not believed. The rows dropped are counted in the record.
+        later = [entry for entry in frame or [] if entry["date"] > end]
+        if later:
+            dropped[symbol] = len(later)
+            frame = [entry for entry in frame if entry["date"] <= end]
         if not frame:
             raise MarketError(
                 f"{chosen.NAME} returned no rows for {symbol} between {start} "
@@ -865,6 +872,7 @@ def fetch_prices(*, symbols, start, end, into, environ, backend=None,
             timespec="seconds"),
         "asked_for": {"start": str(start), "end": str(end)},
         "served": served,
+        "dropped_after_end": dropped,
     }
 
 

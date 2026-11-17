@@ -340,3 +340,4 @@ sixty lines; a line under a lesson that has no date is that lesson's wrapped lin
 2026-11-17 checked a double count only within one class, so the same cell stood once as cash_flow and again as earnings; check every adjustment against every earlier one, whatever its class.
 2026-11-17 planted several cells with one value and then found a coincidence of sums read as a total; plant distinct values in a test so a figure-and-span key or a total's sum is not met by chance.
 2026-11-17 kept stacking guesses (names, a reading key, a sum of rows) to make earnings items disjoint and each one mis-merged other figures; when a source of disjoint items does not exist yet, show each alone and sum none.
+2026-11-17 merged a new src module after running only its own tests; the full suite's universe check refused a ticker-to-element map left in src — run tests/test_universe.py (and the whole suite once) before a module with literals goes up.

@@ -110,6 +110,22 @@ and `trend_table`.
    the numbers **confirm** it, **contradict** it, or leave it **unresolved**. A
    contradiction is never rounded down to unresolved. And: does the 8-K earnings
    release match the 10-Q?
+   `release_versus_report` answers it line by line for revenue, cost of revenue,
+   operating income, pretax income, income tax expense, net income, diluted
+   earnings per share, operating cash flow and capital expenditure: every dollar
+   cell of every table of the release beside the report's fact, and per line one
+   of `differs` (a cell of the statement itself differs), `differs_outside_gaap`
+   (only a cell labelled non-GAAP, segment, component or unidentified differs),
+   `agrees`, `agrees_where_read` (every compared cell agrees, but a table that prints the
+   line could not be read: its paragraph ids are beside it), `block_not_identified`,
+   `report_fact_missing`, `period_not_read` (nothing compared),
+   `printed_under_another_label` (a row prints it under a label the table does
+   not read) or `not_in_release`, with the face statement's own `statement`
+   verdict beside it (`agrees` only if every compared cell in it agrees, else
+   the weakest cell's verdict, ordered differs, block_not_identified,
+   report_fact_missing, agrees_where_read, agrees); `basic_earnings_per_share` is a line outside the
+   nine, emitted only when the release prints a basic row; cite its paths and
+   never subtract.
 
 **Revenue and working capital.** Four sections feed earnings versus cash,
 revenue recognition and the industry lens. Each field named here is a number,
@@ -153,6 +169,36 @@ its share a year earlier, as
 `inventory_composition_and_growth_gap.finished_goods_growth_minus_revenue_growth`
 and `inventory_composition_and_growth_gap.inventory_growth_minus_revenue_growth`.
 None of these is an adjustment amount.
+
+**Reserve rollforwards.** For each reserve the filing tables as a rollforward,
+`rollforwards.allowance_for_credit_losses`, `rollforwards.product_warranty`,
+`rollforwards.inventory_reserve`, `rollforwards.restructuring_reserve`,
+`rollforwards.contract_liabilities`, `rollforwards.supplier_finance_obligations`,
+`rollforwards.goodwill` and `rollforwards.schedule_two_other` (the accounts of Schedule II
+the filer names in its own members, each series with its `member`; `left_out` names the
+ones the filing's own deferred tax allowance accounts for at two dates at least, and a
+member whose name says it may be that allowance has `release` null with its reason) each hold a
+`series` per table and set of axes, and
+each series its `periods`, newest first (for example
+`rollforwards.product_warranty.series.0.periods.0`); a reserve the filing does
+not table says `missing` and why. In a period, `foots` says whether the table's
+own rows reach its ending balance, `difference` is what is left over, and
+`complete` false means the table holds a row that no role places, such as one
+the filer tagged in its own namespace or one on an extra axis (listed under
+`rows_not_placed`), so a `foots` false beside a `complete` false is a table
+Python did not read in full and no finding. Every row in `other`, a zero row
+included, carries `sign_source`, the sign the filing prints for every row whose
+element does not fix its own direction: `printed`, or `tagged` when no printed
+sign could be read. `difference` is the stated ending less the rows.
+`release` is true when the charge to expense is negative or the reserve fell
+while its gross base rose (`release_because` says which), and
+`provision_over_usage` is the charge against what was used or paid out, so a
+figure under one says the reserve was drawn down faster than it was built.
+`coverage_years`, `ending_over_gross_base` and
+`prior_period_revision_over_current_expense` are read the same way, each with
+its fact ids. Cite the field, and for why the reserve moved put inside quotation
+marks the `quote` of an item in the notes reader's report, as above; do not write
+any arithmetic of your own on these rows.
 
 **Industry lens.** Most of the twelve are semiconductors and hardware. Also
 answer, with a finding or "nothing found" and why: inventory obsolescence;
