@@ -325,3 +325,5 @@ sixty lines; a line under a lesson that has no date is that lesson's wrapped lin
 2026-11-17 found the calculator read adjustment paths from a narrower dict than the gate's view (five sections against the whole file); a rule shared by two readers needs the same fields in both, so check what each is handed.
 2026-11-17 took the brief's expected cells on trust: Apple's cited cell was the gross change (13,270), not the net 9,249, and Palo Alto's third cell was in notes_187; read each run's dropped_items before writing an expected value.
 2026-11-17 started a mutation loop in the foreground and hit the tool's time limit with source files mutated; run such a loop in the background and do not touch the files until it ends.
+2026-11-17 let a table's slice end at a substring that also named another constant (_FLOW_NAMES inside INSIDE_FREE_CASH_FLOW_NAMES) and cut a block out of the source; search for a name with its line start before slicing a file by text.
+2026-11-17 took the brief's 366-day limit without trying it on the brief's own accepted cell (STX's 53-week year is 371 days); run a rule on the cells it must accept before writing its number.

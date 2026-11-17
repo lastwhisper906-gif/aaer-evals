@@ -36,6 +36,7 @@ from pathlib import Path
 import pytest
 
 from src import analysis_check, calculator, calculator_drift
+from tests import companyfacts_source as source
 
 REPO = Path(__file__).resolve().parent.parent
 RUNS = REPO / "runs"
@@ -156,22 +157,47 @@ def test_a_balance_at_one_date_in_a_note_table_is_refused(run, path, value, day)
     assert problem == f"calculator_field {path!r} cannot be an adjustment's amount: {reason}"
 
 
-def test_apples_intangible_change_moves_free_cash_flow_by_the_amount():
-    """Free cash flow before: the view's free_cash_flow_simple 136,683 less share-based
-    compensation 13,706 less acquisitions 0 (the statement prints none) = 122,977
-    (millions; each read in the view's `inputs`, the sum worked here by hand)."""
-    held = view(APPLE)["free_cash_flow"]["free_cash_flow_quality_adjusted"]
-    assert held["inputs"]["free_cash_flow_simple"] == 136_683 * MILLION
-    assert held["inputs"]["share_based_compensation"]["value"] == 13_706 * MILLION
-    assert held["inputs"]["acquisitions"]["cash_spent"] == 0
-    before = (136_683 - 13_706 - 0) * MILLION
-    assert before == 122_977 * MILLION and held["value"] == before and held["adjustments_applied"] == []
+def test_apples_free_cash_flow_before_is_worked_by_hand_from_companyfacts():
+    """Apple's trailing four quarters to 2026-06-27, each term read in companyfacts through
+    `tests/companyfacts_source.py` (rows filed at or before the cutoff 2026-07-31, the latest
+    filing per period): the fiscal year 2024-09-29..2025-09-27 of the 10-K, plus the nine
+    months 2025-09-28..2026-06-27, less the nine months 2024-09-29..2025-06-28.
+    Operating cash flow 111,482 + 116,996 - 81,754 = 146,724; payments for property and
+    equipment 12,715 + 6,799 - 9,473 = 10,041; share-based compensation 12,863 + 10,523 -
+    9,680 = 13,706; acquisitions none (companyfacts holds no row, the statement prints none).
+    Free cash flow 146,724 - 10,041 = 136,683, less 13,706 = 122,977 (millions)."""
+    cutoff = view(APPLE)["cutoff"]
+    assert cutoff == "2026-07-31"
+    year, ytd, before = "2024-09-29..2025-09-27", "2025-09-28..2026-06-27", "2024-09-29..2025-06-28"
 
+    def trailing(tag):
+        return (source.one_value("AAPL", tag, year, cutoff) + source.one_value("AAPL", tag, ytd, cutoff)
+                - source.one_value("AAPL", tag, before, cutoff))
+    assert source.reported("AAPL", "PaymentsToAcquireBusinessesNetOfCashAcquired", ytd, cutoff) == []
+    cash = trailing("NetCashProvidedByUsedInOperatingActivities")
+    capex = trailing("PaymentsToAcquirePropertyPlantAndEquipment")
+    pay = trailing("ShareBasedCompensation")
+    assert (cash, capex, pay) == (146_724 * MILLION, 10_041 * MILLION, 13_706 * MILLION)
+    by_hand = cash - capex - pay - 0
+    assert by_hand == 122_977 * MILLION
+    held = view(APPLE)["free_cash_flow"]["free_cash_flow_quality_adjusted"]
+    assert held["value"] == by_hand and held["adjustments_applied"] == []
+    assert final_with(APPLE, [])["value"] == by_hand
+
+
+def test_apples_intangible_change_moves_free_cash_flow_by_the_amount():
+    before = (146_724 - 10_041 - 13_706 - 0) * MILLION           # the hand-worked base above
     cited = final_with(APPLE, [adjustment("note_tables.tables.notes_38.changes.0")])
-    assert cited["adjustments_refused"] == []
-    assert [(row["amount"], row["before"], row["after"]) for row in cited["adjustments_applied"]] == [
-        (13_270 * MILLION, 122_977 * MILLION, (122_977 - 13_270) * MILLION)]
+    assert cited["adjustments_refused"] == [] and cited["adjustments_to_earnings"] == []
+    row, = cited["adjustments_applied"]
+    assert (row["amount"], row["before"], row["after"]) == (
+        13_270 * MILLION, before, (122_977 - 13_270) * MILLION)
     assert cited["value"] == 109_707 * MILLION            # 122,977 - 13,270
+    # the row carries the cell's signed value, its class and its dates beside the amount
+    assert (row["signed_value"], row["class"], row["direction"], row["applies_to"]) == (
+        13_270 * MILLION, "change", "reduce", "cash_flow")
+    assert row["period"] == {"from": {"instant": "2025-09-27"}, "to": {"instant": "2026-06-27"}}
+    assert row["free_cash_flow_covers"] == "the four quarters ending 2026-06-27"
 
     both = final_with(APPLE, [adjustment("note_tables.tables.notes_38.changes.0"),
                               adjustment("note_tables.tables.notes_38.changes.4", "increase")])
@@ -180,11 +206,13 @@ def test_apples_intangible_change_moves_free_cash_flow_by_the_amount():
     assert both["value"] == 118_956 * MILLION             # 109,707 + 9,249
 
 
-def test_palo_altos_three_cells_move_free_cash_flow_and_its_balance_does_not():
+def test_palo_altos_payments_move_free_cash_flow_and_its_earnings_cells_move_nothing():
     """Before: simple 3,793.8 less share-based compensation 1,668.1 less acquisitions
-    5,118.4 = -2,992.7 (millions, from the view's `inputs`). The three cells are durations,
-    each taken by its size and the analyst's direction (reduce): -2,992.7 - 110 = -3,102.7;
-    - 154 = -3,256.7; - 76 = -3,332.7. The fourth is the liability at April 30, 2026."""
+    5,118.4 = -2,992.7 (millions). The analyst's three cells are durations ending at the
+    period end 2026-04-30, as the analyst typed them: facts.8 and notes_187.facts.17 for
+    `earnings`, facts.14 for `cash_flow`. Only the cash-flow one moves free cash flow:
+    -2,992.7 - 154 = -3,146.7. The two earnings ones are listed, 110 and 76, applied to
+    nothing. The fourth cell, the liability at April 30, 2026, is a balance."""
     held = view(PALO_ALTO)["free_cash_flow"]["free_cash_flow_quality_adjusted"]
     assert held["inputs"]["free_cash_flow_simple"] == 3_793_800_000
     assert held["inputs"]["share_based_compensation"]["value"] == 1_668_100_000
@@ -196,14 +224,30 @@ def test_palo_altos_three_cells_move_free_cash_flow_and_its_balance_does_not():
         adjustment("note_tables.tables.notes_42.facts.14"),
         adjustment("note_tables.tables.notes_187.facts.17", applies_to="earnings"),
         adjustment("note_tables.tables.notes_42.facts.16")])
-    assert [(row["amount"], row["before"], row["after"]) for row in out["adjustments_applied"]] == [
-        (110_000_000, -2_992_700_000, -3_102_700_000),
-        (154_000_000, -3_102_700_000, -3_256_700_000),
-        (76_000_000, -3_256_700_000, -3_332_700_000)]
-    assert out["value"] == -3_332_700_000
-    assert [(row["calculator_field"], NOT_A_FLOW in row["reason"])
-            for row in out["adjustments_refused"]] == [
+    row, = out["adjustments_applied"]
+    assert (row["amount"], row["before"], row["after"]) == (
+        154_000_000, -2_992_700_000, -3_146_700_000)
+    assert out["value"] == -3_146_700_000
+    assert (row["signed_value"], row["class"], row["period"]) == (
+        154_000_000, "flow", "2025-08-01..2026-04-30")
+    assert row["free_cash_flow_covers"] == "the four quarters ending 2026-04-30"
+    assert [(r["calculator_field"], r["amount"], r["signed_value"], r["class"], r["period"],
+             r["applied_to"].startswith("nothing")) for r in out["adjustments_to_earnings"]] == [
+        ("note_tables.tables.notes_42.facts.8", 110_000_000, -110_000_000, "flow",
+         "2026-02-01..2026-04-30", True),
+        ("note_tables.tables.notes_187.facts.17", 76_000_000, 76_000_000, "flow",
+         "2025-08-01..2026-04-30", True)]
+    assert [(r["calculator_field"], NOT_A_FLOW in r["reason"]) for r in out["adjustments_refused"]] == [
         ("note_tables.tables.notes_42.facts.16", True)]
+
+
+def test_an_earnings_adjustment_moves_free_cash_flow_by_nothing():
+    """Two adjustments of one cell, one for each target: free cash flow moves by the first."""
+    path = "note_tables.tables.notes_42.facts.14"
+    only_cash = final_with(PALO_ALTO, [adjustment(path)])["value"]
+    both = final_with(PALO_ALTO, [adjustment(path), adjustment(path, applies_to="earnings")])
+    assert both["value"] == only_cash == -3_146_700_000
+    assert len(both["adjustments_applied"]) == 1 and len(both["adjustments_to_earnings"]) == 1
 
 
 # --- planted cells: each class, each refused root ----------------------------------------------
@@ -213,6 +257,7 @@ def usd(**more) -> dict:
 
 
 PLANTED = {
+    "period_end": "2026-06-30",
     # a calculator cell's own period: two dates joined by `..` is a duration, one date a balance
     "terms": {
         "trailing_four_quarters": {
@@ -227,13 +272,13 @@ PLANTED = {
     },
     "note_tables": {"tables": {"notes_1": {
         "facts": [
-            usd(unit="iso4217:USD", start="2025-08-01", end="2026-04-30"),   # 0 a duration
+            usd(unit="iso4217:USD", start="2025-07-01", end="2026-06-30"),   # 0 a duration
             usd(unit="iso4217:USD", instant="2026-04-30"),                   # 1 one date
             usd(unit="iso4217:USD", start="2025-08-01"),                     # 2 a start and no end: no period
         ],
         "changes": [
-            {**usd(unit="iso4217:USD"), "from": {"instant": "2025-09-27"},
-             "to": {"instant": "2026-06-27"}},                                # 0 a change
+            {**usd(unit="iso4217:USD"), "from": {"instant": "2025-06-30"},
+             "to": {"instant": "2026-06-30"}},                                # 0 a change
         ]}}},
     "earnings_versus_cash": {"working_capital": {"receivables": {"balance_sheet_change": usd()}}},
     "ratios": {"efficiency": {"days_sales_outstanding": {"value": 61.0, "unit": "days"}},
@@ -340,7 +385,8 @@ def test_a_cell_with_periods_of_two_kinds_is_refused_not_guessed():
 
 
 def test_a_dollar_cell_whose_value_is_not_a_number_is_refused():
-    fields = {"terms": {"x": {"value": None, "unit": "USD", "period": "2025-07-01..2026-06-30"},
+    fields = {"period_end": "2026-06-30",
+              "terms": {"x": {"value": None, "unit": "USD", "period": "2025-07-01..2026-06-30"},
                         "y": {"value": True, "unit": "USD", "period": "2025-07-01..2026-06-30"},
                         "z": {"value": float("inf"), "unit": "USD", "period": "2025-07-01..2026-06-30"}}}
     for name in "xyz":
@@ -356,7 +402,7 @@ def test_a_unit_that_is_not_a_dollar_is_not_one_even_in_the_filings_spelling():
 def test_a_list_is_indexed_by_ascii_digits_alone_and_nothing_raises():
     """The reading the old gate's test held for a debt line, held here for a flow: '²' and
     '①' are digits to `str.isdigit` and not to `int`, and such a part names nothing."""
-    fields = {"terms": {"lines": [usd(period="2025-07-01..2026-06-30")]}}
+    fields = {"period_end": "2026-06-30", "terms": {"lines": [usd(period="2025-07-01..2026-06-30")]}}
     assert calculator.adjustment_reading(fields, "terms.lines.0") == (1_000_000.0, None)
     for part in ("²", "①", "٣", "-1", "00x"):
         assert calculator.adjustment_reading(fields, f"terms.lines.{part}")[0] is None, part
@@ -365,13 +411,14 @@ def test_a_list_is_indexed_by_ascii_digits_alone_and_nothing_raises():
 def test_a_period_decides_before_the_table_does():
     """A cell under a name the table calls a balance, with a duration of its own, is a flow:
     the cell says what it is."""
-    fields = {"terms": {"balances_now": {"x": usd(period="2025-07-01..2026-06-30")}}}
+    fields = {"period_end": "2026-06-30",
+              "terms": {"balances_now": {"x": usd(period="2025-07-01..2026-06-30")}}}
     assert calculator.adjustment_reading(fields, "terms.balances_now.x")[0] == 1_000_000.0
 
 
 def test_the_unit_may_be_the_calculators_or_the_filings():
     for unit in ("USD", "iso4217:USD"):
-        fields = {"terms": {"x": usd(unit=unit, period="2025-07-01..2026-06-30")}}
+        fields = {"period_end": "2026-06-30", "terms": {"x": usd(unit=unit, period="2025-07-01..2026-06-30")}}
         assert calculator.adjustment_reading(fields, "terms.x") == (1_000_000.0, None)
 
 
@@ -424,7 +471,9 @@ def test_the_module_says_nothing_about_debt_is_adjusted_here():
     text = (REPO / "src" / "calculator.py").read_text(encoding="utf-8")
     assert "Nothing about debt" in text and "adjusted debt in the next wave" in text
     assert "Nothing about debt is decided here" in calculator.adjustment_reading.__doc__
-    assert "Nothing about debt is applied here" in calculator.quality_adjusted.__doc__
+    assert "Nothing about debt is" in " ".join(calculator.quality_adjusted.__doc__.split()) \
+        and "applied here" in calculator.quality_adjusted.__doc__
+    assert "wave" in calculator.quality_adjusted.__doc__ and "earnings" in calculator.quality_adjusted.__doc__
 
 
 # --- the class table, held over every committed run's analysts' view -----------------------------
@@ -441,10 +490,13 @@ def usd_cells(node, path=""):
             yield from usd_cells(value, f"{path}.{position}" if path else str(position))
 
 
-def refused_root(path: str) -> bool:
+def refused_root(path: str, cell: dict | None = None) -> bool:
+    """Refused before its class is asked: under a root no amount is read from, or already
+    inside free cash flow. Such a cell is not placed by the table."""
     root = path.split(".")[0]
-    return root in {name for name, _ in calculator.ADJUSTMENT_REFUSED_ROOTS} | set(
+    return (root in {name for name, _ in calculator.ADJUSTMENT_REFUSED_ROOTS} | set(
         calculator.PRICED_SECTIONS) or root.startswith("market")
+        or (cell is not None and calculator.inside_free_cash_flow(path, cell) is not None))
 
 
 def committed_views() -> list[tuple[str, dict]]:
@@ -478,7 +530,7 @@ def check_every_cell_is_in_exactly_one_class(views):
     counted = {"flow": 0, "change": 0, "balance": 0, "root": 0}
     for name, held in views:
         for path, cell in usd_cells(held):
-            if refused_root(path):
+            if refused_root(path, cell):
                 counted["root"] += 1
                 assert calculator.adjustment_reading(held, path)[0] is None, (name, path)
                 continue
@@ -508,7 +560,7 @@ def test_a_cell_that_names_no_period_is_placed_by_the_table_and_every_entry_is_u
     used = [0] * len(calculator.CELL_CLASSES)
     for _, held in todays_views:
         for path, cell in usd_cells(held):
-            if refused_root(path) or calculator.cell_period(cell) is not None:
+            if refused_root(path, cell) or calculator.cell_period(cell) is not None:
                 continue
             for position, (_, pattern, _) in enumerate(calculator.CELL_CLASSES):
                 if re.fullmatch(pattern, path):
@@ -534,7 +586,6 @@ ONE_PATH_PER_ENTRY = [
     ("ratios.solvency.ebitda.inputs.depreciation_and_amortization.parts.this_year_to_date", "flow"),
     ("earnings_versus_cash.working_capital.inventory.cash_flow_statement_change", "flow"),
     ("ratios.growth.revenue.trailing_four_quarters.inputs.now", "flow"),
-    ("quarterly_cash_flow_and_accruals.operating_cash_flow_quarterly", "flow"),
 ]
 
 
@@ -546,7 +597,7 @@ def test_the_table_has_a_planted_path_for_each_entry():
         assert classes_of(path, usd()) == {kind}, (position, path)
         # the cell is put at its path by walking the parts
         parts = path.split(".")
-        built: dict = {}
+        built: dict = {"period_end": "2026-06-30"}
         cursor = built
         for part in parts[:-1]:
             cursor = cursor.setdefault(part, {})
@@ -558,53 +609,10 @@ def test_the_table_has_a_planted_path_for_each_entry():
             assert amount == 1_000_000.0, (position, reason)
 
 
-# The names the table classes, written out here so that a name dropped from the table fails.
-FLOW_NAMES = {"revenue", "revenue_a_year_earlier", "net_income", "cost_of_revenue", "ebit", "ebitda",
-              "pretax_income", "income_tax_expense", "interest_expense", "operating_cash_flow",
-              "operating_cash_flow_discontinued", "operating_cash_flow_of_continuing_operations",
-              "income_from_continuing_operations", "capital_expenditure",
-              "depreciation_and_amortization", "free_cash_flow_simple", "free_cash_flow_accruals",
-              "billings", "billings_a_year_earlier"}
-BALANCE_NAMES = {"balances_now", "balances_a_year_earlier", "debt_now", "debt_a_year_earlier",
-                 "cash_and_short_term_investments_now", "debt_at_the_start", "debt_at_the_end",
-                 "operating_lease_liability", "total_debt", "net_debt", "invested_capital"}
-CHANGE_NAMES = {"balance_sheet_change", "articulation_gap", "change_in_cash",
-                "change_in_current_assets", "change_in_current_liabilities",
-                "change_in_debt_in_current_liabilities", "change_in_income_taxes_payable",
-                "change_in_contract_liabilities"}
-
-
-def test_the_table_names_are_the_ones_written_out_here():
-    assert set(calculator._FLOW_NAMES.split("|")) == FLOW_NAMES
-    assert set(calculator._BALANCE_NAMES.split("|")) == BALANCE_NAMES
-    assert set(calculator._CHANGE_NAMES.split("|")) == CHANGE_NAMES
-
-
-@pytest.mark.parametrize("kind, names", [("flow", FLOW_NAMES), ("balance", BALANCE_NAMES),
-                                          ("change", CHANGE_NAMES)])
-def test_a_cell_with_no_period_under_a_name_of_the_table_is_of_its_class(kind, names):
-    for name in sorted(names):
-        path = f"ratios.profitability.some_ratio.inputs.{name}"
-        assert calculator.cell_class(path, usd())[0] == kind, name
-        assert {k for k, pattern, _ in calculator.CELL_CLASSES if re.fullmatch(pattern, path)} == {kind}
-
-
-@pytest.mark.parametrize("section, kind", [
-    ("terms.balances_now", "balance"), ("terms.balances_a_year_earlier", "balance"),
-    ("terms.debt_now", "balance"), ("terms.debt_a_year_earlier", "balance"),
-    ("terms.cash_and_short_term_investments_now", "balance"),
-    ("terms.trailing_four_quarters", "flow"), ("terms.trailing_four_quarters_a_year_earlier", "flow"),
-    ("terms.cash_flow_families", "flow")])
-def test_a_cell_with_no_period_in_a_section_of_the_terms_is_of_its_class(section, kind):
-    path = f"{section}.some_line"
-    assert calculator.cell_class(path, usd())[0] == kind
-    assert calculator.cell_class(f"{path}.parts.some_part", usd())[0] == kind
-
-
 def test_a_balance_names_the_table_line_that_says_so():
     """The reason is built from the table: it carries the entry's own line of why."""
-    built = {"terms": {"balances_now": {"x": usd()}}}
-    amount, reason = calculator.adjustment_reading(built, "terms.balances_now.x")
+    built = {"terms": {"balances_now": {"operating_lease_liability": usd()}}}
+    amount, reason = calculator.adjustment_reading(built, "terms.balances_now.operating_lease_liability")
     assert amount is None
     assert calculator.CELL_CLASSES[0][2] in reason and calculator.PLACED_BY_THE_TABLE in reason
 
@@ -612,7 +620,7 @@ def test_a_balance_names_the_table_line_that_says_so():
 def test_a_cell_on_a_published_view_is_never_left_to_the_fallback(published_views):
     for name, held in published_views:
         for path, cell in usd_cells(held):
-            if not refused_root(path):
+            if not refused_root(path, cell):
                 assert calculator.cell_class(path, cell)[0] is not None, (name, path)
 
 
@@ -638,7 +646,8 @@ def test_the_definition_says_what_the_rule_says():
         assert sentence in section, sentence
     text = (REPO / ".claude" / "agents" / "accounting-analyst.md").read_text(encoding="utf-8")
     assert re.search(r"`applies_to` is `cash_flow` or\s+`earnings`, and either needs "
-                     r"`calculator_field` to be a flow or a change, never\s+a balance at one date", text)
+                     r"`calculator_field` to be a flow or a change of the\s+period free cash flow "
+                     r"covers, never a balance at one date; only `cash_flow` moves free cash flow", text)
     # what still held stays
     for kept in ("You never compute the amount", "you never take a portion of a field",
                  "Share-based compensation and acquisitions are already subtracted there",
@@ -713,3 +722,363 @@ def test_reading_the_whole_view_changed_no_section_outside_free_cash_flow(run):
             contains(held[section], again[section], section)
     assert (again["free_cash_flow"]["free_cash_flow_quality_adjusted"]["value"]
             == held["free_cash_flow"]["free_cash_flow_quality_adjusted"]["value"])
+
+
+# --- what the refuter found: free cash flow's own parts, the span, earnings, the plumbing ---------
+
+import functools
+
+
+@functools.lru_cache(maxsize=None)
+def printed(name: str) -> dict:
+    """The view of a committed run as today's calculator prints it, note tables included."""
+    return calculator_drift.recompute(RUNS / name, STORE)
+
+
+def refused_with(held: dict, path: str, said: str) -> None:
+    amount, reason = calculator.adjustment_reading(held, path)
+    assert amount is None and said in reason, (path, amount, reason)
+
+
+INSIDE = "already inside free cash flow"
+OUTSIDE = "not the period free cash flow covers"
+CARR_RUN = "CARR/0001783180-26-000032"
+AAPL_RUN = "AAPL/0000320193-26-000020-note-tables-2026-10-29"
+PALO_RUN = "PANW/0001327567-26-000015-note-tables-2026-11-08"
+LFUS_RUN = "LFUS/0001628280-26-050481-note-tables-2026-11-08"
+WDC_RUN = "WDC/0001628280-26-029054"
+STX_RUN = "STX/0001137789-26-000159"
+TTMI_RUN = "TTMI/0001193125-26-335107"
+
+
+@pytest.mark.parametrize("run, path, concept", [
+    # the cells the refuter named, each with the concept the note table tags it with
+    (CARR_RUN, "note_tables.tables.notes_61.facts.2", "us-gaap:ShareBasedCompensation"),
+    (PALO_RUN, "note_tables.tables.notes_75.facts.0", "us-gaap:PaymentsToAcquireBusinessesGross"),
+    (LFUS_RUN, "note_tables.tables.notes_37.facts.0", "us-gaap:PaymentsToAcquireBusinessesNetOfCashAcquired"),
+    (WDC_RUN, "note_tables.tables.notes_31.facts.0", "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment"),
+    (AAPL_RUN, "note_tables.tables.notes_52.facts.0", "us-gaap:AllocatedShareBasedCompensationExpense"),
+    (AAPL_RUN, "note_tables.tables.notes_52.facts.2", "us-gaap:AllocatedShareBasedCompensationExpense"),
+])
+def test_a_note_table_fact_of_a_part_of_free_cash_flow_is_already_inside_it(run, path, concept):
+    held = printed(run)
+    assert calculator._cell_at(held, path)["concept"] == concept
+    refused_with(held, path, INSIDE)
+
+
+def test_every_fact_of_apples_share_based_pay_table_is_refused():
+    """notes_52 holds the allocated expense and its tax benefit, three months and nine months,
+    this year and last: each is refused, by its concept or by its dates."""
+    table = printed(AAPL_RUN)["note_tables"]["tables"]["notes_52"]
+    assert len(table["facts"]) >= 8
+    for position, fact in enumerate(table["facts"]):
+        path = f"note_tables.tables.notes_52.facts.{position}"
+        assert calculator.adjustment_reading(printed(AAPL_RUN), path)[0] is None, (path, fact["concept"])
+    for position in range(len(table["changes"])):
+        path = f"note_tables.tables.notes_52.changes.{position}"
+        assert calculator.adjustment_reading(printed(AAPL_RUN), path)[0] is None, path
+
+
+def test_the_quarterly_operating_cash_flow_and_its_history_are_already_inside_free_cash_flow():
+    held = printed(AAPL_RUN)
+    base = "quarterly_cash_flow_and_accruals.operating_cash_flow_quarterly"
+    refused_with(held, base, INSIDE)
+    history = calculator._cell_at(held, base)["history"]
+    assert len(history) == 8
+    for position in range(len(history)):
+        refused_with(held, f"{base}.history.{position}", INSIDE)
+
+
+def test_free_cash_flow_simple_inside_the_cash_runway_is_already_inside_free_cash_flow():
+    path = "ratios.liquidity.cash_runway_months.inputs.free_cash_flow_simple"
+    held = printed(TTMI_RUN)
+    assert calculator._cell_at(held, path)["unit"] == "USD"
+    refused_with(held, path, INSIDE)
+
+
+@pytest.mark.parametrize("path", [
+    "terms.trailing_four_quarters.operating_cash_flow", "terms.trailing_four_quarters.capital_expenditure",
+    "terms.trailing_four_quarters.share_based_compensation",
+    "terms.trailing_four_quarters.operating_cash_flow.parts.this_year_to_date",
+    "terms.cash_flow_families.acquisitions", "terms.cash_flow_families.acquisitions.parts.this_year_to_date",
+    "quarterly_cash_flow_and_accruals.free_cash_flow_accruals",
+    "quarterly_cash_flow_and_accruals.cash_flow_accruals.inputs.operating_cash_flow_discontinued",
+    "quarterly_cash_flow_and_accruals.cash_flow_accruals.inputs.operating_cash_flow_of_continuing_operations",
+])
+def test_each_name_of_a_part_of_free_cash_flow_is_refused_wherever_it_stands(path):
+    held = {"period_end": "2026-06-30"}
+    node = held
+    parts = path.split(".")
+    for part in parts[:-1]:
+        node = node.setdefault(part, {})
+    node[parts[-1]] = usd(period="2025-07-01..2026-06-30")
+    refused_with(held, path, INSIDE)
+
+
+def test_a_ratio_of_cash_flow_to_income_is_not_cash_flow_and_its_net_income_input_stands():
+    path = "earnings_versus_cash.operating_cash_flow_over_net_income.inputs.net_income"
+    held = {"period_end": "2026-06-30", "earnings_versus_cash": {"operating_cash_flow_over_net_income": {
+        "inputs": {"net_income": usd()}}}}
+    assert calculator.adjustment_reading(held, path) == (1_000_000.0, None)
+
+
+def test_the_concepts_inside_free_cash_flow_are_each_refused():
+    for concept in ("us-gaap:NetCashProvidedByUsedInOperatingActivities",
+                    "us-gaap:NetCashProvidedByUsedInOperatingActivitiesContinuingOperations",
+                    "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
+                    "us-gaap:PaymentsToAcquireProductiveAssets", "us-gaap:PaymentsForCapitalImprovements",
+                    "us-gaap:ShareBasedCompensation", "us-gaap:AllocatedShareBasedCompensationExpense",
+                    "us-gaap:PaymentsToAcquireBusinessesNetOfCashAcquired",
+                    "us-gaap:PaymentsToAcquireBusinessesGross", "aapl:ShareBasedCompensationOther"):
+        held = {"period_end": "2026-06-30", "note_tables": {"tables": {"notes_1": {"facts": [
+            usd(unit="iso4217:USD", concept=concept, start="2025-07-01", end="2026-06-30")]}}}}
+        refused_with(held, "note_tables.tables.notes_1.facts.0", INSIDE)
+    held = {"period_end": "2026-06-30", "note_tables": {"tables": {"notes_1": {"facts": [
+        usd(unit="iso4217:USD", concept="us-gaap:PaymentsToAcquireIntangibleAssets",
+            start="2025-07-01", end="2026-06-30")]}}}}
+    assert calculator.adjustment_reading(held, "note_tables.tables.notes_1.facts.0")[0] == 1_000_000.0
+
+
+# the span: a year ending at the period's end, or two dates ending at it
+
+def test_stx_changes_a_year_stands_two_years_and_two_flows_do_not():
+    """Seagate's note on its supplier finance obligation, the 10-K for the year ended
+    2026-07-03 (a 53-week year): the obligation was 400 million at 2026-07-03, 20 at
+    2025-06-27 and 50 at 2024-06-28 (companyfacts, through tests/companyfacts_source.py),
+    and the increase 1,817 over the year to 2026-07-03 and 1,344 over the year before."""
+    cutoff = "2026-08-04"
+    at = lambda day: source.one_value("STX", "SupplierFinanceProgramObligation", day, cutoff)
+    assert (at("2026-07-03"), at("2025-06-27"), at("2024-06-28")) == (400e6, 20e6, 50e6)
+    increase = lambda span: source.one_value("STX", "SupplierFinanceProgramObligationIncrease", span, cutoff)
+    assert (increase("2025-06-28..2026-07-03"), increase("2024-06-29..2025-06-27")) == (1_817e6, 1_344e6)
+    held = printed(STX_RUN)
+    assert held["period_end"] == "2026-07-03"
+    two_years = "note_tables.tables.notes_91.changes.0"
+    one_year = "note_tables.tables.notes_91.changes.1"
+    two_flows = "note_tables.tables.notes_91.changes.2"
+    assert calculator._cell_at(held, two_years)["value"] == at("2026-07-03") - at("2024-06-28") == 350e6
+    assert calculator._cell_at(held, one_year)["value"] == at("2026-07-03") - at("2025-06-27") == 380e6
+    assert calculator._cell_at(held, two_flows)["value"] == (
+        increase("2025-06-28..2026-07-03") - increase("2024-06-29..2025-06-27")) == 473e6
+    refused_with(held, two_years, OUTSIDE)
+    refused_with(held, two_flows, "a change between two spans")
+    assert calculator.adjustment_reading(held, one_year) == (380e6, None)
+
+
+def test_palo_altos_prior_year_columns_are_refused_and_the_latest_ones_stand():
+    """notes_42 (contingent consideration) states four columns: three and nine months ended
+    April 30, 2026 and 2025. The 2025 ones start 2025-02-01 and 2024-08-01 and end 2025-04-30;
+    the nine months of 2026 start 2025-08-01 and the three months 2026-02-01, both ending at
+    the period's end 2026-04-30."""
+    held = printed(PALO_RUN)
+    assert held["period_end"] == "2026-04-30"
+    for position, fact in enumerate(held["note_tables"]["tables"]["notes_42"]["facts"]):
+        path = f"note_tables.tables.notes_42.facts.{position}"
+        amount, reason = calculator.adjustment_reading(held, path)
+        if fact.get("start") == "2024-08-01" or fact.get("end") == "2025-04-30" or \
+                fact.get("instant", "").startswith(("2025", "2024")):
+            assert amount is None and OUTSIDE in reason or "balance" in reason, (path, reason)
+        if fact.get("end") == "2026-04-30" and fact.get("start") in ("2026-02-01", "2025-08-01") \
+                and not fact["concept"].endswith("Purchases"):
+            assert amount == fact["value"], (path, reason)
+    assert calculator.adjustment_reading(held, "note_tables.tables.notes_42.facts.8")[0] == -110e6
+    refused_with(held, "note_tables.tables.notes_42.facts.11", OUTSIDE)      # 2024-08-01..2025-04-30
+    refused_with(held, "note_tables.tables.notes_42.facts.9", OUTSIDE)       # 2025-02-01..2025-04-30
+
+
+@pytest.mark.parametrize("path", [
+    "terms.trailing_four_quarters_a_year_earlier.revenue",
+    "terms.trailing_four_quarters.revenue.parts.prior_fiscal_year",
+    "terms.trailing_four_quarters.revenue.parts.prior_year_to_date",
+    "ratios.growth.revenue.trailing_four_quarters.inputs.before",
+    "contract_liabilities_and_billings.billings_a_year_earlier",
+    "receivables_extension.days_sales_outstanding_index.inputs.revenue_a_year_earlier",
+])
+def test_a_prior_year_comparative_of_the_calculator_is_refused_as_not_the_period(path):
+    held = printed("NVDA/0001045810-26-000075")
+    assert calculator._cell_at(held, path)["unit"] == "USD"
+    refused_with(held, path, OUTSIDE)
+
+
+def test_a_history_entry_is_refused_as_not_the_period():
+    held = {"period_end": "2026-06-30", "x": {"history": {"revenue": usd(), "0": {"revenue": usd()}}}}
+    refused_with(held, "x.history.revenue", OUTSIDE)
+    refused_with(held, "x.history.0.revenue", OUTSIDE)
+    assert calculator.adjustment_reading({**held, "x": {"revenue": usd()}}, "x.revenue")[0] == 1_000_000.0
+
+
+@pytest.mark.parametrize("cell, said", [
+    ({"from": {"instant": "2025-06-30"}}, "half of a change"),                       # from and no to
+    ({"to": {"instant": "2026-06-30"}}, "half of a change"),                         # to and no from
+    ({"from": "2025-06-30", "to": "2026-06-30"}, "half of a change"),                # not periods
+    ({"from": {"start": "2024-07-01", "end": "2025-06-30"},
+      "to": {"start": "2025-07-01", "end": "2026-06-30"}}, "a change between two spans"),
+    ({"from": {"instant": "2024-06-30"}, "to": {"instant": "2026-06-30"}}, OUTSIDE),     # two years
+    ({"from": {"instant": "2025-06-30"}, "to": {"instant": "2026-03-31"}}, OUTSIDE),     # not to the period end
+    ({"from": {"instant": "2026-06-30"}, "to": {"instant": "2026-06-30"}}, "same day"),
+    ({"from": {"instant": "not a date"}, "to": {"instant": "2026-06-30"}}, "not dates"),
+    ({"start": "2025-06-30", "end": "2026-07-01"}, OUTSIDE),                          # ends after
+    ({"start": "2024-07-01", "end": "2026-06-30"}, "more than 371"),                  # two years
+    ({"start": "2026-06-30", "end": "2026-06-30"}, None),                             # a day at the period end
+    ({"start": "bad", "end": "2026-06-30"}, "not two dates"),
+    ({"period": "2025-07-01..2026-03-31"}, OUTSIDE),
+])
+def test_the_span_rule_on_planted_cells(cell, said):
+    held = {"period_end": "2026-06-30", "x": {"cell": {**usd(), **cell}}}
+    amount, reason = calculator.adjustment_reading(held, "x.cell")
+    if said is None:
+        assert amount == 1_000_000.0
+    else:
+        assert amount is None and said in reason, reason
+
+
+def test_a_year_of_371_days_stands_and_one_of_372_does_not():
+    ok = {"period_end": "2026-07-03", "x": {"c": usd(period="2025-06-27..2026-07-03")}}     # 371 days
+    long = {"period_end": "2026-07-03", "x": {"c": usd(period="2025-06-26..2026-07-03")}}   # 372
+    assert calculator.adjustment_reading(ok, "x.c")[0] == 1_000_000.0
+    refused_with(long, "x.c", OUTSIDE)
+
+
+def test_a_view_with_no_period_end_holds_nothing_to_a_span():
+    held = {"x": {"c": usd(period="2025-07-01..2026-06-30")}}
+    refused_with(held, "x.c", "names no period end")
+
+
+# earnings never moves free cash flow
+
+def test_the_calculator_lists_an_earnings_adjustment_and_applies_it_to_nothing():
+    out = calculator.quality_adjusted(
+        {"value": 100.0}, {"value": 10.0}, {"value": 0.0, "formula": "x"},
+        [adjustment("terms.trailing_four_quarters.revenue", "reduce", "earnings"),
+         adjustment("terms.trailing_four_quarters.net_income", "increase", "cash_flow")],
+        {**PLANTED, "terms": {"trailing_four_quarters": {"revenue": usd(), "net_income": usd()}}})
+    assert out["value"] == 100.0 - 10.0 + 1_000_000.0
+    assert [r["calculator_field"] for r in out["adjustments_applied"]] == ["terms.trailing_four_quarters.net_income"]
+    earnings, = out["adjustments_to_earnings"]
+    assert earnings["calculator_field"] == "terms.trailing_four_quarters.revenue"
+    assert earnings["amount"] == 1_000_000.0
+    assert earnings["applied_to"].startswith("nothing until normalised operating income")
+    assert "before" not in earnings and "after" not in earnings
+
+
+def test_an_adjustment_of_neither_target_is_refused_by_the_calculator():
+    out = calculator.quality_adjusted(
+        {"value": 100.0}, {"value": 10.0}, {"value": 0.0, "formula": "x"},
+        [adjustment("terms.trailing_four_quarters.revenue", "reduce", "debt")], PLANTED)
+    assert out["value"] == 90.0 and out["adjustments_applied"] == []
+    assert out["adjustments_refused"][0]["reason"] == "applies_to is not 'cash_flow' or 'earnings'"
+
+
+# the four newer sections reach the calculator's fields
+
+@pytest.mark.parametrize("path", [
+    "quarterly_cash_flow_and_accruals.balance_sheet_accruals.inputs.change_in_cash",
+    "receivables_extension.days_sales_outstanding_index.inputs.revenue",
+    "contract_liabilities_and_billings.billings",
+    "inventory_composition_and_growth_gap.inventory_growth_minus_revenue_growth.inputs.revenue_growth.inputs.now",
+    "concentration.facts.0.value",
+])
+def test_every_section_of_the_view_reaches_the_calculators_adjustments(path):
+    """NVIDIA's run, each of the four sections added since most runs were published: the
+    adjustment naming a cell of it is applied by `calculate`, to the cell's value."""
+    run = RUNS / "NVDA" / "0001045810-26-000075"
+    out = calculator.calculate(**calculator_drift.trigger(run), fixtures_root=STORE, bundle=run,
+                               accounting={"adjustments": [adjustment(path)]})
+    quality = out["free_cash_flow"]["free_cash_flow_quality_adjusted"]
+    cell = calculator._cell_at(out, path)
+    if path.startswith("concentration"):                  # a percentage, not a dollar cell
+        assert quality["adjustments_applied"] == [] and "not a dollar cell" in quality["adjustments_refused"][0]["reason"]
+        return
+    row, = quality["adjustments_applied"]
+    assert quality["adjustments_refused"] == [] and row["signed_value"] == cell["value"] != 0
+
+
+def test_the_calculators_fields_carry_every_section_before_free_cash_flow():
+    """The sections the view holds, as `calculate` builds its fields: a path in each is read."""
+    run = RUNS / "NVDA" / "0001045810-26-000075"
+    out = calculator.calculate(**calculator_drift.trigger(run), fixtures_root=STORE, bundle=run)
+    for section in ("terms", "ratios", "ebit", "tax_rate", "earnings_versus_cash",
+                    "quarterly_cash_flow_and_accruals", "receivables_extension",
+                    "contract_liabilities_and_billings", "inventory_composition_and_growth_gap",
+                    "concentration", "note_tables", "trend_table"):
+        assert section in out, section
+
+
+# the class table against the filing's own period types (companyfacts, through the second reader)
+
+def period_type(ticker: str, tag: str) -> str:
+    """`duration` if companyfacts rows for the tag carry a start, `instant` if an end alone;
+    a tag whose rows are of both kinds fails."""
+    kinds = {"duration" if row.get("start") else "instant"
+             for row in source.rows(ticker, tag, every_form=True)}
+    assert len(kinds) == 1, (ticker, tag, kinds)
+    return kinds.pop()
+
+
+# One committed cell with no period of its own for each entry of `CELL_CLASSES`, in order, the
+# ticker whose companyfacts holds its source, and the tags it came from (read in the cell's
+# formula and ids, or, for a change worked out from a balance, in its sibling's), and the class
+# the table must give it: a duration is a flow, an instant a balance, a change of instants a change.
+FROM_THE_FILING = [
+    (AAPL_RUN, "AAPL", "terms.debt_now.parts.debt_current", ("LongTermDebtCurrent", "CommercialPaper"), "balance"),
+    ("NVDA/0001045810-26-000075", "NVDA", "quarterly_cash_flow_and_accruals.balance_sheet_accruals.inputs."
+     "change_in_debt_in_current_liabilities.inputs.now", ("DebtCurrent",), "balance"),
+    (AAPL_RUN, "AAPL", "earnings_versus_cash.working_capital.receivables.balance_sheet_change",
+     ("AccountsReceivableNetCurrent",), "change"),
+    (AAPL_RUN, "AAPL", "earnings_versus_cash.working_capital.receivables.share_of_net_income.inputs.change",
+     ("AccountsReceivableNetCurrent",), "change"),           # its formula: receivables now - a year earlier
+    (AAPL_RUN, "AAPL", "terms.trailing_four_quarters.operating_income", ("OperatingIncomeLoss",), "flow"),
+    (AAPL_RUN, "AAPL", "ratios.profitability.gross_margin.inputs.revenue",
+     ("RevenueFromContractWithCustomerExcludingAssessedTax",), "flow"),
+    ("CIEN/0001628280-26-040767-note-tables-2026-11-14", "CIEN",
+     "ratios.solvency.ebitda.inputs.depreciation_and_amortization.parts.prior_fiscal_year",
+     ("Depreciation", "AmortizationOfIntangibleAssets"), "flow"),
+    (AAPL_RUN, "AAPL", "earnings_versus_cash.working_capital.receivables.cash_flow_statement_change",
+     ("IncreaseDecreaseInAccountsReceivable",), "flow"),
+    (AAPL_RUN, "AAPL", "ratios.growth.revenue.trailing_four_quarters.inputs.now",
+     ("RevenueFromContractWithCustomerExcludingAssessedTax",), "flow"),
+]
+
+
+@pytest.mark.parametrize("position", range(9))
+def test_each_table_entry_gives_a_cell_the_class_of_its_tag_in_the_filing(position):
+    run, ticker, path, tags, kind = FROM_THE_FILING[position]
+    entry_kind, pattern, _ = calculator.CELL_CLASSES[position]
+    held = printed(run)
+    cell = calculator._cell_at(held, path)
+    assert calculator.cell_period(cell) is None              # no period of its own: the table decides
+    assert re.fullmatch(pattern, path)
+    placing = [i for i, (_, other, _) in enumerate(calculator.CELL_CLASSES) if re.fullmatch(other, path)]
+    assert position in placing and {calculator.CELL_CLASSES[i][0] for i in placing} == {entry_kind}
+    types = {period_type(ticker, tag) for tag in tags}
+    assert len(types) == 1
+    expected = {"duration": "flow", "instant": "balance"}[types.pop()]
+    if kind == "change":                                      # a change between two balances
+        assert expected == "balance"
+        expected = "change"
+    assert kind == expected
+    assert calculator.cell_class(path, cell)[0] == expected == entry_kind
+    for tag in tags:
+        assert tag in json.dumps(held)                        # the tag is one the view cites
+
+
+def test_the_definition_says_the_cash_flow_rule_the_span_rule_and_whose_view_an_example_is():
+    section = adjustments_section()
+    for sentence in (
+            "Nor may it be one of free cash flow's own parts, which are already inside it: operating "
+            "cash flow, capital expenditure (payments for property and equipment), share-based "
+            "compensation and acquisitions",
+            "ends at the filing's period end and lasts no more than a year (a 53-week year is allowed)",
+            "A prior-year column, a history entry, a change between two spans and a change over two "
+            "years are dropped as not the period free cash flow covers",
+            "Only a `cash_flow` adjustment moves free cash flow",
+            "listed with its amount, and it is applied to nothing until normalised operating income "
+            "exists in the next wave",
+            "`note_tables.tables.notes_38.changes.0` in Apple's view",
+            "`note_tables.tables.notes_42.facts.14` in Palo Alto's view"):
+        assert sentence in section, sentence
+    # the example that names a view resolves in that view, to the cell the sentence describes
+    apple = calculator._cell_at(view(APPLE), "note_tables.tables.notes_38.changes.0")
+    assert apple["concept"] == "us-gaap:IntangibleAssetsGrossExcludingGoodwill"
+    palo = calculator._cell_at(view(PALO_ALTO), "note_tables.tables.notes_42.facts.14")
+    assert palo["concept"].endswith("LiabilityPayment")

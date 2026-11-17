@@ -2339,15 +2339,21 @@ def quality_adjusted(simple: dict, compensation: dict, acquisitions: dict,
 
     The analyst names each adjustment's direction and the field of its own view
     whose value is its amount; this function reads the amount and applies it, and
-    records what each one moved. The field may be any dollar cell of that view but
-    free cash flow itself, and it must be a flow or a change (`adjustment_reading`
-    holds the rule and the table of classes). An adjustment naming any other field,
-    a balance at one date among them, is refused with its reason and listed, never
-    guessed at. Nothing about debt is applied here: a debt effect comes with adjusted
-    debt in the next wave.
+    records what each one moved, with the cell's signed value, its class and its
+    period beside the amount. The field may be any dollar cell of that view but free
+    cash flow and free cash flow's own parts, and it must be a flow or a change of the
+    period free cash flow covers (`adjustment_reading` holds the rule and the table of
+    classes). An adjustment naming any other field, a balance at one date among them,
+    is refused with its reason and listed, never guessed at.
+
+    Only an adjustment that `applies_to` `cash_flow` moves free cash flow. One that
+    applies to `earnings` is read by the same rule and listed under
+    `adjustments_to_earnings` with its amount, applied to nothing: it waits for
+    normalised operating income, which comes in the next wave. Nothing about debt is
+    applied here: a debt effect comes with adjusted debt in the next wave.
     """
     formula = ("free_cash_flow_simple - share_based_compensation - acquisitions "
-               "- (each reducing adjustment) + (each increasing adjustment)")
+               "- (each reducing cash_flow adjustment) + (each increasing cash_flow adjustment)")
     if "missing" in simple:
         return {"missing": f"free cash flow: {simple['missing']}", "formula": formula}
     if "missing" in compensation:
@@ -2356,32 +2362,47 @@ def quality_adjusted(simple: dict, compensation: dict, acquisitions: dict,
         return {"missing": f"acquisitions: {acquisitions['missing']}", "formula": formula}
     acquired = -family_cash_effect(acquisitions)          # cash spent on acquisitions
     value = simple["value"] - compensation["value"] - acquired
-    applied, refused = [], []
+    period_end = (fields or {}).get("period_end")
+    applied, to_earnings, refused = [], [], []
     for position, item in enumerate(adjustments or []):
         field = item.get("calculator_field")
         direction = item.get("direction")
+        target = item.get("applies_to", "cash_flow")
         amount, why_not = adjustment_reading(fields, field)
-        if direction not in ("reduce", "increase") or amount is None:
+        if direction not in ("reduce", "increase") or target not in ("cash_flow", "earnings") \
+                or amount is None:
             refused.append({"position": position, "name": item.get("name"),
                             "calculator_field": field, "direction": direction,
                             "reason": ("direction is not 'reduce' or 'increase'"
                                        if direction not in ("reduce", "increase") else
+                                       "applies_to is not 'cash_flow' or 'earnings'"
+                                       if target not in ("cash_flow", "earnings") else
                                        f"{field!r} cannot be an adjustment's amount: {why_not}")})
+            continue
+        cell = _cell_at(fields, field)
+        row = {"position": position, "name": item.get("name"), "calculator_field": field,
+               "direction": direction, "applies_to": target, "amount": abs(amount),
+               "signed_value": amount, "class": cell_class(field, cell)[0],
+               "period": period_text(cell),
+               "free_cash_flow_covers": f"the four quarters ending {period_end}",
+               "quote": item.get("quote")}
+        if target == "earnings":
+            to_earnings.append({**row, "applied_to": "nothing until normalised operating income "
+                                                     "exists (the next wave)"})
             continue
         before = value
         value = value - abs(amount) if direction == "reduce" else value + abs(amount)
-        applied.append({"name": item.get("name"), "calculator_field": field,
-                        "direction": direction, "amount": abs(amount),
-                        "before": before, "after": value, "quote": item.get("quote")})
+        applied.append({**row, "before": before, "after": value})
     return {"value": value, "formula": formula, "unit": "USD",
             "inputs": {"free_cash_flow_simple": simple["value"],
                        "share_based_compensation": _brief(compensation),
                        "acquisitions": {"cash_spent": acquired,
                                         "formula": acquisitions.get("formula"),
                                         "note": acquisitions.get("note")}},
-            "adjustments_applied": applied, "adjustments_refused": refused,
+            "adjustments_applied": applied, "adjustments_to_earnings": to_earnings,
+            "adjustments_refused": refused,
             "rule": "an adjustment's amount is the absolute value of the field it names; "
-                    "its direction is the analyst's"}
+                    "its direction is the analyst's; only a cash_flow adjustment moves this value"}
 
 
 # --- where an adjustment's amount may come from ---------------------------------------------
@@ -2395,14 +2416,19 @@ def quality_adjusted(simple: dict, compensation: dict, acquisitions: dict,
 #      removes (`PRICED_SECTIONS`), is refused with that root's reason;
 #   2. the path must name a dict cell whose `unit` is USD, in the file's spelling (`USD`) or
 #      the filing's own (`iso4217:USD`, as a note table's facts carry it);
-#   3. A STOCK CANNOT MOVE A FLOW. `applies_to` is `cash_flow` or `earnings`, both flows, so
-#      the cell must be a flow (a duration) or a change between two balances or two spans.
-#      A balance at one date is refused: "a balance at one date is not a flow".
-#
-# The period of a cell is read from the cell first (`cell_period`); a cell that carries none
-# is classed by the table `CELL_CLASSES`, which names its class by the section or the name of
-# the quantity as this file writes it, one line of why per entry.
-# A cell that is neither marked nor in the table is refused, never guessed at.
+#   3. NOTHING ALREADY INSIDE FREE CASH FLOW may adjust it: a cell named for operating cash
+#      flow, capital expenditure, share-based compensation or acquisitions, or a note-table
+#      fact of one of those concepts (`INSIDE_FREE_CASH_FLOW_NAMES` and `_CONCEPTS`), is
+#      refused as "already inside free cash flow";
+#   4. A STOCK CANNOT MOVE A FLOW. `applies_to` is `cash_flow` or `earnings`, both flows, so
+#      the cell must be a flow (a duration) or a change between two balances. A balance at
+#      one date is refused: "a balance at one date is not a flow";
+#   5. THE SPAN MUST BE FREE CASH FLOW'S: a flow ends at the triggering period's end and
+#      lasts at most `LONGEST_SPAN_DAYS`; a change runs between two dates, the later the
+#      period's end, at most that many days apart; a change between two spans, a prior-year
+#      column and a history entry are refused as "not the period free cash flow covers".
+#   An adjustment of `earnings` passes the same reading and is listed by `quality_adjusted`
+#   without moving free cash flow (see there).
 #
 # Nothing about debt is here. A debt effect (receivables sold, supplier finance, a guarantee)
 # comes with adjusted debt in the next wave, where a balance is the right kind of cell; until
@@ -2413,6 +2439,11 @@ BALANCE_REFUSAL = "a balance at one date is not a flow"
 # `USD` as the calculator writes a cell, `iso4217:USD` as the filing's own facts carry it
 # (a note table's cells).
 USD_UNITS = ("USD", "iso4217:USD")
+# A fiscal year of 53 weeks is 371 days (Seagate's year ended 2026-07-03 is one), so a span of
+# a year is held to that and not to 366 days: 366 would refuse a whole year of such a company.
+LONGEST_SPAN_DAYS = 371
+NOT_THE_PERIOD = "not the period free cash flow covers"
+ALREADY_INSIDE = "already inside free cash flow"
 
 # A root an adjustment's amount is never read from, and why. The sections the filings-only
 # view removes (`PRICED_SECTIONS`, below) are refused beside these with their own reason.
@@ -2423,16 +2454,39 @@ ADJUSTMENT_REFUSED_ROOTS = (
     ("market", "the market table is a price, which the analysts' view removes"),
 )
 
+# Names that are free cash flow's own parts, as a path segment anywhere in the view (the leaf
+# of a path or a section above it), each with its line of why. `operating_cash_flow_over_net_income`
+# is a ratio of cash flow to income, not cash flow, and is left out by the lookahead.
+INSIDE_FREE_CASH_FLOW_NAMES = (
+    (r"free_cash_flow\w*", "free cash flow, or a figure made of it"),
+    (r"operating_cash_flow(?!_over)\w*", "operating cash flow is where free cash flow starts"),
+    (r"capital_expenditure", "capital expenditure is subtracted in free cash flow"),
+    (r"share_based_compensation", "share-based compensation is subtracted in free cash flow"),
+    (r"acquisitions", "acquisitions are subtracted in free cash flow"),
+)
+# The same, for a note-table fact by its concept (the name after the prefix).
+INSIDE_FREE_CASH_FLOW_CONCEPTS = (
+    (r"NetCashProvidedByUsedInOperatingActivities\w*", "operating cash flow is where free cash flow starts"),
+    (r"PaymentsToAcquire(?:PropertyPlantAndEquipment|ProductiveAssets)|PaymentsForCapitalImprovements",
+     "payments for property and equipment are subtracted in free cash flow"),
+    (r"\w*ShareBasedCompensation\w*", "share-based compensation is subtracted in free cash flow"),
+    (r"PaymentsToAcquireBusinesses\w*", "payments to acquire businesses are subtracted in free cash flow"),
+)
+# A path segment that marks a cell as an earlier period's, for a cell that carries no
+# period of its own (one that carries a period is held to its dates).
+PRIOR_PERIOD_SEGMENTS = (
+    (r"(?:\w+_)?a_year_earlier|before|prior_fiscal_year|prior_year_to_date",
+     "a figure of the period a year earlier, the comparative column"),
+    (r"history", "an entry of a history, a period before the latest"),
+)
+
 _ONE = r"[^.]+"
 _FLOW_NAMES = (
     "revenue|revenue_a_year_earlier|net_income|cost_of_revenue|ebit|ebitda|pretax_income|"
-    "income_tax_expense|interest_expense|operating_cash_flow|operating_cash_flow_discontinued|"
-    "operating_cash_flow_of_continuing_operations|income_from_continuing_operations|"
-    "capital_expenditure|depreciation_and_amortization|free_cash_flow_simple|"
-    "free_cash_flow_accruals|billings|billings_a_year_earlier")
+    "income_tax_expense|interest_expense|income_from_continuing_operations|"
+    "depreciation_and_amortization|billings|billings_a_year_earlier")
 _BALANCE_NAMES = (
-    "balances_now|balances_a_year_earlier|debt_now|debt_a_year_earlier|"
-    "cash_and_short_term_investments_now|debt_at_the_start|debt_at_the_end|"
+    "debt_now|debt_a_year_earlier|debt_at_the_start|debt_at_the_end|"
     "operating_lease_liability|total_debt|net_debt|invested_capital")
 _CHANGE_NAMES = (
     "balance_sheet_change|articulation_gap|change_in_cash|change_in_current_assets|"
@@ -2463,8 +2517,6 @@ CELL_CLASSES = (
      "the change in a working capital line as the statement of cash flows states it, over the span"),
     (FLOW, rf"(?:{_ONE}\.)*(?:ratios\.growth\.{_ONE}\.trailing_four_quarters|(?:revenue|billings)_growth)\.inputs\.(?:now|before)",
      "the two trailing four quarters a growth rate compares, each a sum of a statement line"),
-    (FLOW, r"quarterly_cash_flow_and_accruals\.operating_cash_flow_quarterly(?:\.history\.\d+)?",
-     "a quarter of operating cash flow, the cell's `end` being the quarter's last day"),
 )
 PLACED_BY_THE_TABLE = "placed by the table of CELL_CLASSES"
 
@@ -2473,9 +2525,12 @@ def cell_period(cell: dict) -> tuple[str, str] | None:
     """The class of a cell from the period the cell itself carries, and a line saying
     what it carries; None when it carries none. A change carries `from` and `to`, a
     note table's fact carries `instant` or `start` and `end`, a calculator cell
-    carries `period` as one date or as two dates joined by `..`."""
+    carries `period` as one date or as two dates joined by `..`. A cell that carries
+    half a change, or periods of more than one kind, has no class (None, why)."""
     kinds = []
-    if isinstance(cell.get("from"), dict) and isinstance(cell.get("to"), dict):
+    if "from" in cell or "to" in cell:
+        if not (isinstance(cell.get("from"), dict) and isinstance(cell.get("to"), dict)):
+            return None, "the cell states half of a change, or ends that are not periods"
         kinds.append((CHANGE, f"a change from {cell['from']} to {cell['to']}"))
     if isinstance(cell.get("period"), str):
         period = cell["period"]
@@ -2488,6 +2543,20 @@ def cell_period(cell: dict) -> tuple[str, str] | None:
     if len({kind for kind, _ in kinds}) > 1:
         return None, "the cell states periods of more than one kind"
     return kinds[0] if kinds else None
+
+
+def period_text(cell: dict) -> str | dict | None:
+    """The period a cell states, as it is printed beside an applied adjustment: the dates
+    of a duration or of one date as a string, a change's two ends as `from` and `to`."""
+    if isinstance(cell.get("from"), dict) and isinstance(cell.get("to"), dict):
+        return {"from": cell["from"], "to": cell["to"]}
+    if isinstance(cell.get("period"), str):
+        return cell["period"]
+    if isinstance(cell.get("instant"), str):
+        return cell["instant"]
+    if isinstance(cell.get("start"), str) and isinstance(cell.get("end"), str):
+        return f"{cell['start']}..{cell['end']}"
+    return None
 
 
 def cell_class(path: str, cell: dict) -> tuple[str | None, str]:
@@ -2524,11 +2593,74 @@ def _cell_at(fields: dict, path):
     return node
 
 
+def _date(text) -> dt.date | None:
+    try:
+        return dt.date.fromisoformat(text) if isinstance(text, str) else None
+    except ValueError:
+        return None
+
+
+def inside_free_cash_flow(path: str, cell: dict) -> str | None:
+    """Why a cell is already inside free cash flow, or None: a segment of its path names
+    one of free cash flow's parts, or a note-table fact's concept is one."""
+    for segment in path.split("."):
+        for pattern, why in INSIDE_FREE_CASH_FLOW_NAMES:
+            if re.fullmatch(pattern, segment):
+                return why
+    concept = cell.get("concept")
+    if isinstance(concept, str):
+        local = concept.split(":")[-1]
+        for pattern, why in INSIDE_FREE_CASH_FLOW_CONCEPTS:
+            if re.fullmatch(pattern, local):
+                return why
+    return None
+
+
+def period_problem(path: str, cell: dict, kind: str, period_end: dt.date | None) -> str | None:
+    """Why a flow or a change is not of the period free cash flow covers, or None. The
+    cell's own dates are held to the triggering period's end and to a year's length; a cell
+    with no dates of its own is the trailing four quarters or the year to date by the table,
+    unless a segment of its path marks it an earlier period's."""
+    if period_end is None:
+        return f"{NOT_THE_PERIOD}: the view names no period end to hold it to"
+    own = cell_period(cell)
+    if own is None or own[0] is None:
+        for segment in path.split("."):
+            for pattern, why in PRIOR_PERIOD_SEGMENTS:
+                if re.fullmatch(pattern, segment):
+                    return f"{NOT_THE_PERIOD}: {why} ({segment})"
+        return None
+    if kind == CHANGE:
+        ends = [(cell[side].get("instant") if isinstance(cell[side], dict) else None)
+                for side in ("from", "to")]
+        early, late = (_date(end) for end in ends)
+        if early is None or late is None:
+            return (f"{NOT_THE_PERIOD}: a change between two spans, or between ends that are "
+                    f"not dates, is not a change between two balances")
+    else:
+        if isinstance(cell.get("period"), str):
+            start, _, end = cell["period"].partition("..")
+        else:
+            start, end = cell.get("start"), cell.get("end")
+        early, late = _date(start), _date(end)
+        if early is None or late is None:
+            return f"{NOT_THE_PERIOD}: its span is not two dates"
+    if late != period_end:
+        return (f"{NOT_THE_PERIOD}: it ends {late}, and the period ends {period_end}")
+    if not 0 <= (late - early).days <= LONGEST_SPAN_DAYS:
+        return (f"{NOT_THE_PERIOD}: it spans {(late - early).days} days from {early}, "
+                f"more than {LONGEST_SPAN_DAYS}")
+    if kind == CHANGE and early == late:
+        return f"{NOT_THE_PERIOD}: its two dates are the same day"
+    return None
+
+
 def adjustment_reading(fields: dict, path) -> tuple[float | None, str | None]:
     """(amount, None) for a path an adjustment may name, or (None, the reason it may not).
     One rule, read by the analysis gate and by the calculator alike: any dollar cell of
-    the analysts' view but free cash flow and the priced sections, and a flow or a change,
-    never a balance at one date (the comment above says why, and in what order).
+    the analysts' view but free cash flow, the priced sections and free cash flow's own
+    parts; a flow or a change, never a balance at one date; of the period free cash flow
+    covers (the comment above says why, and in what order).
 
     Nothing about debt is decided here. A debt effect comes with adjusted debt in the
     next wave; until then a debt line is a balance and is refused as one."""
@@ -2545,11 +2677,17 @@ def adjustment_reading(fields: dict, path) -> tuple[float | None, str | None]:
         return None, "it names no cell of the analysts' view"
     if not isinstance(cell, dict) or cell.get("unit") not in USD_UNITS:
         return None, "it is not a dollar cell (a dict whose unit is USD)"
+    inside = inside_free_cash_flow(path, cell)
+    if inside:
+        return None, f"{ALREADY_INSIDE}: {inside}"
     kind, why = cell_class(path, cell)
     if kind is None:
         return None, why
     if kind == BALANCE:
         return None, f"{BALANCE_REFUSAL}: {why}"
+    problem = period_problem(path, cell, kind, _date((fields or {}).get("period_end")))
+    if problem:
+        return None, problem
     amount = field_value(fields, path)
     if amount is None:
         return None, "its value is not a number"
@@ -3565,7 +3703,7 @@ def calculate(*, ticker: str, cutoff, period_end: str, form: str, accession: str
     }
     tables = note_tables.from_run(ticker, accession, cutoff, fixtures_root=fixtures_root,
                                   bundle=bundle)
-    fields = {"terms": terms,
+    fields = {"period_end": period_end, "terms": terms,
               "ratios": {key: sections[key] for key in ("profitability", "efficiency",
                                                         "liquidity", "solvency", "growth")},
               "ebit": sections["ebit"], "tax_rate": sections["tax_rate"],
@@ -3580,7 +3718,11 @@ def calculate(*, ticker: str, cutoff, period_end: str, form: str, accession: str
                               (assumptions or {}).get("wacc_overrides"))
     moved = None
     quality = free["free_cash_flow_quality_adjusted"]
-    if quality.get("adjustments_applied"):
+    # the valuation moves by every adjustment read, a cash-flow one and an earnings one,
+    # in the analyst's order, as before; free cash flow moved by the first kind alone
+    read = sorted(quality.get("adjustments_applied", []) + quality.get("adjustments_to_earnings", []),
+                  key=lambda row: row["position"])
+    if read:
         by_name = {item.get("name"): item for item in adjustments or []}
         op, tax = sections["ebit"], sections["tax_rate"]
         nopat = (op["value"] * (1 - tax["value"])
@@ -3588,7 +3730,7 @@ def calculate(*, ticker: str, cutoff, period_end: str, form: str, accession: str
         moved = {"applied": [dict(item, applies_to=by_name.get(item["name"], {})
                                   .get("applies_to", "cash_flow"),
                                   recurs=by_name.get(item["name"], {}).get("recurs") is True)
-                             for item in quality["adjustments_applied"]],
+                             for item in read],
                  "nopat": nopat}
     value = valuation(terms, sections, capital, assumptions, moved)
     beside_the_dcf = {
