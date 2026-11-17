@@ -242,7 +242,8 @@ adjustments), or the statement's change in a working-capital line,
 reached by another path. Each line is cited once. (b) The change in the supplier finance
 obligation or in receivables sold or factored, each a note table's `changes` cell of that concept,
 or the period's payment of acquisition consideration (`PaymentForContingentConsiderationLiability`
-in financing, operating or investing activities, or `PaymentsForPreviousAcquisition`), a note table's
+in financing or investing activities, or `PaymentsForPreviousAcquisition`; the operating-activities
+variant is already deducted inside operating cash flow and is refused), a note table's
 `facts` cell, a flow over the period. The supplier finance obligation sits inside
 accounts payable and receivables sold inside receivables, both inside operating cash flow: each is
 the same movement as the statement's change in payables or in receivables, so name that line or

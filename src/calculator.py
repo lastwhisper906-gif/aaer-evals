@@ -2646,7 +2646,7 @@ NAMED_ITEMS = (
      "line:change_in_receivables"),
 )
 # The period's payment of acquisition consideration, a flow fact (a start and an end), with its own key per concept.
-CONSIDERATION_PAYMENTS = (r"paymentforcontingentconsiderationliability(?:financing|operating|investing)activities\w*|"
+CONSIDERATION_PAYMENTS = (r"paymentforcontingentconsiderationliability(?:financing|investing)activities\w*|"
                           r"paymentsforpreviousacquisition\w*")
 
 # A cell that is a change in cash or restricted cash, or in a total that includes cash, CONTAINS free
@@ -2869,6 +2869,10 @@ def inside_free_cash_flow(path: str, cell: dict, fields: dict | None = None,
         if applies_to == "cash_flow" and any(
                 re.fullmatch(pattern, local, re.IGNORECASE) for pattern in INVESTING_FLOWS):
             return CONTAINS_OR_INSIDE
+        if applies_to == "cash_flow" and re.fullmatch(
+                r"paymentforcontingentconsiderationliabilityoperatingactivities\w*", local.lower()):
+            return (f"{ALREADY_INSIDE}: a consideration payment in operating activities is already deducted "
+                    f"inside operating cash flow, so a `reduce` would repeat it")
         if isinstance(cell.get("from"), dict) and isinstance(cell.get("to"), dict) and any(
                 re.search(pattern, local.lower()) for pattern in CONTAINS_FREE_CASH_FLOW_CONCEPTS):
             return f"{CONTAINS}: a change in cash or restricted cash, or in a total that includes cash"

@@ -3405,3 +3405,32 @@ def test_the_refusal_sentence_is_quoted_as_the_code_has_it_in_both_documents_and
     assert needs.count("whether consideration for an acquisition paid later") == 1
 
 
+
+
+def test_a_consideration_payment_in_operating_activities_is_already_inside_free_cash_flow():
+    """The refuter's plant: a 50 million `PaymentForContingentConsiderationLiabilityOperatingActivities` over Seagate's
+    trailing year (2025-06-28..2026-07-03) is already deducted inside operating cash flow, so `reduce` would repeat it:
+    refused in both directions, by the calculator and by the gate, as cash_flow. As earnings it is not refused for
+    that. The financing and investing variants stand."""
+    held = printed(STX_RUN)
+    year = calculator.trailing_year_start(held).isoformat()
+    assert year == "2025-06-28"          # the prior year to date's last day, the view's own start of the year
+    def planted(local: str) -> dict:
+        fact = {"concept": f"us-gaap:{local}", "value": 50e6, "unit": "iso4217:USD", "start": year, "end": held["period_end"]}
+        return {**held, "note_tables": {"tables": {"notes_1": {"facts": [fact]}}}}
+    path = "note_tables.tables.notes_1.facts.0"
+    operating = planted("PaymentForContingentConsiderationLiabilityOperatingActivities")
+    amount, reason = reading(operating, path, False, "cash_flow")
+    assert amount is None and INSIDE in reason and "already deducted inside operating cash flow" in reason, reason
+    for direction in ("reduce", "increase"):
+        problem = analysis_check.adjustment_problem(operating)(
+            {"direction": direction, "applies_to": "cash_flow", "calculator_field": path, "quote": "q"})
+        assert "already deducted inside operating cash flow" in problem, (direction, problem)
+        out = calculator.quality_adjusted({"value": 1e9}, {"value": 0.0}, {"value": 0.0, "formula": "x"},
+                                          [adjustment(path, direction, "cash_flow")], operating)
+        assert out["adjustments_applied"] == [] and out["value"] == 1e9
+        assert "already deducted inside operating cash flow" in out["adjustments_refused"][0]["reason"]
+    assert reading(operating, path, False, "earnings")[0] == 50e6
+    for local in ("PaymentForContingentConsiderationLiabilityFinancingActivities",
+                  "PaymentForContingentConsiderationLiabilityInvestingActivities"):
+        assert reading(planted(local), path, False, "cash_flow") == (50e6, None), local
