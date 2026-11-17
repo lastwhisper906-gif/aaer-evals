@@ -83,10 +83,9 @@ Schedule II's other accounts (a filer's own members, such as Omnicell's
 `omcl:AccountsReceivableAndUnbilledReceivablesMember`) are the series of the family
 `schedule_two_other`, each with its `member`; the standard member of the deferred tax allowance
 is always left out, and so is a member whose balance equals the filing's own
-`DeferredTaxAssetsValuationAllowance` at every date the filing tags one (the filing decides, never
-a name); each is listed under `left_out`. Where the filing tags no such allowance and the member's
-name says valuation allowance, it stays a series with `release` null and says it may be that
-allowance, never a release. `RestructuringCosts` and `RestructuringCostsAndAssetImpairmentCharges` are the
+`DeferredTaxAssetsValuationAllowance` at two dates at least, at every date compared, not all zero,
+each date with one allowance value (the filing decides, never a name); each is listed under `left_out`. A member not so proven stays a series, and where its name says valuation allowance, deferred
+tax, income tax or a tax asset its `release` is null and says it may be that allowance. `RestructuringCosts` and `RestructuringCostsAndAssetImpairmentCharges` are the
 restructuring provision. Left out because they are no row of the family's own rollforward: the
 measurement-period adjustments `BusinessCombinationProvisionalInformationInitialAccounting
 IncompleteAdjustment...` (rows of a purchase price allocation, found beside goodwill), and
@@ -340,12 +339,15 @@ SCHEDULE_TWO_OTHER = "schedule_two_other"
 
 US_GAAP_TAX_MEMBER = "us-gaap:ValuationAllowanceOfDeferredTaxAssetsMember"
 FILINGS_TAX_ALLOWANCE = "us-gaap:DeferredTaxAssetsValuationAllowance"
-UNCOMPARED = ("may be the deferred tax allowance; the filing tags no allowance to compare")
+CAUTION = "may be the deferred tax allowance; not proven by the filing's own allowance"
+# a name that makes a release cautious, never one that leaves a member out
+CAUTIOUS_NAMES = ("valuationallowance", "deferredtax", "incometax", "taxasset")
 
 
 def _filings_tax_allowances(tables: dict) -> dict[str, set]:
     """The filing's own valuation allowance of deferred tax assets (`DeferredTaxAssetsValuation
-    Allowance`, no axes) by date, from any table of its notes."""
+    Allowance`, no axes) by date, from any table of its notes: every value the filing states at
+    the date."""
     out: dict[str, set] = {}
     for table in tables.values():
         for one in table["facts"]:
@@ -357,18 +359,21 @@ def _filings_tax_allowances(tables: dict) -> dict[str, set]:
 
 def _tax_decision(group: dict, allowances: dict) -> str:
     """Whether a filer's own Schedule II account is the deferred tax allowance, decided by the
-    filing and not by a name: "left_out" when its balance equals the filing's own allowance at
-    every date at which the filing tags one (and at one at least); "uncompared" when the
-    filing tags none at its dates and the member's name says valuation allowance, so it may be
-    that allowance; else "series"."""
+    filing: "left_out" only when its balance equals the filing's own allowance at two dates at
+    least, at every date compared, the matched values are not all zero, and each date has one
+    allowance value (a date with conflicting values is not compared). Otherwise "cautious" when
+    the member's name says valuation allowance, deferred tax, income tax or a tax asset -- a
+    name never excludes, it only keeps a release from being read -- else "series"."""
     balances = [one for one in group["roles"].get("balance", []) if "instant" in one]
-    compared = [_dec(one["value"]) in allowances[one["instant"]]
-                for one in balances if one["instant"] in allowances]
-    if compared and all(compared):
+    compared = [(_dec(one["value"]), allowances[one["instant"]])
+                for one in balances if len(allowances.get(one["instant"], ())) == 1]
+    if (len({one["instant"] for one in balances if len(allowances.get(one["instant"], ())) == 1})
+            >= 2 and all(value in values for value, values in compared)
+            and any(value != 0 for value, _ in compared)):
         return "left_out"
     member = group["axes"].get(SCHEDULE_TWO_AXIS, "").rsplit(":", 1)[-1].lower()
-    if not compared and "valuationallowance" in member:
-        return "uncompared"
+    if any(word in member for word in CAUTIOUS_NAMES):
+        return "cautious"
     return "series"
 
 
@@ -781,9 +786,9 @@ def _period(group: dict, start: str, end: str, tables: dict, signs: dict,
                                "gross base did not show the reserve falling while it rose")
     else:
         out["release"] = False
-    if group.get("uncompared"):
+    if group.get("cautious"):
         # it may be the deferred tax allowance, which is never a release of a reserve
-        out["release"], out["release_because"], out["release_note"] = None, [], UNCOMPARED
+        out["release"], out["release_because"], out["release_note"] = None, [], CAUTION
     return out
 
 
@@ -800,7 +805,7 @@ def _family(name: str, tables: dict, signs: dict, mates: dict) -> dict:
             decision = _tax_decision(group, allowances) if name == SCHEDULE_TWO_OTHER else None
             if decision == "left_out":
                 continue
-            group["uncompared"] = decision == "uncompared"
+            group["cautious"] = decision == "cautious"
             spans = sorted({(one["start"], one["end"]) for role in FLOW_ROLES
                             for one in group["roles"].get(role, [])},
                            key=lambda span: (span[1], span[0]), reverse=True)

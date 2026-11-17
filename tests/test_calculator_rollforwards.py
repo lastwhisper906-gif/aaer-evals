@@ -1801,19 +1801,33 @@ ACCOUNT_NAMES = [
     "abc:ReturnsMember", "abc:FederalMember"]
 
 
-def one_member(member: str, *, allowance: int | None = None, extra: dict | None = None) -> dict:
-    """A Schedule II account of 1,000 falling to 800 on a -200 charge, beside the filing's own
-    allowance of deferred tax assets at the closing date (`allowance`, in another table) or none."""
+CAUTIOUS = ("valuationallowance", "deferredtax", "incometax", "taxasset")
+
+
+def says_tax(member: str) -> bool:
+    return any(word in member.rsplit(":", 1)[-1].lower() for word in CAUTIOUS)
+
+
+def one_member(member: str, *, allowance: int | None = None, extra: dict | None = None,
+               closing: int = 800, opening: int = 1_000, allowances=None) -> dict:
+    """A Schedule II account of `opening` (1,000) going to `closing` (800) on a charge of the
+    difference, beside the filing's own allowance of deferred tax assets in another table:
+    `allowance` at the closing date and 1,000 at the opening, or `allowances`, a list of
+    (instant, value) the filing tags, or none."""
     axes = {SCHEDULE_AXIS: member, **(extra or {})}
     tables = [
-        fact("ValuationAllowancesAndReservesBalance", 1_000, at=OPENING, axes=axes, number="t1"),
-        fact("ValuationAllowancesAndReservesChargedToCostAndExpense", -200, **YEAR, axes=axes,
-             number="t2"),
-        fact("ValuationAllowancesAndReservesBalance", 800, at=CLOSING, axes=axes, number="t3")]
+        fact("ValuationAllowancesAndReservesBalance", opening, at=OPENING, axes=axes,
+             number="t1"),
+        fact("ValuationAllowancesAndReservesChargedToCostAndExpense", closing - opening,
+             **YEAR, axes=axes, number="t2"),
+        fact("ValuationAllowancesAndReservesBalance", closing, at=CLOSING, axes=axes,
+             number="t3")]
     if allowance is not None:
+        allowances = [(OPENING, 1_000), (CLOSING, allowance)]
+    if allowances:
         return rollforwards.build(planted(tables, [
-            fact(ALLOWANCE, 1_000, at=OPENING, number="a1"),
-            fact(ALLOWANCE, allowance, at=CLOSING, number="a2")]))
+            fact(ALLOWANCE, value, at=at, number=f"a{at_}")
+            for at_, (at, value) in enumerate(allowances)]))
     return rollforwards.build(planted(tables))
 
 
@@ -1830,34 +1844,80 @@ def test_a_member_whose_balance_is_the_filings_own_tax_allowance_is_left_out_wha
 
 
 @pytest.mark.parametrize("member", LEFT_OUT_NAMES + ACCOUNT_NAMES)
-def test_a_member_that_is_not_the_filings_tax_allowance_is_a_series_whatever_its_name(member):
-    """The filing tags 1,000 and 700, not 800: the member is an account of the section's, and a
-    -200 charge is a release (unless its name says valuation allowance, below)."""
+def test_a_member_matching_at_one_date_and_not_at_another_is_a_series_a_name_makes_cautious(
+        member):
+    """The filing tags 1,000 and 700, the member 1,000 and 800: it matched at the opening and
+    not at the closing, so it is proven nothing, and an account of the section's. A name that
+    says valuation allowance, deferred tax, income tax or a tax asset keeps its release unread."""
     result = one_member(member, allowance=700)
     assert result["left_out"] == []
     (series,) = result["schedule_two_other"]["series"]
     assert series["member"] == member
     year = series["periods"][0]
-    # a comparison was made and it is no match: a real account, and the -200 is a release
-    assert year["foots"] is True and year["release"] is True
-    assert year["release_because"] == ["charged_to_expense_negative"]
+    assert year["foots"] is True
+    if says_tax(member):
+        assert year["release"] is None and year["release_because"] == []
+        assert year["release_note"] == (
+            "may be the deferred tax allowance; not proven by the filing's own allowance")
+    else:
+        assert year["release"] is True and year["release_because"] == [
+            "charged_to_expense_negative"]
 
 
 @pytest.mark.parametrize("member", LEFT_OUT_NAMES + ACCOUNT_NAMES)
-def test_a_member_with_no_allowance_to_compare_is_a_series_and_a_valuation_name_is_no_release(
-        member):
+def test_a_member_with_no_allowance_to_compare_is_a_series_a_name_makes_cautious(member):
     result = one_member(member)
     assert result["left_out"] == []
     (series,) = result["schedule_two_other"]["series"]
     year = series["periods"][0]
     assert year["foots"] is True
-    if "valuationallowance" in member.rsplit(":", 1)[-1].lower():
-        assert year["release"] is None and year["release_because"] == []
-        assert year["release_note"] == (
-            "may be the deferred tax allowance; the filing tags no allowance to compare")
+    if says_tax(member):
+        assert year["release"] is None and "not proven" in year["release_note"]
     else:
-        assert year["release"] is True and year["release_because"] == [
-            "charged_to_expense_negative"]
+        assert year["release"] is True
+
+
+@pytest.mark.parametrize("member,cautious", [
+    ("abc:DeferredTaxAssetsAllowanceMember", True), ("abc:IncomeTaxReserveMember", True),
+    ("abc:DeferredTaxReserveMember", True), ("abc:TaxAssetReserveMember", True),
+    ("abc:ValuationAllowanceReserveMember", True),
+    ("abc:ReturnsMember", False), ("abc:SalesTaxReserveMember", False)])
+def test_a_name_makes_a_release_cautious_never_excludes(member, cautious):
+    """The filing tags 1,000 and 800; the member 1,000 and 790: close, not equal."""
+    result = one_member(member, closing=790, allowances=[(OPENING, 1_000), (CLOSING, 800)])
+    assert result["left_out"] == []
+    year = result["schedule_two_other"]["series"][0]["periods"][0]
+    assert (year["release"] is None) is cautious
+    if not cautious:
+        assert year["release"] is True
+
+
+def test_one_tagged_date_is_no_proof():
+    """The allowance is tagged at the closing date only (800), the member 1,000 then 800: one
+    date compared is one coincidence."""
+    result = one_member("abc:ReturnsMember", allowances=[(CLOSING, 800)])
+    assert result["left_out"] == [] and result["schedule_two_other"]["series"]
+
+
+def test_zeros_at_both_dates_are_no_proof():
+    """A member at 0 and 0 beside an allowance of 0 and 0 matches only in having nothing."""
+    result = one_member("abc:ReturnsMember", opening=0, closing=0,
+                        allowances=[(OPENING, 0), (CLOSING, 0)])
+    assert result["left_out"] == [] and result["schedule_two_other"]["series"]
+
+
+def test_a_date_with_conflicting_allowance_values_is_not_compared():
+    """The filing states 800 and 805 at the closing date: that date is not compared, so only the
+    opening one is, and one date is no proof."""
+    result = one_member("abc:ReturnsMember",
+                        allowances=[(OPENING, 1_000), (CLOSING, 800), (CLOSING, 805)])
+    assert result["left_out"] == [] and result["schedule_two_other"]["series"]
+
+
+def test_two_matching_dates_of_nonzero_values_leave_a_member_out_whatever_its_name():
+    result = one_member("abc:ReturnsMember", allowances=[(OPENING, 1_000), (CLOSING, 800)])
+    assert result["schedule_two_other"].get("series") is None
+    assert [one["member"] for one in result["left_out"]] == ["abc:ReturnsMember"]
 
 
 def test_the_standard_us_gaap_member_is_always_left_out_even_on_another_axis():
@@ -2184,4 +2244,66 @@ def test_an_allowance_at_other_dates_is_no_comparison_for_a_member():
          fact(ALLOWANCE, 800, at="2023-12-31", number="a2")]))
     assert result["left_out"] == []
     year = result["schedule_two_other"]["series"][0]["periods"][0]
-    assert year["release"] is None and "no allowance to compare" in year["release_note"]
+    assert year["release"] is None and "not proven" in year["release_note"]
+
+
+def test_two_nests_in_one_series_and_span_are_each_their_own_mates():
+    """The charge of one period is tagged twice in two separate nests (70 as `RestructuringCosts`
+    with `RestructuringCharges` in it, and 70 as `RestructuringCostsAndAssetImpairmentCharges`
+    with `RestructuringSettlementAndImpairmentProvisions` in it): the first nest's mates do not
+    run on into the second, and the two nests are two printed rows, so they are overlapping."""
+    page = inline_page(
+        '<td>a</td><td><ix:nonFraction id="a" name="x:Y" contextRef="c" unitRef="usd">'
+        + number_cell("b", "5") + "</ix:nonFraction></td>",
+        '<td>c</td><td><ix:nonFraction id="c" name="x:Y" contextRef="c" unitRef="usd">'
+        + number_cell("d", "5") + "</ix:nonFraction></td>")
+    assert note_tables.same_cell_facts(page) == {"a": ["b"], "b": ["a"], "c": ["d"], "d": ["c"]}
+    one_row = inline_page(
+        '<td>a</td><td><ix:nonFraction id="a" name="x:Y" contextRef="c" unitRef="usd">'
+        + number_cell("b", "5") + "</ix:nonFraction>"
+        '<ix:nonFraction id="c" name="x:Y" contextRef="c" unitRef="usd">'
+        + number_cell("d", "5") + "</ix:nonFraction></td>")
+    assert note_tables.same_cell_facts(one_row) == {"a": ["b"], "b": ["a"], "c": ["d"],
+                                                    "d": ["c"]}
+    year = real_restructuring(
+        [f"<td>x</td><td>{ix('c1', 'RestructuringCosts', 'd', '', ix('c2', 'RestructuringCharges', 'd', '70'))}"
+         f"{ix('c3', 'RestructuringCostsAndAssetImpairmentCharges', 'd', '', ix('c4', 'RestructuringSettlementAndImpairmentProvisions', 'd', '70'))}</td>"],
+        [("c1", "RestructuringCosts", "d", 70), ("c2", "RestructuringCharges", "d", 70),
+         ("c3", "RestructuringCostsAndAssetImpairmentCharges", "d", 70),
+         ("c4", "RestructuringSettlementAndImpairmentProvisions", "d", 70)], closing=140)
+    assert "overlapping charge elements" in year["charged_to_expense"]["missing"]
+    assert year["complete"] is False
+
+
+def three_year_member(allowances: list[tuple[str, int]]) -> dict:
+    """An account of 900, 1,000 and 790 at three year ends (charges 100 and -210)."""
+    axes = {SCHEDULE_AXIS: "abc:ReturnsMember"}
+    last = {"start": "2024-01-01", "end": "2024-12-31"}
+    return rollforwards.build(planted(
+        [fact("ValuationAllowancesAndReservesBalance", 900, at="2023-12-31", axes=axes,
+              number="t0"),
+         fact("ValuationAllowancesAndReservesChargedToCostAndExpense", 100, **last, axes=axes,
+              number="t1"),
+         fact("ValuationAllowancesAndReservesBalance", 1_000, at=OPENING, axes=axes, number="t2"),
+         fact("ValuationAllowancesAndReservesChargedToCostAndExpense", -210, **YEAR, axes=axes,
+              number="t3"),
+         fact("ValuationAllowancesAndReservesBalance", 790, at=CLOSING, axes=axes, number="t4")],
+        [fact(ALLOWANCE, value, at=at, number=f"a{at_}")
+         for at_, (at, value) in enumerate(allowances)]))
+
+
+def test_a_date_with_conflicting_allowance_values_does_not_spoil_the_dates_that_match():
+    """The filing's allowance is 900 and 1,000 at the first two year ends, which the member
+    matches, and 800 and 805 at the third, where the member is 790: that date is not compared,
+    so two dates match and every date compared matches."""
+    result = three_year_member([("2023-12-31", 900), (OPENING, 1_000), (CLOSING, 800),
+                                (CLOSING, 805)])
+    assert [one["member"] for one in result["left_out"]] == ["abc:ReturnsMember"]
+
+
+def test_matched_values_that_are_not_all_zero_are_proof():
+    """The member is 1,000 then 0 and the allowance 1,000 then 0: one of the matched values is
+    zero and the other is not, which is proof; zeros at every date are none."""
+    result = one_member("abc:ReturnsMember", closing=0, allowances=[(OPENING, 1_000),
+                                                                    (CLOSING, 0)])
+    assert [one["member"] for one in result["left_out"]] == ["abc:ReturnsMember"]
