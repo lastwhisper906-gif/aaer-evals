@@ -1673,3 +1673,25 @@ def test_release_versus_report_is_pointed_at_in_the_accounting_analysts_cross_do
     assert prompt.count("`release_versus_report`") == 1
     for name in ("numbers-reader", "notes-text-reader"):
         assert "release_versus_report" not in (PROMPTS / f"{name}.md").read_text(encoding="utf-8")
+
+
+def test_the_accounting_analysts_reserve_rollforward_paragraph_names_the_fields_and_the_quote_rule():
+    """The paragraph that points the analyst at `rollforwards.<family>`: the fields it may cite,
+    its reading of a `foots` false beside a `complete` false, the sign source of every row of
+    `other` (a zero row included), and that the reason a reserve moved is quoted from a notes
+    reader's item, never from the filing the analyst does not see."""
+    text = (REPO / ".claude" / "agents" / "accounting-analyst.md").read_text(encoding="utf-8")
+    opening = text.index("**Reserve rollforwards.**")
+    paragraph = " ".join(text[opening:].split("\n\n", 1)[0].split())
+    for name in ("foots", "complete", "difference", "sign_source", "release",
+                 "provision_over_usage", "rows_not_placed", "coverage_years",
+                 "ending_over_gross_base", "prior_period_revision_over_current_expense"):
+        assert f"`{name}`" in paragraph, name
+    assert ("so a `foots` false beside a `complete` false is a table Python did not read in "
+            "full and no finding") in paragraph
+    assert "Every row in `other`, a zero row included, carries `sign_source`" in paragraph
+    assert "`difference` is the stated ending less the rows" in paragraph
+    assert ("put inside quotation marks the `quote` of an item in the notes reader's report"
+            in paragraph)
+    assert "quote the filing's own words" not in paragraph
+    assert "do not write any arithmetic of your own" in paragraph
