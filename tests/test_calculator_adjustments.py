@@ -659,3 +659,57 @@ def test_each_example_path_in_the_definition_resolves_in_a_published_run_and_is_
     assert isinstance(cell, dict) and "value" in cell
     assert calculator.cell_class(path, cell)[0] == kind
     assert calculator.adjustment_reading(held, path)[0] == cell["value"]
+
+
+def test_every_example_path_in_the_adjustments_paragraph_resolves_in_a_committed_view(published_views):
+    """A definition's example must be a path some committed run's view holds, with a number."""
+    paths = re.findall(r"`((?:terms|earnings_versus_cash|note_tables|ratios)\.[a-z0-9_.]+)`",
+                       adjustments_section())
+    assert len(paths) >= 5
+    for path in paths:
+        found = [name for name, held in published_views
+                 if isinstance(calculator._cell_at(held, path), dict)
+                 and isinstance(calculator._cell_at(held, path).get("value"), (int, float))]
+        assert found, path
+
+
+def test_the_refused_example_is_refused_in_the_run_it_was_published_in():
+    """Supplier finance as a balance: DELL and STX each had it applied before this rule; now
+    it is refused, and the definition says why and what to do instead."""
+    path = "terms.balances_now.supplier_finance_obligation"
+    section = adjustments_section()
+    assert f"`{path}`" in section and "debt-like" in section and "adjusted debt" in section
+    for run in (RUNS / "DELL" / "0001571996-26-000046", RUNS / "STX" / "0001137789-26-000159"):
+        amount, reason = calculator.adjustment_reading(view(run), path)
+        assert amount is None and NOT_A_FLOW in reason
+
+
+def contains(published, recomputed, where=""):
+    """Every leaf the published file holds is in the recomputed one, equal; the recomputed
+    file may hold more (sections and cells added since the run was published)."""
+    if isinstance(published, dict):
+        assert isinstance(recomputed, dict), where
+        for key, value in published.items():
+            assert key in recomputed, f"{where}.{key}"
+            contains(value, recomputed[key], f"{where}.{key}")
+    elif isinstance(published, list):
+        assert isinstance(recomputed, list) and len(published) == len(recomputed), where
+        for position, (a, b) in enumerate(zip(published, recomputed)):
+            contains(a, b, f"{where}.{position}")
+    else:
+        assert published == recomputed, where
+
+
+@pytest.mark.parametrize("run", [APPLE, PALO_ALTO], ids=["apple", "palo_alto"])
+def test_reading_the_whole_view_changed_no_section_outside_free_cash_flow(run):
+    """The calculator now builds one `fields` from every section before free cash flow; each
+    published section other than free_cash_flow is still what a recompute prints (the run
+    published before four sections were added, so the recompute may hold more, never less).
+    With no adjustment, free cash flow's own value is the published one."""
+    held = view(run)
+    again = calculator_drift.recompute(run, STORE)
+    for section in held:
+        if section != "free_cash_flow":
+            contains(held[section], again[section], section)
+    assert (again["free_cash_flow"]["free_cash_flow_quality_adjusted"]["value"]
+            == held["free_cash_flow"]["free_cash_flow_quality_adjusted"]["value"])

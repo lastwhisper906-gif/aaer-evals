@@ -194,9 +194,15 @@ every year of the forecast. Examples of the shape:
   later minus earlier)
 - receivables growth tied to extended payment terms: `reduce`, `cash_flow`,
   `earnings_versus_cash.working_capital.receivables.balance_sheet_change`
-- receivables factoring: `reduce`, `cash_flow`,
-  `terms.trailing_four_quarters.proceeds_from_sale_of_receivables`
+- receivables sold or collected early, as the statement of cash flows shows it: `reduce`,
+  `cash_flow`, `terms.trailing_four_quarters.change_in_receivables`
 - a reserve release: `reduce`, `earnings`, the field that carries the release
+- a balance that is refused: `terms.balances_now.supplier_finance_obligation` is the
+  obligation at one date, so it cannot be the amount of an adjustment of free cash flow.
+  A supplier-finance obligation is debt-like and belongs to adjusted debt, which arrives in
+  a later wave; its cash effect is the change in the obligation, so name a note table's
+  `changes` cell for it where your view carries one, and where it carries none, leave it
+  to adjusted debt
 
 ## Citations
 
