@@ -3367,7 +3367,7 @@ def implied_growth_beside_history(value: dict, history: dict) -> dict:
 
 # --- the triggering filing's own facts, where companyfacts has not caught up ---------------
 
-FILING_UNITS = {"iso4217:USD": "USD", "shares": "shares"}
+FILING_UNITS = {"iso4217:USD": "USD", "shares": "shares", "iso4217:USD/shares": "USD/shares"}
 
 
 def supplemented(document: dict, bundle: Path | None,
