@@ -51,6 +51,8 @@ value are carried.
 from __future__ import annotations
 
 import copy
+import re
+import unicodedata
 import datetime as dt
 from decimal import Decimal
 import xml.etree.ElementTree as ET
@@ -92,12 +94,15 @@ def inline_tables(html: bytes) -> dict[str, list[str]]:
 
 
 MINUS_SIGNS = ("-", "\u2212", "\u2013")      # hyphen, minus sign, en dash
+# a bare footnote mark in the text of a cell: "(a)", "(1)", "(ab)"
+FOOTNOTE_MARK = re.compile(r"\(\s*(?:[A-Za-z]{1,2}|\d{1,2})\s*\)")
 
 
 def _row_tokens(row: ET.Element) -> list[tuple[str, str | None]]:
     """The text of one table row in document order, with each inline numeric fact as a
-    marker and the end of each cell as another: ("text", the text), ("fact", its id) and
-    ("cell", None)."""
+    marker and the end of each cell as another: ("text", the text), ("fact", its id),
+    ("alias", the id of a fact nested inside the one before) and ("cell", None). The text
+    of a `<sup>` (a footnote mark) is left out."""
     tokens: list[tuple[str, str | None]] = []
 
     def walk(node: ET.Element) -> None:
@@ -106,7 +111,10 @@ def _row_tokens(row: ET.Element) -> list[tuple[str, str | None]]:
         for child in node:
             if child.tag == f"{{{IX}}}nonFraction":
                 tokens.append(("fact", child.get("id")))
-            else:
+                for inner in child.iter(f"{{{IX}}}nonFraction"):
+                    if inner is not child:
+                        tokens.append(("alias", inner.get("id")))
+            elif child.tag != f"{{{XHTML}}}sup":
                 walk(child)
                 if child.tag in (f"{{{XHTML}}}td", f"{{{XHTML}}}th"):
                     tokens.append(("cell", None))
@@ -118,7 +126,12 @@ def _row_tokens(row: ET.Element) -> list[tuple[str, str | None]]:
 
 
 def _squeeze(text: str) -> str:
-    return text.translate(str.maketrans("", "", " \t\r\n\u00a0\u200b$"))
+    """The text with its footnote marks, every space separator (no-break, thin, figure,
+    narrow no-break, zero-width and the rest of Unicode's), line breaks and currency signs
+    taken out."""
+    text = FOOTNOTE_MARK.sub("", text)
+    return "".join(one for one in text if one not in "\t\r\n"
+                   and unicodedata.category(one) not in ("Zs", "Zl", "Zp", "Cf", "Sc"))
 
 
 def printed_signs(html: bytes) -> dict[str, str]:
@@ -128,9 +141,13 @@ def printed_signs(html: bytes) -> dict[str, str]:
     the sign the reader of the table sees, which is the contribution of the row to its
     table whatever sign the filer tagged (a printed "1" tagged `sign="-"`, a printed "(1)"
     tagged +1). The parenthesis opens in the text just before the fact and closes in the
-    text just after it, across the cell boundary the renderer shows as "(1,647 | )"; the
-    minus is in the fact's own cell, so that the "-" of an empty cell beside it is no sign.
-    A fact outside a table row is not listed."""
+    text just after it (a percent sign may come first), across the cell boundary the
+    renderer shows as "(1,647 | )"; footnote marks and every kind of space are ignored. A
+    dash is a minus only when it is all the text between the start of the fact's own cell and
+    the fact, an opening parenthesis and a currency sign aside: so the "-" of an empty cell
+    beside it is no sign, and neither is the range "2.00 - 9.00%". A fact nested inside
+    another has the sign of the cell it is printed in. A fact outside a table row is not
+    listed."""
     root = ET.fromstring(html)
     out: dict[str, str] = {}
     for row in root.iter(f"{{{XHTML}}}tr"):
@@ -138,24 +155,33 @@ def printed_signs(html: bytes) -> dict[str, str]:
         for at, (kind, fact_id) in enumerate(tokens):
             if kind != "fact" or fact_id is None:
                 continue
-            before, after, own_cell = "", "", ""
+            before, after, own_cell, other_fact = "", "", "", False
             for earlier in reversed(tokens[:at]):
                 if earlier[0] == "fact":
                     break
                 if earlier[0] == "text":
                     before = earlier[1] + before
             for earlier in reversed(tokens[:at]):
-                if earlier[0] in ("fact", "cell"):
+                if earlier[0] == "cell":
                     break
-                own_cell = earlier[1] + own_cell
+                if earlier[0] == "fact":
+                    other_fact = True
+                if earlier[0] == "text":
+                    own_cell = earlier[1] + own_cell
             for later in tokens[at + 1:]:
                 if later[0] == "fact":
                     break
                 if later[0] == "text":
                     after += later[1]
-            parenthesised = _squeeze(before).endswith("(") and _squeeze(after).startswith(")")
-            minus = _squeeze(own_cell) in MINUS_SIGNS
-            out[fact_id] = "negative" if parenthesised or minus else "positive"
+            parenthesised = (_squeeze(before).endswith("(")
+                             and re.match(r"%?\)", _squeeze(after)) is not None)
+            minus = not other_fact and _squeeze(own_cell).lstrip("(") in MINUS_SIGNS
+            sign = "negative" if parenthesised or minus else "positive"
+            out[fact_id] = sign
+            for later in tokens[at + 1:]:
+                if later[0] != "alias":
+                    break
+                out[later[1]] = sign
     return out
 
 

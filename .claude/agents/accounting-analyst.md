@@ -156,8 +156,10 @@ None of these is an adjustment amount.
 **Reserve rollforwards.** For each reserve the filing tables as a rollforward,
 `rollforwards.allowance_for_credit_losses`, `rollforwards.product_warranty`,
 `rollforwards.inventory_reserve`, `rollforwards.restructuring_reserve`,
-`rollforwards.contract_liabilities`, `rollforwards.supplier_finance_obligations`
-and `rollforwards.goodwill` each hold a `series` per table and set of axes, and
+`rollforwards.contract_liabilities`, `rollforwards.supplier_finance_obligations`,
+`rollforwards.goodwill` and `rollforwards.schedule_two_other` (the accounts of Schedule II
+the filer names in its own members, each series with its `member`) each hold a
+`series` per table and set of axes, and
 each series its `periods`, newest first (for example
 `rollforwards.product_warranty.series.0.periods.0`); a reserve the filing does
 not table says `missing` and why. In a period, `foots` says whether the table's

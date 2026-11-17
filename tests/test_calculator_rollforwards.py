@@ -704,11 +704,11 @@ def test_an_element_in_no_role_twice():
             seen[name] = "schedule_two"
 
 
-def test_the_seven_families_are_the_ones_the_task_names():
+def test_the_families_are_the_seven_the_task_names_and_schedule_twos_other_accounts():
     assert set(rollforwards.FAMILIES) == {
         "allowance_for_credit_losses", "product_warranty", "inventory_reserve",
         "restructuring_reserve", "contract_liabilities", "supplier_finance_obligations",
-        "goodwill"}
+        "goodwill", "schedule_two_other"}
 
 
 # --- the calculator carries it -----------------------------------------------------------
@@ -935,17 +935,32 @@ def all_filings():
                 yield manifest.parent.name, accession, found["primary_html"]["filing_date"]
 
 
-# Each period over the 72 committed filings that reads `foots` false and `complete` true. There
-# is none today. This is a regression guard on the module's own output, not an expected value
-# from a source: it was observed after the NSSC periods that were on it (a deduction the filer
-# tags as `Recoveries` and prints in parentheses) began to foot. What would catch a rule that
-# wrongly made tables foot is `test_a_table_that_does_not_foot_as_printed_reads_foots_false`,
-# whose tables are worked by hand.
-EXPECTED_FALSE_AND_COMPLETE: list[tuple] = []
+def recomputed_difference(year: dict) -> Decimal:
+    """The stated ending less the sum of the placed rows, from the period's own rows and
+    nothing else: the beginning, each charge row as tagged, each row of `other` at its
+    contribution (its tagged value where it has none), each usage row taken away as tagged
+    (revenue recognized out of contract liabilities, the one element read as a magnitude, by
+    its size)."""
+    def total(cell: dict, *, usage: bool = False) -> Decimal:
+        out = Decimal(0)
+        for row in cell.get("rows", []):
+            value = Decimal(str(row.get("contribution", row["value"])))
+            if usage and row["concept"].endswith(":ContractWithCustomerLiabilityRevenueRecognized"):
+                value = abs(value)
+            out += value
+        return out
+    return (Decimal(str(year["ending"]["value"]))
+            - (Decimal(str(year["beginning"]["value"])) + total(year["charged_to_expense"])
+               + total(year["other"]) - total(year["usage"], usage=True)))
 
 
-def test_over_all_committed_filings_a_table_that_does_not_foot_is_complete_only_where_the_filing_says_so():
-    seen, false_and_complete, filings = 0, [], 0
+def test_over_all_committed_filings_each_period_is_what_its_own_rows_say(capsys):
+    """Structural invariants over every period of the 72 committed filings, each worked out
+    from the period's own cells and no counts held: `foots` is true exactly when `difference`
+    is zero; `complete` is false exactly when `rows_not_placed` is not empty; and `difference`
+    is the stated ending less the sum of the placed rows, recomputed here. The independent
+    evidence that the identity is right is in the hand-worked tables, not in this sweep."""
+    filings = periods = false_and_complete = 0
     for ticker, accession, cutoff in all_filings():
         filings += 1
         result = rollforwards.build(tables_of(ticker, accession, cutoff))
@@ -954,14 +969,18 @@ def test_over_all_committed_filings_a_table_that_does_not_foot_is_complete_only_
                 for year in series["periods"]:
                     if "foots" not in year:
                         continue
-                    seen += 1
-                    if year["foots"] is False and year["complete"] is True:
-                        false_and_complete.append((
-                            ticker, accession, family, series["table"], year["period"]["end"],
-                            year["difference"]["value"]))
+                    where = (ticker, accession, family, series["table"], year["period"]["end"])
+                    periods += 1
+                    assert year["foots"] is (year["difference"]["value"] == 0), where
+                    assert year["complete"] is (not year["rows_not_placed"]), where
+                    assert Decimal(str(year["difference"]["value"])) == recomputed_difference(
+                        year), where
+                    false_and_complete += year["foots"] is False and year["complete"] is True
     assert filings == 72
-    assert seen > 400
-    assert false_and_complete == EXPECTED_FALSE_AND_COMPLETE
+    assert periods > 0
+    with capsys.disabled():
+        print(f"\nrollforward sweep: {filings} filings, {periods} periods, "
+              f"{false_and_complete} read foots false with complete true")
 
 
 # --- the same figure twice, a row with no dated span -------------------------------------
@@ -1328,3 +1347,332 @@ def test_a_table_that_does_not_foot_as_printed_reads_foots_false(name, table, si
     year = period_of(series_of(rollforwards.build(with_signs(planted(rows), signs)),
                                "product_warranty", "notes_1"), CLOSING)
     assert year["foots"] is False and year["difference"]["value"] == gap
+
+
+# --- Omnicell's Schedule II, in its own members ------------------------------------------
+
+OMNICELL = ("OMCL", "0000926326-26-000006", "2026-02-26")
+
+
+def omnicell_series(member: str) -> dict:
+    result = rollforwards.build(tables_of(*OMNICELL))
+    return next(one for one in result["schedule_two_other"]["series"] if one["member"] == member)
+
+
+def test_a_filers_own_schedule_two_member_is_a_series_of_schedule_two_other_keyed_by_it():
+    """Omnicell's 10-K filed 2026-02-26, Schedule II, in thousands, accounts receivable and
+    unbilled receivables, 2023: beginning 5,153, charged 2,726, other 126, deductions 2,441,
+    ending 5,564. 5,153 + 2,726 - 2,441 + 126 = 5,564, the instance's f-1376 (beginning), f-1377,
+    f-1379, f-1378 and f-1380 (ending)."""
+    series = omnicell_series("omcl:AccountsReceivableAndUnbilledReceivablesMember")
+    assert series["table"] == "notes_65" and series["kind"] == "schedule_two"
+    year = period_of(series, "2023-12-31")
+    assert year["beginning"]["value"] == 5_153_000 and year["ending"]["value"] == 5_564_000
+    assert year["charged_to_expense"]["value"] == 2_726_000
+    assert year["usage"]["value"] == 2_441_000 and year["other"]["value"] == 126_000
+    assert year["foots"] is True and year["complete"] is True
+    assert year["difference"]["facts"] == ids("0000926326-26-000006", "f-1376", "f-1377",
+                                              "f-1379", "f-1378", "f-1380")
+    assert year["release"] is False
+    # the three accounts of the table are three series, and none is the sum of the others
+    members = {one["member"] for one in rollforwards.build(tables_of(*OMNICELL))[
+        "schedule_two_other"]["series"]}
+    assert members == {"omcl:AccountsReceivableAndUnbilledReceivablesMember",
+                       "omcl:ContractWithCustomerAssetUnbilledReceivablesNoncurrentMember",
+                       "omcl:NetInvestmentInSalesTypeLeasesMember"}
+
+
+def test_omnicells_negative_charges_are_releases():
+    """Unbilled receivables, 2023: 35 + (4) - 0 = 31 in thousands, the charge f-1382 = -4,000;
+    net investment in sales-type leases, 2023: 308 + (51) = 257, the charge f-1387 = -51,000."""
+    unbilled = period_of(omnicell_series(
+        "omcl:ContractWithCustomerAssetUnbilledReceivablesNoncurrentMember"), "2023-12-31")
+    assert unbilled["charged_to_expense"]["facts"] == ids("0000926326-26-000006", "f-1382")
+    assert unbilled["charged_to_expense"]["value"] == -4_000
+    assert (unbilled["beginning"]["value"], unbilled["ending"]["value"]) == (35_000, 31_000)
+    assert unbilled["foots"] is True
+    assert unbilled["release"] is True and unbilled["release_because"] == [
+        "charged_to_expense_negative"]
+    leases = period_of(omnicell_series("omcl:NetInvestmentInSalesTypeLeasesMember"), "2023-12-31")
+    assert leases["charged_to_expense"]["facts"] == ids("0000926326-26-000006", "f-1387")
+    assert leases["charged_to_expense"]["value"] == -51_000
+    assert (leases["beginning"]["value"], leases["ending"]["value"]) == (308_000, 257_000)
+    assert leases["release"] is True
+
+
+def test_the_deferred_tax_valuation_allowance_is_no_account_of_schedule_two_other():
+    result = rollforwards.build(tables_of("GNRC", GNRC_ACCESSION, "2026-02-18"))
+    assert "missing" in result["schedule_two_other"]
+
+
+# --- the printed sign, in the forms a filing really uses ---------------------------------
+
+def one_cell(cell: str) -> dict:
+    return note_tables.printed_signs(inline_page(f"<td>label</td>{cell}"))
+
+
+def test_every_kind_of_space_inside_the_parentheses_is_a_space():
+    thin, figure, narrow = " ", " ", " "
+    assert one_cell(f"<td>({thin}{number_cell('t', '5')}{thin})</td>") == {"t": "negative"}
+    assert one_cell(f"<td>({figure}{number_cell('f', '5')}{figure})</td>") == {"f": "negative"}
+    assert one_cell(f"<td>{narrow}({number_cell('n', '5')}){narrow}</td>") == {"n": "negative"}
+    assert one_cell(f"<td>(​{number_cell('z', '5')}​)</td>") == {"z": "negative"}
+
+
+def test_a_minus_after_thin_and_narrow_spaces_is_a_minus():
+    assert one_cell(f"<td>− {number_cell('n', '5')}</td>") == {"n": "negative"}
+    assert one_cell(f"<td> - {number_cell('t', '5')}</td>") == {"t": "negative"}
+
+
+def test_a_footnote_mark_before_a_minus_or_inside_the_parentheses_is_no_text():
+    assert one_cell(f"<td><sup>(a)</sup> −{number_cell('a', '5')}</td>") == {"a": "negative"}
+    assert one_cell(f"<td>(a) −{number_cell('b', '5')}</td>") == {"b": "negative"}
+    assert one_cell(f"<td>({number_cell('p', '5')}<sup>(1)</sup>)</td>") == {"p": "negative"}
+    assert one_cell(f"<td>({number_cell('q', '5')} (1))</td>") == {"q": "negative"}
+    assert one_cell(f"<td>(1) {number_cell('c', '5')}</td>") == {"c": "positive"}
+    assert one_cell(f"<td><sup>1</sup>\u2212{number_cell('s', '5')}</td>") == {"s": "negative"}
+    assert one_cell(f"<td>({number_cell('u', '5')}<sup>*</sup>)</td>") == {"u": "negative"}
+
+
+def test_a_percent_inside_the_parentheses_is_part_of_the_number():
+    assert one_cell(f"<td>({number_cell('p', '5')}%)</td>") == {"p": "negative"}
+
+
+def test_a_nested_fact_has_the_sign_of_the_cell_it_is_printed_in():
+    nested = ('<ix:nonFraction id="o" name="x:Y" contextRef="c" unitRef="usd">'
+              + number_cell("i", "5") + "</ix:nonFraction>")
+    assert one_cell(f"<td>({nested})</td>") == {"o": "negative", "i": "negative"}
+    assert one_cell(f"<td>{nested}</td>") == {"o": "positive", "i": "positive"}
+
+
+def test_a_range_hyphen_is_no_minus():
+    """FELE's 10-K (accession 0000038725-26-000009) prints the rate of compensation increase as
+    "2.00 - 9.00%": f-1137, f-1139 and f-1141 are the upper bounds, read by eye in the inline
+    document, and positive."""
+    page = inline_page(f"<td>{number_cell('r1', '2.00')} - {number_cell('r2', '9.00')}%</td>")
+    assert note_tables.printed_signs(page) == {"r1": "positive", "r2": "positive"}
+    path = next(FIXTURES / "FELE" / entry["path"] for entry in json.loads(
+        (FIXTURES / "FELE" / "manifest.json").read_text(encoding="utf-8"))["documents"]
+                if entry["accession"] == "0000038725-26-000009"
+                and entry["role"] == "primary_html")
+    raw = path.read_bytes() if path.exists() else gzip.open(f"{path}.gz").read()
+    raw = gzip.decompress(raw) if raw[:2] == b"\x1f\x8b" else raw
+    signs = note_tables.printed_signs(raw)
+    assert [signs[one] for one in ("f-1137", "f-1139", "f-1141")] == ["positive"] * 3
+
+
+def test_a_dash_is_a_minus_only_when_nothing_else_stands_before_the_number_in_its_cell():
+    """Text before the dash: "Total - 5" is not a minus; a currency sign or an opening
+    parenthesis before it is no text; a missing closing parenthesis is no negative."""
+    assert one_cell(f"<td>Total - {number_cell('t', '5')}</td>") == {"t": "positive"}
+    assert one_cell(f"<td>x-{number_cell('x', '5')}</td>") == {"x": "positive"}
+    assert one_cell(f"<td>$ -{number_cell('d', '5')}</td>") == {"d": "negative"}
+    assert one_cell(f"<td>({number_cell('o', '5')}</td>") == {"o": "positive"}
+    assert one_cell(f"<td>({number_cell('p', '5')}</td><td>x</td>") == {"p": "positive"}
+
+
+def nested_warranty():
+    """The refuter's planted table: every cell a fact nested in a fact, the outer in the
+    company-wide context and the inner in a segment member's, translation tagged +20 and
+    printed (20): 1,000 + 400 - (300) - (20) = 1,080."""
+    def fact_of(number, name, context, shown):
+        return (f'<ix:nonFraction id="{number}" name="us-gaap:{name}" contextRef="{context}" '
+                f'unitRef="usd" decimals="0" scale="0">{shown}</ix:nonFraction>')
+
+    def nested(outer, inner, name, outer_context, inner_context, shown):
+        return (f'<ix:nonFraction id="{outer}" name="us-gaap:{name}" contextRef="{outer_context}" '
+                f'unitRef="usd" decimals="0" scale="0">'
+                + fact_of(inner, name, inner_context, shown) + "</ix:nonFraction>")
+    balance, issued = "ProductWarrantyAccrual", "ProductWarrantyAccrualWarrantiesIssued"
+    paid, move = ("ProductWarrantyAccrualPayments",
+                  "StandardProductWarrantyAccrualForeignCurrencyTranslationGainLoss")
+    rows = [("Balance at beginning", nested("b1", "b1m", balance, "i0", "i0m", "1,000"), ""),
+            ("Provision", nested("c1", "c1m", issued, "d", "dm", "400"), ""),
+            ("Payments", "(" + nested("u1", "u1m", paid, "d", "dm", "300"), ")"),
+            ("Currency translation", "(" + nested("o1", "o1m", move, "d", "dm", "20"), ")"),
+            ("Balance at end", nested("b2", "b2m", balance, "i1", "i1m", "1,080"), "")]
+    html = ('<html xmlns="http://www.w3.org/1999/xhtml" '
+            'xmlns:ix="http://www.xbrl.org/2013/inlineXBRL"><body><table>'
+            + "".join(f"<tr><td>{a}</td><td>{b}</td><td>{c}</td></tr>" for a, b, c in rows)
+            + "</table></body></html>").encode()
+
+    def context(name, *, start=None, end=None, at=None, member=False):
+        segment = ('<xbrli:segment><xbrldi:explicitMember dimension="us-gaap:'
+                   'StatementBusinessSegmentsAxis">x:OnlyMember</xbrldi:explicitMember>'
+                   "</xbrli:segment>" if member else "")
+        period = (f"<xbrli:instant>{at}</xbrli:instant>" if at else
+                  f"<xbrli:startDate>{start}</xbrli:startDate><xbrli:endDate>{end}</xbrli:endDate>")
+        return (f'<xbrli:context id="{name}"><xbrli:entity><xbrli:identifier scheme="http://www.'
+                f'sec.gov/CIK">1</xbrli:identifier>{segment}</xbrli:entity><xbrli:period>'
+                f"{period}</xbrli:period></xbrli:context>")
+    contexts = "".join([
+        context("i0", at="2024-12-31"), context("i1", at="2025-12-31"),
+        context("d", start="2025-01-01", end="2025-12-31"),
+        context("i0m", at="2024-12-31", member=True), context("i1m", at="2025-12-31", member=True),
+        context("dm", start="2025-01-01", end="2025-12-31", member=True)])
+    values = {"b1": (balance, "i0", 1000), "b2": (balance, "i1", 1080), "c1": (issued, "d", 400),
+              "u1": (paid, "d", 300), "o1": (move, "d", 20)}
+    facts = "".join(
+        f'<us-gaap:{name} id="{key}{suffix}" contextRef="{ref}{suffix}" unitRef="usd" '
+        f'decimals="0">{value}</us-gaap:{name}>'
+        for key, (name, ref, value) in values.items() for suffix in ("", "m")).replace(
+        'contextRef="d"', 'contextRef="d"')
+    instance = ('<xbrli:xbrl xmlns:xbrli="http://www.xbrl.org/2003/instance" '
+                'xmlns:xbrldi="http://xbrl.org/2006/xbrldi" '
+                'xmlns:us-gaap="http://fasb.org/us-gaap/2025" '
+                'xmlns:iso4217="http://www.xbrl.org/2003/iso4217">' + contexts
+                + '<xbrli:unit id="usd"><xbrli:measure>iso4217:USD</xbrli:measure></xbrli:unit>'
+                + facts + "</xbrli:xbrl>").encode()
+    paragraphs = [(f"{ACCESSION}:notes:{at}", text)
+                  for at, text in enumerate(note_tables.inline_tables(html)) if text.startswith("|")]
+    return note_tables.tables(paragraphs, html, instance, accession=ACCESSION,
+                              cutoff="2026-02-01")
+
+
+def test_a_table_of_nested_facts_foots_in_the_outer_and_the_inner_series():
+    tables = nested_warranty()
+    assert tables["printed_signs"][f"{ACCESSION}:o1m"] == "negative"
+    # only flows carry a printed sign: the balances (instants) are not listed
+    assert not {f"{ACCESSION}:b1", f"{ACCESSION}:b2m"} & set(tables["printed_signs"])
+    result = rollforwards.build(tables)
+    series = {tuple(one["axes"].values()): one for one in result["product_warranty"]["series"]}
+    assert set(series) == {(), ("x:OnlyMember",)}
+    for one in series.values():
+        year = one["periods"][0]
+        # 1,000 + 400 - 300 - 20 = 1,080 with the (20) printed on a +20 tag
+        assert year["foots"] is True and year["difference"]["value"] == 0
+        assert year["other"]["rows"][0]["contribution"] == -20
+        assert year["other"]["rows"][0]["sign_source"] == "printed"
+
+
+# --- Restructuring costs are the provision -----------------------------------------------
+
+def test_dells_severance_liability_foots_in_each_year():
+    """Dell's 10-K filed 2026-03-16, note 92, in millions, severance liability: fiscal 2026
+    238 + 569 - 671 = 136; fiscal 2025 352 + 693 - 807 = 238; fiscal 2024 408 + 648 - 704 = 352
+    (`RestructuringCosts` is the charge, "Cash paid and other" `PaymentsForRestructuring`)."""
+    series = series_of(rollforwards.build(tables_of("DELL", "0001571996-26-000008",
+                                                    "2026-03-16")),
+                       "restructuring_reserve", "notes_92")
+    for end, opening, charge, paid, closing in (
+            ("2026-01-30", 238, 569, 671, 136), ("2025-01-31", 352, 693, 807, 238),
+            ("2024-02-02", 408, 648, 704, 352)):
+        year = period_of(series, end)
+        assert (year["beginning"]["value"], year["charged_to_expense"]["value"],
+                year["usage"]["value"], year["ending"]["value"]) == (
+            opening * 1e6, charge * 1e6, paid * 1e6, closing * 1e6)
+        assert year["foots"] is True and year["complete"] is True
+
+
+def test_dells_quarterly_severance_liability_foots_in_each_span():
+    """Dell's 10-Q filed 2026-09-08, note 51, in millions: three months to July 31, 2026
+    242 + 261 - 164 = 339; six months 136 + 488 - 285 = 339; three months to August 1, 2025
+    151 + 204 - 144 = 211; six months 238 + 334 - 361 = 211."""
+    series = series_of(rollforwards.build(tables_of("DELL", "0001571996-26-000046",
+                                                    "2026-09-08")),
+                       "restructuring_reserve", "notes_51")
+    spans = {(year["period"]["start"], year["period"]["end"]): year for year in series["periods"]}
+    for span, (opening, charge, paid, closing) in {
+            ("2026-05-02", "2026-07-31"): (242, 261, 164, 339),
+            ("2026-01-31", "2026-07-31"): (136, 488, 285, 339),
+            ("2025-05-03", "2025-08-01"): (151, 204, 144, 211),
+            ("2025-02-01", "2025-08-01"): (238, 334, 361, 211)}.items():
+        year = spans[span]
+        assert (year["beginning"]["value"], year["charged_to_expense"]["value"],
+                year["usage"]["value"], year["ending"]["value"]) == (
+            opening * 1e6, charge * 1e6, paid * 1e6, closing * 1e6)
+        assert year["foots"] is True and year["complete"] is True
+
+
+def test_johnson_controls_impairment_column_foots_with_the_costs_and_impairment_charges():
+    """Johnson Controls' 10-Q filed 2026-07-29, note 30, in millions, the long-lived asset
+    impairments column: balance 0 (printed "-"), restructuring and related costs 53, utilized
+    noncash (53): 0 + 53 - 53 = 0. The "Other" row is the filer's `jci:RestructuringCostsOther`,
+    so the table is not complete."""
+    result = rollforwards.build(tables_of("JCI", "0000833444-26-000087", "2026-07-29"))
+    series = next(one for one in result["restructuring_reserve"]["series"]
+                  if one["table"] == "notes_30" and one["axes"].get(
+                      "us-gaap:RestructuringCostAndReserveAxis") == "jci:FixedAssetImpairmentMember")
+    year = series["periods"][0]
+    assert (year["beginning"]["value"], year["charged_to_expense"]["value"],
+            year["usage"]["value"], year["ending"]["value"]) == (0, 53e6, 53e6, 0)
+    assert year["foots"] is True and year["complete"] is False
+    assert {row["concept"] for row in year["rows_not_placed"]} == {"jci:RestructuringCostsOther"}
+
+
+# --- rules held by a test of their own ---------------------------------------------------
+
+def test_a_change_in_estimate_takes_its_printed_sign_and_so_does_its_ratio():
+    """Tagged +6 and printed (6) over a charge of 100: 1,000 + 100 - 6 = 1,094 foots, and the
+    revision over the charge is -6 / 100."""
+    rows = table_of("ProductWarrantyAccrual", "ProductWarrantyAccrualWarrantiesIssued",
+                    "ProductWarrantyAccrualPayments", opening=1_000, closing=1_094, charge=100,
+                    spent=0, other=6,
+                    other_concept="ProductWarrantyAccrualPreexistingIncreaseDecrease")
+    year = period_of(series_of(rollforwards.build(with_signs(planted(rows), {"o1": "negative"})),
+                               "product_warranty", "notes_1"), CLOSING)
+    assert year["foots"] is True and year["other"]["rows"][0]["contribution"] == -6
+    assert year["prior_period_revision_over_current_expense"]["value"] == pytest.approx(-0.06)
+
+
+def other_rows(*rows: tuple[int, str | None]):
+    """A warranty table whose `other` role holds the given (tagged value, printed sign) rows,
+    ending where the tagged values put it."""
+    concepts = ["StandardProductWarrantyAccrualForeignCurrencyTranslationGainLoss",
+                "ProductWarrantyAccrualPreexistingIncreaseDecrease",
+                "ProductWarrantyAccrualAdditionsFromBusinessAcquisition"]
+    facts = [fact("ProductWarrantyAccrual", 1_000, at=OPENING, number="b1"),
+             fact("ProductWarrantyAccrual", 1_000 + sum(value for value, _ in rows), at=CLOSING,
+                  number="b2")]
+    signs = {}
+    for at, (value, printed) in enumerate(rows):
+        facts.append(fact(concepts[at], value, **YEAR, number=f"o{at}"))
+        if printed:
+            signs[f"o{at}"] = printed
+    result = rollforwards.build(with_signs(planted(facts), signs))
+    return period_of(series_of(result, "product_warranty", "notes_1"), CLOSING)
+
+
+def test_the_cell_level_sign_source_of_other():
+    # only zero rows: nothing to read, tagged, no disagreement
+    zero = other_rows((0, None))
+    assert zero["other"]["sign_source"] == "tagged" and zero["other"]["sign_disagrees"] is False
+    assert zero["other"]["rows"][0]["sign_source"] == "tagged"
+    assert zero["other"]["rows"][0]["contribution"] == 0
+    # a zero row beside a printed one does not turn the cell to tagged
+    printed = other_rows((0, None), (5, "positive"))
+    assert printed["other"]["sign_source"] == "printed"
+    # printed and tagged rows together: the cell says tagged, a disagreement elsewhere says so
+    mixed = other_rows((5, "positive"), (7, None))
+    assert [row["sign_source"] for row in mixed["other"]["rows"]] == ["printed", "tagged"]
+    assert mixed["other"]["sign_source"] == "tagged"
+    # all printed, one against its tag
+    both = other_rows((5, "positive"), (7, "negative"))
+    assert both["other"]["sign_source"] == "printed" and both["other"]["sign_disagrees"] is True
+    agree = other_rows((5, "positive"), (7, "positive"))
+    assert agree["other"]["sign_source"] == "printed" and agree["other"]["sign_disagrees"] is False
+
+
+def test_a_row_of_a_standard_schedule_two_account_is_no_row_of_a_filers_own_account():
+    """A table of Schedule II holding a filer's own account whole (100 + 20 - 5 = 115) beside a
+    charge row of the allowance for credit losses and of the deferred tax valuation allowance,
+    each with no balances in this table: neither is a row of the filer's own account."""
+    own = {SCHEDULE_AXIS: "x:ReturnsMember"}
+    result = rollforwards.build(planted([
+        fact("ValuationAllowancesAndReservesBalance", 100, at=OPENING, axes=own, number="r1"),
+        fact("ValuationAllowancesAndReservesChargedToCostAndExpense", 20, **YEAR, axes=own,
+             number="r2"),
+        fact("ValuationAllowancesAndReservesDeductions", 5, **YEAR, axes=own, number="r3"),
+        fact("ValuationAllowancesAndReservesBalance", 115, at=CLOSING, axes=own, number="r4"),
+        fact("ValuationAllowancesAndReservesChargedToCostAndExpense", 9, **YEAR,
+             axes={SCHEDULE_AXIS: "us-gaap:AllowanceForCreditLossMember"}, number="s1"),
+        fact("ValuationAllowancesAndReservesChargedToCostAndExpense", 8, **YEAR,
+             axes={SCHEDULE_AXIS: "us-gaap:ValuationAllowanceOfDeferredTaxAssetsMember"},
+             number="s2")]))
+    (series,) = result["schedule_two_other"]["series"]
+    assert series["member"] == "x:ReturnsMember"
+    year = series["periods"][0]
+    assert year["foots"] is True and year["complete"] is True and year["rows_not_placed"] == []
+
+
+SCHEDULE_AXIS = "us-gaap:ValuationAllowancesAndReservesTypeAxis"

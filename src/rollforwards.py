@@ -79,6 +79,15 @@ leaving), `GoodwillGross` as a gross base (it excludes impairments, so a goodwil
 that fell by impairment would read as a release) and `NotesReceivableGross`. Every
 `AccountsReceivableAllowanceForCreditLoss...` element the current taxonomy names was
 absent from the committed instances, which tag `AllowanceForDoubtfulAccountsReceivable...`.
+Schedule II's other accounts (a filer's own members, such as Omnicell's
+`omcl:AccountsReceivableAndUnbilledReceivablesMember`) are the series of the family
+`schedule_two_other`, each with its `member`; only the deferred tax asset valuation allowance
+is left out. `RestructuringCosts` and `RestructuringCostsAndAssetImpairmentCharges` are the
+restructuring provision. Left out because they are no row of the family's own rollforward: the
+measurement-period adjustments `BusinessCombinationProvisionalInformationInitialAccounting
+IncompleteAdjustment...` (rows of a purchase price allocation, found beside goodwill), and
+every flow on an extra axis, which is its own series with no balance (an acquisition member of
+a segment, the period axis of Flex's restructuring), listed in `rows_not_placed`.
 `ValuationAllowancesAndReservesPeriodIncreaseDecrease`, a net change like its two
 siblings above, is a row no role holds. Goodwill has no
 `release` (it is not a reserve, its impairment is its usage, a negative purchase
@@ -92,6 +101,9 @@ import re
 from decimal import Decimal
 
 ELEMENTS = {
+    "schedule_two_other": {
+        "balance": (), "charged": (), "usage": (), "other": (), "revision": (), "base": (),
+    },
     "allowance_for_credit_losses": {
         "balance": (
             "AllowanceForDoubtfulAccountsReceivable",
@@ -162,6 +174,8 @@ ELEMENTS = {
         ),
         "charged": (
             "RestructuringCharges",
+            "RestructuringCosts",
+            "RestructuringCostsAndAssetImpairmentCharges",
             "RestructuringSettlementAndImpairmentProvisions",
         ),
         "usage": (
@@ -282,6 +296,8 @@ CONFIRMED_IN = {
     "ProvisionForDoubtfulAccounts": "CIEN",
     "ProvisionForLoanLossesExpensed": "CSCO",
     "RestructuringCharges": "ADTN",
+    "RestructuringCosts": "ADTN",
+    "RestructuringCostsAndAssetImpairmentCharges": "AVGO",
     "RestructuringReserve": "ADTN",
     "RestructuringReserveAccrualAdjustment1": "CSCO",
     "RestructuringReserveSettledWithoutCash2": "JCI",
@@ -310,6 +326,12 @@ CONFIRMED_IN = {
 FAMILIES = tuple(ELEMENTS)
 # Schedule II's type axis, and the members that say which family a column is.
 SCHEDULE_TWO_AXIS = "us-gaap:ValuationAllowancesAndReservesTypeAxis"
+# Any other account of Schedule II, the filer's own members among them (Omnicell's
+# `omcl:AccountsReceivableAndUnbilledReceivablesMember`), is a series of the family below,
+# keyed by its member. The deferred tax asset valuation allowance is no reserve of this
+# section's and is left out.
+SCHEDULE_TWO_OTHER = "schedule_two_other"
+SCHEDULE_TWO_LEFT_OUT = ("us-gaap:ValuationAllowanceOfDeferredTaxAssetsMember",)
 SCHEDULE_TWO_MEMBERS = {
     "us-gaap:AllowanceForCreditLossMember": "allowance_for_credit_losses",
     "us-gaap:InventoryValuationReserveMember": "inventory_reserve",
@@ -430,8 +452,14 @@ def classify(one: dict):
         return None
     axes = dict(one.get("axes") or {})
     if local in SCHEDULE_ROLE:
-        family = SCHEDULE_TWO_MEMBERS.get(axes.pop(SCHEDULE_TWO_AXIS, None))
-        return (family, SCHEDULE_ROLE[local], "schedule_two", _axes_key(axes)) if family else None
+        member = axes.get(SCHEDULE_TWO_AXIS)
+        if member in SCHEDULE_TWO_MEMBERS:
+            del axes[SCHEDULE_TWO_AXIS]
+            return (SCHEDULE_TWO_MEMBERS[member], SCHEDULE_ROLE[local], "schedule_two",
+                    _axes_key(axes))
+        if member and member not in SCHEDULE_TWO_LEFT_OUT:
+            return SCHEDULE_TWO_OTHER, SCHEDULE_ROLE[local], "schedule_two", _axes_key(axes)
+        return None
     if local in ROLE_OF and SCHEDULE_TWO_AXIS not in axes:
         family, role = ROLE_OF[local]
         return family, role, "note_table", _axes_key(axes)
@@ -484,10 +512,14 @@ def _unplaced_pool(table: dict, group: dict, accounted: set) -> list[dict]:
         if not _usable(one) or "instant" in one or one["fact"] in accounted:
             continue
         own = dict(one.get("axes") or {})
-        member = own.pop(SCHEDULE_TWO_AXIS, None)
+        member = own.get(SCHEDULE_TWO_AXIS)
         if group["kind"] == "schedule_two":
-            if SCHEDULE_TWO_MEMBERS.get(member) != group["family"]:
-                continue
+            # a filer's own account keeps its member among the axes, so another account's
+            # rows are no superset of them; a standard account is told by its member
+            if group["family"] != SCHEDULE_TWO_OTHER:
+                if SCHEDULE_TWO_MEMBERS.get(member) != group["family"]:
+                    continue
+                del own[SCHEDULE_TWO_AXIS]
         elif member is not None:
             continue
         if not set(group["axes"].items()) <= set(own.items()):
@@ -687,11 +719,13 @@ def _family(name: str, tables: dict, signs: dict) -> dict:
             group["unplaced_pool"] = pool
             series.append({"table": key, "paragraph": group["paragraph"], "kind": group["kind"],
                            "axes": group["axes"],
+                           **({"member": group["axes"][SCHEDULE_TWO_AXIS]}
+                              if name == SCHEDULE_TWO_OTHER else {}),
                            "periods": [_period(group, start, end, tables, signs)
                                        for start, end in spans]})
     if not series:
         names = ", ".join(ELEMENTS[name]["balance"]
-                          + (SCHEDULE_TWO["balance"] if name in SCHEDULE_TWO_MEMBERS.values()
+                          + (SCHEDULE_TWO["balance"] if name in (*SCHEDULE_TWO_MEMBERS.values(), SCHEDULE_TWO_OTHER)
                              else ()))
         return {"missing": f"no table of the filing's notes carries a rollforward of "
                            f"{name.replace('_', ' ')}: no balance row ({names}) with a flow row "
