@@ -51,6 +51,8 @@ value are carried.
 from __future__ import annotations
 
 import copy
+import re
+import unicodedata
 import datetime as dt
 from decimal import Decimal
 import xml.etree.ElementTree as ET
@@ -91,6 +93,134 @@ def inline_tables(html: bytes) -> dict[str, list[str]]:
     return out
 
 
+MINUS_SIGNS = ("-", "\u2212", "\u2013")      # hyphen, minus sign, en dash
+# a bare footnote mark in the text of a cell: "(a)", "(1)", "(ab)"
+FOOTNOTE_MARK = re.compile(r"\(\s*(?:[A-Za-z]{1,2}|\d{1,2})\s*\)")
+
+
+def _row_tokens(row: ET.Element) -> list[tuple[str, str | None]]:
+    """The text of one table row in document order, with each inline numeric fact as a
+    marker and the end of each cell as another: ("text", the text), ("fact", its id),
+    ("alias", the id of a fact nested inside the one before) and ("cell", None). The text
+    of a `<sup>` (a footnote mark) is left out."""
+    tokens: list[tuple[str, str | None]] = []
+
+    def walk(node: ET.Element) -> None:
+        if node.text:
+            tokens.append(("text", node.text))
+        for child in node:
+            if child.tag == f"{{{IX}}}nonFraction":
+                tokens.append(("fact", child.get("id")))
+                for inner in child.iter(f"{{{IX}}}nonFraction"):
+                    if inner is not child:
+                        tokens.append(("alias", inner.get("id")))
+            elif child.tag != f"{{{XHTML}}}sup":
+                walk(child)
+                if child.tag in (f"{{{XHTML}}}td", f"{{{XHTML}}}th"):
+                    tokens.append(("cell", None))
+            if child.tail:
+                tokens.append(("text", child.tail))
+
+    walk(row)
+    return tokens
+
+
+def _squeeze(text: str) -> str:
+    """The text with its footnote marks, every space separator (no-break, thin, figure,
+    narrow no-break, zero-width and the rest of Unicode's), line breaks and currency signs
+    taken out."""
+    text = FOOTNOTE_MARK.sub("", text)
+    return "".join(one for one in text if one not in "\t\r\n"
+                   and unicodedata.category(one) not in ("Zs", "Zl", "Zp", "Cf", "Sc"))
+
+
+def printed_signs(html: bytes) -> dict[str, str]:
+    """For each numeric fact of an inline document's tables, whether the number is
+    printed as a negative -- in parentheses, or with a hyphen, a minus sign or an en
+    dash written just before it in the same cell -- "negative", or without, "positive":
+    the sign the reader of the table sees, which is the contribution of the row to its
+    table whatever sign the filer tagged (a printed "1" tagged `sign="-"`, a printed "(1)"
+    tagged +1). The parenthesis opens in the text just before the fact and closes in the
+    text just after it (a percent sign may come first), across the cell boundary the
+    renderer shows as "(1,647 | )"; footnote marks and every kind of space are ignored. A
+    dash is a minus only when it is all the text between the start of the fact's own cell and
+    the fact, an opening parenthesis and a currency sign aside: so the "-" of an empty cell
+    beside it is no sign, and neither is the range "2.00 - 9.00%". A fact nested inside
+    another has the sign of the cell it is printed in. A fact outside a table row is not
+    listed."""
+    root = ET.fromstring(html)
+    out: dict[str, str] = {}
+    for row in root.iter(f"{{{XHTML}}}tr"):
+        tokens = _row_tokens(row)
+        for at, (kind, fact_id) in enumerate(tokens):
+            if kind != "fact" or fact_id is None:
+                continue
+            before, after, own_cell, other_fact = "", "", "", False
+            for earlier in reversed(tokens[:at]):
+                if earlier[0] == "fact":
+                    break
+                if earlier[0] == "text":
+                    before = earlier[1] + before
+            for earlier in reversed(tokens[:at]):
+                if earlier[0] == "cell":
+                    break
+                if earlier[0] == "fact":
+                    other_fact = True
+                if earlier[0] == "text":
+                    own_cell = earlier[1] + own_cell
+            for later in tokens[at + 1:]:
+                if later[0] == "fact":
+                    break
+                if later[0] == "text":
+                    after += later[1]
+            parenthesised = (_squeeze(before).endswith("(")
+                             and re.match(r"%?\)", _squeeze(after)) is not None)
+            minus = not other_fact and _squeeze(own_cell).lstrip("(") in MINUS_SIGNS
+            sign = "negative" if parenthesised or minus else "positive"
+            out[fact_id] = sign
+            for later in tokens[at + 1:]:
+                if later[0] != "alias":
+                    break
+                out[later[1]] = sign
+    return out
+
+
+def same_cell_facts(html: bytes) -> dict[str, list[str]]:
+    """For each inline numeric fact nested in another, or holding another, the ids of the
+    others of its nest. In inline XBRL two tags on one printed figure must be nested; two figures
+    side by side in one cell (divided by a line break, a `div`, prose, or a fact before a nested
+    table) are different figures, however alike their values. A fact with nothing nested in it
+    and in nothing is not listed."""
+    root = ET.fromstring(html)
+    out: dict[str, list[str]] = {}
+    for row in root.iter(f"{{{XHTML}}}tr"):
+        tokens = _row_tokens(row)
+        for at, (kind, fact_id) in enumerate(tokens):
+            if kind != "fact" or not fact_id:
+                continue
+            nest = [fact_id]
+            for later in tokens[at + 1:]:
+                if later[0] != "alias":
+                    break
+                nest.append(later[1])
+            if len(nest) > 1:
+                for one in nest:
+                    out[one] = [other for other in nest if other != one]
+    return out
+
+
+def tagged_signs(html: bytes) -> dict[str, str]:
+    """The sign the filer tagged, apart from the printed one: an inline numeric fact is
+    "negative" when its own element says `sign="-"` and "positive" otherwise."""
+    root = ET.fromstring(html)
+    return {one.get("id"): "negative" if one.get("sign") == "-" else "positive"
+            for one in root.iter(f"{{{IX}}}nonFraction") if one.get("id")}
+
+
+# The printed sign of every non-zero flow (a fact with a span) is carried with the table: a
+# row whose element does not fix its own direction -- recoveries, adjustments, translation,
+# acquisitions, transfers, "other" -- is tagged with whichever sign the filer chose, and the
+# table's reader sees the printed one (`src/rollforwards.py`).
 # What a concept's name says when the number is a price of the company's own
 # shares or is worked out from one. Words, not the bare "price": a commodity
 # hedge (`PriceRiskDerivativeAssetsAtFairValue`) or a contract's transaction
@@ -255,6 +385,7 @@ def tables(paragraphs: list[tuple[str, str]], html: bytes, instance: bytes, *,
              for fact in instance_facts.facts(instance, accession=accession)
              if fact["kind"] == "numeric"}
     found, unmatched, untagged, prices, later = {}, [], [], {}, {}
+    signs, printed, mates, in_cells = {}, None, {}, None
     for paragraph, text in paragraphs:
         if not paragraph.startswith(f"{accession}:notes:") or not text.startswith("|"):
             continue
@@ -280,13 +411,24 @@ def tables(paragraphs: list[tuple[str, str]], html: bytes, instance: bytes, *,
             if same not in seen:
                 seen.add(same)
                 cells.append(cell(fact))
+                if in_cells is None:
+                    in_cells = same_cell_facts(html)
+                if one in in_cells:
+                    mates[fact["id"]] = [by_id[other]["id"] for other in in_cells[one]
+                                         if other in by_id]
+                if fact["value"] and "instant" not in fact["context"]:
+                    if printed is None:
+                        printed = printed_signs(html)
+                    if one in printed:
+                        signs[fact["id"]] = printed[one]
         if cells:
             found[key(paragraph)] = {"paragraph": paragraph, "facts": cells}
             moved = changes(cells)
             if moved:
                 found[key(paragraph)]["changes"] = moved
     return {"tables": found, "unmatched": unmatched, "not_in_the_instance": untagged,
-            "left_out_as_a_price": prices, "left_out_ending_after_the_cutoff": later}
+            "left_out_as_a_price": prices, "left_out_ending_after_the_cutoff": later,
+            "printed_signs": signs, "same_cell_facts": mates}
 
 
 WHAT_THIS_IS = ("for each table of the triggering filing's notes that reached the readers "
