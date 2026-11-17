@@ -45,7 +45,7 @@ NVDA = "NVDA/0001045810-26-000075"
 QCOM = "QCOM/0000804328-26-000086"
 TTMI = "TTMI/0001193125-26-335107"
 # The runs that move under today's rule for a cash-flow amount (docs/ANALYSIS_PIPELINE.md §5): a cash_flow
-# amount is a line of the company's statement of cash flows or one of three named off-statement items. Each of
+# amount is a working-capital change line of the company's statement of cash flows or one of three named items. Each of
 # these runs published one adjustment of free cash flow that is neither: a balance at one date (a stock cannot
 # move a flow), a balance-sheet change, a gap between two changes, or a repayment of borrowing. The cell each
 # published, and its amount as published (the run's `calculator.json`, `adjustments_applied`). Their adjusted free
@@ -471,11 +471,11 @@ def test_the_printed_list_counts_per_run_and_names_file_old_and_new():
     assert drift.printed([]) == "no published figure changes"
 
 
-# --- the rule for a cash-flow amount: a line of the statement of cash flows or a named off-statement item -------
+# --- the rule for a cash-flow amount: a working-capital line of the statement or a named item -------
 
 def test_only_the_named_runs_move_under_the_rule_for_a_cash_flow_amount():
-    """A cash_flow amount is a line of the company's statement of cash flows or one of three named
-    off-statement items (`docs/ANALYSIS_PIPELINE.md` §5). Ten of the eleven runs that published an applied
+    """A cash_flow amount is a working-capital change line of the company's statement of cash flows or one
+    of three named items (`docs/ANALYSIS_PIPELINE.md` §5). Ten of the eleven runs that published an applied
     adjustment of free cash flow cited a balance at one date, a balance-sheet change, a gap between two changes
     or a repayment of borrowing, which today's calculator refuses: each such run's adjusted free cash flow is
     higher by the published adjustment's own amount (`REFUSED_ADJUSTMENT`, read from the run's committed

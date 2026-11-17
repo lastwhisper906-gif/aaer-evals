@@ -2377,8 +2377,8 @@ def quality_adjusted(simple: dict, compensation: dict, acquisitions: dict,
         target = item.get("applies_to", "cash_flow")
         recurs = item.get("recurs") is True
         amount, why_not = adjustment_reading(view, field, recurs, target)
-        if amount is not None and target == "cash_flow":
-            why_not = counted_twice(view, field, [row["calculator_field"] for row in applied])
+        if amount is not None:
+            why_not = counted_twice(view, field, [row["calculator_field"] for row in applied + to_earnings])
             amount = None if why_not else amount
         if direction not in ("reduce", "increase") or target not in ("cash_flow", "earnings") \
                 or amount is None:
@@ -2528,8 +2528,8 @@ INSIDE_FREE_CASH_FLOW_CONCEPTS = (
 #       pair may stand, never both); consideration keeps its own key, its concept, so a current and a
 #       noncurrent balance are two.
 # Anything else is refused as a cash-flow amount and stays available as earnings (a debt class arrives with adjusted debt, wave two).
-NOT_A_STATEMENT_LINE = ("a cash_flow amount is a line of the statement of cash flows or a named "
-                        "off-statement item")
+NOT_A_STATEMENT_LINE = ("a cash_flow amount is a working-capital change line of the statement, or a "
+                        "supplier finance, receivables sold or acquisition consideration change")
 NOT_ON_THE_LIST = NOT_A_STATEMENT_LINE
 STATEMENT_LINES = ("change_in_receivables", "change_in_inventory", "change_in_payables")
 STATEMENT_LINE_OF_WORKING_CAPITAL = {
@@ -2715,7 +2715,7 @@ def _date(text) -> dt.date | None:
 
 def cash_flow_source(path: str, cell: dict) -> str | None:
     """Where a cash-flow amount comes from, or None: the key of the statement line a calculator cell is
-    (`line:change_in_payables`), or of the named off-statement item a note-table change is
+    (`line:change_in_payables`), or of the named item (a supplier finance, receivables sold or acquisition consideration change) a note-table change is
     (`line:change_in_payables` for a supplier finance obligation, which sits inside payables;
     `item:<concept>` for acquisition consideration). Two adjustments with the same key count one movement twice."""
     segments = path.split(".")
@@ -2986,19 +2986,56 @@ def recurrence_problem(path: str, cell: dict, kind: str, fields: dict) -> str | 
     return None
 
 
+# A working-capital movement has one key whatever its class and however it is reached: the statement's
+# change in the line, the balance sheet's change in it (and its share of net income, its gap), and a note
+# table's change in the balance. Each named item keeps its key; every other cell is keyed by its field.
+WORKING_CAPITAL_MOVEMENTS = (
+    ("line:change_in_receivables", "receivables", r"receivable"),
+    ("line:change_in_inventory", "inventory", r"inventor"),
+    ("line:change_in_payables", "accounts_payable", r"payable"),
+)
+
+
+def movement_keys(fields: dict, path: str) -> set:
+    """The keys under which an adjustment counts a movement, whatever its class; two adjustments that share
+    a key count one movement twice. A statement line or a named item has its own key (supplier finance and
+    receivables sold share their line's); any other cell of the balance sheet or a note table that moves a
+    working-capital line has that line's key; a consideration total holds the keys of its current and its
+    noncurrent part, which hold only their own; every other cell is keyed by its field."""
+    cell = _cell_at(fields, path)
+    if not isinstance(cell, dict):
+        return {f"field:{path}"}
+    source = cash_flow_source(path, cell)
+    concept = cell.get("concept")
+    if source:
+        if source.startswith("item:") and isinstance(concept, str):
+            local = concept.rpartition(":")[2].lower()
+            if not local.endswith(("current", "noncurrent")):          # a total: both of its parts
+                return {source, f"item:{local}current", f"item:{local}noncurrent"}
+        return {source}
+    segments = path.split(".")
+    for key, working, pattern in WORKING_CAPITAL_MOVEMENTS:
+        if isinstance(concept, str):
+            if re.search(pattern, concept.rpartition(":")[2].lower()):
+                return {key}
+        elif segments[:2] == ["earnings_versus_cash", "working_capital"] and len(segments) > 2 \
+                and segments[2] == working:
+            return {key}
+    return {f"field:{path}"}
+
+
 def counted_twice(fields: dict, path: str, earlier: list) -> str | None:
-    """Why a cash-flow adjustment counts one movement twice, or None: an earlier cash-flow adjustment
-    cites the same statement line (however it is reached) or the same named off-statement item.
-    `earlier` holds the fields of the cash-flow adjustments before it."""
-    def key(p):
-        cell = _cell_at(fields, p)
-        return (cash_flow_source(p, cell) if isinstance(cell, dict) else None) or f"field:{p}"
-    mine = key(path)
+    """Why an adjustment counts one movement twice, or None: an earlier adjustment, of either class,
+    cites the same field, the same working-capital movement (however it is reached) or the same named
+    item. `earlier` holds the fields of the adjustments before it."""
+    mine = movement_keys(fields, path)
     for other in earlier:
-        if key(other) == mine:
-            what = mine.partition(":")[2] if not mine.startswith("field:") else f"the field {path!r}"
-            return (f"it counts one movement twice: an earlier cash_flow adjustment ({other!r}) is the "
-                    f"same {'statement line' if mine.startswith('line:') else 'item'} {what}")
+        shared = mine & movement_keys(fields, other)
+        if shared:
+            key, = sorted(shared)[:1]
+            what = f"the field {path!r}" if key.startswith("field:") else key.partition(":")[2]
+            return (f"it counts one movement twice: an earlier adjustment ({other!r}) is the "
+                    f"same {'cell' if key.startswith('field:') else 'movement'} {what}")
     return None
 
 

@@ -115,21 +115,31 @@ The target, beyond the research:
   today). Python applies each to its own field and prints the before and after.
 - **A stock cannot move a flow.** A balance (an instant) may adjust debt; only a
   flow or a change between two balances may adjust free cash flow or income.
-- **A free cash flow adjustment comes from the company's statement of cash flows
-  or from three named items.** Earnings adjustments may come from any
+- **A free cash flow adjustment is one of the statement's working-capital change
+  lines, or one of three named items.** Earnings adjustments may come from any
   dollar cell that passes the rules above (a flow or change of the trailing
-  year, never cash, never a balance for a flow). A `cash_flow` amount is a line
-  of the company's own statement of cash flows inside operating activities, as
-  the calculator reads it (`terms.trailing_four_quarters.<line>` and the
-  statement's change in a working-capital line), or the change in the supplier
-  finance obligation, receivables sold or factored, or deferred or contingent
-  acquisition consideration, each from the filing's own note. The statement's
-  lines are disjoint and sum to operating cash flow, so each line is taken once
-  and each named item once (`calculator.cash_flow_source`); a balance-sheet
-  change, a total, a reserve or any other note-table change is refused as a
-  `cash_flow` amount ("a cash_flow amount is a line of the statement of cash
-  flows or a named off-statement item") and stays available as an earnings adjustment (a debt class arrives with adjusted debt in wave two; the gate accepts only `cash_flow` and `earnings` today). Families inferred from names could not be made disjoint in
-  nine rounds of review; the statement already is.
+  year, never cash, never a balance for a flow). A `cash_flow` amount is a
+  working-capital change line of the company's own statement of cash flows, as
+  the calculator reads it: the change in receivables, in inventory, in payables
+  (`terms.trailing_four_quarters.<line>`, or the statement's change under
+  `earnings_versus_cash.working_capital.<line>.cash_flow_statement_change`). Three
+  lines is the default in force: accrued liabilities, contract liabilities and
+  deferred revenue are earnings adjustments only until more of the statement is
+  read by tag (`docs/needs_judgment.md`). The named items are the change in the
+  supplier finance obligation, receivables sold or factored, and deferred or
+  contingent acquisition consideration, each from the filing's own note.
+  Supplier finance sits inside payables and receivables sold inside receivables,
+  both inside operating cash flow, so each shares its line's key; consideration
+  has its own, by concept (a total holds its current and noncurrent parts, which
+  are two). Every adjustment, of either class, is checked against every earlier
+  one: the same field, or the same movement reached by the statement, the balance
+  sheet or a note table, counts once (`calculator.counted_twice`). Everything
+  else is refused as a `cash_flow` amount ("a cash_flow amount is a
+  working-capital change line of the statement, or a supplier finance,
+  receivables sold or acquisition consideration change") and stays available as an
+  earnings adjustment (a debt class arrives with adjusted debt in wave two; the
+  gate accepts only `cash_flow` and `earnings` today). Families inferred from names
+  could not be made disjoint in nine rounds of review; the statement already is.
 
 ## 6. Build plan
 

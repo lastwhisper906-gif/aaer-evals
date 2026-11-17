@@ -861,12 +861,10 @@ def adjustment_problem(fields: dict):
 
 
 def adjustment_overlap(fields: dict):
-    """A cash-flow adjustment in a balance family an earlier kept one is in counts one movement twice:
-    the later is dropped (`calculator.counted_twice`)."""
+    """An adjustment, of either class, that cites the field or the working-capital movement an earlier kept
+    one cites counts one movement twice: the later is dropped (`calculator.counted_twice`)."""
     def check(item: dict, kept: list):
-        if item.get("applies_to") != "cash_flow":
-            return None
-        earlier = [other.get("calculator_field") for other in kept if other.get("applies_to") == "cash_flow"]
+        earlier = [other.get("calculator_field") for other in kept]
         return calculator.counted_twice(fields, item.get("calculator_field"), earlier)
     return check
 

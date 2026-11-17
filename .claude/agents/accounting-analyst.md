@@ -200,13 +200,12 @@ accounts payable and receivables sold inside receivables, both inside operating 
 the same movement as the statement's change in payables or in receivables, so name that line or
 the item, never both. Acquisition consideration is cited once for each concept, so a current and a
 noncurrent balance are two. Everything else is refused as
-a `cash_flow` amount with the reason "a cash_flow amount is a line of the statement of cash flows
-or a named off-statement item": a balance-sheet change (the calculator's `balance_sheet_change`,
+a `cash_flow` amount with the reason "a cash_flow amount is a working-capital change line of the statement, or a supplier finance, receivables sold or acquisition consideration change": a balance-sheet change (the calculator's `balance_sheet_change`,
 `articulation_gap`, `share_of_net_income` input), a total (the change in current liabilities,
 billings), a note table's other changes (a reserve, an accrual, an inventory obligation, a
 restructuring charge, a tax or a debt line, goodwill, intangible assets, property and equipment).
 All of them stay available as `earnings` adjustments (there is no `debt` class yet: adjusted debt is wave two). A second `cash_flow` adjustment of
-a statement line or a named item already cited is dropped as counting one movement twice. A balance at
+a statement line or a named item already cited is dropped as counting one movement twice. This holds across classes: the same field, or the same working-capital movement (the statement's change, the balance sheet's change and a note table's change in one balance), cited as `cash_flow` and as `earnings`, or twice as `earnings`, is one reading, and the later is dropped. A balance at
 one date is not a flow, and Python drops an adjustment that names one, with that
 reason. The cell must also be of the period free cash flow covers: a span that
 begins no earlier than the first day of the trailing year the view prints

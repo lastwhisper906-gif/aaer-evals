@@ -337,3 +337,4 @@ sixty lines; a line under a lesson that has no date is that lesson's wrapped lin
 2026-11-17 a text edit with sed on a line that also appeared in a second test changed both; check what else an edited line matches before a global substitution.
 2026-11-17 killed a mutation loop with pkill and left a mutated source file in place; restore the file from its good copy before anything else after stopping a loop.
 2026-11-17 gave a named item a key of its own beside the statement line that already holds it, so the same movement stood twice; key an item by the line it sits inside.
+2026-11-17 checked a double count only within one class, so the same cell stood once as cash_flow and again as earnings; check every adjustment against every earlier one, whatever its class.
