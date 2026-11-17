@@ -141,12 +141,10 @@ def printed_signs(html: bytes) -> dict[str, str]:
     return out
 
 
-# The rows whose printed sign is carried with the table: a foreign-currency translation
-# row is tagged "gain (loss)", and filers differ over whether a printed increase of the
-# reserve is the positive or the negative value (`src/rollforwards.py`).
-SIGN_WORDS = ("translation", "foreigncurrency")
-
-
+# The printed sign of every non-zero flow (a fact with a span) is carried with the table: a
+# row whose element does not fix its own direction -- recoveries, adjustments, translation,
+# acquisitions, transfers, "other" -- is tagged with whichever sign the filer chose, and the
+# table's reader sees the printed one (`src/rollforwards.py`).
 # What a concept's name says when the number is a price of the company's own
 # shares or is worked out from one. Words, not the bare "price": a commodity
 # hedge (`PriceRiskDerivativeAssetsAtFairValue`) or a contract's transaction
@@ -337,8 +335,7 @@ def tables(paragraphs: list[tuple[str, str]], html: bytes, instance: bytes, *,
             if same not in seen:
                 seen.add(same)
                 cells.append(cell(fact))
-                local = fact["name"].rsplit(":", 1)[-1].lower()
-                if fact["value"] and any(word in local for word in SIGN_WORDS):
+                if fact["value"] and "instant" not in fact["context"]:
                     if printed is None:
                         printed = printed_signs(html)
                     if one in printed:

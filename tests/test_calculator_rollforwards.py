@@ -935,20 +935,10 @@ def all_filings():
                 yield manifest.parent.name, accession, found["primary_html"]["filing_date"]
 
 
-# Each period over the 72 committed filings that reads `foots` false and `complete` true, with
-# the table read by eye. The printed table foots in each: NSSC's Schedule II
-# (10-K filed 2026-08-24, thousands), the account "Allowance for credit losses", columns
-# beginning, charged to costs and expenses, "Deductions/(recoveries)", end:
-#   year to June 30, 2025:   32 + 0 - 7 = 25      (printed (7), tagged `Recoveries` +7)
-#   year to June 30, 2024:  131 + 0 - 99 = 32      (printed (99), tagged `Recoveries` +99)
-# The filer tags a deduction with the element of recoveries, and the section reads a
-# recoveries row as tagged: 32 + 7 = 39 is 14 over 25, and 131 + 99 = 230 is 198 over 32.
-EXPECTED_FALSE_AND_COMPLETE = [
-    ("NSSC", "0001104659-26-100081", "allowance_for_credit_losses", "notes_82", "2025-06-30",
-     -14_000),
-    ("NSSC", "0001104659-26-100081", "allowance_for_credit_losses", "notes_82", "2024-06-30",
-     -198_000),
-]
+# Each period over the 72 committed filings that reads `foots` false and `complete` true. There
+# is none: the two NSSC periods that were (below) foot once a row whose element does not fix
+# its own direction takes the sign the filing prints.
+EXPECTED_FALSE_AND_COMPLETE: list[tuple] = []
 
 
 def test_over_all_committed_filings_a_table_that_does_not_foot_is_complete_only_where_the_filing_says_so():
@@ -1192,3 +1182,51 @@ def test_a_balance_split_at_a_date_is_no_row_of_the_span():
     year = period_of(series_of(rollforwards.build(planted(rows)), "product_warranty",
                                "notes_1"), CLOSING)
     assert year["foots"] is True and year["complete"] is True and year["rows_not_placed"] == []
+
+
+def test_nssc_prints_a_deduction_in_parentheses_and_tags_it_as_recoveries():
+    """NSSC's 10-K filed 2026-08-24, Schedule II note 82, in thousands, the allowance for credit
+    losses: beginning 32, charged 0 (printed "-"), deductions/(recoveries) printed (7), end 25;
+    and beginning 131, charged 0, (99), end 32. The instance tags the 7 and the 99 as
+    `ValuationAllowancesAndReservesRecoveries` with +7 and +99. 32 - 7 = 25 and 131 - 99 = 32."""
+    for end, opening, row, closing in (("2025-06-30", 32, 7, 25), ("2024-06-30", 131, 99, 32)):
+        year = one_period("NSSC", "0001104659-26-100081", "2026-08-24",
+                          "allowance_for_credit_losses", "notes_82", end)
+        (recovery,) = year["other"]["rows"]
+        assert recovery["concept"] == "us-gaap:ValuationAllowancesAndReservesRecoveries"
+        assert (recovery["value"], recovery["contribution"]) == (row * 1000, -row * 1000)
+        assert recovery["sign_source"] == "printed" and recovery["sign_disagrees"] is True
+        assert (year["beginning"]["value"], year["ending"]["value"]) == (
+            opening * 1000, closing * 1000)
+        assert year["foots"] is True and year["difference"]["value"] == 0
+        assert year["complete"] is True
+
+
+def test_a_charge_and_a_usage_row_keep_their_roles_direction_whatever_is_printed():
+    """A usage row printed in parentheses is still taken away once, never added: 1,000 + 400 -
+    300 = 1,100 with the 300 tagged +300 and printed (300)."""
+    rows = table_of("ProductWarrantyAccrual", "ProductWarrantyAccrualWarrantiesIssued",
+                    "ProductWarrantyAccrualPayments", opening=1_000, closing=1_100, charge=400,
+                    spent=300)
+    result = rollforwards.build(with_signs(planted(rows), {"u1": "negative", "c1": "negative"}))
+    year = period_of(series_of(result, "product_warranty", "notes_1"), CLOSING)
+    assert year["foots"] is True and "sign_source" not in year["usage"]
+    assert "sign_source" not in year["charged_to_expense"]
+
+
+def test_any_row_of_other_takes_its_printed_sign_and_the_difference_is_ending_less_rows():
+    """A recoveries row tagged +7 and printed (7) against 32 - 7 = 25; printed 7 it would read 39
+    and the stated 25 less 39 is -14."""
+    rows = table_of("AllowanceForDoubtfulAccountsReceivableCurrent",
+                    "ProvisionForDoubtfulAccounts", None, opening=32, closing=25, charge=0,
+                    other=7, other_concept="ValuationAllowancesAndReservesRecoveries")
+    # the schedule's own element needs its type axis: use a note table row of the other role
+    rows = [one for one in rows if "Recoveries" not in one["concept"]] + [
+        fact("FinancingReceivableAllowanceForCreditLossForeignCurrencyTranslation", 7, **YEAR,
+             number="o1")]
+    year = period_of(series_of(rollforwards.build(with_signs(planted(rows), {"o1": "negative"})),
+                               "allowance_for_credit_losses", "notes_1"), CLOSING)
+    assert year["foots"] is True
+    year = period_of(series_of(rollforwards.build(with_signs(planted(rows), {"o1": "positive"})),
+                               "allowance_for_credit_losses", "notes_1"), CLOSING)
+    assert year["foots"] is False and year["difference"]["value"] == -14

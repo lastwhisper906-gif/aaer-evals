@@ -42,11 +42,12 @@ family's base row at the same two dates and on the same axes, a ratio of two fac
 printed with both fact ids, and left out when the filing states two different
 values for it.
 
-**The sign of a translation row is the one the filing prints.** A foreign-currency
-translation row is tagged "gain (loss)", and filers differ over whether a printed
-increase of the reserve is the positive or the negative value: Cisco prints 3 and
+**The sign of a row whose element does not fix its own direction is the one the filing
+prints.** Recoveries, adjustments, acquisitions, translation, transfers and "other" rows
+(the `other` role) are tagged with whichever sign the filer chose, and filers differ:
+NSSC prints a deduction (7) and tags it +7 as `Recoveries`; Cisco prints 3 and
 tags -3, Johnson Controls prints (1) and tags +1, Logitech's 10-Q prints 94 and tags
--94, Lennox prints (0.8) and tags -0.8. The row contributes the sign the inline table
+-94, Lennox prints (0.8) and tags -0.8. Such a row contributes the sign the inline table
 prints (parentheses round the number, read by `note_tables.printed_signs` and carried
 as `printed_signs`), `sign_source` "printed" and `sign_disagrees` where the tag differs;
 where no printed sign was read it contributes its tagged value, `sign_source` "tagged".
@@ -316,14 +317,15 @@ SCHEDULE_TWO_MEMBERS = {
 # the elements read as a magnitude, whichever sign the filer tagged
 MAGNITUDE = ("ContractWithCustomerLiabilityRevenueRecognized",)
 FLOW_ROLES = ("charged", "usage", "other", "revision")
-# A foreign-currency translation row is tagged "gain (loss)", and filers differ over whether a
-# printed increase of the reserve is the positive or the negative value: Cisco prints "1"
-# and tags it `sign="-"`, Johnson Controls prints "(1)" and tags +1, Logitech's 10-Q prints
-# "94" and tags -94, Lennox prints "(0.8)" and tags -0.8. So such a row contributes the sign
-# the filing prints (parentheses round the number, as `note_tables.printed_signs` reads
-# them), and where no printed sign was read, the tagged value, with `sign_source` saying
-# which. Whether the table foots is never what decides a sign.
-TRANSLATION_WORD = "translation"
+# A row whose element does not fix its own direction (recoveries, adjustments, translation,
+# acquisitions, transfers, "other") is tagged with whichever sign the filer chose: Cisco
+# prints 3 and tags -3, Johnson Controls prints (1) and tags +1, Logitech's 10-Q prints 94 and
+# tags -94, Lennox prints (0.8) and tags -0.8, and NSSC prints a deduction (7) and tags it
+# +7 as `Recoveries`. Such a row (the `other` role, the change-in-estimate rows with it)
+# contributes the sign the filing prints (parentheses round the number, as
+# `note_tables.printed_signs` reads them), and where no printed sign was read, the tagged
+# value, with `sign_source` saying which. Whether the table foots never decides a sign. A
+# charge and a usage row keep their role's direction.
 DAYS_TO_THE_BALANCE = 3                 # a balance tagged this near the day it stands for
 A_YEAR = (350, 380)                     # days: the span `coverage_years` is read over
 USD = "iso4217:USD"
@@ -337,10 +339,13 @@ WHAT_THIS_IS = (
     "that no role holds (a row the filer tagged in its own namespace, a row on an extra axis "
     "such as an acquisition, a row with no dated span, a net change); each is listed under "
     "`rows_not_placed`, and a `foots` false beside a `complete` false is a table not read in "
-    "full. A foreign-currency translation row contributes the sign the filing prints "
-    "(parentheses round the number), `sign_source` printed, and the tagged value where no "
-    "printed sign was read, `sign_source` tagged; a row whose printed and tagged signs "
-    "differ says `sign_disagrees`. `provision_over_usage` is the charge over the usage; "
+    "full. `difference` is the stated ending less the rows. Every row of `other` takes the sign "
+    "the filing prints, for every row whose element does not fix its own direction "
+    "(recoveries, adjustments, acquisitions, translation, transfers, other): parentheses round "
+    "the number is negative, `sign_source` printed, and the tagged value where no printed sign "
+    "was read, `sign_source` tagged; a row whose printed and tagged signs differ says "
+    "`sign_disagrees`. A charge and a usage row keep their role's direction. "
+    "`provision_over_usage` is the charge over the usage; "
     "`coverage_years` is the beginning balance over the usage of a year; "
     "`ending_over_gross_base` is the ending reserve over the gross base the filing tags; "
     "`prior_period_revision_over_current_expense` is the table's change-in-estimate line "
@@ -381,18 +386,15 @@ def _dated(one: dict) -> bool:
     return isinstance(one.get("start"), str) and isinstance(one.get("end"), str)
 
 
-def _is_translation(one: dict) -> bool:
-    return TRANSLATION_WORD in (_local(one["concept"]) or "").lower()
-
-
-def _contribution(one: dict, signs: dict) -> tuple[Decimal, str | None, bool]:
+def _contribution(one: dict, signs: dict, signed: bool = False) -> tuple[Decimal, str | None,
+                                                                         bool]:
     """What a row adds to (or, in the usage role, takes from) the identity, where its sign
     came from ("printed", "tagged", or None for a row whose sign is no question), and whether
     the printed sign differs from the tagged one."""
     value = _dec(one["value"])
     if _local(one["concept"]) in MAGNITUDE:
         return abs(value), None, False
-    if _is_translation(one) and value != 0:
+    if signed and value != 0:
         printed = signs.get(one["fact"])
         if printed:
             read = -abs(value) if printed == "negative" else abs(value)
@@ -401,10 +403,10 @@ def _contribution(one: dict, signs: dict) -> tuple[Decimal, str | None, bool]:
     return value, None, False
 
 
-def _row(one: dict, signs: dict | None = None) -> dict:
+def _row(one: dict, signs: dict | None = None, signed: bool = False) -> dict:
     out = {"concept": one["concept"], "value": one["value"], "fact": one["fact"]}
-    if signs is not None and _is_translation(one) and one["value"] != 0:
-        contribution, source, disagrees = _contribution(one, signs)
+    if signs is not None and signed and one["value"] != 0:
+        contribution, source, disagrees = _contribution(one, signs, True)
         out["contribution"] = float(contribution)
         out["sign_source"] = source
         if source == "printed":
@@ -506,9 +508,9 @@ def _balance_names(family: str, kind: str) -> tuple[str, ...]:
     return SCHEDULE_TWO["balance"] if kind == "schedule_two" else ELEMENTS[family]["balance"]
 
 
-def _cell(rows: list[dict], total: Decimal, signs: dict) -> dict:
+def _cell(rows: list[dict], total: Decimal, signs: dict, signed: bool = False) -> dict:
     out = {"value": float(total), "facts": [one["fact"] for one in rows],
-           "rows": [_row(one, signs) for one in rows]}
+           "rows": [_row(one, signs, signed) for one in rows]}
     sources = [row["sign_source"] for row in out["rows"] if "sign_source" in row]
     if sources:
         out["sign_source"] = "tagged" if "tagged" in sources else "printed"
@@ -516,10 +518,10 @@ def _cell(rows: list[dict], total: Decimal, signs: dict) -> dict:
     return out
 
 
-def _flow_total(rows: list[dict], signs: dict) -> Decimal:
+def _flow_total(rows: list[dict], signs: dict, signed: bool = False) -> Decimal:
     total = Decimal(0)
     for one in rows:
-        total += _contribution(one, signs)[0]
+        total += _contribution(one, signs, signed)[0]
     return total
 
 
@@ -589,7 +591,7 @@ def _period(group: dict, start: str, end: str, tables: dict, signs: dict) -> dic
     begin, end_value = _dec(opening["value"]), _dec(closing["value"])
     charge = _flow_total(charged, signs)
     spent = _flow_total(usage, signs)
-    rest = _flow_total(other, signs)
+    rest = _flow_total(other, signs, True)
     expected = begin + charge + rest - spent
     difference = end_value - expected
     ordered = [opening] + charged + other + usage
@@ -598,7 +600,7 @@ def _period(group: dict, start: str, end: str, tables: dict, signs: dict) -> dic
     out["charged_to_expense"] = _cell(charged, charge, signs) if charged else {
         "missing": "the table states no charge or additions row among the elements of "
                    "this section"}
-    out["other"] = _cell(other, rest, signs) if other else {
+    out["other"] = _cell(other, rest, signs, True) if other else {
         "missing": "the table states no other row among the elements of this section"}
     out["usage"] = _cell(usage, spent, signs) if usage else {
         "missing": "the table states no usage row among the elements of this section"}
@@ -627,7 +629,7 @@ def _period(group: dict, start: str, end: str, tables: dict, signs: dict) -> dic
                         else f"the span is {span['days']} days, and coverage is read over a year")}
     revision = roles["revision"]
     out["prior_period_revision_over_current_expense"] = (
-        _ratio(_flow_total(revision, signs), charge,
+        _ratio(_flow_total(revision, signs, True), charge,
                [one["fact"] for one in revision + charged],
                why="the charge of the span is zero") if revision and charged else
         {"missing": "the table has no change-in-estimate row or no charge row"})

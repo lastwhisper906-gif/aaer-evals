@@ -165,9 +165,9 @@ own rows reach its ending balance, `difference` is what is left over, and
 `complete` false means the table holds a row that no role places, such as one
 the filer tagged in its own namespace or one on an extra axis (listed under
 `rows_not_placed`), so a `foots` false beside a `complete` false is a table
-Python did not read in full and no finding. A currency translation row carries
-`sign_source`: `printed` when its sign is the one the filing prints, `tagged`
-when no printed sign could be read.
+Python did not read in full and no finding. Every row in `other` carries `sign_source`, the sign the filing prints for every
+row whose element does not fix its own direction: `printed`, or `tagged` when no
+printed sign could be read. `difference` is the stated ending less the rows.
 `release` is true when the charge to expense is negative or the reserve fell
 while its gross base rose (`release_because` says which), and
 `provision_over_usage` is the charge against what was used or paid out, so a
