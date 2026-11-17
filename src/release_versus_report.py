@@ -758,8 +758,12 @@ def _names_attributable_net_income(label: str) -> bool:
 # in dollars: not a non-GAAP or adjusted measure, a deferred or current part, a weighted
 # average or a share count, or a rate (growth, margin, rate, percent, change): a rate is not a
 # dollar row of the line.
-_NOT_THE_LINE = re.compile(r"non-?\s*gaap|adjusted|deferred|current|weighted|\bshares?\b|"
-                           r"growth|margin|\brate\b|percent|%|\bchange")
+# A balance, a ratio or an adjustment is another quantity too (retained, accrued, prepaid,
+# receivable, payable, net debt to, last twelve months, future obligations, aggregate adjustment).
+_NOT_THE_LINE = re.compile(r"non-?\s*gaap|adjusted|organic|deferred|current|weighted|\bshares\b|"
+                           r"growth|margin|\brate\b|percent|%|\bchange|retained|accrued|prepaid|"
+                           r"receivable|payable|\bnet debt\b|last twelve months|\bfuture\b|"
+                           r"\baggregate\b|\badjustments?\b")
 
 
 # Words that qualify a stated label without naming another quantity: `Total consolidated net
@@ -768,6 +772,43 @@ _NOT_THE_LINE = re.compile(r"non-?\s*gaap|adjusted|deferred|current|weighted|\bs
 # which leaves out the discontinued part) is another figure, listed.
 _QUALIFIERS = {"total", "consolidated", "of", "the", "and", "in", "from", "for", "gaap",
                "reported", "-", "as"}
+
+
+def align_figures(figures: list[dict], columns: list[dict]) -> list[tuple[dict, dict]] | None:
+    """A row's figures matched to the header's columns: one for each column; or its dollars one
+    for each column; or its dollars one for each column that is not a Change column. None if
+    they do not fit (the row is then noted unread, never dropped)."""
+    if len(figures) == len(columns):
+        return list(zip(columns, figures))
+    dollars = [f for f in figures if not f["percent"]]
+    if len(dollars) == len(columns):
+        return list(zip(columns, dollars))
+    plain = [c for c in columns if "change" not in c]
+    if plain and len(dollars) == len(plain):
+        return list(zip(plain, dollars))
+    return None
+
+
+# The key words of each line: a row whose label carries them is a row of that line under another
+# label (comparable only when it holds a whole stated label and qualifiers, else listed), so no
+# row that looks like a line's figure is dropped without a word.
+_LINE_KEYS = {
+    "revenue": re.compile(r"\b(?:revenues?|sales)\b"),
+    "cost_of_revenue": re.compile(r"\bcosts? of\b"),
+    "operating_income": re.compile(r"\boperating (?:income|profit|earnings|loss)\b|"
+                                   r"\b(?:income|profit|loss) from operations\b"),
+    "pretax_income": re.compile(r"\bbefore (?:provision for |benefit from )?(?:income )?tax"),
+    "income_tax_expense": re.compile(r"\bincome tax|\bprovision for (?:income )?tax|\btaxes\b"),
+    "net_income": re.compile(r"\bnet (?:income|earnings|loss)\b|\bearnings from\b"),
+    "diluted_earnings_per_share": re.compile(
+        r"\bdiluted (?:earnings|net income|eps)\b|\bdiluted\b.*\bper (?:\w+ )?share\b|"
+        r"\b(?:earnings|income) per (?:\w+ )?share\b|\beps\b"),
+    "operating_cash_flow": re.compile(r"\boperating activities\b|\bfrom operations\b|"
+                                      r"\boperating cash\b"),
+    "capital_expenditure": re.compile(
+        r"\bcapital expenditures?\b|\bcapex\b|\b(?:purchases?|payments?|acquisitions?|"
+        r"expenditures?)\b.*\b(?:property|equipment|plant|fixtures|capital)\b"),
+}
 
 
 def other_label_candidates(label: str) -> list[tuple[str, bool]]:
@@ -791,6 +832,10 @@ def other_label_candidates(label: str) -> list[tuple[str, bool]]:
                 comparable = comparable or all(t in _QUALIFIERS for t in tokens)
         if found:
             out.append((line, comparable))
+    named = {line for line, _ in out}
+    out += [(line, False) for line, key in _LINE_KEYS.items()
+            if line not in named and key.search(words)
+            and not (line == "capital_expenditure" and _CAPEX_NOT.search(words))]
     if capex_synonym(label) == "other":       # more than the plain purchase: listed, never compared
         out = [(line, comparable and line != "capital_expenditure") for line, comparable in out]
         if all(line != "capital_expenditure" for line, _ in out):
@@ -850,6 +895,10 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
                 if lines_of[i]:
                     note(lines_of[i], _label_of(row)[1], str(reason))
                     seen.add(lines_of[i])
+                elif _is_data_row(row):
+                    for name in lines_named_in(_label_of(row)[1]):
+                        note(name, _label_of(row)[1], str(reason))      # a candidate row: not silent
+                        seen.add(name)
             continue
         columns = header["columns"]
         if is_a_statement_of_cash_flows(rows):
@@ -930,8 +979,17 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
                 # a row whose label holds a stated label's words and is none of them
                 near = other_label_candidates(placed[1]) if _is_data_row(row) else []
                 shown = _figures(row[placed[0] + 1:])
-                if near and len(shown) == len(columns):
-                    for column, figure in zip(columns, shown):
+                use_columns = columns
+                if header.get("sub") and len(shown) == len(columns) * len(header["sub"]):
+                    use_columns = _expand(columns, header["sub"])     # Reported, Adjustments, ...
+                pairs = align_figures(shown, use_columns) if near else None
+                if near and pairs is None:
+                    for name, _ in near:
+                        note(name, placed[1], f"the row prints {len(shown)} figures and the "
+                                              f"header names {len(columns)} columns")
+                        seen.add(name)
+                if near and pairs is not None:
+                    for column, figure in pairs:
                         if "change" in column or column["end"] != end or figure["percent"]:
                             continue
                         for name, comparable in near:

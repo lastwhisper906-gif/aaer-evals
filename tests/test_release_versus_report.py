@@ -143,7 +143,13 @@ def test_release_versus_report_dell_prints_capital_expenditure_under_a_label_not
     assert [(r["label"], r["paragraph_id"].split(":")[-1], r["span_months"], r["cell"])
             for r in entry["rows"]] == [
         ("Capital expenditures and capitalized software development costs", "74", 3, "(1,239)"),
-        ("Capital expenditures and capitalized software development costs", "74", 6, "(2,202)")]
+        ("Capital expenditures and capitalized software development costs", "74", 6, "(2,202)"),
+        # `:116` prints four figures under six columns (two are Change columns): its dollars are
+        # matched to the columns that are not Change columns, and the row is listed
+        ("Capital expenditures and capitalized software development costs, net (a)", "116", 3,
+         "(1,239)"),
+        ("Capital expenditures and capitalized software development costs, net (a)", "116", 6,
+         "(2,202)")]
     text = (DELL_RUN / "input_8k.md").read_text(encoding="utf-8")
     assert "| Capital expenditures and capitalized software development costs | (1,239) |" in text
     # a line no row names at all stays not_in_release
@@ -2272,8 +2278,10 @@ def test_release_versus_report_nvidias_purchases_that_also_cover_intangibles_are
     than property and equipment: printed under another label, listed, never absent and never
     compared."""
     entry = _planted("NVDA", STATEMENTS["NVDA"][0], {})["capital_expenditure"]
-    assert entry["verdict"] == "printed_under_another_label" and "comparisons" not in entry
-    assert [(r["label"], r["cell"], r["span_months"]) for r in entry["rows"]] == [
+    # `:74` prints the same rows with no header above its figures: noted unread, so the line is
+    # `period_not_read`, and `:71`'s rows stay listed beside it
+    assert entry["verdict"] == "period_not_read" and not entry["comparisons"]
+    assert [(r["label"], r["cell"], r["span_months"]) for r in entry["other_label_rows"]] == [
         ("Purchases related to property and equipment and intangible assets", "(2,677)", 3),
         ("Purchases related to property and equipment and intangible assets", "(4,434)", 6)]
 
@@ -2463,6 +2471,12 @@ def test_release_versus_report_a_middle_sub_column_called_special_items_is_never
     ("weighted", "Weighted net income"), ("shares", "Net income shares"),
     ("deferred", "Deferred net income"), ("current", "Current net income"),
     ("adjusted", "Adjusted net income"), ("non-GAAP", "Non-GAAP net income"),
+    ("organic", "Organic net income"), ("retained", "Retained net income"),
+    ("accrued", "Accrued net income"), ("prepaid", "Prepaid net income"),
+    ("receivable", "Net income receivable"), ("payable", "Net income payable"),
+    ("future", "Future net income"), ("aggregate", "Aggregate net income"),
+    ("adjustments", "Net income adjustments"), ("net debt", "Net debt net income"),
+    ("last twelve months", "Last twelve months net income"),
     ("growth", "Net income growth"), ("margin", "Net income margin"), ("rate", "Net income rate"),
     ("percent", "Net income percent"), ("%", "Net income %"), ("change", "Net income change")])
 def test_release_versus_report_each_excluding_word_alone_keeps_a_row_out_of_the_candidates(word, label):
@@ -2481,14 +2495,16 @@ def test_release_versus_report_each_excluding_word_alone_keeps_a_row_out_of_the_
 
 def test_release_versus_report_a_candidate_row_with_the_wrong_count_of_figures_is_not_listed():
     """`Net income before special items` with three figures under a header of two columns cannot
-    be read at the period: not listed, and the line is not called printed."""
+    be matched to the period: noted unread with its reason (the line is `period_not_read`),
+    never dropped and never called printed."""
     out = _run([_row("Net revenue", "1,000"),
                 "| Net income before special items | $ | 812 |  | $ | 700 |  | $ | 600 |"],
                _fact(revenue=1e9))
-    assert out["net_income"]["verdict"] == "not_in_release"
+    assert out["net_income"]["verdict"] == "period_not_read"
+    assert "3 figures and the header names 2 columns" in out["net_income"]["unread"][0]["reason"]
     out = _run([_row("Net revenue", "1,000"), "| Net income before special items | $ | 812 |"],
                _fact(revenue=1e9))
-    assert out["net_income"]["verdict"] == "not_in_release"
+    assert out["net_income"]["verdict"] == "period_not_read"
     out = _run([_row("Net revenue", "1,000"), _row("Net income before special items", "812")],
                _fact(revenue=1e9))
     assert out["net_income"]["verdict"] == "printed_under_another_label"
@@ -2705,7 +2721,11 @@ def test_release_versus_report_diluted_earnings_per_share_is_read_in_the_three_s
     and that drop a label saying per share."""
     accession = STATEMENTS[ticker][0]
     entry = _planted_full(ticker, accession, {})["lines"]["diluted_earnings_per_share"]
-    assert entry["verdict"] == "agrees" and entry["statement"]["verdict"] == "agrees"
+    # ESCO's per-quarter EPS reconciliation tables (`:91`-`:97`) have no dated header: noted
+    # unread, so its line is `period_not_read` beside the cells that agree
+    assert entry["verdict"] == ("period_not_read" if ticker == "ESE" else "agrees")
+    assert entry["statement"]["verdict"] == "agrees"
+    assert {c["verdict"] for c in entry["comparisons"]} == {"agrees"}
     found = {c["span_months"]: c for c in entry["comparisons"]}
     for months, printed in cells.items():
         cell = found[months]
@@ -2846,7 +2866,10 @@ def test_release_versus_report_a_share_count_label_is_not_diluted_earnings_per_s
     the mutant that drops `shares`, `used` and `number of` from the excluded words."""
     assert rvr.eps_label(label) is False, label
     out = _run([_row(label, "739.9")], _fact(diluted_earnings_per_share=0.82))
-    assert out["diluted_earnings_per_share"]["verdict"] == "not_in_release", label
+    # never the line: not compared; a label that also carries the key words is listed, not silent
+    assert out["diluted_earnings_per_share"]["verdict"] in (
+        "not_in_release", "printed_under_another_label"), label
+    assert not out["diluted_earnings_per_share"].get("comparisons"), label
 
 
 # --- round seven: the sign of the noncontrolling figure is read from its row ---------------------
@@ -3406,7 +3429,7 @@ def test_release_versus_report_a_row_under_another_label_is_compared_when_only_q
     assert out["revenue"]["verdict"] == "differs_outside_gaap"
 
 
-@pytest.mark.parametrize("label", ["ISG operating income", "Adjustments to reconcile net income",
+@pytest.mark.parametrize("label", ["ISG operating income", "Net income of the Acme segment",
                                    "Net cash provided by operating activities - continuing operations",
                                    "Equity method investment net earnings"])
 def test_release_versus_report_a_row_that_names_something_more_is_listed_never_compared(label):
@@ -3435,4 +3458,142 @@ def test_release_versus_report_the_corpus_other_label_cells_are_four_and_all_agr
         ("DELL", "Total consolidated operating income (f)", "agrees"),
         ("DELL", "Total consolidated operating income (f)", "agrees")]
     esco = _planted_full("ESE", STATEMENTS["ESE"][0], {})["lines"]["operating_cash_flow"]
-    assert [r["cell"] for r in esco["other_label_rows"]] == ["193,377"]
+    assert [r["cell"] for r in esco["other_label_rows"]] == ["193,377", "(59,340"]
+
+
+# --- round twelve: nothing silent ---------------------------------------------------------------------
+
+# The judge's own key words, written without the module's: a row whose label carries one of them is
+# a row a reader would take for that line's figure.
+_SILENT_KEYS = (
+    r"\b(?:total )?(?:net )?(?:revenues?|sales)\b",
+    r"\bcosts? of (?:revenues?|sales|goods|products?|services)\b",
+    r"\boperating (?:income|profit|earnings)\b", r"\bincome from operations\b",
+    r"\bbefore (?:provision for |benefit from )?(?:income )?tax",
+    r"\bincome tax", r"\bprovision for (?:income )?tax",
+    r"\bnet (?:income|earnings|loss)\b",
+    r"\bdiluted\b.*\b(?:earnings|income|eps|per)\b", r"\b(?:earnings|income) per\b",
+    r"\boperating activities\b", r"\bfrom operations\b", r"\boperating cash\b",
+    r"\bcapital expenditures?\b",
+    r"\b(?:purchases?|payments?|acquisitions?)\b.*\b(?:property|equipment|plant|fixtures)\b")
+# Rows that are another quantity or not dollars, by the judge's own reckoning: another measure
+# (non-GAAP, adjusted, organic), a balance or a ratio, a per share count, a rate, a payment for
+# something else, or a heading with no figure.
+_SILENT_NOT = (
+    r"non-?\s*gaap|adjusted|organic|deferred|current|weighted|\bshares?\b|growth|margin|\brate\b|"
+    r"percent|%|\bchange|retained|accrued|prepaid|receivable|payable|\bnet debt|last twelve|"
+    r"\bfuture\b|aggregate|adjustments?|financ|\bdebt|\btaxes? (?:paid|related)|insurance|"
+    r"contingent|repair|materials?|\bleases?|unearned|marketable|proceeds|sales and marketing|"
+    r"selling|\bsales of\b|taxes paid|cash paid")
+
+
+def _silent_rows(ticker, accession):
+    """The period-dated dollar rows of a committed release whose label carries a key word, and
+    what was done with each: compared, listed beside its line, excluded with a reason, or in a
+    table noted unread. Returns the rows that were none of these."""
+    import datetime as dt
+    import re
+    from src import parse_8k
+    run, cutoff, record, periods = _run_inputs(ticker, accession)
+    item = parse_8k.earnings_release(ticker, cutoff=cutoff)["item_2_02"]
+    members = calculator.segment_members(calculator.instance_facts(run, cutoff))
+    reader = calculator.release_report_reader(record, periods)
+    out = rvr.compare_release(item["paragraph_ids"], item["paragraphs"], periods["balance_now"],
+                              reader, members)
+    done, noted = set(), set()
+    for entry in out["lines"].values():
+        for cell in entry.get("comparisons", []):
+            done.add((cell["release"]["paragraph_id"], cell["release"]["label"]))
+        for row in entry.get("other_label_rows", []) + entry.get("rows", []):
+            done.add((row["paragraph_id"], row["label"]))
+        for row in entry.get("excluded_rows", []):
+            done.add((row["paragraph_id"], row["label"]))
+        for row in entry.get("unread", []):
+            noted.add(row["paragraph_id"])
+    end = dt.date.fromisoformat(periods["balance_now"])
+    silent = []
+    for pid, paragraph in zip(item["paragraph_ids"], item["paragraphs"]):
+        rows = rvr._rows_of(paragraph)
+        if rows is None or pid in noted:
+            continue
+        try:
+            header = rvr.read_header(rows, members)
+        except rvr.Unread:
+            header = None                            # undated: a key row must be in a noted table
+        if header and not any("change" not in c and c["end"] == end for c in header["columns"]):
+            continue                                 # no column of the period: not period-dated
+        for row in (rows[header["first_data_row"]:] if header else rows):
+            placed = rvr._label_of(row)
+            if not placed or not rvr._is_data_row(row) or (pid, placed[1]) in done:
+                continue
+            label = re.sub("[\u2010-\u2015]", "-", placed[1].lower())
+            if re.search(_SILENT_NOT, label) or not any(re.search(k, label) for k in _SILENT_KEYS):
+                continue
+            figures = [f for f in rvr._figures(row[placed[0] + 1:]) if not f["percent"]]
+            if figures:
+                silent.append((pid.split(":")[-1], placed[1]))
+    return silent
+
+
+@pytest.mark.parametrize("ticker", sorted(STATEMENTS))
+def test_release_versus_report_no_row_that_looks_like_a_line_is_silent(ticker):
+    """Every period-dated dollar row of a committed release whose label carries a key word of a
+    line is compared, listed beside its line, excluded with a reason, or in a table noted
+    unread. Any other fails, with its paragraph id and label. Kills the mutants that leave a
+    candidate row unlisted."""
+    assert _silent_rows(ticker, STATEMENTS[ticker][0]) == []
+
+
+@pytest.mark.parametrize("line,label", [
+    ("revenue", "Subscription revenue"), ("cost_of_revenue", "Cost of subscription services"),
+    ("operating_income", "Profit from operations"), ("pretax_income", "Profit before tax"),
+    ("income_tax_expense", "Taxes on income"), ("net_income", "Net loss from the Acme unit"),
+    ("diluted_earnings_per_share", "Earnings per ordinary share"),
+    ("operating_cash_flow", "Cash provided by operating activities from continuing operations"),
+    ("capital_expenditure", "Cash used for purchases of property")])
+def test_release_versus_report_a_row_with_a_lines_key_words_is_listed_never_not_in_release(line, label):
+    """A label that carries a line's key words but holds no stated label is that line's figure
+    under another label: listed beside it, and the line reads `printed_under_another_label`
+    rather than `not_in_release`. Kills the mutant that drops that line's key words."""
+    out = _run([_row("Net revenue", "1,000") if line != "revenue" else _row("Total assets", "9"),
+                _row(label, "812")], _fact(**{line: 812e6}))
+    assert out[line]["verdict"] == "printed_under_another_label", line
+    assert [r["label"] for r in out[line]["rows"]] == [label]
+
+
+def test_release_versus_report_a_figure_row_that_fits_the_columns_only_without_change_is_listed():
+    """Dell `:116` prints four figures under six columns, two of them Change columns: the dollars
+    are matched to the columns that are not Change columns and the row is listed; a row whose
+    figures fit no way is noted unread, never dropped."""
+    header = ["|  | Three Months Ended |  |  | Six Months Ended |",
+              "|  | June 30, 2026 |  | June 30, 2025 |  | Change |  | June 30, 2026 |  | June 30, 2025 |  | Change |",
+              "|  | (in millions) |"]
+    row = "| Capital expenditures and capitalized software development costs, net (a) | (1,239) | (675) | (2,202) | (1,243) |"
+    full = rvr.compare_release(["p:1"], ["\n".join(header + [_row("Net revenue", "1,000"), row])],
+                               "2026-06-30", _fact(revenue=1e9))["lines"]
+    assert full["capital_expenditure"]["verdict"] == "printed_under_another_label"
+    assert [(r["cell"], r["span_months"]) for r in full["capital_expenditure"]["rows"]] == [
+        ("(1,239)", 3), ("(2,202)", 6)]
+    odd = "| Capital expenditures and capitalized software development costs, net (a) | (1,239) | (675) | (2,202) |"
+    full = rvr.compare_release(["p:1"], ["\n".join(header + [_row("Net revenue", "1,000"), odd])],
+                               "2026-06-30", _fact(revenue=1e9))["lines"]
+    assert full["capital_expenditure"]["verdict"] == "period_not_read"
+    assert "3 figures" in full["capital_expenditure"]["unread"][0]["reason"]
+
+
+def test_release_versus_report_johnson_controls_operating_cash_flow_is_printed_under_another_label():
+    """JCI prints `Cash provided by operating activities from continuing operations | 1,289`
+    (`:81`, `:131`) and `Cash (used) provided by operating activities | — | 208` (`:81`): not a
+    stated label, so listed, and the line is not `not_in_release`. Carrier's `Net cash flows
+    provided by (used in) continuing operating activities | 888` is listed beside its stated row."""
+    jci = _planted_full("JCI", "0000833444-26-000087", {})["lines"]["operating_cash_flow"]
+    assert jci["verdict"] == "printed_under_another_label"
+    listed = {(r["paragraph_id"].split(":")[-1], r["label"], r["cell"]) for r in jci["rows"]}
+    assert ("81", "Cash provided by operating activities from continuing operations", "1,289") in listed
+    assert ("131", "Cash provided by operating activities from continuing operations", "1,289") in listed
+    assert ("81", "Cash (used) provided by operating activities", "—") in listed
+    carr = _planted_full("CARR", "0001783180-26-000032", {})["lines"]["operating_cash_flow"]
+    assert carr["verdict"] == "agrees"
+    assert ("93", "888") in {(r["paragraph_id"].split(":")[-1], r["cell"])
+                              for r in carr["other_label_rows"]
+                              if "continuing operating activities" in r["label"]}
