@@ -106,10 +106,12 @@ import zipfile
 from pathlib import Path
 
 try:
-    from src import cutoff_guard, interpreter_pin, market, note_tables, trends
+    from src import (cutoff_guard, interpreter_pin, market, note_tables, parse_8k,
+                     release_versus_report as release_lines, trends)
 except ImportError:  # invoked as a plain script
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from src import cutoff_guard, interpreter_pin, market, note_tables, trends
+    from src import (cutoff_guard, interpreter_pin, market, note_tables, parse_8k,
+                     release_versus_report as release_lines, trends)
 
 BAD_INPUT = 2
 INCOMPLETE = 4
@@ -197,6 +199,8 @@ REVENUE_AND_WORKING_CAPITAL_TERMS: dict[str, tuple[str, tuple[str, ...]]] = {
 }
 
 TERMS: dict[str, tuple[str, tuple[str, ...]]] = {
+    "net_income_including_noncontrolling": ("duration", ("ProfitLoss",)),
+    "net_income_to_noncontrolling": ("duration", ("NetIncomeLossAttributableToNoncontrollingInterest",)),
     **{term: trends.CONCEPTS[term] for term in SHARED_WITH_THE_TREND_TABLE},
     **trends.CALCULATOR_TERMS,
     **REVENUE_AND_WORKING_CAPITAL_TERMS,
@@ -206,6 +210,13 @@ TERMS: dict[str, tuple[str, tuple[str, ...]]] = {
 SHARE_TERMS: dict[str, tuple[str, str, tuple[str, ...]]] = {
     "diluted_shares": ("us-gaap", "duration", ("WeightedAverageNumberOfDilutedSharesOutstanding",)),
     "shares_outstanding": ("dei", "instant", ("EntityCommonStockSharesOutstanding",)),
+}
+
+# Terms stated per share, read from the record under the unit `USD/shares`. A
+# per-share figure is never added or differenced across periods.
+PER_SHARE_TERMS: dict[str, tuple[str, str, tuple[str, ...]]] = {
+    "diluted_earnings_per_share": ("us-gaap", "duration", ("EarningsPerShareDiluted",)),
+    "basic_earnings_per_share": ("us-gaap", "duration", ("EarningsPerShareBasic",)),
 }
 
 # Families: a figure a statement may print on several lines. Each family is a
@@ -484,12 +495,15 @@ class Record:
         self.usd = trends.observations(document)
         self.shares = {"us-gaap": index_units(document, "us-gaap", "shares"),
                        "dei": index_units(document, "dei", "shares")}
+        self.per_share = index_units(document, "us-gaap", "USD/shares")
 
     # A term for one span, by the trend table's rule.
     def term(self, term: str, span) -> dict:
         if span is None:
             return {"missing": f"no {term}: the period it would be read for is not "
                                f"in the record"}
+        if term in PER_SHARE_TERMS:
+            return self.per_share_term(term, span)
         if term in SHARE_TERMS:
             return self.share_term(term, span)
         kind = TERMS[term][0]
@@ -540,6 +554,21 @@ class Record:
                 if "missing" in settled:
                     return settled
                 return _fact(tag, key, settled, unit="shares", namespace=namespace)
+        return {"missing": f"no row for {term} in {key[0]}..{key[1]} under "
+                           f"{', '.join(namespace + ':' + t for t in tags)}"}
+
+    def per_share_term(self, term: str, span) -> dict:
+        namespace, _, tags = PER_SHARE_TERMS[term]
+        if span is None:
+            return {"missing": f"no {term}: the period it would be read for is not in the record"}
+        key = span if isinstance(span, tuple) else (None, span)
+        for tag in tags:
+            rows = self.per_share.get(tag, {}).get(key)
+            if rows:
+                settled = trends.as_filed(rows, f"{namespace}:{tag}")
+                if "missing" in settled:
+                    return settled
+                return _fact(tag, key, settled, unit="USD/shares", namespace=namespace)
         return {"missing": f"no row for {term} in {key[0]}..{key[1]} under "
                            f"{', '.join(namespace + ':' + t for t in tags)}"}
 
@@ -894,7 +923,7 @@ def quarter(record: Record, term: str, spans: list, end: dt.date, *,
         found = read(direct)
         if "missing" not in found:
             return {"value": found["value"], "formula": "the quarter as stated",
-                    "parts": [found], "end": direct[1]}
+                    "parts": [found], "start": direct[0], "end": direct[1]}
     to_date = year_to_date(spans, end)
     if to_date is None:
         near = [e for _, e in spans if _near(e, end)]
@@ -937,7 +966,8 @@ def quarter(record: Record, term: str, spans: list, end: dt.date, *,
                 return {"missing": found["missing"]}
     return {"value": whole["value"] - part["value"],
             "formula": f"{to_date[0]}..{to_date[1]} less {before[0]}..{before[1]}",
-            "parts": [whole, part], "end": to_date[1]}
+            "parts": [whole, part], "end": to_date[1],
+            "start": (_date(before[1]) + dt.timedelta(days=1)).isoformat()}
 
 
 # --- arithmetic with its inputs named -------------------------------------------
@@ -1189,6 +1219,67 @@ def net_working_capital(balances: dict, debt_current: dict, cash: dict) -> dict:
         - (v["current_liabilities"] - v["debt_current"]), unit="USD")
 
 
+ENDING_CONVENTION = ("the period-end balance over the flow of the period the report is for "
+                     "(a quarter's, stated or the year to date less the one a quarter shorter; "
+                     "on an annual report the fiscal year's), times that period's own calendar "
+                     "days, its first day to its last, so a fourteen-week quarter and a "
+                     "fifty-three-week year count the days they have. The `days_*` cells beside "
+                     "these divide the average of the balance now and a year earlier by the "
+                     "trailing four quarters' flow, times 365")
+
+
+def ending_balance_days(record: Record, terms: dict, periods: dict) -> dict:
+    """Days on the ending balance over the period's own flow, beside the average version.
+
+    A forensic day-one check: a balance that has grown faster than the quarter's
+    flow shows in the ending balance a quarter before it moves the average of
+    two year-ends. The flow is the quarter's own (`quarter`), never the trailing
+    year's, the days are that period's own calendar days (its start to its end),
+    and `revenue_per_day_of_receivables` is what one day of that flow is worth,
+    so an analyst can cite it without dividing.
+    """
+    annual = periods["annual_trigger"]
+    span, key = ("fiscal year", "fiscal_year") if annual else ("quarter", "quarter")
+    if annual:
+        flows = {name: terms["trailing_four_quarters"][name]
+                 for name in ("revenue", "cost_of_revenue")}
+        start, end = periods["current_to_date"] or (None, None)
+    else:
+        spans, ending = durations(record.usd), _date(periods["balance_now"])
+        flows = {name: quarter(record, name, spans, ending) for name in ("revenue", "cost_of_revenue")}
+        start, end = flows["revenue"].get("start"), flows["revenue"].get("end")
+    now = terms["balances_now"]
+    if start is None or end is None:
+        missing = {"missing": f"the {span}'s own first and last day are not known: no {span} "
+                              f"flow is on record to take them from"}
+        return {name: dict(missing) for name in (
+            "days_sales_outstanding_ending", "days_sales_of_inventory_ending",
+            "days_payables_outstanding_ending", "revenue_per_day_of_receivables")}
+    days = _days(start, end)
+    days_text = f"{days} ({start} to {end})"
+
+    def over(balance: str, flow: str, label: str) -> dict:
+        cell = measure(f"ending {label} / {span}'s {flow} * {days_text}",
+                       {f"ending_{label}": now[balance], f"{key}_{flow}": flows[flow]},
+                       lambda v: v[f"ending_{label}"] / v[f"{key}_{flow}"] * days,
+                       unit="days", denominator=f"{key}_{flow}")
+        cell["convention"] = ENDING_CONVENTION
+        cell["days_in_period"] = days
+        return cell
+
+    per_day = measure(f"{span}'s revenue / {days_text}", {f"{key}_revenue": flows["revenue"]},
+                      lambda v: v[f"{key}_revenue"] / days, unit="USD")
+    per_day["convention"] = ENDING_CONVENTION
+    per_day["days_in_period"] = days
+    return {
+        "days_sales_outstanding_ending": over("receivables", "revenue", "receivables"),
+        "days_sales_of_inventory_ending": over("inventory", "cost_of_revenue", "inventory"),
+        "days_payables_outstanding_ending": over("accounts_payable", "cost_of_revenue",
+                                                 "accounts_payable"),
+        "revenue_per_day_of_receivables": per_day,
+    }
+
+
 def ratios(record: Record, terms: dict, periods: dict) -> dict:
     ttm = terms["trailing_four_quarters"]
     now, ago = terms["balances_now"], terms["balances_a_year_earlier"]
@@ -1274,6 +1365,7 @@ def ratios(record: Record, terms: dict, periods: dict) -> dict:
             - v["days_payables_outstanding"], unit="days"),
         "asset_turnover": dupont["asset_turnover"],
     }
+    efficiency.update(ending_balance_days(record, terms, periods))
 
     free_simple = measure("operating_cash_flow - capital_expenditure",
                           {"operating_cash_flow": ttm["operating_cash_flow"],
@@ -3277,7 +3369,7 @@ def implied_growth_beside_history(value: dict, history: dict) -> dict:
 
 # --- the triggering filing's own facts, where companyfacts has not caught up ---------------
 
-FILING_UNITS = {"iso4217:USD": "USD", "shares": "shares"}
+FILING_UNITS = {"iso4217:USD": "USD", "shares": "shares", "iso4217:USD/shares": "USD/shares"}
 
 
 def supplemented(document: dict, bundle: Path | None,
@@ -3437,6 +3529,8 @@ def calculate(*, ticker: str, cutoff, period_end: str, form: str, accession: str
         "inventory_composition_and_growth_gap": inventory_composition_and_growth_gap(
             record, terms, periods),
     }
+    beside_the_release = release_versus_report(record, periods, ticker=ticker, cutoff=cutoff,
+                                               fixtures_root=fixtures_root, facts=facts)
 
     missing = [f"{term}: {terms['trailing_four_quarters'][term]['missing']}"
                for term in CORE_TERMS if term in terms["trailing_four_quarters"]
@@ -3479,6 +3573,7 @@ def calculate(*, ticker: str, cutoff, period_end: str, form: str, accession: str
         "ebit": sections["ebit"], "tax_rate": sections["tax_rate"],
         "earnings_versus_cash": earnings,
         **revenue_and_working_capital,
+        "release_versus_report": beside_the_release,
         "free_cash_flow": free,
         "concentration": concentration(bundle),
         "note_tables": tables,
@@ -3493,6 +3588,116 @@ def calculate(*, ticker: str, cutoff, period_end: str, form: str, accession: str
         "valuation": value,
         **beside_the_dcf,
     }
+
+
+# --- the earnings release beside the report ---------------------------------------------------
+
+RELEASE_TERMS = {line: line for line in release_lines.LINES}
+# Net income before the noncontrolling interest's share, which a release row not labelled
+# "attributable" prints and `NetIncomeLoss` (the parent's) does not.
+RELEASE_TERMS["net_income_with_noncontrolling"] = "net_income_including_noncontrolling"
+# A release row of basic earnings per share (`Basic`, or a row under a `Basic:` heading).
+RELEASE_TERMS[release_lines.BASIC] = "basic_earnings_per_share"
+# The noncontrolling interest's income, whose tagged sign decides the sign of a release row.
+RELEASE_TERMS[release_lines.NCI] = "net_income_to_noncontrolling"
+
+RELEASE_WHAT_THIS_IS = (
+    "the earnings release (8-K exhibit 99.1, furnished and not filed) printed beside the "
+    "report, line by line: every dollar cell of every table of the release under a line's "
+    "row labels for the period is compared, each at its own table's printed precision, with "
+    "its paragraph id beside the report's fact for the same period through the term table, "
+    "the difference (the release's value less the report's, in dollars) with its sign toward "
+    "the release. A heading may label a cell with a hint (`gaap`, `not_gaap`, `segment`, "
+    "`component`, `unidentified`, `basic`, `another_label`) and never takes it out. The line verdicts, most important "
+    "first: `differs` if a `gaap` cell differs; `differs_outside_gaap` if only cells with "
+    "another hint differ (each listed with its hint, paragraph id and both values); "
+    "`block_not_identified` if a cell agrees but could not be told as GAAP; "
+    "`report_fact_missing` if the report has no fact for the period; `period_not_read` if a "
+    "table that prints the line could not be read and no cell was compared; "
+    "`agrees_where_read` if every compared cell agrees but a table that prints the line (or "
+    "a row that carries its key words) could not be read, naming the unread tables' paragraph "
+    "ids; `agrees` only if every compared cell agrees and none is unread; `printed_under_another_label` if no stated label matches but a row whose label "
+    "holds a stated label's words prints a dollar figure for the period (listed, not "
+    "compared); `not_in_release` if no row does. Only per share rows and cells printed as a "
+    "percent are not compared to a dollar fact. `statement` beside each line is the face "
+    "statement's own verdict (the table printing at least four of the lines, chosen without a "
+    "value): `agrees`, `agrees_where_read`, `differs`, `block_not_identified`, "
+    "`report_fact_missing` or `not_compared`, never borrowed by the line's. Unread "
+    "tables are listed by kind and unread columns with their dates. `basic_earnings_per_share` "
+    "is a line outside the nine, emitted only when the release prints a basic row, held to the "
+    "report's `EarningsPerShareBasic` and never filed under another line. Python wrote every "
+    "number here")
+
+
+def release_report_reader(record: Record, periods: dict):
+    """The report's cell for a release line over a span of so many months ending on
+    the period end: the quarter's own (stated or differenced) for three months, the
+    year to date for the span the report states, nothing for any other."""
+    spans = durations(record.usd)
+    end = _date(periods["balance_now"])
+
+    def read(line: str, months: int) -> dict:
+        term = RELEASE_TERMS[line]
+        if months == 3:
+            if term in PER_SHARE_TERMS:
+                found = record.term(term, periods["quarter"])
+            else:
+                found = quarter(record, term, spans, end)
+        else:
+            span = periods["current_to_date"]
+            length = _days(*span)
+            if abs(length - months * 30.4375) > TOLERANCE:
+                return {"missing": f"the release's column covers {months} months and the "
+                                   f"report's year to date covers {length} days"}
+            found = record.term(term, span)
+        return found if "missing" in found else _brief(found)
+
+    return read
+
+
+SEGMENT_AXIS = "us-gaap:StatementBusinessSegmentsAxis"
+
+
+def segment_members(facts: list | dict) -> list[str]:
+    """The names of the segments the report's own instance states on its business segments
+    axis, from the members' local names (the instance carries no labels). Empty when the
+    instance was not read, so no table is called a segment's by guess."""
+    if isinstance(facts, dict):
+        return []
+    members = {dim["member"] for fact in facts for dim in (fact.get("context") or {}).get(
+        "segment") or [] if dim.get("dimension") == SEGMENT_AXIS}
+    return sorted({release_lines.segment_label(member) for member in members})
+
+
+def release_versus_report(record: Record, periods: dict, *, ticker: str, cutoff: dt.date,
+                          fixtures_root, release: dict | None = None,
+                          facts: list | dict | None = None) -> dict:
+    """`release` is the release as `parse_8k.earnings_release` returns it; a caller that
+    holds one (a test planting a figure in a committed release) hands it in. `facts` are
+    the filing's own, for the segments its instance names."""
+    try:
+        release = release or parse_8k.earnings_release(ticker, cutoff=cutoff,
+                                                       fixtures_root=fixtures_root)
+    except cutoff_guard.CutoffGuardError as exc:
+        return {"missing": f"no earnings release is on record at the cutoff: {exc}"}
+    item = release["item_2_02"]
+    found = release_lines.compare_release(
+        item["paragraph_ids"], item["paragraphs"], periods["balance_now"],
+        release_report_reader(record, periods), segment_members(facts or []))
+    lines = found["lines"]
+    tally: dict[str, int] = {}
+    nine = {line: entry for line, entry in lines.items() if line in release_lines.LINES}
+    for entry in nine.values():
+        tally[entry["verdict"]] = tally.get(entry["verdict"], 0) + 1
+    statements: dict[str, int] = {}
+    for entry in nine.values():
+        statements[entry["statement"]["verdict"]] = statements.get(
+            entry["statement"]["verdict"], 0) + 1
+    return {"what_this_is": RELEASE_WHAT_THIS_IS, "accession": release["accession"],
+            "filing_date": release["filing_date"], "period_end": periods["balance_now"],
+            "tally": tally, "statement_table": found["statement"],
+            "statement_tally": statements, "unread_columns": found["unread_columns"],
+            "unread_tables": found["unread_tables"], "lines": lines}
 
 
 # What the accounting and financial analysts may not see: every figure read off a
