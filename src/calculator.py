@@ -2378,7 +2378,8 @@ def quality_adjusted(simple: dict, compensation: dict, acquisitions: dict,
         recurs = item.get("recurs") is True
         amount, why_not = adjustment_reading(view, field, recurs, target)
         if amount is not None:
-            why_not = counted_twice(view, field, [row["calculator_field"] for row in applied + to_earnings])
+            why_not = counted_twice(view, field, [(row["calculator_field"], row["applies_to"])
+                                                  for row in applied + to_earnings], target)
             amount = None if why_not else amount
         if direction not in ("reduce", "increase") or target not in ("cash_flow", "earnings") \
                 or amount is None:
@@ -2406,8 +2407,8 @@ def quality_adjusted(simple: dict, compensation: dict, acquisitions: dict,
                                   f"ending {period_end}"),
                "quote": item.get("quote")}
         if target == "earnings":
-            to_earnings.append({**row, "applied_to": "not to free cash flow; the valuation applies it "
-                                                     "(once, or as a margin cut where it recurs)"})
+            to_earnings.append({**row, "applied_to": "not to free cash flow; the valuation shows it alone "
+                                                     "(once, or as a margin cut where it recurs), not summed"})
             continue
         before = value
         value = value - abs(amount) if direction == "reduce" else value + abs(amount)
@@ -2454,7 +2455,7 @@ def quality_adjusted(simple: dict, compensation: dict, acquisitions: dict,
 #      (`cash_flow_source`, below), each cited once; earnings adjustments may come from any
 #      dollar cell that passes rules 1 to 6.
 #   An adjustment of `earnings` passes the same reading and is listed by `quality_adjusted`
-#   without moving free cash flow; the valuation applies it (see there).
+#   without moving free cash flow; the valuation shows it alone and does not sum it (see there).
 #
 # Nothing about debt is decided here. A debt effect (receivables sold, supplier finance, a guarantee)
 # comes with adjusted debt in the next wave, where a balance is the right kind of cell; until
@@ -2769,6 +2770,45 @@ def inside_free_cash_flow(path: str, cell: dict, fields: dict | None = None,
     return None
 
 
+# A WHOLE TOTAL OF A STATEMENT is never the amount of an earnings adjustment: an adjustment is an item an
+# analyst would remove or add back (a charge, a gain, a reserve change, a write-down, share-based pay, a
+# one-time or special item, a working-capital or note-table change), and a total is what the items are in.
+# By the name of the cell (the last segment of its path, or the one before a trailing sum's `parts`), and
+# for a cell of the calculator with no dates of its own, by being the same figure as one of the canonical
+# totals below, so a total copied under another path is one.
+STATEMENT_TOTAL_NAMES = (
+    "revenue", "revenue_a_year_earlier", "cost_of_revenue", "gross_profit", "operating_income", "ebit", "ebitda",
+    "pretax_income", "income_tax_expense", "net_income", "income_from_continuing_operations",
+    "operating_cash_flow", "investing_cash_flow", "financing_cash_flow", "free_cash_flow", "billings",
+    "billings_a_year_earlier")
+STATEMENT_TOTAL_CELLS = (
+    "terms.trailing_four_quarters.revenue", "terms.trailing_four_quarters.cost_of_revenue",
+    "terms.trailing_four_quarters.operating_income", "terms.trailing_four_quarters.pretax_income",
+    "terms.trailing_four_quarters.income_tax_expense", "terms.trailing_four_quarters.net_income",
+    "terms.trailing_four_quarters.operating_cash_flow", "ebit", "ratios.solvency.ebitda",
+    "contract_liabilities_and_billings.billings")
+TOTAL_OF_THE_STATEMENT = "a total of the statement is not an adjustment; name the item within it"
+
+
+def statement_total(fields: dict, path: str, cell: dict) -> str | None:
+    """`TOTAL_OF_THE_STATEMENT` for a cell that is a whole total of a statement, by its name or as a copy of one."""
+    segments = path.split(".")
+    if len(segments) > 2 and segments[-2] == "parts":
+        segments = segments[:-2]
+    elif len(segments) > 2 and segments[-2] == "lines":
+        segments = segments[:-2]
+    if segments and segments[-1] in STATEMENT_TOTAL_NAMES:
+        return TOTAL_OF_THE_STATEMENT
+    value = cell.get("value")
+    if (isinstance(value, (int, float)) and not isinstance(value, bool) and value != 0 and not period_text(cell)
+            and segments[0] not in ("note_tables", "earnings_versus_cash")):
+        for canonical in STATEMENT_TOTAL_CELLS:
+            other = _cell_at(fields, canonical)
+            if isinstance(other, dict) and other is not cell and other.get("value") == value:
+                return TOTAL_OF_THE_STATEMENT
+    return None
+
+
 def non_cash_charge(path: str, cell: dict) -> str | None:
     """Why a cell is a non-cash charge (an impairment, a write-down, a write-off), or None: the words
     count where they are part of the measured quantity, not after "Excluding"."""
@@ -3004,83 +3044,19 @@ NOT_A_LINE_BALANCE = r"tax|dividend|interest|obligation|allowance|creditloss|wri
 WORKING_CAPITAL_MOVEMENT_CELLS = ("balance_sheet_change", "cash_flow_statement_change")
 
 
-def reading_key(fields: dict, cell: dict) -> str | None:
-    """The key of a cell's own reading: its signed value and the span it covers (its own dates, its change's
-    two ends, or, where it carries none, the trailing year the table places it in). One figure copied under
-    several paths has one reading; a zero moves nothing and has none."""
-    value = cell.get("value")
-    if isinstance(value, bool) or not isinstance(value, (int, float)) or value == 0:
-        return None
-    own = period_text(cell)
-    if isinstance(own, dict):
-        own = f"{own['from']}..{own['to']}"
-    span = own or f"{trailing_year_start(fields)}..{(fields or {}).get('period_end')}"
-    return f"reading:{float(value)!r}:{span}"
-
-
-def _printed_unit(values: list) -> float:
-    """The largest power of ten, at most a million, that divides every value: the precision a table prints."""
-    unit = 1_000_000.0
-    while unit > 1 and any(abs(v) % unit > 1e-6 and abs(abs(v) % unit - unit) > 1e-6 for v in values):
-        unit /= 10
-    return unit
-
-
-def table_rows_of(fields: dict, path: str) -> list:
-    """The paths of the rows a note-table change is the total of: the cells of its own table, in its own
-    column and period, immediately above it, whose values sum to its value at the table's printed precision
-    (the longest such run of two or more); empty where it is no total."""
-    parts = path.split(".")
-    if not (len(parts) == 5 and parts[:2] == ["note_tables", "tables"] and parts[3] == "changes"
-            and parts[4].isascii() and parts[4].isdigit()):
-        return []
-    cells = ((fields.get("note_tables") or {}).get("tables") or {}).get(parts[2], {}).get("changes")
-    position = int(parts[4])
-    if not isinstance(cells, list) or position >= len(cells) or not isinstance(cells[position], dict):
-        return []
-    total = cells[position]
-    if not isinstance(total.get("value"), (int, float)) or total["value"] == 0:
-        return []
-    for start in range(0, position - 1):
-        run = cells[start:position]
-        if any(not isinstance(c, dict) or c.get("from") != total.get("from") or c.get("to") != total.get("to")
-               or not isinstance(c.get("value"), (int, float)) for c in run):
-            continue
-        values = [c["value"] for c in run] + [total["value"]]
-        if abs(sum(values[:-1]) - total["value"]) <= _printed_unit(values):
-            return [f"{'.'.join(parts[:4])}.{i}" for i in range(start, position)]
-    return []
-
-
 def movement_keys(fields: dict, path: str) -> set:
-    """The keys of a cell (`_cell_keys`), and, for a note-table change that is the total of the rows above it,
-    the keys of those rows too: a total and one of its own rows never both stand, in any class, and two rows
-    of one table do."""
-    keys = _cell_keys(fields, path)
-    for row in table_rows_of(fields, path):
-        keys |= _cell_keys(fields, row)
-    return keys
-
-
-def _cell_keys(fields: dict, path: str) -> set:
-    """The keys under which an adjustment counts a movement, whatever its class; two adjustments that share
-    a key count one movement twice. A cell carries its own reading (`reading_key`), so one figure under two
-    paths is one. A statement line or a named item has its own key (supplier finance and receivables sold
-    share their line's); a movement cell of the balance sheet or a note table's balance of a working-capital
-    line has that line's key; a consideration total holds the keys of its current and its noncurrent part,
-    which hold only their own; every other cell is keyed by its field."""
+    """The keys under which a CASH-FLOW adjustment counts a movement; two cash-flow adjustments that share one
+    count one movement twice. A statement line or a named item has its own key (supplier finance and receivables
+    sold share their line's); a note table's trade balance of a working-capital line, and the movement cells of
+    the balance sheet's line, have that line's key; a consideration total holds the keys of its current and its
+    noncurrent part, which hold only their own; every other cell is keyed by its field."""
     cell = _cell_at(fields, path)
     if not isinstance(cell, dict):
         return {f"field:{path}"}
-    keys = {f"field:{path}"}
-    reading = reading_key(fields, cell)
-    if reading:
-        keys.add(reading)
     source = cash_flow_source(path, cell)
     concept = cell.get("concept")
     if source:
-        keys.discard(f"field:{path}")
-        keys.add(source)
+        keys = {source}
         if source.startswith("item:") and isinstance(concept, str):
             local = concept.rpartition(":")[2].lower()
             if not local.endswith(("current", "noncurrent")):          # a total: both of its parts
@@ -3091,31 +3067,31 @@ def _cell_keys(fields: dict, path: str) -> set:
         if isinstance(concept, str):
             local = concept.rpartition(":")[2].lower()
             if re.fullmatch(pattern, local) and not re.search(NOT_A_LINE_BALANCE, local):
-                keys.discard(f"field:{path}")
-                keys.add(key)
-                return keys
+                return {key}
         elif (segments[:2] == ["earnings_versus_cash", "working_capital"] and len(segments) > 3
                 and segments[2] == working and segments[-1] in WORKING_CAPITAL_MOVEMENT_CELLS):
-            keys.discard(f"field:{path}")
-            keys.add(key)
-            return keys
-    return keys
+            return {key}
+    return {f"field:{path}"}
 
 
-def counted_twice(fields: dict, path: str, earlier: list) -> str | None:
-    """Why an adjustment counts one movement twice, or None: an earlier adjustment, of either class,
-    cites the same field, the same working-capital movement (however it is reached) or the same named
-    item. `earlier` holds the fields of the adjustments before it."""
-    mine = movement_keys(fields, path)
+def counted_twice(fields: dict, path: str, earlier: list, applies_to: str = "cash_flow") -> str | None:
+    """Why an adjustment counts one movement twice, or None. The same field cited again is refused whatever the
+    class. Two cash-flow adjustments that share a movement key (`movement_keys`) are refused: cash-flow amounts
+    are disjoint by construction, the statement's lines and the named items with their shared keys. Earnings
+    adjustments are shown alone and never summed, so the movement a cash-flow one carries may also be cited as
+    earnings. `earlier` holds the adjustments before it, each a field (a cash-flow one) or `(field, class)`."""
+    mine = movement_keys(fields, path) if applies_to == "cash_flow" else set()
     for other in earlier:
-        shared = mine & movement_keys(fields, other)
-        if shared:
-            key = sorted(shared)[0]
-            kind = key.partition(":")[0]
-            what = {"field": f"the field {key.partition(':')[2]!r}", "reading": f"the figure {key.partition(':')[2]}"}.get(
-                kind, key.partition(":")[2])
-            return (f"it counts one movement twice: an earlier adjustment ({other!r}) is the "
-                    f"same {'cell' if kind == 'field' else 'figure' if kind == 'reading' else 'movement'} {what}")
+        other_path, other_class = other if isinstance(other, tuple) else (other, "cash_flow")
+        if other_path == path:
+            return (f"it counts one movement twice: an earlier adjustment ({other_path!r}) cites "
+                    f"the same field")
+        if applies_to == "cash_flow" and other_class == "cash_flow":
+            shared = mine & movement_keys(fields, other_path)
+            if shared:
+                key = sorted(shared)[0]
+                return (f"it counts one movement twice: an earlier cash_flow adjustment ({other_path!r}) is the "
+                        f"same movement {key.partition(':')[2]}")
     return None
 
 
@@ -3163,6 +3139,10 @@ def adjustment_reading(fields: dict, path, recurs: bool = False,
         problem = recurrence_problem(path, cell, kind, fields)
         if problem:
             return None, problem
+    if applies_to != "cash_flow":
+        total = statement_total(fields, path, cell)
+        if total:
+            return None, total
     amount = field_value(fields, path)
     if amount is None:
         return None, "its value is not a number"
@@ -3828,6 +3808,9 @@ def sensitivity(base_revenue, drivers, tax, wacc, rf, net_debt, leases, shares) 
             "terminal growth -0.5 point, as is, +0.5 point", "grid": grid}
 
 
+EARNINGS_SHOWN_ALONE = "shown alone; not summed until the special-items table exists"
+
+
 def adjusted_value(base_revenue, drivers, tax, wacc, net_debt, leases, shares, base_value,
                    moved: dict, ttm: dict) -> dict:
     """How much the accounting analyst's adjustments move the base value.
@@ -3849,9 +3832,11 @@ def adjusted_value(base_revenue, drivers, tax, wacc, net_debt, leases, shares, b
         amount = item["amount"] if item["direction"] == "reduce" else -item["amount"]
         target = item.get("applies_to", "cash_flow")
         if not item.get("recurs"):
-            once += amount
+            if target != "earnings":
+                once += amount
             rows.append({"name": item["name"], "applies_to": target, "recurs": False,
                          "mechanism": "one-time: value lowered by the amount over diluted shares",
+                         **({"summed": EARNINGS_SHOWN_ALONE} if target == "earnings" else {}),
                          "value_per_share": base_value - amount / shares,
                          "moved_per_share": -amount / shares})
             continue
@@ -3860,8 +3845,8 @@ def adjusted_value(base_revenue, drivers, tax, wacc, net_debt, leases, shares, b
             cut = amount / revenue
             one["operating_margin_year_one"] -= cut
             one["operating_margin_year_ten"] -= cut
-            margin_cut += cut
-            how = f"recurring: operating margin lowered by {cut} in every year"
+            how = (f"recurring: operating margin lowered by {cut} in every year; "
+                   f"{EARNINGS_SHOWN_ALONE}")
         else:
             if not nopat:
                 rows.append({"name": item["name"], "missing": "after-tax operating income is "
@@ -3875,6 +3860,7 @@ def adjusted_value(base_revenue, drivers, tax, wacc, net_debt, leases, shares, b
             how = f"recurring: reinvestment rate raised by {add} in every year"
         value = per_share(base_revenue, one, tax, wacc, net_debt, leases, shares)
         rows.append({"name": item["name"], "applies_to": target, "recurs": True,
+                     **({"summed": EARNINGS_SHOWN_ALONE} if target == "earnings" else {}),
                      "mechanism": how, "value_per_share": value,
                      "moved_per_share": value - base_value})
     together = dict(drivers)

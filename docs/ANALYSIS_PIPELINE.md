@@ -131,9 +131,16 @@ The target, beyond the research:
   Supplier finance sits inside payables and receivables sold inside receivables,
   both inside operating cash flow, so each shares its line's key; consideration
   has its own, by concept (a total holds its current and noncurrent parts, which
-  are two). Every adjustment, of either class, is checked against every earlier
-  one: the same field, or the same movement reached by the statement, the balance
-  sheet or a note table, counts once (`calculator.counted_twice`). Everything
+  are two). The same field cited twice, in either class, counts once, and
+  two cash-flow adjustments that share a movement key count once
+  (`calculator.counted_twice`). The valuation sums cash-flow adjustments only:
+  they are disjoint by construction. **Earnings adjustments are shown alone**, each
+  in `valuation.accounting_adjustments.each` with its own per-share effect, and
+  never summed (`all_together` holds none of them) until the company's own
+  special-items or non-GAAP reconciliation table makes earnings items disjoint
+  (wave two, normalised operating income). An earnings adjustment is an item an
+  analyst would remove or add back, never a whole total of a statement (revenue,
+  operating income, EBIT, EBITDA, net income, the cash-flow totals, billings). Everything
   else is refused as a `cash_flow` amount ("a cash_flow amount is a
   working-capital change line of the statement, or a supplier finance,
   receivables sold or acquisition consideration change") and stays available as an

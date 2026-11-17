@@ -508,3 +508,81 @@ def test_only_the_named_runs_move_under_the_rule_for_a_cash_flow_amount():
     for row in rows:
         # recomputed today less the published adjusted free cash flow: the reduction undone
         assert row["new"] - row["old"] == pytest.approx(published_amounts[row["run"]], rel=1e-12), row["run"]
+
+
+# --- each published amount equals its source -------------------------------------------------------------------
+
+def sourced(run: str, tag: str, period: str) -> float:
+    """One figure of a run's company in dollars, from companyfacts through the independent reader at the run's own
+    cutoff, or, where the store's companyfacts predates the triggering filing, from the run's own
+    `input_numbers.json` (the filing's tagged facts); the tag and the period only name the figure."""
+    ticker = run.split("/")[0]
+    cutoff = json.loads((RUNS / run / FILINGS_ONLY).read_text(encoding="utf-8"))["cutoff"]
+    standing = source.reported(ticker, tag, period, cutoff)
+    if standing:
+        values = {row["val"] for row in standing}
+    else:
+        start, _, end = period.rpartition("..")
+        facts = json.loads((RUNS / run / "input_numbers.json").read_text(encoding="utf-8"))
+
+        def at(context: dict) -> bool:
+            return (context.get("start") == start and context.get("end") == end) if start \
+                else context.get("instant") == end
+        values = {fact["number"] for fact in facts["facts"]
+                  if fact["tag"] == tag and not fact.get("nil") and not fact.get("superseded_by")
+                  and not (fact.get("context") or {}).get("segment")
+                  and at(fact.get("context") or {}) and fact.get("filing_date", "9999") <= cutoff}
+    assert len(values) == 1, (run, tag, period, values)
+    return float(values.pop())
+
+
+def cell_of(run: str, path: str) -> dict:
+    node = json.loads((RUNS / run / FILINGS_ONLY).read_text(encoding="utf-8"))
+    for part in path.split("."):
+        node = node[part]
+    return node
+
+
+def balance_change(run: str, path: str) -> float:
+    """The change of a balance as the filing's own two balances give it: now less a year earlier. The cell names the
+    tag and the two dates; the numbers are the source's."""
+    inputs = cell_of(run, path)["inputs"]
+    return (sourced(run, inputs["now"]["tag"], inputs["now"]["period"])
+            - sourced(run, inputs["a_year_earlier"]["tag"], inputs["a_year_earlier"]["period"]))
+
+
+def trailing_line(run: str, parts: dict) -> float:
+    """A statement line summed over the trailing year: the fiscal year plus the year to date less the year to date a
+    year earlier; each part is one tag or the sum of its dated lines."""
+    def part(one: dict) -> float:
+        lines = one.get("lines") or [one]
+        return sum(sourced(run, line["tag"], line["period"]) for line in lines)
+    return part(parts["prior_fiscal_year"]) + part(parts["this_year_to_date"]) - part(parts["prior_year_to_date"])
+
+
+def test_every_published_amount_equals_its_source():
+    """The nine amounts other than Dell's, each tied to companyfacts (or the filing's own tagged facts where the store
+    predates it), apart from the cell the run read: the published amount, the figure the source gives, and the
+    refusal undoing exactly that amount (`test_only_the_named_runs_move_under_the_rule_for_a_cash_flow_amount`)."""
+    working = "earnings_versus_cash.working_capital"
+    for run, path in ((AAPL, f"{working}.accounts_payable.balance_sheet_change"),
+                      (ANET, f"{working}.receivables.balance_sheet_change"),
+                      (ANET_RERUN, f"{working}.receivables.balance_sheet_change"),
+                      (CIEN, f"{working}.accounts_payable.balance_sheet_change"),
+                      (JCI, f"{working}.accounts_payable.balance_sheet_change"),
+                      (NVDA, f"{working}.receivables.balance_sheet_change")):
+        assert REFUSED_ADJUSTMENT[run][0] == path
+        assert balance_change(run, path) == REFUSED_ADJUSTMENT[run][1], run
+    # TTM's gap: the balance sheet's change in payables less the statement's, both from the source
+    gap = f"{working}.accounts_payable.articulation_gap"
+    assert REFUSED_ADJUSTMENT[TTMI][0] == gap
+    statement = cell_of(TTMI, f"{working}.accounts_payable.cash_flow_statement_change")["parts"]
+    assert balance_change(TTMI, f"{working}.accounts_payable.balance_sheet_change") - trailing_line(TTMI, statement) \
+        == REFUSED_ADJUSTMENT[TTMI][1]
+    # Qualcomm's borrowing repaid: the statement's repayment lines over the trailing year
+    repaid = "terms.cash_flow_families.borrowing_repaid"
+    assert REFUSED_ADJUSTMENT[QCOM][0] == repaid
+    assert trailing_line(QCOM, cell_of(QCOM, repaid)["parts"]) == REFUSED_ADJUSTMENT[QCOM][1]
+    # Seagate's supplier finance obligation at the period end
+    assert REFUSED_ADJUSTMENT[STX][0] == "terms.balances_now.supplier_finance_obligation"
+    assert sourced(STX, "SupplierFinanceProgramObligation", "2026-07-03") == REFUSED_ADJUSTMENT[STX][1]

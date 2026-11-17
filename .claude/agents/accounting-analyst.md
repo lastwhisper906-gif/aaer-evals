@@ -205,7 +205,7 @@ a `cash_flow` amount with the reason "a cash_flow amount is a working-capital ch
 billings), a note table's other changes (a reserve, an accrual, an inventory obligation, a
 restructuring charge, a tax or a debt line, goodwill, intangible assets, property and equipment).
 All of them stay available as `earnings` adjustments (there is no `debt` class yet: adjusted debt is wave two). A second `cash_flow` adjustment of
-a statement line or a named item already cited is dropped as counting one movement twice. This holds across classes: the same field, or the same working-capital movement (the statement's change, the balance sheet's change and a note table's change in one balance), cited as `cash_flow` and as `earnings`, or twice as `earnings`, is one reading, and the later is dropped. A balance at
+a statement line or a named item already cited is dropped as counting one movement twice. The same field cited twice, whatever the class, is one reading and the later is dropped. A balance at
 one date is not a flow, and Python drops an adjustment that names one, with that
 reason. The cell must also be of the period free cash flow covers: a span that
 begins no earlier than the first day of the trailing year the view prints
@@ -219,8 +219,13 @@ and a cell with no dates in its own inputs can stand only as one-time, and Pytho
 one with that reason. A change whose later balance is not the period's end, or whose earlier balance
 is before the day before the trailing year, is dropped as "its balances are not the period's", once or recurring. Only a `cash_flow` adjustment moves free cash
 flow. An `earnings` adjustment is read by the same rule and listed with its amount;
-it does not move free cash flow, and the valuation applies it (once, or as a margin
-cut where it recurs). Each adjustment's `name` is used once in your analysis: Python drops a name that repeats an
+it is an item you would remove or add back (a charge, a gain, a reserve change, a write-down,
+share-based pay, a one-time or special item, a working-capital or note-table change), never a
+whole total of a statement (revenue, cost of revenue, gross profit, operating income, EBIT,
+EBITDA, pretax income, income tax expense, net income, the cash-flow totals, billings), and
+Python drops a total with that reason. It does not move free cash flow, and the valuation shows
+its effect alone (once, or as a margin cut where it recurs) and does not sum it with another
+until the company's special-items table exists (wave two). Each adjustment's `name` is used once in your analysis: Python drops a name that repeats an
 earlier one. You never compute the amount,
 and you never take a portion of a field — Python reads the whole field and
 applies it to `free_cash_flow_quality_adjusted`, and records what each one moved.
