@@ -2451,7 +2451,7 @@ def quality_adjusted(simple: dict, compensation: dict, acquisitions: dict,
 #   6. A RECURRING AMOUNT MUST COVER THE YEAR: `recurs` is read only for a cell whose span is the
 #      whole trailing year; a shorter span stands as a one-time adjustment alone.
 #   7. A CASH-FLOW AMOUNT IS A LINE OF THE STATEMENT OF CASH FLOWS OR A NAMED OFF-STATEMENT ITEM
-#      (`cash_flow_source`, below), each cited once; earnings and debt adjustments may come from any
+#      (`cash_flow_source`, below), each cited once; earnings adjustments may come from any
 #      dollar cell that passes rules 1 to 6.
 #   An adjustment of `earnings` passes the same reading and is listed by `quality_adjusted`
 #   without moving free cash flow; the valuation applies it (see there).
@@ -2524,7 +2524,7 @@ INSIDE_FREE_CASH_FLOW_CONCEPTS = (
 #   (b) A NAMED OFF-STATEMENT ITEM, a note-table change whose concept is of one of three families:
 #       the supplier finance obligation, receivables sold or factored, deferred or contingent
 #       acquisition consideration.
-# Anything else is refused as a cash-flow amount and stays available as earnings or debt.
+# Anything else is refused as a cash-flow amount and stays available as earnings (a debt class arrives with adjusted debt, wave two).
 NOT_A_STATEMENT_LINE = ("a cash_flow amount is a line of the statement of cash flows or a named "
                         "off-statement item")
 NOT_ON_THE_LIST = NOT_A_STATEMENT_LINE

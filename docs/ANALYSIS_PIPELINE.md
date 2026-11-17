@@ -110,12 +110,13 @@ The target, beyond the research:
   see.
 - **Each adjustment names its effect**: free cash flow (as today), operating
   income (feeding normalised operating income) or debt (feeding adjusted debt:
-  receivables sold, supplier finance, a guarantee). Python applies each to its
-  own field and prints the before and after.
+  receivables sold, supplier finance, a guarantee; the debt effect arrives with
+  adjusted debt in wave two, and the gate accepts only `cash_flow` and `earnings`
+  today). Python applies each to its own field and prints the before and after.
 - **A stock cannot move a flow.** A balance (an instant) may adjust debt; only a
   flow or a change between two balances may adjust free cash flow or income.
 - **A free cash flow adjustment comes from the company's statement of cash flows
-  or from three named items.** Earnings and debt adjustments may come from any
+  or from three named items.** Earnings adjustments may come from any
   dollar cell that passes the rules above (a flow or change of the trailing
   year, never cash, never a balance for a flow). A `cash_flow` amount is a line
   of the company's own statement of cash flows inside operating activities, as
@@ -127,8 +128,7 @@ The target, beyond the research:
   and each named item once (`calculator.cash_flow_source`); a balance-sheet
   change, a total, a reserve or any other note-table change is refused as a
   `cash_flow` amount ("a cash_flow amount is a line of the statement of cash
-  flows or a named off-statement item") and stays available as an earnings or
-  debt adjustment. Families inferred from names could not be made disjoint in
+  flows or a named off-statement item") and stays available as an earnings adjustment (a debt class arrives with adjusted debt in wave two; the gate accepts only `cash_flow` and `earnings` today). Families inferred from names could not be made disjoint in
   nine rounds of review; the statement already is.
 
 ## 6. Build plan

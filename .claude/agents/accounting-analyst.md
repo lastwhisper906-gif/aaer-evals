@@ -200,7 +200,7 @@ or a named off-statement item": a balance-sheet change (the calculator's `balanc
 `articulation_gap`, `share_of_net_income` input), a total (the change in current liabilities,
 billings), a note table's other changes (a reserve, an accrual, an inventory obligation, a
 restructuring charge, a tax or a debt line, goodwill, intangible assets, property and equipment).
-All of them stay available as `earnings` or `debt` adjustments. A second `cash_flow` adjustment of
+All of them stay available as `earnings` adjustments (there is no `debt` class yet: adjusted debt is wave two). A second `cash_flow` adjustment of
 a statement line or a named item already cited is dropped as counting one movement twice. A balance at
 one date is not a flow, and Python drops an adjustment that names one, with that
 reason. The cell must also be of the period free cash flow covers: a span that
@@ -225,10 +225,10 @@ list them again. An adjustment moves value once unless you set `"recurs": true`
 and your quote says why it will repeat; only then does Python carry it into
 every year of the forecast. Examples of the shape:
 
-- a flow, a note table's fact over a span of dates: `reduce`, `cash_flow`,
+- a flow, a note table's fact over a span of dates: `reduce`, `earnings`,
   `note_tables.tables.notes_<n>.facts.<k>`, where fact `<k>` of table `<n>` is a number
   stated for a span that ends at the period end (payments over the year to date, say)
-- a change, a note table's `changes` cell: `reduce`, `cash_flow`,
+- a change, a note table's `changes` cell: `reduce`, `earnings`,
   `note_tables.tables.notes_<n>.changes.<k>`, where change `<k>` is the change in a line
   between two balance dates (later minus earlier); read the path in your own view, for
   `<n>` and `<k>` name different cells in every company's view
