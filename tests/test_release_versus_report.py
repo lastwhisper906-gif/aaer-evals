@@ -53,9 +53,18 @@ def nvidia():
     return out["release_versus_report"]
 
 
-def _by_months(entry: dict, months: int) -> dict:
+def _cells(entry: dict, months: int) -> list[dict]:
+    """Every table's cell for the span: each table of the release votes."""
     found = [c for c in entry["comparisons"] if c["span_months"] == months]
-    assert len(found) == 1, entry
+    assert found, entry
+    return found
+
+
+def _by_months(entry: dict, months: int) -> dict:
+    """The first table's cell for the span; the tests that use it also hold every other
+    table's cell to the same verdict."""
+    found = _cells(entry, months)
+    assert {c["verdict"] for c in found} == {found[0]["verdict"]}, found
     return found[0]
 
 
@@ -84,7 +93,11 @@ def test_release_versus_report_dell_net_income_agrees_with_the_quarters_net_inco
     assert cell["report"]["parts"]["0"]["id"] == \
         "0001571996-26-000046:facts:NetIncomeLoss:2026-05-02..2026-07-31"
     assert cell["difference"] == 0.0 and cell["sign"] == "equal"
-    assert cell["verdict"] == "agrees" and dell["lines"]["net_income"]["verdict"] == "agrees"
+    assert cell["verdict"] == "agrees"
+    # Dell prints the quarter's net income in four tables (the summary, the statement, the
+    # cash-flow statement and the reconciliation), and each one is compared
+    assert [c["release"]["paragraph_id"].split(":")[-1] for c in _cells(
+        dell["lines"]["net_income"], 3)] == ["35", "63", "74", "103"]
 
 
 def test_release_versus_report_dell_revenue_and_cash_flow_agree_for_the_quarter_and_the_six_months(dell):
@@ -105,7 +118,7 @@ def test_release_versus_report_dell_revenue_and_cash_flow_agree_for_the_quarter_
     assert _by_months(cash, 3)["release"]["value"] == 2_225 * 1_000_000
     assert _by_months(cash, 3)["report"]["value"] == 2_225 * 1_000_000
     for entry in (revenue, cash):
-        assert entry["verdict"] == "agrees"
+        assert {c["verdict"] for c in entry["comparisons"]} == {"agrees"}
 
 
 def test_release_versus_report_dell_diluted_earnings_per_share_agrees_at_two_decimals(dell):
@@ -277,7 +290,8 @@ def test_release_versus_report_the_period_is_the_period_end_and_a_span_the_heade
                        "| Revenue | $96,221 | $81,615 |"])
     out = rvr.compare(["p:1"], [table], "2026-06-30", lambda line, months: {"value": 1.0})
     assert out["revenue"]["verdict"] == "period_not_read"
-    assert out["revenue"]["paragraph_id"] == "p:1" and out["revenue"]["reason"]
+    assert out["revenue"]["unread"][0]["paragraph_id"] == "p:1"
+    assert out["revenue"]["unread"][0]["reason"]
     out = _compare([_row("Net income", "4,133")], {"net_income": {"value": 4_133_000_000.0}},
                    header=("Three Months Ended", "March 31, 2026", "(in millions)"))
     assert out["net_income"]["verdict"] == "period_not_read"
@@ -303,52 +317,224 @@ def test_release_versus_report_header_forms_the_committed_releases_use():
         assert [c["span_months"] for c in entry["comparisons"]] == expected, (rows[0], entry)
 
 
-def test_release_versus_report_the_first_readable_table_decides_and_a_later_one_is_listed():
+def test_release_versus_report_every_table_votes_and_a_segment_table_is_not_the_line():
+    """Two statements print the line: the second's cell differs, and the line differs, with
+    both cells listed under their paragraph ids. A table under a segment's heading is not
+    the company's line and is listed apart."""
     first = _table([_row("Net sales", "1,000")])
-    segment = _table([_row("Net sales", "400")])
-    out = rvr.compare(["p:1", "p:2"], [first, segment], "2026-06-30",
+    second = _table([_row("Net sales", "1,100")])
+    out = rvr.compare(["p:1", "p:2"], [first, second], "2026-06-30",
                       lambda line, months: {"value": 1_000_000_000.0})
-    cell = out["revenue"]["comparisons"][0]
-    assert cell["release"]["paragraph_id"] == "p:1" and cell["verdict"] == "agrees"
-    assert [c["cell"] for c in cell["later_cells_that_differ"]] == ["400"]
+    assert out["revenue"]["verdict"] == "differs"
+    assert [(c["release"]["paragraph_id"], c["verdict"]) for c in out["revenue"]["comparisons"]] \
+        == [("p:1", "agrees"), ("p:2", "differs")]
+    assert out["revenue"]["comparisons"][1]["difference"] == 100_000_000.0
+    segment = _table([_row("Net sales", "400")])
+    out = rvr.compare(["p:1", "p:0", "p:2"], [first, "Climate Solutions Americas (CSA)", segment],
+                      "2026-06-30", lambda line, months: {"value": 1_000_000_000.0})
+    assert out["revenue"]["verdict"] == "agrees"
+    assert [c["cell"] for c in out["revenue"]["segment_cells_not_compared"]] == ["400"]
 
 
-def test_release_versus_report_the_first_block_of_a_span_is_the_one_read():
-    """Side by side GAAP and non-GAAP columns of one span: the first is read."""
-    rows = ["|  | Quarter Ended |  | Quarter Ended |", "|  | June 30, |  | June 30, |",
-            "|  | 2026 |  | 2026 |", "| (in millions) |", "| Net income | $ | 100 |  | $ | 130 |"]
-    out = rvr.compare(["p:1"], ["\n".join(rows)], "2026-06-30",
+def test_release_versus_report_a_statement_title_above_a_table_is_not_a_segment_heading():
+    for title in ("Condensed Consolidated Statements of Operations", "Reconciliation of net income",
+                  "Total revenue by quarter", "Results of operations (unaudited)"):
+        assert not rvr.is_segment_heading(title), title
+    for title in ("Climate Solutions Americas (CSA)", "Climate Solutions Transportation (CST)"):
+        assert rvr.is_segment_heading(title), title
+    assert not rvr.is_segment_heading(None)
+    assert not rvr.is_segment_heading("Net sales rose 4% to $6.4 billion.")
+
+
+def test_release_versus_report_a_row_that_agrees_does_not_hide_one_that_does_not():
+    """The first row agrees and the second row of the same table differs, and the other
+    way about: all rows must agree, and each is listed."""
+    for first, second in (("1,000", "1,100"), ("1,100", "1,000")):
+        table = _table([_row("Net sales", first), _row("Total net sales", second)])
+        out = rvr.compare(["p:1"], [table], "2026-06-30",
+                          lambda line, months: {"value": 1_000_000_000.0})
+        assert out["revenue"]["verdict"] == "differs", (first, second)
+        assert sorted(c["verdict"] for c in out["revenue"]["comparisons"]) == ["agrees", "differs"]
+
+
+def test_release_versus_report_each_table_is_compared_at_its_own_printed_precision():
+    """Ciena's case: the summary in millions prints 1,570.7 and the statement in thousands
+    1,570,778 for a report fact of 1,570,739,000. The summary cannot see a 39,000 dollar
+    difference and the statement can."""
+    summary = _table([_row("Revenue", "1,570.7")])
+    statement = _table([_row("Total revenue", "1,570,778")],
+                       header=("Three Months Ended", "June 30, 2026", "(in thousands)"))
+    out = rvr.compare(["p:1", "p:2"], [summary, statement], "2026-06-30",
+                      lambda line, months: {"value": 1_570_739_000.0})
+    verdicts = {c["release"]["paragraph_id"]: c for c in out["revenue"]["comparisons"]}
+    assert verdicts["p:1"]["verdict"] == "agrees"
+    assert verdicts["p:2"]["verdict"] == "differs"
+    assert verdicts["p:2"]["difference"] == 39_000.0 and verdicts["p:2"]["sign"] == "release_larger"
+    assert out["revenue"]["verdict"] == "differs"
+
+
+def _blocks(rows):
+    return "\n".join(["|  | Three Months Ended |", "|  | June 30, 2026 |  | June 30, 2025 |",
+                      "| (in millions) |"] + rows)
+
+
+def test_release_versus_report_a_non_gaap_block_below_the_gaap_one_is_listed_not_compared():
+    """GAAP above non-GAAP, the same label in both: the GAAP cell is held to the report,
+    the non-GAAP cell is `not_gaap` and is not."""
+    rows = ["| GAAP |", _row("Net income", "100"), "| Non-GAAP |", _row("Net income", "130")]
+    out = rvr.compare(["p:1"], [_blocks(rows)], "2026-06-30",
                       lambda line, months: {"value": 100_000_000.0})
-    entries = out["net_income"]["comparisons"]
-    assert [c["release"]["cell"] for c in entries] == ["100"]
-    assert "other_rows_of_the_same_table" not in entries[0]
-    # the second block's 130 is not what the report is held to
-    out = rvr.compare(["p:1"], ["\n".join(rows)], "2026-06-30",
-                      lambda line, months: {"value": 130_000_000.0})
+    assert out["net_income"]["verdict"] == "agrees"
+    assert [c["release"]["cell"] for c in out["net_income"]["comparisons"]] == ["100"]
+    assert [c["release"]["cell"] for c in out["net_income"]["not_gaap"]] == ["130"]
+    assert out["net_income"]["not_gaap"][0]["verdict"] == "not_gaap"
+    out = rvr.compare(["p:1"], [_blocks(["| GAAP |", _row("Net income", "110")] + rows[2:])],
+                      "2026-06-30", lambda line, months: {"value": 100_000_000.0})
     assert out["net_income"]["verdict"] == "differs"
-    assert out["net_income"]["comparisons"][0]["difference"] == -30_000_000.0
+
+
+def test_release_versus_report_a_non_gaap_block_above_the_gaap_one():
+    rows = ["| Non-GAAP |", _row("Net income", "130"), "| GAAP |", _row("Net income", "100")]
+    out = rvr.compare(["p:1"], [_blocks(rows)], "2026-06-30",
+                      lambda line, months: {"value": 100_000_000.0})
+    assert [c["release"]["cell"] for c in out["net_income"]["comparisons"]] == ["100"]
+    assert [c["release"]["cell"] for c in out["net_income"]["not_gaap"]] == ["130"]
+    assert out["net_income"]["verdict"] == "agrees"
+    # with only the non-GAAP block in the release the line is `not_gaap`, never `agrees`
+    out = rvr.compare(["p:1"], [_blocks(rows[:2])], "2026-06-30",
+                      lambda line, months: {"value": 100_000_000.0})
+    assert out["net_income"]["verdict"] == "not_gaap"
+
+
+def test_release_versus_report_side_by_side_blocks_are_told_apart_by_the_header_or_not_at_all():
+    named = "\n".join(["|  | GAAP Results |  | Non-GAAP Results |",
+                       "|  | Quarter Ended |  | Quarter Ended |", "|  | June 30, |  | June 30, |",
+                       "|  | 2026 |  | 2026 |", "| (in millions) |",
+                       "| Net income | $ | 100 |  | $ | 130 |"])
+    out = rvr.compare(["p:1"], [named], "2026-06-30", lambda line, months: {"value": 1e8})
+    assert out["net_income"]["verdict"] == "agrees"
+    assert [c["release"]["cell"] for c in out["net_income"]["not_gaap"]] == ["130"]
+    unnamed = named.replace("GAAP Results", "Results").replace("Non-Results", "Results") \
+                   .replace("Non-GAAP Results", "More results")
+    out = rvr.compare(["p:1"], [unnamed], "2026-06-30", lambda line, months: {"value": 1e8})
+    assert out["net_income"]["verdict"] == "block_not_identified"
+    assert {c["verdict"] for c in out["net_income"]["comparisons"]} == {"block_not_identified"}
+
+
+def test_release_versus_report_a_heading_naming_both_is_not_identified_and_never_agrees():
+    rows = ["| Reconciliation of GAAP and non-GAAP net income |", _row("Net income", "100")]
+    out = rvr.compare(["p:1"], [_blocks(rows)], "2026-06-30", lambda line, months: {"value": 1e8})
+    assert out["net_income"]["verdict"] == "block_not_identified"
+    assert out["net_income"]["comparisons"][0]["verdict"] == "block_not_identified"
+    assert "difference" not in out["net_income"]["comparisons"][0]
+    # a label that says GAAP is GAAP wherever it sits
+    rows = ["| Non-GAAP |", _row("GAAP net income", "100")]
+    out = rvr.compare(["p:1"], [_blocks(rows)], "2026-06-30", lambda line, months: {"value": 1e8})
+    assert out["net_income"]["verdict"] == "agrees"
+
+
+@pytest.mark.parametrize("heading", ["Basic:", "Diluted:", "Earnings per share:",
+                                     "Net income per share", "Weighted average shares:",
+                                     "Percentage of Total Net Revenue:",
+                                     "Summary of Stock-Based Compensation Expense:"])
+def test_release_versus_report_rows_under_a_per_share_share_or_percent_heading_are_left_out(heading):
+    """Carrier and ESCO print per-share rows under the net earnings label, and Dell
+    prints percent of revenue rows under `Net income`; none is the dollar line, and the
+    next ordinary heading puts the line back."""
+    rows = [_row("Net income", "100"), f"| {heading} |", _row("Net income", "0.61"),
+            "| Operating expenses: |", _row("Net earnings", "100")]
+    out = rvr.compare(["p:1"], [_blocks(rows)], "2026-06-30", lambda line, months: {"value": 1e8})
+    assert [c["release"]["cell"] for c in out["net_income"]["comparisons"]] == ["100", "100"]
+    assert out["net_income"]["verdict"] == "agrees"
+    assert [e["cell"] for e in out["net_income"]["excluded_rows"]] == ["0.61"]
+
+
+def test_release_versus_report_a_percent_row_is_not_the_dollar_line():
+    table = _blocks(["| Net income | 8.8 | % |  | 3.9 | % |", _row("Net income", "100")])
+    out = rvr.compare(["p:1"], [table], "2026-06-30", lambda line, months: {"value": 1e8})
+    assert [c["release"]["cell"] for c in out["net_income"]["comparisons"]] == ["100"]
+    cell_percent = _blocks(["| Net income | $ | 8.8% |  | $ | 3.9% |"])
+    out = rvr.compare(["p:1"], [cell_percent], "2026-06-30", lambda line, months: {"value": 1e8})
+    assert out["net_income"]["comparisons"] == []
+    assert out["net_income"]["excluded_rows"][0]["cell"] == "8.8%"
+
+
+def test_release_versus_report_per_share_rows_stay_in_the_per_share_line():
+    rows = ["| Earnings per share: |", _row("Diluted earnings per share", "6.34")]
+    out = rvr.compare(["p:1"], [_blocks(rows)], "2026-06-30",
+                      lambda line, months: {"value": 6.34})
+    assert out["diluted_earnings_per_share"]["verdict"] == "agrees"
+
+
+@pytest.mark.parametrize("other", ["block_not_identified", "report_fact_missing", "period_not_read"])
+def test_release_versus_report_a_difference_outranks_the_other_flags_in_either_order(other):
+    assert rvr.line_verdict(["differs", other]) == "differs"
+    assert rvr.line_verdict([other, "differs"]) == "differs"
+    assert rvr.line_verdict(["agrees", "differs", other]) == "differs"
+
+
+@pytest.mark.parametrize("other", ["block_not_identified", "report_fact_missing", "period_not_read"])
+def test_release_versus_report_each_flag_outranks_agrees_in_either_order(other):
+    assert rvr.line_verdict(["agrees", other]) == other
+    assert rvr.line_verdict([other, "agrees", "agrees"]) == other
+    assert rvr.line_verdict([other]) == other
+
+
+def test_release_versus_report_an_empty_verdict_list_is_not_in_release():
+    assert rvr.line_verdict([]) == "not_in_release"
+
+
+def test_release_versus_report_the_precedence_holds_through_compare_both_ways():
+    """A differing cell in one table and an unreadable table: `differs`. An agreeing cell
+    and an unreadable table: `period_not_read`, not `agrees`."""
+    unread = "\n".join(["|  | Q2 FY27 |", "| (in millions) |", "| Net revenue | 5 |"])
+    for ids, tables in ((["p:1", "p:2"], [_table([_row("Net revenue", "1,100")]), unread]),
+                        (["p:2", "p:1"], [unread, _table([_row("Net revenue", "1,100")])])):
+        out = rvr.compare(ids, tables, "2026-06-30",
+                          lambda line, months: {"value": 1_000_000_000.0})
+        assert out["revenue"]["verdict"] == "differs"
+    tables = [unread, _table([_row("Net revenue", "1,000")])]
+    out = rvr.compare(["p:1", "p:2"], tables, "2026-06-30",
+                      lambda line, months: {"value": 1_000_000_000.0})
+    assert out["revenue"]["verdict"] == "period_not_read"
+    assert [c["verdict"] for c in out["revenue"]["comparisons"]] == ["agrees"]
+    out = rvr.compare(["p:1"], [_table([_row("Net revenue", "1,000")])], "2026-06-30",
+                      lambda line, months: {"missing": "none"})
+    assert out["revenue"]["verdict"] == "report_fact_missing"
 
 
 # --- the label table ------------------------------------------------------------------------
 
 def _labels_in_the_committed_releases() -> dict[str, set[str]]:
+    """Every row label of every pipe row of every committed `input_8k.md` that has a
+    figure after it, found with a reader of its own: split on the pipe, take the first
+    cell that has text, keep the row if a later cell looks like a number. It uses nothing
+    from `src/release_versus_report.py`."""
+    import re
     found: dict[str, set[str]] = {}
     for path in glob.glob(str(REPO_ROOT / "runs" / "*" / "*" / "input_8k.md")):
         ticker = Path(path).parts[-3]
         for line in Path(path).read_text(encoding="utf-8").splitlines():
             if not (line.startswith("| ") and line.endswith(" |")):
                 continue
-            cells = rvr.cells_of(line)
-            placed = rvr._label_of(cells)
-            if placed and any(rvr.read_number(cell) is not None for cell in cells[placed[0] + 1:]):
-                found.setdefault(rvr.normal_label(placed[1]), set()).add(ticker)
+            cells = [cell.strip() for cell in line[2:-2].split(" | ")]
+            text = [i for i, cell in enumerate(cells) if cell]
+            if not text:
+                continue
+            label, later = cells[text[0]], cells[text[0] + 1:]
+            if not any(re.fullmatch(r"\(?\$?\(?[\d,]*\d(\.\d+)?\)?%?", cell) for cell in later):
+                continue
+            label = label.lower().replace("\u2014", "-").replace("\u2013", "-")
+            label = re.sub(r"\s+", " ", label).strip().rstrip(":").strip()
+            label = re.sub(r"(\s*\((\d{1,2}|[a-z])\)|\s*\*+)+$", "", label)
+            found.setdefault(label, set()).add(ticker)
     return found
 
 
 def test_release_versus_report_every_label_is_a_row_of_a_committed_release():
     found = _labels_in_the_committed_releases()
-    unconfirmed = [(line, label) for line, labels in rvr.ROW_LABELS.items() for label in labels
-                   if rvr.normal_label(label) not in found]
+    unconfirmed = [(line, label) for line, labels in EXPECTED_LABELS.items() for label in labels
+                   if label.lower() not in found]
     assert unconfirmed == []
 
 
@@ -483,3 +669,293 @@ def test_release_versus_report_reads_the_structure_input_8k_is_written_from():
     text = (DELL_RUN / "input_8k.md").read_text(encoding="utf-8")
     for identifier, paragraph in zip(item["paragraph_ids"], item["paragraphs"]):
         assert f"[{identifier}]\n{paragraph}\n" in text
+
+
+# --- headers, units, figure counts --------------------------------------------------------
+
+@pytest.mark.parametrize("phrase,months", [
+    ("Three Months Ended", 3), ("Six Months Ended", 6), ("Nine Months Ended", 9),
+    ("Twelve Months Ended", 12), ("Year Ended", 12), ("Quarter Ended", 3)])
+def test_release_versus_report_each_span_a_header_names_is_that_many_months(phrase, months):
+    table = "\n".join([f"|  | {phrase} |", "|  | June 30, 2026 |  | June 30, 2025 |",
+                       "| (in millions) |", _row("Net income", "100")])
+    header = rvr.read_header([rvr.cells_of(line) for line in table.split("\n")])
+    assert [c["months"] for c in header["columns"]] == [months, months]
+    out = rvr.compare(["p:1"], [table], "2026-06-30", lambda line, m: {"value": 1e8})
+    assert [c["span_months"] for c in out["net_income"]["comparisons"]] == [months]
+
+
+def test_release_versus_report_a_header_with_the_words_run_together_is_read():
+    """Carrier's `Six Months EndedJune 30,` has no space before the month. Here the three
+    months end earlier (March 31), so only the six-month columns are the period, and they
+    are found only if the run-together month is read as a date of its own."""
+    table = "\n".join(["|  | Three Months Ended March 31, |  | Six Months EndedJune 30, |",
+                       "| (In millions) | 2026 | 2025 | 2026 | 2025 |",
+                       "| Net sales | $ | 6,351 |  | $ | 6,113 |  | $ | 11,692 |  | $ | 11,331 |"])
+    header = rvr.read_header([rvr.cells_of(line) for line in table.split("\n")])
+    assert [(c["months"], c["end"].isoformat()) for c in header["columns"]] == [
+        (3, "2026-03-31"), (3, "2025-03-31"), (6, "2026-06-30"), (6, "2025-06-30")]
+    out = rvr.compare(["p:1"], [table], "2026-06-30",
+                      lambda line, months: {"value": {6: 11.692e9}[months]})
+    assert [(c["span_months"], c["verdict"]) for c in out["revenue"]["comparisons"]] == [
+        (6, "agrees")]
+    assert out["revenue"]["comparisons"][0]["release"]["cell"] == "11,692"
+
+
+def test_release_versus_report_a_misdated_header_is_never_a_false_difference():
+    """A release whose header dates its columns a quarter early, or only a year early,
+    has no column for the period: `period_not_read`, with the cells never compared."""
+    for date in ("March 31, 2026", "June 30, 2025"):
+        table = "\n".join(["|  | Three Months Ended |", f"|  | {date} |", "| (in millions) |",
+                           _row("Net income", "9,999")])
+        out = rvr.compare(["p:1"], [table], "2026-06-30", lambda line, m: {"value": 1e8})
+        assert out["net_income"]["verdict"] == "period_not_read", date
+        assert out["net_income"]["comparisons"] == []
+    # years in the other order: the 2026 column is still the second figure
+    table = "\n".join(["|  | Three Months Ended June 30, |", "| (in millions) | 2025 | 2026 |",
+                       "| Net income | $ | 90 |  | $ | 100 |"])
+    out = rvr.compare(["p:1"], [table], "2026-06-30", lambda line, m: {"value": 1e8})
+    assert out["net_income"]["verdict"] == "agrees"
+    assert out["net_income"]["comparisons"][0]["release"]["cell"] == "100"
+
+
+def test_release_versus_report_a_row_with_the_wrong_count_of_figures_is_not_read():
+    """Three figures under a header of two columns are not read at the first two."""
+    table = _table(["| Net income | $ | 100 |  | $ | 90 |  | $ | 80 |"])
+    out = rvr.compare(["p:1"], [table], "2026-06-30", lambda line, m: {"value": 1e8})
+    assert out["net_income"]["verdict"] == "period_not_read"
+    assert out["net_income"]["comparisons"] == []
+    assert "3 figures" in out["net_income"]["unread"][0]["reason"]
+    table = _table(["| Net income | $ | 100 |"])
+    out = rvr.compare(["p:1"], [table], "2026-06-30", lambda line, m: {"value": 1e8})
+    assert out["net_income"]["verdict"] == "period_not_read"
+
+
+def test_release_versus_report_no_unit_statement_is_never_assumed_to_be_millions():
+    table = _table([_row("Net income", "100")], header=("Three Months Ended", "June 30, 2026",
+                                                         "unaudited"))
+    out = rvr.compare(["p:1"], [table], "2026-06-30", lambda line, m: {"value": 1e8})
+    assert out["net_income"]["verdict"] == "period_not_read"
+    assert "no unit statement" in out["net_income"]["unread"][0]["reason"]
+    assert out["net_income"]["comparisons"] == []
+
+
+def test_release_versus_report_a_unit_in_a_sentence_is_not_a_tables_unit():
+    """Prose that says millions is not the table's statement. A title line that is only
+    the statement `(In millions, except per share amounts)` is, and carries to the next
+    table that prints none."""
+    bare = _table([_row("Net income", "100")], header=("Three Months Ended", "June 30, 2026",
+                                                        "unaudited"))
+    for sentence in ("Net income was reported in millions of dollars for the quarter.",
+                     "Revenue grew to 5 in millions as the company said in thousands of calls."):
+        out = rvr.compare(["p:0", "p:1"], [sentence, bare], "2026-06-30",
+                          lambda line, m: {"value": 1e8})
+        assert out["net_income"]["verdict"] == "period_not_read", sentence
+    out = rvr.compare(["p:0", "p:1"], ["(In millions, except per share amounts)", bare],
+                      "2026-06-30", lambda line, m: {"value": 1e8})
+    assert out["net_income"]["verdict"] == "agrees"
+    # the first unit statement of a title that names two is the dollars'
+    out = rvr.compare(["p:0", "p:1"], ["(In millions, except shares, which are in thousands)",
+                                      bare], "2026-06-30", lambda line, m: {"value": 1e8})
+    assert out["net_income"]["comparisons"][0]["release"]["scale"] == "millions"
+
+
+def test_release_versus_report_the_span_length_guard_never_compares_a_twelve_month_column_to_a_nine_month_year_to_date():
+    """JCI's release prints a trailing-twelve-month column against a 10-Q whose year to
+    date is nine months (273 days): the report side is missing, with the reason."""
+    class Stub:
+        usd = {}
+
+        def term(self, term, span):
+            return {"value": 7.0, "id": f"stub:{term}:{span}", "tag": "Stub", "period": str(span)}
+
+    periods = {"balance_now": "2026-06-30", "annual_trigger": False,
+               "current_to_date": ("2025-10-01", "2026-06-30"), "quarter": None}
+    read = calculator.release_report_reader(Stub(), periods)
+    found = read("pretax_income", 12)
+    assert "missing" in found and "12 months" in found["missing"] and "273 days" in found["missing"]
+    assert read("pretax_income", 9)["value"] == 7.0
+    assert "missing" in read("pretax_income", 6)
+    assert "missing" in read("pretax_income", 3)       # no quarter span on record
+    annual = dict(periods, annual_trigger=True, current_to_date=("2025-07-01", "2026-06-30"))
+    assert read.__closure__ is not None
+    assert calculator.release_report_reader(Stub(), annual)("pretax_income", 12)["value"] == 7.0
+
+
+# --- the refuter's plants, in the committed releases ---------------------------------------
+
+def _run_inputs(ticker: str, accession: str):
+    import json
+    run = next(iter(sorted((REPO_ROOT / "runs" / ticker).glob(f"{accession}*"))))
+    published = json.loads((run / "calculator.json").read_text(encoding="utf-8"))
+    cutoff = dt.date.fromisoformat(published["cutoff"])
+    from src import trends
+    document, _ = calculator.supplemented(trends.read_record(ticker, cutoff), run, cutoff)
+    record = calculator.Record(document)
+    periods = calculator.trigger_periods(record.usd, published["period_end"], published["form"])
+    return run, cutoff, record, periods
+
+
+def _planted(ticker: str, accession: str, plants: dict[str, tuple[str, str]]) -> dict:
+    """The committed release with figures changed in named paragraphs (the paragraph
+    number after `8k_2_02:`), each change the first occurrence of an exact string, read through
+    the calculator against the real record."""
+    from src import parse_8k
+    run, cutoff, record, periods = _run_inputs(ticker, accession)
+    release = parse_8k.earnings_release(ticker, cutoff=cutoff)
+    item = release["item_2_02"]
+    paragraphs = list(item["paragraphs"])
+    for number, (old, new) in plants.items():
+        index = next(i for i, pid in enumerate(item["paragraph_ids"])
+                     if pid.endswith(f":8k_2_02:{number}"))
+        assert old in paragraphs[index], (number, old)
+        paragraphs[index] = paragraphs[index].replace(old, new, 1)     # the first one
+    planted = dict(release, item_2_02=dict(item, paragraphs=paragraphs))
+    return calculator.release_versus_report(record, periods, ticker=ticker, cutoff=cutoff,
+                                            fixtures_root=calculator.cutoff_guard.FIXTURES,
+                                            release=planted)["lines"]
+
+
+def _in_table(entry: dict, number: str) -> list[dict]:
+    return [c for c in entry["comparisons"]
+            if c["release"]["paragraph_id"].endswith(f":8k_2_02:{number}")]
+
+
+def test_release_versus_report_unplanted_committed_releases_have_no_difference():
+    for ticker, accession in (("DELL", "0001571996-26-000046"), ("CARR", "0001783180-26-000032"),
+                              ("CIEN", "0001628280-26-040767"), ("AAPL", "0000320193-26-000020")):
+        lines = _planted(ticker, accession, {})
+        for line, entry in lines.items():
+            assert entry["verdict"] != "differs", (ticker, line)
+            assert all(c["verdict"] != "differs" for c in entry.get("comparisons", [])), (ticker, line)
+
+
+def test_release_versus_report_planted_dell_net_income_and_revenue_in_the_statement_differ():
+    lines = _planted("DELL", "0001571996-26-000046", {
+        "63": ("| Net income | $ | 4,133 |", "| Net income | $ | 4,233 |")})
+    entry = lines["net_income"]
+    assert entry["verdict"] == "differs"
+    bad = _in_table(entry, "63")
+    assert [(c["span_months"], c["verdict"], c["difference"], c["sign"]) for c in bad
+            if c["span_months"] == 3] == [(3, "differs", 100_000_000.0, "release_larger")]
+    assert [c["verdict"] for c in _in_table(entry, "35")] == ["agrees", "agrees"]
+    lines = _planted("DELL", "0001571996-26-000046", {
+        "63": ("| Total net revenue | 46,971 |", "| Total net revenue | 47,971 |")})
+    revenue = [c for c in _in_table(lines["revenue"], "63") if c["span_months"] == 3]
+    assert lines["revenue"]["verdict"] == "differs"
+    assert [(c["verdict"], c["difference"]) for c in revenue] == [("differs", 1_000_000_000.0)]
+
+
+def test_release_versus_report_planted_carrier_net_sales_operating_profit_and_net_earnings_differ():
+    lines = _planted("CARR", "0001783180-26-000032", {
+        "84": ("| Total Net sales |  | 6,351 |", "| Total Net sales |  | 6,451 |")})
+    assert lines["revenue"]["verdict"] == "differs"
+    assert [(c["verdict"], c["difference"]) for c in _in_table(lines["revenue"], "84")
+            if c["span_months"] == 3] == [("differs", 100_000_000.0)]
+    lines = _planted("CARR", "0001783180-26-000032", {
+        "84": ("| Operating profit |  | 825 |", "| Operating profit |  | 925 |")})
+    assert lines["operating_income"]["verdict"] == "differs"
+    # the first `Net earnings (loss) attributable` row is the one changed, and the
+    # second, further down the same table, still agrees: no row hides another
+    lines = _planted("CARR", "0001783180-26-000032", {
+        "84": ("| Net earnings (loss) attributable to common shareowners |  | $ | 501 |",
+               "| Net earnings (loss) attributable to common shareowners |  | $ | 601 |")})
+    quarter = [c for c in _in_table(lines["net_income"], "84") if c["span_months"] == 3]
+    assert lines["net_income"]["verdict"] == "differs"
+    assert sorted(c["verdict"] for c in quarter if c["release"]["cell"] in ("601", "501")) \
+        == ["agrees", "differs"]
+
+
+def test_release_versus_report_carriers_segment_tables_are_not_the_company_line():
+    lines = _planted("CARR", "0001783180-26-000032", {})
+    cells = {c["cell"] for c in lines["revenue"]["segment_cells_not_compared"]}
+    assert {"3,372", "1,324", "917", "738"} <= cells
+    assert lines["revenue"]["verdict"] != "differs"
+
+
+def test_release_versus_report_planted_ciena_statement_in_thousands_catches_what_the_summary_cannot():
+    lines = _planted("CIEN", "0001628280-26-040767", {
+        "55": ("| Total revenue | 1,570,739 |", "| Total revenue | 1,570,778 |")})
+    entry = lines["revenue"]
+    assert entry["verdict"] == "differs"
+    statement = [c for c in _in_table(entry, "55") if c["span_months"] == 3]
+    assert [(c["verdict"], c["difference"]) for c in statement] == [("differs", 39_000.0)]
+    # the summary table (paragraph 19) states its unit only in a sentence above it, which
+    # is not a unit, so it is not read: its 1,570.7 million could not have caught the 39,000
+    assert [r["paragraph_id"].split(":")[-1] for r in entry["unread"]] == ["19"]
+
+
+def test_release_versus_report_planted_apple_statement_row_against_the_footnote_totals():
+    lines = _planted("AAPL", "0000320193-26-000020", {
+        "29": ("| Total net sales (1) | 109,417 |", "| Total net sales (1) | 109,517 |")})
+    entry = lines["revenue"]
+    assert entry["verdict"] == "differs"
+    quarter = [c for c in entry["comparisons"] if c["span_months"] == 3]
+    assert sorted((c["release"]["label"], c["verdict"]) for c in quarter) == [
+        ("Total net sales", "agrees"), ("Total net sales", "agrees"),
+        ("Total net sales (1)", "differs")]
+    assert [c["difference"] for c in quarter if c["verdict"] == "differs"] == [100_000_000.0]
+
+
+# --- expected values read through the companyfacts record, by hand ---------------------
+
+def test_release_versus_report_dell_quarters_operating_cash_flow_is_the_six_months_less_the_three():
+    """The 10-Q states Dell's operating cash flow for six months (6,306 million) and for
+    the first quarter (4,081 million); the second quarter's is the difference, 2,225
+    million, worked here from the record. The release's `Change in cash from operating
+    activities | 2,225` is the three-month cell, and the calculator's report side is the
+    same difference."""
+    tag = "NetCashProvidedByUsedInOperatingActivities"
+    six = source.one_value("DELL", tag, "2026-01-31..2026-07-31", DELL_CUTOFF)
+    first = source.one_value("DELL", tag, "2026-01-31..2026-05-01", DELL_CUTOFF)
+    assert (six, first) == (6_306_000_000.0, 4_081_000_000.0)
+    assert six - first == 2_225_000_000.0
+    out = calculator.calculate(ticker="DELL", cutoff=DELL_CUTOFF, period_end="2026-07-31",
+                               form="10-Q", accession="0001571996-26-000046")
+    cell = _by_months(out["release_versus_report"]["lines"]["operating_cash_flow"], 3)
+    assert cell["report"]["value"] == six - first
+    assert cell["release"]["value"] == 2_225 * 1_000_000
+
+
+def test_release_versus_report_net_earnings_before_the_noncontrolling_interest_is_held_to_profit_or_loss():
+    """Carrier's statement prints `Net earnings (loss) | 541` (before the noncontrolling
+    interest's 40) and `... attributable to common shareowners | 501`. The record's
+    `NetIncomeLoss` is 501 and its `ProfitLoss` is 541, so the first agrees with the second
+    fact and says so; the attributable row is held to `NetIncomeLoss` alone, and a plant of
+    541 into the attributable row differs."""
+    lines = _planted("CARR", "0001783180-26-000032", {})
+    quarter = {c["release"]["label"]: c for c in _in_table(lines["net_income"], "84")
+               if c["span_months"] == 3}
+    assert quarter["Net earnings (loss)"]["verdict"] == "agrees"
+    assert "noncontrolling" in quarter["Net earnings (loss)"]["agrees_with"]
+    assert quarter["Net earnings (loss)"]["report"]["parts"]["0"]["tag"] == "ProfitLoss"
+    assert quarter["Net earnings (loss) attributable to common shareowners"]["verdict"] == "agrees"
+    assert "agrees_with" not in quarter["Net earnings (loss) attributable to common shareowners"]
+    lines = _planted("CARR", "0001783180-26-000032", {
+        "84": ("| Net earnings (loss) attributable to common shareowners |  | $ | 501 |",
+               "| Net earnings (loss) attributable to common shareowners |  | $ | 541 |")})
+    assert lines["net_income"]["verdict"] == "differs"
+
+
+def test_release_versus_report_a_non_gaap_total_closes_the_block_its_heading_opened():
+    """Dell's reconciliation prints GAAP `Operating income`, then `Non-GAAP adjustments:`
+    and its rows, then `Non-GAAP operating income`, and then the next GAAP line `Net
+    income`: the heading's block ends with the non-GAAP total, so the GAAP rows on either
+    side are GAAP and the adjustments are not."""
+    rows = [_row("Operating income", "5,385"), "| Non-GAAP adjustments: |",
+            _row("Amortization of intangibles", "96"), _row("Non-GAAP operating income", "5,929"),
+            _row("Net income", "4,133")]
+    out = rvr.compare(["p:1"], [_blocks(rows)], "2026-06-30",
+                      lambda line, months: {"value": {"operating_income": 5.385e9,
+                                                      "net_income": 4.133e9}.get(line)}
+                      if line != "net_income_with_noncontrolling" else {"missing": "none"})
+    assert out["operating_income"]["verdict"] == "agrees"
+    assert out["net_income"]["verdict"] == "agrees"
+    assert "not_gaap" not in out["net_income"] and "not_gaap" not in out["operating_income"]
+    # a GAAP row planted wrong after the total is still caught
+    rows[-1] = _row("Net income", "4,233")
+    out = rvr.compare(["p:1"], [_blocks(rows)], "2026-06-30",
+                      lambda line, months: {"value": {"operating_income": 5.385e9,
+                                                      "net_income": 4.133e9}.get(line)}
+                      if line != "net_income_with_noncontrolling" else {"missing": "none"})
+    assert out["net_income"]["verdict"] == "differs"
