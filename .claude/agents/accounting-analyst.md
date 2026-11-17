@@ -138,7 +138,7 @@ Receivables: `receivables_extension.receivables_growth_minus_revenue_growth`,
 `receivables_extension.past_due_receivables_share` beside
 `receivables_extension.past_due_receivables_share.a_year_earlier`, each read at
 the date printed with it. Contract liabilities:
-`contract_liabilities_and_billings.billings` (Fortinet's definition; the
+`contract_liabilities_and_billings.billings` (the company's own definition; the
 acquired balances still inside it are named),
 `contract_liabilities_and_billings.billings_growth_minus_revenue_growth`,
 `contract_liabilities_and_billings.contract_liability_duration` (the noncurrent
@@ -183,13 +183,17 @@ concepts. `cash_flow` and `earnings` are both flows, so the cell must be a flow
 `changes` cell is a change, later minus earlier, worked out by Python. A balance at
 one date is not a flow, and Python drops an adjustment that names one, with that
 reason. The cell must also be of the period free cash flow covers: a span that
-ends at the filing's period end and lasts no more than a year (a 53-week year is
-allowed), or a change between two dates that ends at the period end and begins no
-more than a year before it. A prior-year column, a history entry, a change between
+begins no earlier than the first day of the trailing year the view prints
+(`terms.trailing_four_quarters`) and ends at the filing's period end, or a change
+between two dates that ends at the period end and begins no earlier than the day
+before that first day. A prior-year column, a history entry, a change between
 two spans and a change over two years are dropped as not the period free cash flow
-covers. Only a `cash_flow` adjustment moves free cash flow. An `earnings`
-adjustment is read by the same rule and listed with its amount, and it is applied to
-nothing until normalised operating income exists in the next wave. You never compute the amount,
+covers. An adjustment you mark `"recurs": true` must cover the whole trailing year;
+a shorter span (a quarter, the year to date) can stand only as one-time, and Python
+drops a recurring one with that reason. Only a `cash_flow` adjustment moves free cash
+flow. An `earnings` adjustment is read by the same rule and listed with its amount;
+it does not move free cash flow, and the valuation applies it (once, or as a margin
+cut where it recurs). You never compute the amount,
 and you never take a portion of a field — Python reads the whole field and
 applies it to `free_cash_flow_quality_adjusted`, and records what each one moved.
 Share-based compensation and acquisitions are already subtracted there; do not
@@ -198,12 +202,12 @@ and your quote says why it will repeat; only then does Python carry it into
 every year of the forecast. Examples of the shape:
 
 - a flow, a note table's fact over a span of dates: `reduce`, `cash_flow`,
-  `note_tables.tables.notes_42.facts.14` in Palo Alto's view (nine months of payments of
-  contingent consideration, ending at the period end)
+  `note_tables.tables.notes_<n>.facts.<k>`, where fact `<k>` of table `<n>` is a number
+  stated for a span that ends at the period end (payments over the year to date, say)
 - a change, a note table's `changes` cell: `reduce`, `cash_flow`,
-  `note_tables.tables.notes_38.changes.0` in Apple's view (gross intangible assets at two
-  dates, later minus earlier). A table's number is a different one in another company's
-  view: read the cell in your own view before you cite its path
+  `note_tables.tables.notes_<n>.changes.<k>`, where change `<k>` is the change in a line
+  between two balance dates (later minus earlier); read the path in your own view, for
+  `<n>` and `<k>` name different cells in every company's view
 - receivables growth tied to extended payment terms: `reduce`, `cash_flow`,
   `earnings_versus_cash.working_capital.receivables.balance_sheet_change`
 - receivables sold or collected early, as the statement of cash flows shows it: `reduce`,

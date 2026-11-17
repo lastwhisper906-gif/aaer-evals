@@ -838,7 +838,8 @@ def adjustment_problem(fields: dict):
             return f"applies_to {item.get('applies_to')!r} is not one of {', '.join(APPLIES_TO)}"
         # applies_to is cash_flow or earnings, both flows: the one rule the calculator
         # reads too decides whether the cell may be an amount
-        amount, why_not = calculator.adjustment_reading(fields, item.get("calculator_field"))
+        amount, why_not = calculator.adjustment_reading(
+            fields, item.get("calculator_field"), item.get("recurs") is True)
         if amount is None:
             return (f"calculator_field {item.get('calculator_field')!r} cannot be an "
                     f"adjustment's amount: {why_not}")

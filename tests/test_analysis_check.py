@@ -1946,6 +1946,8 @@ def test_an_adjustment_indexes_a_list_by_ascii_digits_alone(field, stands):
     adjustment stands."""
     fields = copy.deepcopy(FIELDS)
     fields["period_end"] = "2026-06-27"                  # Apple's own period end, as the line's
+    fields["terms"]["trailing_four_quarters"]["operating_cash_flow"] = {      # and its trailing year
+        "parts": {"prior_year_to_date": {"period": "2024-09-29..2025-06-28"}}}
     fields["terms"]["cash_flow_families"] = {"borrowing_repaid": {"parts": {
         "this_year_to_date": {"value": 8146000000.0, "lines": [FLOW_LINE]}}}}
     payload = accounting()
