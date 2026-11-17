@@ -371,7 +371,7 @@ def valuation_section(analysis: dict | None, fields: dict,
     return out + ["", f"_한계: {LIMITS_KO['valuation']}_", ""]
 
 
-ADJUSTED_VALUE_LINE_KO = "회계 조정으로 달라진 주당 가치 (잉여현금흐름 조정만 합산)"
+ADJUSTED_VALUE_LINE_KO = "회계 조정에 따른 주당 가치 변화 (잉여현금흐름 조정만 합산)"
 FALLBACK_KO = "세전 타인자본비용은 대체값이며, WACC와 가치 범위는 이 대체값에 기대고 있습니다"
 
 

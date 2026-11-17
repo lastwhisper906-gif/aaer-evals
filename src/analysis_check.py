@@ -854,6 +854,10 @@ def adjustment_problem(fields: dict):
         if amount is None:
             return (f"calculator_field {item.get('calculator_field')!r} cannot be an "
                     f"adjustment's amount: {why_not}")
+        repeated = calculator.repeats_a_movement(
+            fields, item.get("calculator_field"), item.get("direction"), item.get("applies_to"))
+        if repeated:
+            return f"direction {item.get('direction')!r} of {item.get('calculator_field')!r}: {repeated}"
         if not item.get("quote"):
             return "an adjustment carries no quote"
         return None

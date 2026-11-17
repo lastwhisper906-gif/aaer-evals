@@ -320,11 +320,11 @@ def test_the_sensitivity_grid_moves_wacc_by_a_point():
 def test_an_adjustment_takes_its_amount_from_the_field_it_names():
     """The analyst names a field by its path in calculator.json and a direction; the
     amount is the field's value. The field here is the trailing-four-quarter increase
-    in receivables, from NVIDIA's cash-flow statements: fiscal 2026 (15,399) in the
+    in receivables (it rose, so it lowered operating cash flow and is taken out with `increase`), from NVIDIA's cash-flow statements: fiscal 2026 (15,399) in the
     10-K, plus six months of 2027 (24,590), less six months of 2026 (4,743), in the
     10-Q -- 35,246 million."""
     accounting = {"adjustments": [
-        {"name": "working capital pulled forward", "direction": "reduce",
+        {"name": "working capital pulled forward", "direction": "increase",
          "applies_to": "cash_flow",
          "calculator_field": "terms.trailing_four_quarters.change_in_receivables",
          "quote": "q"},
@@ -339,7 +339,7 @@ def test_an_adjustment_takes_its_amount_from_the_field_it_names():
     assert [row["calculator_field"] for row in quality["adjustments_refused"]] == [
         "nowhere.at_all", "ratios.efficiency.days_sales_outstanding"]
     before = quality["adjustments_applied"][0]["before"]
-    assert quality["value"] == before - 35_246 * MILLION
+    assert quality["value"] == before + 35_246 * MILLION     # receivables rose: already lowered operating cash flow
 
 
 # --- the whole file on NVIDIA ------------------------------------------------------------------

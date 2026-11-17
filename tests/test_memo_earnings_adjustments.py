@@ -79,7 +79,7 @@ def test_the_valuation_part_of_the_memo_puts_the_cash_flow_figure_under_its_head
     fields = planted()
     lines = memo.accounting_adjustment_lines(fields)
     heading = [line for line in lines if line.startswith(f"- {memo.ADJUSTED_VALUE_LINE_KO}")]
-    assert heading == ["- 회계 조정으로 달라진 주당 가치 (잉여현금흐름 조정만 합산): 주당 -1.50달러"]
+    assert heading == ["- 회계 조정에 따른 주당 가치 변화 (잉여현금흐름 조정만 합산): 주당 -1.50달러"]
     earn, = [line for line in lines if "이익 조정" in line]
     assert "충당금 변동" in earn and "단독으로만 표시" in earn and earn.endswith("가치에 합산하지 않음") and "-0.42" in earn
     assert "-1.50" not in earn
@@ -109,7 +109,7 @@ def test_the_memos_valuation_section_prints_the_adjustment_lines():
     fields["valuation"].update({"value_range_per_share": {"low": 10.0, "high": 20.0}, "price_at_cutoff": 15.0,
                                 "price_position": "범위 안", "reverse_dcf": {"value": 0.05}})
     text = "\n".join(memo.valuation_section(None, fields))
-    assert "회계 조정으로 달라진 주당 가치 (잉여현금흐름 조정만 합산): 주당 -1.50달러" in text
+    assert "회계 조정에 따른 주당 가치 변화 (잉여현금흐름 조정만 합산): 주당 -1.50달러" in text
     assert "이익 조정 충당금 변동: 단독으로만 표시" in text
 
 

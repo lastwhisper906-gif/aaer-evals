@@ -2473,6 +2473,12 @@ def quality_adjusted(simple: dict, compensation: dict, acquisitions: dict,
             why_not = counted_twice(view, field, [(row["calculator_field"], row["applies_to"])
                                                   for row in applied + to_earnings], target)
             amount = None if why_not else amount
+        repeated = repeats_a_movement(view, field, direction, target) if amount is not None else None
+        if repeated:
+            refused.append({"position": position, "name": item.get("name"), "calculator_field": field,
+                            "direction": direction,
+                            "reason": f"{field!r} with {direction!r}: {repeated}"})
+            continue
         if direction not in ("reduce", "increase") or target not in ("cash_flow", "earnings") \
                 or amount is None:
             refused.append({"position": position, "name": item.get("name"),
@@ -2891,20 +2897,46 @@ STATEMENT_TOTAL_CONCEPTS = (
     r"netincomeloss\w*|profitloss|revenues|revenuefromcontractwithcustomer\w*|salesrevenue\w*|costofrevenue|"
     r"costofgoodsandservicessold|costofgoodssold|grossprofit|operatingincomeloss|"
     r"incomelossfromcontinuingoperationsbeforeincometaxes\w*|incometaxexpensebenefit|"
-    r"operatingexpenses|costsandexpenses|othercomprehensiveincomeloss\w*|comprehensiveincomenetoftax\w*|"
-    r"businessacquisitionsproforma\w*|"
+    r"operatingexpenses|operatingandnonoperatingexpenses|costsandexpenses|businessacquisitions?proforma\w*|"
     r"netcashprovidedbyusedin\w*|earningspershare\w*|incomelossfromcontinuingoperations")
+
+
+GENERIC_INPUT_SEGMENTS = {"now", "before", "this_year_to_date", "prior_year_to_date", "prior_fiscal_year",
+                          "this_quarter", "last_quarter", "a_year_earlier", "parts", "lines"}
+
+
+def names_an_item_in_inputs(after: list[str]) -> bool:
+    """True when the segments after a total's name are `inputs` and then a segment that names an item."""
+    if len(after) < 2 or after[0] != "inputs":
+        return False
+    item = after[1]
+    return item not in GENERIC_INPUT_SEGMENTS and not item.isdigit()
+
+
+OCI_IS_NOT_EARNINGS = "other comprehensive income is not earnings"
+OCI_CONCEPTS = r"oci\w*|othercomprehensiveincome\w*|comprehensiveincome\w*"
+
+
+def other_comprehensive_income(cell: dict) -> str | None:
+    """`OCI_IS_NOT_EARNINGS` for a cell whose tag or concept is other comprehensive income or one of its
+    components: it bypasses net income, so no line of it is an earnings adjustment."""
+    for key in ("concept", "tag"):
+        name = cell.get(key)
+        if isinstance(name, str) and re.fullmatch(OCI_CONCEPTS, name.rpartition(":")[2].lower()):
+            return OCI_IS_NOT_EARNINGS
+    return None
 
 
 def statement_total(fields: dict, path: str, cell: dict) -> str | None:
     """`TOTAL_OF_THE_STATEMENT` for a cell that is a whole total of a statement, by its name or as a copy of one."""
     segments = path.split(".")
     # a total is known by any segment of its path (a growth `parts` cell carries no concept of its own)
-    # (not the segment that opens `inputs`: a total's inputs hold its own constituents, items such as the
-    # depreciation within EBITDA or the change in contract liabilities within billings, each read by its own name)
+    # (a segment that opens `inputs` escapes only when the segment after `inputs` names an item: a total's inputs
+    # hold its constituents, such as the depreciation within EBITDA or the change in contract liabilities within
+    # billings; a generic one (now, before, a span, parts, an index) is the total's own reading again)
     if segments[-1] in STATEMENT_TOTAL_NAMES or any(
-            segment in STATEMENT_TOTAL_NAMES and following != "inputs"
-            for segment, following in zip(segments, segments[1:])):
+            segment in STATEMENT_TOTAL_NAMES and not names_an_item_in_inputs(segments[position + 1:])
+            for position, segment in enumerate(segments[:-1])):
         return TOTAL_OF_THE_STATEMENT
     if len(segments) > 2 and segments[-2] in ("parts", "lines"):
         segments = segments[:-2]
@@ -3209,6 +3241,48 @@ def counted_twice(fields: dict, path: str, earlier: list, applies_to: str = "cas
     return None
 
 
+# What a movement did to operating cash flow, which free cash flow starts from, by the sign of the cell. The
+# statement's own convention (IncreaseDecreaseInAccountsReceivable is positive when receivables ROSE, which lowered
+# operating cash flow; IncreaseDecreaseInAccountsPayable is positive when payables rose, which raised it): a line
+# of the statement is read by its name, a note table's change (later minus earlier) of a named item that rose
+# raised operating cash flow, as a payables stretch or a receivables sale does.
+STATEMENT_LINE_EFFECT_SIGN = {"change_in_receivables": -1, "change_in_inventory": -1, "change_in_payables": 1}
+REPEATS_A_MOVEMENT = ("repeats a movement free cash flow already holds; a cash_flow adjustment takes a line's "
+                      "effect out")
+
+
+def movement_effect(fields: dict, path: str, amount: float | None = None) -> float | None:
+    """The effect on operating cash flow of the movement a cash_flow cell holds (positive: it raised it), or
+    None for a cell that is no statement line or named item with a known effect (acquisition consideration)."""
+    cell = _cell_at(fields, path)
+    if not isinstance(cell, dict):
+        return None
+    source = cash_flow_source(path, cell)
+    if source is None or source.startswith("item:"):
+        return None
+    value = field_value(fields, path) if amount is None else amount
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return None
+    if isinstance(cell.get("concept"), str):                        # a note table's change of a named item
+        return float(value)
+    return STATEMENT_LINE_EFFECT_SIGN[source.partition(":")[2]] * float(value)
+
+
+def repeats_a_movement(fields: dict, path, direction, applies_to: str = "cash_flow") -> str | None:
+    """`REPEATS_A_MOVEMENT` when a cash_flow adjustment points the way the line's own effect already points.
+    A working-capital line is already inside operating cash flow: a receivables build lowered it, a payables
+    stretch raised it. So `reduce` takes out only a movement that raised it, and `increase` only one that lowered
+    it; the amount is the line's size, never more."""
+    if applies_to != "cash_flow" or not isinstance(path, str):
+        return None
+    effect = movement_effect(fields, path)
+    if not effect:
+        return None
+    if (direction == "reduce" and effect < 0) or (direction == "increase" and effect > 0):
+        return REPEATS_A_MOVEMENT
+    return None
+
+
 def adjustment_reading(fields: dict, path, recurs: bool = False,
                        applies_to: str = "cash_flow") -> tuple[float | None, str | None]:
     """(amount, None) for a path an adjustment may name, or (None, the reason it may not).
@@ -3240,6 +3314,9 @@ def adjustment_reading(fields: dict, path, recurs: bool = False,
     if charge and applies_to == "cash_flow":
         return None, charge
     if applies_to != "cash_flow":
+        oci = other_comprehensive_income(cell)
+        if oci:
+            return None, oci
         # asked before the period, so a total of any span is refused for what it is
         total = statement_total(fields, path, cell)
         if total:

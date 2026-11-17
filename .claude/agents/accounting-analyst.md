@@ -245,7 +245,15 @@ each a note table's `changes` cell of that concept. The supplier finance obligat
 accounts payable and receivables sold inside receivables, both inside operating cash flow: each is
 the same movement as the statement's change in payables or in receivables, so name that line or
 the item, never both. Acquisition consideration is cited once for each concept, so a current and a
-noncurrent balance are two. Everything else is refused as
+noncurrent balance are two. A `cash_flow` adjustment takes a line's effect OUT of free cash flow and never repeats it.
+A working-capital line is already inside operating cash flow: a receivables or inventory build
+(the statement's figure is positive) already lowered it, a payables or supplier finance rise
+(positive) already raised it, and receivables sold already raised it. So `reduce` is allowed only
+for a movement that raised operating cash flow (receivables or inventory fell, payables or the
+supplier finance obligation rose, receivables were sold), and `increase` only for one that lowered
+it; the amount is the line's whole size. Python reads the direction from the cell's sign, and drops
+the wrong one with "repeats a movement free cash flow already holds; a cash_flow adjustment takes
+a line's effect out". Everything else is refused as
 a `cash_flow` amount with the reason "a cash_flow amount is a working-capital change line of the statement, or a supplier finance, receivables sold or acquisition consideration change": a balance-sheet change (the calculator's `balance_sheet_change`,
 `articulation_gap`, `share_of_net_income` input), a total (the change in current liabilities,
 billings), a note table's other changes (a reserve, an accrual, an inventory obligation, a
@@ -288,10 +296,14 @@ every year of the forecast. Examples of the shape:
   `note_tables.tables.notes_<n>.changes.<k>`, where change `<k>` is the change in a line
   between two balance dates (later minus earlier); read the path in your own view, for
   `<n>` and `<k>` name different cells in every company's view
-- receivables growth tied to extended payment terms: `reduce`, `cash_flow`,
-  `terms.trailing_four_quarters.change_in_receivables` (the statement's own line; the
-  balance sheet's `earnings_versus_cash.working_capital.receivables.balance_sheet_change`
-  is for `earnings` only)
+- receivables growth tied to extended payment terms: `reduce`, `earnings`,
+  `terms.trailing_four_quarters.change_in_receivables` (a concern about the quality of the
+  earnings: the receivables build is already inside operating cash flow, which it lowered, so a
+  `cash_flow` adjustment may not reduce free cash flow by it a second time; the balance sheet's
+  `earnings_versus_cash.working_capital.receivables.balance_sheet_change` is for `earnings` only)
+- a payables stretch that flatters operating cash flow: `reduce`, `cash_flow`,
+  `terms.trailing_four_quarters.change_in_payables` (the statement's own line; payables rose,
+  which already raised operating cash flow, so `reduce` takes that effect out)
 - a supplier finance obligation that rose: `reduce`, `cash_flow`, the note table's `changes`
   cell of `SupplierFinanceProgramObligation`, `note_tables.tables.notes_<n>.changes.<k>`
 - a reserve release: `reduce`, `earnings`, the note table's change in the reserve

@@ -343,3 +343,4 @@ sixty lines; a line under a lesson that has no date is that lesson's wrapped lin
 2026-11-17 merged a new src module after running only its own tests; the full suite's universe check refused a ticker-to-element map left in src — run tests/test_universe.py (and the whole suite once) before a module with literals goes up.
 2026-11-17 renamed nothing when an effect was shown alone, so a row still carried the field a reader sums; give a shown-alone figure its own name.
 2026-11-17 a total matched only by its last path segment or a concept missed cells that carry a tag or sit under the total's name; match every route a cell can name itself by.
+2026-11-17 an adjustment direction was left to the analyst, so a line already inside operating cash flow could be taken out twice; read the sign of the cell and refuse the repeat.

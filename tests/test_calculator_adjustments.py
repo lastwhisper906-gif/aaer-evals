@@ -88,7 +88,13 @@ def reading(held: dict, path, recurs: bool = False, applies_to: str = "earnings"
     return calculator.adjustment_reading(with_year(held), path, recurs, applies_to)
 
 
-def adjustment(path: str, direction: str = "reduce", applies_to: str = "earnings") -> dict:
+def adjustment(path: str, direction: str | None = None, applies_to: str = "earnings") -> dict:
+    """With no direction given, the one a cash_flow adjustment of the line may take on a positive cell: a receivables
+    or inventory line that rose lowered operating cash flow, so it is taken out with `increase`; any other cell is
+    `reduce`."""
+    if direction is None:
+        direction = ("increase" if applies_to == "cash_flow" and re.search(r"receivables|inventor", path)
+                     and "balance_sheet" not in path else "reduce")
     return {"name": path, "direction": direction, "applies_to": applies_to,
             "calculator_field": path, "quote": "q"}
 
@@ -195,39 +201,49 @@ def test_apples_free_cash_flow_before_is_worked_by_hand_from_companyfacts():
     assert final_with(APPLE, [])["value"] == by_hand
 
 
-def test_apples_statement_lines_move_free_cash_flow_by_their_amounts():
+def test_apples_statement_lines_move_free_cash_flow_only_by_taking_their_effect_out():
     """Apple's statement of cash flows, trailing four quarters to 2026-06-27, read in companyfacts through the
     second reader (cutoff 2026-07-31): the fiscal year 2024-09-29..2025-09-27 plus the nine months to
     2026-06-27 less the nine months to 2025-06-28. Accounts receivable 6,682 - 8,316 + 5,685 = 4,051 and
-    accounts payable 902 - 5,203 + 18,479 = 14,178 (millions; the statement's signs). Reducing free cash flow
-    by the first, 122,977 - 4,051 = 118,926; increasing it by the second, 118,926 + 14,178 = 133,104. The
-    balance-sheet change of payables (14,151) is no line of the statement and is refused as cash_flow."""
+    accounts payable 902 - 5,203 + 18,479 = 14,178 (millions; the statement's signs: a positive figure is a
+    liability that rose or a receivable that rose). Receivables rose, so they already LOWERED operating cash flow:
+    `reduce` would take out a second time what is already out, and is refused; `increase` takes the effect out,
+    122,977 + 4,051 = 127,028. Payables rose, so they already RAISED it: `reduce` takes the effect out,
+    122,977 - 14,178 = 108,799, and `increase` is refused. The balance-sheet change of payables (14,151) is no
+    line of the statement and is refused as cash_flow."""
     cutoff = "2026-07-31"
     year, ytd, before = "2024-09-29..2025-09-27", "2025-09-28..2026-06-27", "2024-09-29..2025-06-28"
     line = lambda tag: (source.one_value("AAPL", tag, year, cutoff) + source.one_value("AAPL", tag, ytd, cutoff)
                         - source.one_value("AAPL", tag, before, cutoff))
     assert (line("IncreaseDecreaseInAccountsReceivable"), line("IncreaseDecreaseInAccountsPayable")) == (
         4_051 * MILLION, 14_178 * MILLION)
-    assert 122_977 - 4_051 == 118_926 and 118_926 + 14_178 == 133_104
+    assert 122_977 + 4_051 == 127_028 and 122_977 - 14_178 == 108_799 and 122_977 + 4_051 - 14_178 == 112_850
     receivables = "terms.trailing_four_quarters.change_in_receivables"
     payables = "terms.trailing_four_quarters.change_in_payables"
-    one = final_with(APPLE, [adjustment(receivables, applies_to="cash_flow")])
+    wrong = final_with(APPLE, [adjustment(receivables, "reduce", applies_to="cash_flow"),
+                               adjustment(payables, "increase", applies_to="cash_flow")])
+    assert wrong["adjustments_applied"] == [] and wrong["value"] == 122_977 * MILLION
+    assert [row["calculator_field"] for row in wrong["adjustments_refused"]] == [receivables, payables]
+    assert all(calculator.REPEATS_A_MOVEMENT in row["reason"] for row in wrong["adjustments_refused"])
+    one = final_with(APPLE, [adjustment(receivables, "increase", applies_to="cash_flow")])
     assert one["adjustments_refused"] == [] and one["adjustments_to_earnings"] == []
     row, = one["adjustments_applied"]
     assert (row["amount"], row["before"], row["after"]) == (
-        4_051 * MILLION, 122_977 * MILLION, 118_926 * MILLION)
-    assert one["value"] == 118_926 * MILLION
+        4_051 * MILLION, 122_977 * MILLION, 127_028 * MILLION)
+    assert one["value"] == 127_028 * MILLION
     assert (row["signed_value"], row["class"], row["direction"], row["applies_to"]) == (
-        4_051 * MILLION, "flow", "reduce", "cash_flow")
+        4_051 * MILLION, "flow", "increase", "cash_flow")
     assert row["period"] is None
     assert row["its_own_span"].startswith("no dates of its own; its parts run from the day after 2025-06-28")
     assert row["free_cash_flow_covers"] == "the four quarters 2025-06-29..2026-06-27"
     assert row["recurs"] is False
-    both = final_with(APPLE, [adjustment(receivables, applies_to="cash_flow"),
-                              adjustment(payables, "increase", applies_to="cash_flow")])
+    both = final_with(APPLE, [adjustment(receivables, "increase", applies_to="cash_flow"),
+                              adjustment(payables, "reduce", applies_to="cash_flow")])
     assert [(r["before"], r["after"]) for r in both["adjustments_applied"]] == [
-        (122_977 * MILLION, 118_926 * MILLION), (118_926 * MILLION, 133_104 * MILLION)]
-    assert both["value"] == 133_104 * MILLION
+        (122_977 * MILLION, 127_028 * MILLION), (127_028 * MILLION, 112_850 * MILLION)]
+    assert both["value"] == 112_850 * MILLION
+    only_payables = final_with(APPLE, [adjustment(payables, "reduce", applies_to="cash_flow")])
+    assert only_payables["value"] == 108_799 * MILLION
     balance = "earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change"
     refused = final_with(APPLE, [adjustment(balance, "increase", applies_to="cash_flow")])
     assert refused["adjustments_applied"] == [] and refused["value"] == 122_977 * MILLION
@@ -235,36 +251,44 @@ def test_apples_statement_lines_move_free_cash_flow_by_their_amounts():
 
 
 def test_palo_altos_receivables_line_moves_free_cash_flow_and_its_earnings_cells_move_nothing():
-    """Before: simple 3,793.8 less share-based compensation 1,668.1 less acquisitions
-    5,118.4 = -2,992.7 (millions). The analyst's cells are durations ending at the period end
-    2026-04-30: facts.8 and notes_187.facts.17 for `earnings`, facts.14 (the payment of 154) first as
-    `cash_flow`, which is no line of the statement and no change of a named item, and refused as one.
-    The statement's change in receivables moves free cash flow: companyfacts, fiscal year
-    2024-08-01..2025-07-31 345.3, plus the nine months to 2026-04-30 -441.0, less the nine months to
-    2025-04-30 -669.0, is 573.3; -2,992.7 - 573.3 = -3,566.0. The two earnings ones are listed, 110 and
-    76, applied to nothing. The fourth cell, the liability at April 30, 2026, is a balance."""
+    """The base is worked from companyfacts through the second reader, by the spans and tags the view's formula
+    names: operating cash flow (NetCashProvidedByUsedInOperatingActivities) 4,217.0 less capital expenditure
+    (PaymentsToAcquireProductiveAssets) 423.2, less share-based pay (ShareBasedCompensation) 1,668.1, less
+    acquisitions (PaymentsToAcquireBusinessesNetOfCashAcquired) 5,118.4, each the fiscal year 2024-08-01..2025-07-31
+    plus the nine months to 2026-04-30 less the nine months to 2025-04-30: -2,992.7 (millions). The analyst's cells
+    are durations ending at the period end 2026-04-30: facts.8 and notes_187.facts.17 for `earnings`, facts.14 (the
+    payment of 154) first as `cash_flow`, which is no line of the statement and no change of a named item, and
+    refused as one. The statement's change in receivables is 573.3 (345.3 - 441.0 + 669.0: receivables ROSE, which
+    already lowered operating cash flow): `reduce` repeats it and is refused, `increase` takes it out,
+    -2,992.7 + 573.3 = -2,419.4. The two earnings ones are listed, 110 and 76, applied to nothing. The fourth
+    cell, the liability at April 30, 2026, is a balance."""
     view_ = view(PALO_ALTO)
     held = view_["free_cash_flow"]["free_cash_flow_quality_adjusted"]
-    assert held["inputs"]["free_cash_flow_simple"] == 3_793_800_000
-    assert held["inputs"]["share_based_compensation"]["value"] == 1_668_100_000
-    assert held["inputs"]["acquisitions"]["cash_spent"] == 5_118_400_000
-    assert 3_793_800_000 - 1_668_100_000 - 5_118_400_000 == -2_992_700_000 == held["value"]
     tag, cutoff = "IncreaseDecreaseInAccountsReceivable", view_["cutoff"]
-    receivables = (source.one_value("PANW", tag, "2024-08-01..2025-07-31", cutoff)
-                   + source.one_value("PANW", tag, "2025-08-01..2026-04-30", cutoff)
-                   - source.one_value("PANW", tag, "2024-08-01..2025-04-30", cutoff))
+
+    def line(concept: str) -> float:
+        return (source.one_value("PANW", concept, "2024-08-01..2025-07-31", cutoff)
+                + source.one_value("PANW", concept, "2025-08-01..2026-04-30", cutoff)
+                - source.one_value("PANW", concept, "2024-08-01..2025-04-30", cutoff))
+    base = (line("NetCashProvidedByUsedInOperatingActivities") - line("PaymentsToAcquireProductiveAssets")
+            - line("ShareBasedCompensation") - line("PaymentsToAcquireBusinessesNetOfCashAcquired"))
+    assert base == -2_992_700_000
+    assert held["value"] == base                      # the run's published figure is the source's
+    receivables = line(tag)
     assert receivables == 573_300_000 == 345_300_000 - 441_000_000 + 669_000_000
 
+    receivables_path = "terms.trailing_four_quarters.change_in_receivables"
     out = final_with(PALO_ALTO, [
         adjustment("note_tables.tables.notes_42.facts.8", applies_to="earnings"),
         adjustment("note_tables.tables.notes_42.facts.14", applies_to="cash_flow"),
-        adjustment("terms.trailing_four_quarters.change_in_receivables", applies_to="cash_flow"),
+        adjustment(receivables_path, "reduce", applies_to="cash_flow"),
+        adjustment(receivables_path, "increase", applies_to="cash_flow"),
         adjustment("note_tables.tables.notes_187.facts.17", applies_to="earnings"),
         adjustment("note_tables.tables.notes_42.facts.16")])
     row, = out["adjustments_applied"]
-    assert (row["amount"], row["before"], row["after"]) == (573_300_000, -2_992_700_000, -3_566_000_000)
-    assert out["value"] == -3_566_000_000
-    assert (row["signed_value"], row["class"]) == (573_300_000, "flow")
+    assert (row["amount"], row["before"], row["after"]) == (receivables, base, base + receivables)
+    assert out["value"] == base + receivables == -2_419_400_000
+    assert (row["signed_value"], row["class"]) == (receivables, "flow")
     assert row["free_cash_flow_covers"] == "the four quarters 2025-05-01..2026-04-30"
     assert [(r["calculator_field"], r["amount"], r["signed_value"], r["class"], r["period"],
              r["applied_to"] == EARNINGS_LABEL) for r in out["adjustments_to_earnings"]] == [
@@ -272,9 +296,10 @@ def test_palo_altos_receivables_line_moves_free_cash_flow_and_its_earnings_cells
          "2026-02-01..2026-04-30", True),
         ("note_tables.tables.notes_187.facts.17", 76_000_000, 76_000_000, "flow",
          "2025-08-01..2026-04-30", True)]
-    assert [(r["calculator_field"], calculator.NOT_A_STATEMENT_LINE in r["reason"] or NOT_A_FLOW in r["reason"])
-            for r in out["adjustments_refused"]] == [
-        ("note_tables.tables.notes_42.facts.14", True), ("note_tables.tables.notes_42.facts.16", True)]
+    refused = {(r["calculator_field"], r["direction"]): r["reason"] for r in out["adjustments_refused"]}
+    assert calculator.REPEATS_A_MOVEMENT in refused[(receivables_path, "reduce")]
+    for path in ("note_tables.tables.notes_42.facts.14", "note_tables.tables.notes_42.facts.16"):
+        assert calculator.NOT_A_STATEMENT_LINE in refused[(path, "reduce")] or NOT_A_FLOW in refused[(path, "reduce")]
 
 
 def test_one_cell_is_one_reading_whatever_the_class():
@@ -283,7 +308,7 @@ def test_one_cell_is_one_reading_whatever_the_class():
     path = "terms.trailing_four_quarters.change_in_receivables"
     only_cash = final_with(PALO_ALTO, [adjustment(path, applies_to="cash_flow")])["value"]
     both = final_with(PALO_ALTO, [adjustment(path, applies_to="cash_flow"), adjustment(path, applies_to="earnings")])
-    assert both["value"] == only_cash == -3_566_000_000
+    assert both["value"] == only_cash == -2_419_400_000
     assert len(both["adjustments_applied"]) == 1 and both["adjustments_to_earnings"] == []
     refused, = both["adjustments_refused"]
     assert TWICE in refused["reason"] and refused["position"] == 1
@@ -477,7 +502,8 @@ def test_the_unit_may_be_the_calculators_or_the_filings():
 def test_the_gate_and_the_calculator_say_the_same_thing(path):
     amount, reason = reading(PLANTED, path, False, "cash_flow")
     gate = analysis_check.adjustment_problem(with_year(PLANTED))(
-        {"direction": "reduce", "applies_to": "cash_flow", "calculator_field": path, "quote": "q"})
+        {"direction": "increase" if "receivables" in path else "reduce", "applies_to": "cash_flow",
+         "calculator_field": path, "quote": "q"})
     if amount is not None:
         assert gate is None
     else:
@@ -486,7 +512,7 @@ def test_the_gate_and_the_calculator_say_the_same_thing(path):
 
 def test_the_gate_still_checks_what_it_checked_before():
     problem = analysis_check.adjustment_problem(with_year(PLANTED))
-    base = {"direction": "reduce", "applies_to": "cash_flow",
+    base = {"direction": "increase", "applies_to": "cash_flow",
             "calculator_field": "terms.trailing_four_quarters.change_in_receivables", "quote": "q"}
     assert problem(base) is None
     assert "direction" in problem({**base, "direction": "hold"})
@@ -717,8 +743,10 @@ def test_the_definition_says_what_the_rule_says():
      "change", "earnings"),
     ("note_tables.tables.notes_<n>.changes.<k>", "note_tables.tables.notes_91.changes.1", "STX/0001137789-26-000159",
      "change", "cash_flow"),               # the supplier finance example: a named item
+    ("terms.trailing_four_quarters.change_in_payables", "terms.trailing_four_quarters.change_in_payables",
+     "DELL/0001571996-26-000046", "flow", "cash_flow"),               # the payables stretch, taken out with reduce
     ("terms.trailing_four_quarters.change_in_receivables", "terms.trailing_four_quarters.change_in_receivables",
-     "DELL/0001571996-26-000046", "flow", "cash_flow"),
+     "DELL/0001571996-26-000046", "flow", "earnings"),
     ("earnings_versus_cash.working_capital.receivables.balance_sheet_change",
      "earnings_versus_cash.working_capital.receivables.balance_sheet_change",
      "DELL/0001571996-26-000046", "change", "earnings"),
@@ -734,6 +762,10 @@ def test_each_example_in_the_definition_has_an_instance_in_a_run_as_printed_toda
     assert isinstance(cell, dict) and "value" in cell
     assert calculator.cell_class(path, cell)[0] == kind
     assert reading(held, path, False, applies_to)[0] == cell["value"]
+    if applies_to == "cash_flow":                      # the examples take a movement that raised operating cash flow out
+        assert calculator.movement_effect(held, path) > 0, path
+        assert calculator.repeats_a_movement(held, path, "reduce", applies_to) is None
+        assert calculator.repeats_a_movement(held, path, "increase", applies_to) == calculator.REPEATS_A_MOVEMENT
 
 
 def test_the_definitions_examples_name_the_class_each_is_read_in():
@@ -742,7 +774,10 @@ def test_the_definitions_examples_name_the_class_each_is_read_in():
     section = " ".join(adjustments_section().split())
     assert "`reduce`, `earnings`, `note_tables.tables.notes_<n>.facts.<k>`" in section
     assert "`reduce`, `earnings`, `note_tables.tables.notes_<n>.changes.<k>`" in section
-    assert "`reduce`, `cash_flow`, `terms.trailing_four_quarters.change_in_receivables`" in section
+    assert "`reduce`, `cash_flow`, `terms.trailing_four_quarters.change_in_payables`" in section
+    assert "`reduce`, `earnings`, `terms.trailing_four_quarters.change_in_receivables`" in section
+    assert "`reduce`, `cash_flow`, `terms.trailing_four_quarters.change_in_receivables`" not in section
+    assert "repeats a movement free cash flow already holds; a cash_flow adjustment takes a line's effect out" in section
     assert "`reduce`, `cash_flow`, the note table's `changes` cell of `SupplierFinanceProgramObligation`" in section
     assert "there is no `debt` class yet" in section
     assert "or `debt`" not in section
@@ -1112,9 +1147,9 @@ def test_the_calculator_lists_an_earnings_adjustment_and_does_not_apply_it_to_fr
     out = calculator.quality_adjusted(
         {"value": 100.0}, {"value": 10.0}, {"value": 0.0, "formula": "x"},
         [adjustment("terms.trailing_four_quarters.research_and_development_expense", "reduce", "earnings"),
-         adjustment("terms.trailing_four_quarters.change_in_payables", "increase", "cash_flow")],
+         adjustment("terms.trailing_four_quarters.change_in_payables", "reduce", "cash_flow")],
         with_year({**PLANTED, "terms": {"trailing_four_quarters": {"research_and_development_expense": usd(), "change_in_payables": usd(value=2_000_000.0)}}}))
-    assert out["value"] == 100.0 - 10.0 + 2_000_000.0
+    assert out["value"] == 100.0 - 10.0 - 2_000_000.0
     assert [r["calculator_field"] for r in out["adjustments_applied"]] == ["terms.trailing_four_quarters.change_in_payables"]
     earnings, = out["adjustments_to_earnings"]
     assert earnings["calculator_field"] == "terms.trailing_four_quarters.research_and_development_expense"
@@ -2276,14 +2311,15 @@ def test_a_statement_line_cited_twice_counts_one_movement_twice_through_calculat
     out = final_with(APPLE, [adjustment(first, applies_to="cash_flow"),
                              {**adjustment(second, applies_to="cash_flow"), "name": "again"}])
     applied, = out["adjustments_applied"]
-    assert applied["calculator_field"] == first and out["value"] == 118_926 * MILLION
+    assert applied["calculator_field"] == first and out["value"] == 127_028 * MILLION
     refused, = out["adjustments_refused"]
     assert refused["name"] == "again" and TWICE in refused["reason"] and "change_in_receivables" in refused["reason"]
 
 
 def test_two_different_statement_lines_both_stand():
     """Apple's change in receivables 4,051 (6,682 - 8,316 + 5,685) and in inventories 5,284 (-1,400 + 5,461 +
-    1,223), companyfacts through the second reader, both reduce free cash flow: 122,977 - 4,051 - 5,284 = 113,642."""
+    1,223), companyfacts through the second reader. Both rose, so both already lowered operating cash flow and are
+    taken out with `increase`: 122,977 + 4,051 + 5,284 = 132,312."""
     cutoff = "2026-07-31"
     year, ytd, before = "2024-09-29..2025-09-27", "2025-09-28..2026-06-27", "2024-09-29..2025-06-28"
     tag = "IncreaseDecreaseInInventories"
@@ -2294,7 +2330,7 @@ def test_two_different_statement_lines_both_stand():
                              adjustment("terms.trailing_four_quarters.change_in_inventory", applies_to="cash_flow")])
     assert out["adjustments_refused"] == []
     assert [r["amount"] for r in out["adjustments_applied"]] == [4_051 * MILLION, 5_284 * MILLION]
-    assert out["value"] == (122_977 - 4_051 - 5_284) * MILLION == 113_642 * MILLION
+    assert out["value"] == (122_977 + 4_051 + 5_284) * MILLION == 132_312 * MILLION
 
 
 def test_the_total_of_current_liabilities_and_billings_are_no_lines_of_the_statement():
@@ -2418,7 +2454,10 @@ def test_the_gate_drops_a_field_cited_twice_and_a_cash_flow_movement_cited_twice
     fields["terms"]["trailing_four_quarters"]["change_in_payables"] = usd()
     fields["terms"]["trailing_four_quarters"]["research_and_development_expense"] = usd()
     def item(name, applies_to, path):
-        return {**base, "name": name, "applies_to": applies_to, "calculator_field": path}
+        # the planted statement-line cell is positive (receivables rose; the line's own cell is negative, so reduce): a cash_flow one is taken out with `increase`, never repeated
+        rose = applies_to == "cash_flow" and path.endswith("receivables.cash_flow_statement_change")
+        return {**base, "name": name, "applies_to": applies_to, "calculator_field": path,
+                **({"direction": "increase"} if rose else {})}
     line = "terms.trailing_four_quarters.change_in_receivables"
     payload = gate.accounting()
     payload["adjustments"] = [
@@ -2582,6 +2621,14 @@ def test_dated_lines_are_held_to_the_trailing_year_one_by_one():
     assert amount is None and "a recurring amount must cover the year" in reason
 
 
+def taken_out(item: dict) -> str:
+    """The direction that takes a receivables or inventory line's effect out (it rose, so it lowered operating cash
+    flow): `increase`; any other adjustment is `reduce`."""
+    return ("increase" if item.get("applies_to") == "cash_flow"
+            and re.search(r"change_in_(receivables|inventory)|receivables\.cash_flow_statement_change",
+                          item.get("calculator_field", "")) else "reduce")
+
+
 def with_stxs_valuation(adjustments: list):
     """`calculate` on Seagate's run with its own published market data and assumptions: the quality block and the
     valuation's accounting adjustments."""
@@ -2591,7 +2638,7 @@ def with_stxs_valuation(adjustments: list):
     out = calculator.calculate(**calculator_drift.trigger(run), fixtures_root=STORE, bundle=run,
                                market_data=published["market"], assumptions=assumptions,
                                accounting={"adjustments": [
-                                   {"name": f"n{i}", "direction": "reduce", "recurs": False, "quote": "q", **item}
+                                   {"name": f"n{i}", "direction": taken_out(item), "recurs": False, "quote": "q", **item}
                                    for i, item in enumerate(adjustments)]})
     return out["free_cash_flow"]["free_cash_flow_quality_adjusted"], out["valuation"].get("accounting_adjustments")
 
@@ -2973,29 +3020,38 @@ TOTALS_WRITTEN_HERE = {
     "incometaxexpensebenefit", "netcashprovidedbyusedinoperatingactivities",
     "netcashprovidedbyusedininvestingactivities", "netcashprovidedbyusedinfinancingactivities",
     "earningspersharebasic", "earningspersharediluted", "earningspersharebasicanddiluted",
-    "operatingexpenses", "costsandexpenses",
+    "operatingexpenses", "costsandexpenses", "operatingandnonoperatingexpenses",
+    # the pro forma totals, each spelled singular and plural as filers write them
+    *(f"businessacquisition{plural}proforma{stem}" for plural in ("", "s") for stem in (
+        "revenue", "netincomeloss", "earningspersharebasic", "earningspersharediluted",
+        "incomelossfromcontinuingoperationsbeforetax", "incomelossfromcontinuingoperationsbeforeincometaxes",
+        "grossprofit", "operatingincomeloss")),
 }
-TOTAL_PREFIXES_WRITTEN_HERE = ("othercomprehensiveincomeloss", "businessacquisitionsproforma")
+OCI_WRITTEN_HERE = ("othercomprehensiveincome", "oci")      # other comprehensive income, a component or a total
 
 
 def test_no_statement_total_is_accepted_as_earnings_in_any_committed_view(todays_views):
     """Over every view as printed today, every dollar cell whose `tag` or `concept` is a statement total is refused as
     earnings with the totals reason (a cell under a refused root or inside free cash flow is refused before that is
     asked, and is not counted). A cell the rule accepts must not be one. The cells are counted, so the sweep cannot pass by finding none."""
-    seen_totals = accepted = 0
+    seen_totals = accepted = oci_seen = 0
     for name, held in todays_views:
         for path, cell in usd_cells(held):
             names = {str(cell.get(key)).rpartition(":")[2].lower() for key in ("tag", "concept") if cell.get(key)}
-            is_total = bool(names & TOTALS_WRITTEN_HERE) or any(
-                name.startswith(TOTAL_PREFIXES_WRITTEN_HERE) for name in names)
+            is_total = bool(names & TOTALS_WRITTEN_HERE)
+            is_oci = any(name.startswith(OCI_WRITTEN_HERE) for name in names)
             amount, reason = reading(held, path, False, "earnings")
+            if is_oci and not refused_root(path, cell):
+                assert amount is None and reason == calculator.OCI_IS_NOT_EARNINGS, (name, path, reason)
+                oci_seen += 1
+                continue
             if amount is not None:
                 accepted += 1
                 assert not is_total, (name, path, sorted(names), amount)
             elif is_total and not refused_root(path, cell):
                 seen_totals += 1
                 assert reason == calculator.TOTAL_OF_THE_STATEMENT, (name, path, reason)
-    assert seen_totals > 100 and accepted > 200, (seen_totals, accepted)
+    assert seen_totals > 100 and accepted > 200 and oci_seen > 10, (seen_totals, accepted, oci_seen)
 
 
 def test_a_total_reached_through_ratios_growth_is_refused_as_earnings():
@@ -3050,11 +3106,14 @@ def test_the_whole_totals_of_other_statements_are_refused_as_earnings():
     """LFUS: other comprehensive income net of tax (-24.88 million) and the pro forma net income (4.429 million)
     are whole totals, not items within one."""
     held = printed(LFUS_RUN)
-    for path, concept in (("note_tables.tables.notes_159.facts.68",
-                           "us-gaap:OtherComprehensiveIncomeLossNetOfTaxPortionAttributableToParent"),
-                          ("note_tables.tables.notes_54.facts.22", "us-gaap:BusinessAcquisitionsProFormaNetIncomeLoss")):
+    for path, concept in (("note_tables.tables.notes_54.facts.22", "us-gaap:BusinessAcquisitionsProFormaNetIncomeLoss"),
+                          ("note_tables.tables.notes_52.facts.4",
+                           "lfus:BusinessAcquisitionProFormaIncomeLossFromContinuingOperationsBeforeTax")):
         assert calculator._cell_at(held, path)["concept"] == concept
         assert reading(held, path, False, "earnings") == (None, calculator.TOTAL_OF_THE_STATEMENT), path
+    assert calculator._cell_at(held, "note_tables.tables.notes_52.facts.4")["value"] == 117_064_000
+    assert reading(held, "note_tables.tables.notes_159.facts.68", False, "earnings") == (
+        None, calculator.OCI_IS_NOT_EARNINGS)
     for concept in ("us-gaap:OperatingExpenses", "us-gaap:CostsAndExpenses",
                     "us-gaap:BusinessAcquisitionsProFormaRevenue"):
         assert reading(a_fact_of(concept), "note_tables.tables.notes_1.facts.0", False,
@@ -3077,3 +3136,132 @@ def test_a_cell_with_no_tag_or_concept_under_a_total_in_its_path_is_refused_by_t
     for item in ("ratios.solvency.ebitda.inputs.depreciation_and_amortization",
                  "contract_liabilities_and_billings.billings.inputs.change_in_contract_liabilities"):
         assert calculator.statement_total({}, item, {"value": 1.0, "unit": "USD"}) is None, item
+
+
+def test_no_line_of_other_comprehensive_income_is_an_earnings_adjustment():
+    """OCI bypasses net income: every `Oci...` and `OtherComprehensiveIncome...` concept, components included, is
+    refused as earnings with its own reason (not the totals reason), and stays open as nothing else."""
+    found = 0
+    for ticker, path in (("FN", "notes_68.facts.6"), ("FN", "notes_138.facts.5"), ("CSCO", "notes_234.facts.7"),
+                         ("STX", "notes_94.facts.21"), ("ESE", "notes_55.facts.36")):
+        run = sorted((RUNS / ticker).glob("*"))[0]
+        held = calculator_drift.recompute(run, STORE)
+        full = f"note_tables.tables.{path}"
+        cell = calculator._cell_at(held, full)
+        assert re.match(r"(?i)(us-gaap:)?(oci|othercomprehensiveincome)", cell["concept"]), (ticker, path, cell["concept"])
+        assert reading(held, full, False, "earnings") == (None, calculator.OCI_IS_NOT_EARNINGS), (ticker, path)
+        found += 1
+    assert found == 5
+    for concept in ("us-gaap:OtherComprehensiveIncomeLossNetOfTax", "us-gaap:OciBeforeReclassificationsNetOfTax",
+                    "us-gaap:OtherComprehensiveIncomeLossCashFlowHedgeGainLossBeforeReclassificationAndTax"):
+        assert reading(a_fact_of(concept), "note_tables.tables.notes_1.facts.0", False,
+                       "earnings") == (None, calculator.OCI_IS_NOT_EARNINGS), concept
+    assert reading(a_fact_of("us-gaap:RestructuringCharges"), "note_tables.tables.notes_1.facts.0", False,
+                   "earnings") == (1_000_000.0, None)
+
+
+def test_cien_operating_and_nonoperating_expenses_is_a_total():
+    held = printed(CIEN_RUN)
+    path = "note_tables.tables.notes_138.facts.84"
+    assert calculator._cell_at(held, path)["concept"].endswith("OperatingAndNonoperatingExpenses")
+    assert reading(held, path, False, "earnings") == (None, calculator.TOTAL_OF_THE_STATEMENT)
+
+
+@pytest.mark.parametrize("path", [
+    "terms.trailing_four_quarters.net_income.inputs.this_year_to_date",
+    "ratios.solvency.ebitda.inputs.now",
+    "terms.trailing_four_quarters.revenue.inputs.this_year_to_date",
+    "ratios.growth.revenue.trailing_four_quarters.inputs.before.parts.0",
+    "ratios.growth.operating_income.inputs.prior_fiscal_year",
+    "ratios.growth.revenue.inputs.parts.2"])
+def test_a_total_s_inputs_escape_only_when_the_next_segment_names_an_item(path):
+    """The refuter's synthetic paths: after `inputs` comes a generic reading of the total itself (now, before, a span,
+    parts, an index), so the total is not escaped."""
+    node = {"value": 1_000_000.0, "unit": "USD"}
+    for key in reversed(path.split(".")):
+        node = {key: node}
+    held = with_year({"period_end": "2026-06-30", **node})
+    assert reading(held, path, False, "earnings") == (None, calculator.TOTAL_OF_THE_STATEMENT), path
+    for item in ("ratios.solvency.ebitda.inputs.depreciation_and_amortization",
+                 "contract_liabilities_and_billings.billings.inputs.change_in_contract_liabilities"):
+        assert calculator.statement_total({}, item, {"value": 1.0, "unit": "USD"}) is None, item
+
+
+# --- a cash_flow adjustment takes a line's effect out and never repeats it ---------------------------------------
+
+def line_cells(**lines) -> dict:
+    return with_year({"period_end": "2026-06-30", "terms": {"trailing_four_quarters": {
+        name: usd(value=value) for name, value in lines.items()}}})
+
+
+@pytest.mark.parametrize("line, value, allowed, refused", [
+    ("change_in_receivables", 4_051e6, "increase", "reduce"),       # receivables rose: lowered operating cash flow
+    ("change_in_receivables", -300e6, "reduce", "increase"),        # receivables fell: raised it
+    ("change_in_inventory", 5_284e6, "increase", "reduce"),
+    ("change_in_inventory", -5e6, "reduce", "increase"),
+    ("change_in_payables", 14_178e6, "reduce", "increase"),         # payables rose: raised it
+    ("change_in_payables", -2e6, "increase", "reduce")])
+def test_a_statement_line_is_taken_out_against_its_effect_never_repeated(line, value, allowed, refused):
+    held = line_cells(**{line: value})
+    path = f"terms.trailing_four_quarters.{line}"
+    assert calculator.repeats_a_movement(held, path, allowed) is None
+    assert calculator.repeats_a_movement(held, path, refused) == calculator.REPEATS_A_MOVEMENT
+    out = calculator.quality_adjusted({"value": 1000e6}, {"value": 0.0}, {"value": 0.0, "formula": "x"},
+                                      [adjustment(path, refused, "cash_flow"),
+                                       {**adjustment(path, allowed, "cash_flow"), "name": "right"}], held)
+    row, = out["adjustments_applied"]
+    assert row["name"] == "right" and row["amount"] == abs(value)         # the line's whole size, at most
+    wrong, = out["adjustments_refused"]
+    assert calculator.REPEATS_A_MOVEMENT in wrong["reason"] and wrong["direction"] == refused
+    gate = analysis_check.adjustment_problem(held)
+    item = {"applies_to": "cash_flow", "calculator_field": path, "quote": "q"}
+    assert gate({**item, "direction": allowed}) is None
+    assert calculator.REPEATS_A_MOVEMENT in gate({**item, "direction": refused})
+    # an earnings adjustment of the same line has no such rule: it moves nothing
+    assert calculator.repeats_a_movement(held, path, refused, "earnings") is None
+
+
+def test_a_note_tables_change_of_a_named_item_that_rose_is_taken_out_with_reduce():
+    """A supplier finance obligation that rose (later minus earlier positive) raised operating cash flow as a payables
+    stretch does; receivables sold likewise. Acquisition consideration has no effect on operating cash flow here and
+    takes either direction."""
+    held = printed(STX_RUN)
+    path = "note_tables.tables.notes_91.changes.1"
+    cell = calculator._cell_at(held, path)
+    assert cell["concept"].endswith("SupplierFinanceProgramObligation") and calculator.field_value(held, path) > 0
+    assert calculator.repeats_a_movement(held, path, "reduce") is None
+    assert calculator.repeats_a_movement(held, path, "increase") == calculator.REPEATS_A_MOVEMENT
+    for local, rose, direction_ok in (("TransferOfFinancialAssetsAccountedForAsSalesAmountDerecognized", 40e6, "reduce"),
+                                      ("SupplierFinanceProgramObligation", -40e6, "increase")):
+        planted = with_year({"period_end": "2026-06-30", "note_tables": {"tables": {"notes_1": {"changes": [
+            {"concept": f"us-gaap:{local}", "from": {"value": 100e6, "end": "2025-06-30"},
+             "to": {"value": 100e6 + rose, "end": "2026-06-30"}, "value": rose, "unit": "iso4217:USD"}]}}}})
+        place = "note_tables.tables.notes_1.changes.0"
+        other = "increase" if direction_ok == "reduce" else "reduce"
+        assert calculator.repeats_a_movement(planted, place, direction_ok) is None, local
+        assert calculator.repeats_a_movement(planted, place, other) == calculator.REPEATS_A_MOVEMENT, local
+
+
+def test_no_published_applied_adjustment_is_refused_by_the_direction_rule_alone():
+    """Every adjustment of free cash flow the committed runs applied, read with its direction: ten were refused
+    already for what they cite (a balance, a balance-sheet change, a gap, a repayment); the eleventh, Littelfuse's
+    statement change in payables (57.502 million, payables rose, taken out with `reduce`), takes a movement that
+    raised operating cash flow out and stands. None is refused by the direction rule."""
+    checked = standing = 0
+    for held_path in sorted(RUNS.glob("*/*/analysis_accounting.json")):
+        run = held_path.parent
+        final = json.loads((run / "calculator.json").read_text(encoding="utf-8"))
+        applied = {row["calculator_field"] for row in
+                   (final.get("free_cash_flow") or {}).get("free_cash_flow_quality_adjusted", {}).get(
+                       "adjustments_applied") or []}
+        view_ = json.loads((run / "calculator_filings_only.json").read_text(encoding="utf-8"))
+        for item in json.loads(held_path.read_text(encoding="utf-8")).get("adjustments") or []:
+            if item["calculator_field"] not in applied:
+                continue
+            checked += 1
+            amount, _ = calculator.adjustment_reading(view_, item["calculator_field"], False,
+                                                      item.get("applies_to", "cash_flow"))
+            assert calculator.repeats_a_movement(view_, item["calculator_field"], item["direction"],
+                                                 item.get("applies_to", "cash_flow")) is None, run.name
+            standing += amount is not None
+    assert (checked, standing) == (11, 1)
