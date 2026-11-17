@@ -371,10 +371,14 @@ def _assign_blocks(columns: list[dict], labels: list[str]) -> None:
             column["block"] = "gaap"
 
 
-# What a period's sub-column is called. Only `Reported`, `As reported` and `GAAP` are the
-# statement's; `Adjusted` and `non-GAAP` are not GAAP; any other name (Adjustments, Special
-# Items, Impact, Adj.) is not a dollar of the line, and is listed unread with its name.
-_SUB_GAAP = re.compile(r"^(?:as reported|reported|gaap)$", re.I)
+# What a period's sub-column is called. A name that says adjustments, adj., special items,
+# impact, change or variance is not a dollar of the line, and is listed unread with its name.
+# Adjusted, non-GAAP, organic and constant currency are `not_gaap`. A name with GAAP in it (and
+# not non or adjusted) or `reported` is the statement's. Any other name is compared and labelled
+# `unidentified`: an unknown never hides a difference.
+_SUB_UNREAD = re.compile(r"\badjustments?\b|\badj\b|special items?|impact|change|variance", re.I)
+_SUB_NOT_GAAP = re.compile(r"adjusted|non[-\s]*gaap|organic|constant[-\s]+currency", re.I)
+_SUB_GAAP = re.compile(r"gaap|reported", re.I)
 
 
 def _sub_columns(header: list[list[str]], count: int) -> list[str] | None:
@@ -391,10 +395,13 @@ def _sub_columns(header: list[list[str]], count: int) -> list[str] | None:
 
 
 def _sub_kind(label: str) -> str | None:
-    """`gaap`, `not_gaap`, or None for a sub-column that is not a dollar of the line."""
-    if _SUB_GAAP.match(label.strip()):
-        return "gaap"
-    return "not_gaap" if header_hint(label) == "not_gaap" else None
+    """`gaap`, `not_gaap` or `unidentified` for a sub-column that is compared, None for one
+    that is not a dollar of the line."""
+    if _SUB_UNREAD.search(label):
+        return None
+    if _SUB_NOT_GAAP.search(label):
+        return "not_gaap"
+    return "gaap" if _SUB_GAAP.search(label) else "unidentified"
 
 
 def _expand(columns: list[dict], sub: list[str]) -> list[dict]:
@@ -600,7 +607,7 @@ def table_kind(rows: list[list[str]], reason: str, segment_labels=()) -> str:
 
 
 # The unit a heading row carries only sets the unit; the heading is what is left of it.
-_UNIT_PHRASE = re.compile(r"\(?\s*(?:\$\s*)?(?:u\.s\.\s*dollars\s*)?in\s+(?:thousands|millions|billions)\b"
+_UNIT_PHRASE = re.compile(r"\(?\s*(?:\$\s*)?(?:(?:(?:u\.s\.\s*)?dollars|amounts|figures)\s*)?in\s+(?:thousands|millions|billions)\b"
                           r"[^()]*\)?|\(\s*unaudited\s*\)", re.I)
 
 
@@ -614,24 +621,56 @@ def heading_text(label: str) -> str:
 # equipment, plant or fixtures. A label that also covers something else (intangible assets,
 # software, a net figure, an amount still payable) is only printed under another label.
 _CAPEX_VERB = re.compile(r"^(?:purchases?|acquisitions?|payments?|expenditures?)\b")
-_CAPEX_THING = re.compile(r"\b(?:property|equipment|fixtures|plant)\b")
+_CAPEX_THING = re.compile(r"\b(?:property|equipment|fixtures|plant|leasehold improvements|"
+                          r"capital assets)\b")
+# What a row names that makes it a different payment, whatever else it holds: it is not the line
+# and not a candidate for it.
+_CAPEX_NOT = re.compile(r"financ|debt|\btax|insurance|contingent|consideration|repair|material|"
+                        r"\bleases?\b")
 _CAPEX_MORE = re.compile(r"intangible|software|securit|investment|business|real estate|capitalized|"
-                         r"\bnet\b|\bleases?\b|deposit|loan|payable|accrued|unpaid|non-?cash|"
-                         r"financed|proceeds|sale\b")
+                         r"\bnet\b|deposit|loan|payable|accrued|unpaid|non-?cash|"
+                         r"proceeds|sale\b")
 
 
 def capex_synonym(label: str) -> str | None:
     """`line` if the label is a plain synonym of capital expenditure, `other` if it holds the
     words and something else besides, else None."""
     words = normal_label(label)
-    if not (_CAPEX_VERB.match(words) and _CAPEX_THING.search(words)):
+    if not (_CAPEX_VERB.match(words) and _CAPEX_THING.search(words)) or _CAPEX_NOT.search(words):
         return None
     return "other" if _CAPEX_MORE.search(words) else "line"
 
 
+# A heading that says shares or weighted average opens a share block, never a per share block;
+# `per share`, `per diluted share` are not it.
+_SHARE_BLOCK = re.compile(r"weighted|\bshares?\b|\bunits\b")
+_PER_SHARE_WORDS = re.compile(r"\bper\s+(?:[\w-]+\s+){0,2}(?:shares?|units?)\b")
+_NOT_EPS = re.compile(r"weighted|outstanding|adjusted|non-?\s*gaap|continuing|discontinued|before|"
+                      r"dividend|book|cash flow|\bbasic\b")
+
+
+def is_per_share_heading(text: str) -> bool:
+    """A heading whose rows are per share: it says per share, or opens with Basic or Diluted,
+    and does not say it counts shares or a weighted average."""
+    words = normal_label(text)
+    if not PER_SHARE_HEADING.search(words):
+        return False
+    return not _SHARE_BLOCK.search(_PER_SHARE_WORDS.sub(" ", words))
+
+
+def eps_label(label: str) -> bool:
+    """A row label that is diluted earnings per share by its own words: it says diluted and
+    per share (`Net income attributable to common shareholders per common share - diluted`)."""
+    words = normal_label(label)
+    return bool(re.search(r"\bdiluted\b", words) and _PER_SHARE_WORDS.search(words)
+                and not _NOT_EPS.search(words))
+
+
 def line_of_label(label: str) -> str | None:
-    """The line a row label is: a stated label, or a plain synonym of capital expenditure."""
+    """The line a row label is: a stated label, a diluted per share label, or a plain synonym
+    of capital expenditure."""
     return LINE_OF_LABEL.get(normal_label(label)) or (
+        "diluted_earnings_per_share" if eps_label(label) else None) or (
         "capital_expenditure" if capex_synonym(label) == "line" else None)
 
 
@@ -639,7 +678,7 @@ def row_lines(rows: list[list[str]]) -> list[str | None]:
     """The line each row of a table is, by its label and its heading: `Diluted` under a per share
     heading is diluted earnings per share, and under a heading about shares it is not."""
     first = next((i for i, cells in enumerate(rows) if _is_data_row(cells)), len(rows))
-    per_share, out = False, [None] * len(rows)
+    per_share, diluted, out = False, False, [None] * len(rows)
     for index, row in enumerate(rows):
         placed = _label_of(row)
         if placed is None:
@@ -649,12 +688,28 @@ def row_lines(rows: list[list[str]]) -> list[str | None]:
                 continue
             text = heading_text(placed[1])
             if text or not unit_statement(" ".join(row)):
-                per_share = bool(PER_SHARE_HEADING.search(normal_label(text)))
+                per_share = is_per_share_heading(text)
+                diluted = per_share and bool(re.search(r"\bdiluted\b", normal_label(text)))
             continue
-        out[index] = line_of_label(placed[1]) or (
+        line = line_of_label(placed[1])
+        if per_share and diluted and (line == "net_income" or (
+                line is None and _names_attributable_net_income(placed[1]))):
+            line = "diluted_earnings_per_share"         # Net earnings under `Diluted:`
+        out[index] = line or (
             "diluted_earnings_per_share" if normal_label(placed[1]) == "diluted" and per_share
             else None)
     return out
+
+
+# A row that is the net income of the noncontrolling interest, not a payment to it.
+_NCI_ROW = re.compile(r"non-?\s*controlling|minority")
+_NCI_NOT_INCOME = re.compile(r"distribution|dividend|contribution|purchase|acquisition|payment|"
+                             r"\bsale\b|equity|capital|redeem|redemption|total")
+
+
+def is_noncontrolling_row(label: str) -> bool:
+    words = label.lower()
+    return bool(_NCI_ROW.search(words)) and not _NCI_NOT_INCOME.search(words)
 
 
 def _names_attributable_net_income(label: str) -> bool:
@@ -668,8 +723,10 @@ def _names_attributable_net_income(label: str) -> bool:
 
 # A row printed under another label is only a candidate for the line if it could be the line
 # in dollars: not a non-GAAP or adjusted measure, a deferred or current part, a weighted
-# average or a share count.
-_NOT_THE_LINE = re.compile(r"non-?\s*gaap|adjusted|deferred|current|weighted|\bshares?\b")
+# average or a share count, or a rate (growth, margin, rate, percent, change): a rate is not a
+# dollar row of the line.
+_NOT_THE_LINE = re.compile(r"non-?\s*gaap|adjusted|deferred|current|weighted|\bshares?\b|"
+                           r"growth|margin|\brate\b|percent|%|\bchange")
 
 
 def lines_named_in(label: str) -> list[str]:
@@ -702,6 +759,7 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
     end = dt.date.fromisoformat(period_end)
     cells, unread, excluded, seen, unread_columns = [], {}, [], set(), []
     cash_flow_statements, other_label_rows, attributable_tables = set(), {}, set()
+    noncontrolling_tables, noncontrolling = set(), {}
     printed_lines: dict[str, set[str]] = {}
     last_unit, above = None, None
     for paragraph_id, paragraph in zip(paragraph_ids, paragraphs):
@@ -778,12 +836,32 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
             line = lines_of[index]
             if _is_data_row(row) and _names_attributable_net_income(placed[1]) and not per_share:
                 attributable_tables.add(paragraph_id)
+            if _is_data_row(row) and scale_name and not per_share:
+                nci = is_noncontrolling_row(placed[1])
+                parent_row = (not nci and _names_attributable_net_income(placed[1])
+                              and not re.search(r"continuing|discontinued", placed[1].lower()))
+                if nci:
+                    noncontrolling_tables.add(paragraph_id)
+                if nci or parent_row:
+                    shown_row = _figures(row[placed[0] + 1:])
+                    if len(shown_row) == len(columns):
+                        for column, figure in zip(columns, shown_row):
+                            if ("change" in column or column["end"] != end or figure["percent"]):
+                                continue
+                            held_rows = noncontrolling.setdefault(
+                                (paragraph_id, column["months"]), {})
+                            held_rows.setdefault("noncontrolling" if nci else "parent", {
+                                "label": placed[1], "cell": figure["text"],
+                                "paragraph_id": paragraph_id, "decimals": figure["decimals"],
+                                "step": float(_SCALE[scale_name] * Decimal(10) ** -figure["decimals"]),
+                                "printed": str(figure["value"]), "scale": _SCALE[scale_name],
+                                "value": float(figure["value"] * _SCALE[scale_name])})
             if not _is_data_row(row) and not line:
                 # a heading: it labels the rows under it and compares nothing away
                 # (a unit it carries only sets the unit: its own words are read)
                 words = normal_label(own_words)
                 row_hint = heading_hint(own_words) or row_hint
-                per_share = bool(PER_SHARE_HEADING.search(words))
+                per_share = is_per_share_heading(own_words)
                 component = bool(COMPONENT_HEADING.search(words))
                 continue
             if not line:
@@ -872,7 +950,8 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
     return {"cells": cells, "unread": unread, "excluded": excluded, "seen": seen,
             "unread_columns": unread_columns, "statement": statement,
             "cash_flow_statements": cash_flow_statements, "other_label_rows": other_label_rows,
-            "attributable_tables": attributable_tables}
+            "attributable_tables": attributable_tables,
+            "noncontrolling_tables": noncontrolling_tables, "noncontrolling": noncontrolling}
 
 
 # The order a line's verdict is taken in. A difference in a GAAP cell is the line's; a
@@ -901,6 +980,46 @@ def _printed_as(line: str, label: str, value: Decimal) -> Decimal:
             return -value
         return value if "benefit" in words else abs(value)
     return abs(value) if line in BY_SIZE else value
+
+
+def _identity(cell: dict, rows: dict, parent_fact: dict) -> dict:
+    """A consolidated net income in a table that prints the noncontrolling interest, with no
+    ProfitLoss on record: held to the table's own identity, consolidated less noncontrolling is
+    the parent's row, at the printed precision. A row that breaks it differs, with the three
+    cells; a table that does not print all three is a fact not on record."""
+    held = ("the table's own identity: consolidated net income less the noncontrolling interest "
+            "is the parent's row, which is held to NetIncomeLoss")
+    nci, parent = rows.get("noncontrolling"), rows.get("parent")
+    if nci is None or parent is None:
+        return {"verdict": "report_fact_missing", "held_to": held,
+                "report": {"missing": "ProfitLoss is not on record, and the table does not print "
+                                      "both the noncontrolling interest and the parent's row "
+                                      "for the period"}}
+    total = Decimal(str(cell["release"]["value"]))
+    taken, kept = Decimal(str(nci["value"])), Decimal(str(parent["value"]))
+    step = max(cell["scale_value"] * Decimal(10) ** -cell["decimals"],
+               Decimal(str(nci["step"])), Decimal(str(parent["step"])))
+    # a noncontrolling interest printed in parentheses is a deduction, or a loss added back
+    options = [total - taken] if taken >= 0 else [total + taken, total - taken]
+    residual = min((o - kept for o in options), key=abs)
+    cells = [{"role": role, "label": c["label"], "cell": c["cell"], "paragraph_id": c["paragraph_id"]}
+             for role, c in (("consolidated", {"label": cell["label"], "cell": cell["cell"],
+                                               "paragraph_id": cell["paragraph_id"]}),
+                             ("noncontrolling", nci), ("parent", parent))]
+    entry = {"held_to": held, "report": parent_fact if "missing" not in parent_fact
+             else {"missing": parent_fact["missing"]}}
+    if "missing" in parent_fact:
+        return dict(entry, verdict="report_fact_missing")
+    parent_difference = Decimal(parent["printed"]) * parent["scale"] - Decimal(str(parent_fact["value"]))
+    parent_agrees = agrees_at_the_release_precision(
+        Decimal(parent["printed"]), parent_fact["value"], parent["scale"], parent["decimals"])
+    broken = abs(residual) > step
+    difference = residual if broken else parent_difference
+    entry.update(difference=float(difference), sign=_sign(difference),
+                 verdict="agrees" if parent_agrees and not broken else "differs",
+                 identity={"cells": cells, "residual": float(residual), "step": float(step),
+                           "parent_agrees_with_the_report": parent_agrees})
+    return entry
 
 
 def compare_release(paragraph_ids: list[str], paragraphs: list[str], period_end: str, read_report,
@@ -937,12 +1056,20 @@ def compare_release(paragraph_ids: list[str], paragraphs: list[str], period_end:
                                        or cell["paragraph_id"] in cash_flow_tables)
             held = total if wants_total else line
             fact = report(held, cell["months"])
+            if wants_total and "missing" in fact and cell["paragraph_id"] in read["noncontrolling_tables"]:
+                # the table prints the noncontrolling interest: the consolidated cell is not
+                # NetIncomeLoss. The parent's own row is held to NetIncomeLoss, and this cell to
+                # the table's identity: consolidated less noncontrolling is the parent's row
+                entry.update(_identity(cell, read["noncontrolling"].get(
+                    (cell["paragraph_id"], cell["months"]), {}), report(parent, cell["months"])))
+                compared.append(entry)
+                continue
             if wants_total and "missing" in fact:
                 held = parent
                 fact = report(parent, cell["months"])
                 entry["held_to"] = ("NetIncomeLoss: ProfitLoss is not on record for the period, "
-                                    "so the total before the noncontrolling interest cannot be "
-                                    "told from the parent's")
+                                    "and the table prints no noncontrolling interest, so the "
+                                    "total is the parent's")
             if "missing" in fact:
                 entry.update(verdict="report_fact_missing", report={"missing": fact["missing"]})
                 compared.append(entry)
