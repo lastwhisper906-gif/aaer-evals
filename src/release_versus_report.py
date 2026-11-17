@@ -817,9 +817,29 @@ def other_label_candidates(label: str) -> list[tuple[str, bool]]:
     another label and is compared) or names something more (then it is only listed):
     `Total consolidated net revenue` is compared, `Capital expenditures and capitalized software
     development costs` is listed. Only a row no stated label matches is asked."""
-    words = normal_label(label)
     if _NOT_THE_LINE.search(_flatten(label)):
         return []
+    return [(line, comparable) for line, comparable in _label_matches(label)
+            if not (line == "capital_expenditure" and _CAPEX_NOT.search(normal_label(label)))]
+
+
+def excluded_candidates(label: str) -> list[tuple[str, str]]:
+    """The lines whose key words or stated labels a row label carries, and which another
+    measure's word excludes it from (`_NOT_THE_LINE`, or for capital expenditure `_CAPEX_NOT`),
+    each with that word: `Non-GAAP net income` is net income's, excluded by `non-gaap`. Such a
+    row is listed as excluded with its word, never dropped."""
+    found = _NOT_THE_LINE.search(_flatten(label))
+    if found:
+        return [(line, found.group(0)) for line, _ in _label_matches(label)]
+    paid = _CAPEX_NOT.search(normal_label(label))
+    if paid and any(line == "capital_expenditure" for line, _ in _label_matches(label)):
+        return [("capital_expenditure", paid.group(0))]
+    return []
+
+
+def _label_matches(label: str) -> list[tuple[str, bool]]:
+    """`other_label_candidates` before any exclusion."""
+    words = normal_label(label)
     out = []
     for line, stated in ROW_LABELS.items():
         comparable, found = False, False
@@ -834,8 +854,7 @@ def other_label_candidates(label: str) -> list[tuple[str, bool]]:
             out.append((line, comparable))
     named = {line for line, _ in out}
     out += [(line, False) for line, key in _LINE_KEYS.items()
-            if line not in named and key.search(words)
-            and not (line == "capital_expenditure" and _CAPEX_NOT.search(words))]
+            if line not in named and key.search(words)]
     if capex_synonym(label) == "other":       # more than the plain purchase: listed, never compared
         out = [(line, comparable and line != "capital_expenditure") for line, comparable in out]
         if all(line != "capital_expenditure" for line, _ in out):
@@ -844,8 +863,9 @@ def other_label_candidates(label: str) -> list[tuple[str, bool]]:
 
 
 def lines_named_in(label: str) -> list[str]:
-    """The lines a row label holds a stated label of (`other_label_candidates`, names only)."""
-    return [line for line, _ in other_label_candidates(label)]
+    """The lines a row label holds a stated label or key words of, excluded or not."""
+    return sorted({line for line, _ in other_label_candidates(label)}
+                  | {line for line, _ in excluded_candidates(label)})
 
 
 def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
@@ -896,9 +916,17 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
                     note(lines_of[i], _label_of(row)[1], str(reason))
                     seen.add(lines_of[i])
                 elif _is_data_row(row):
-                    for name in lines_named_in(_label_of(row)[1]):
-                        note(name, _label_of(row)[1], str(reason))      # a candidate row: not silent
+                    label = _label_of(row)[1]
+                    for name, _ in other_label_candidates(label):
+                        note(name, label, str(reason))                  # a candidate row: not silent
                         seen.add(name)
+                    first = next(iter(_figures(row[_label_of(row)[0] + 1:])), None)
+                    for name, word in excluded_candidates(label):
+                        excluded.append({"line": name, "paragraph_id": paragraph_id,
+                                         "label": label, "cell": first["text"] if first else "",
+                                         "reason": f"the label carries {word!r}, another measure "
+                                                   f"than the line; the table is unread: {reason}",
+                                         "word": word})
             continue
         columns = header["columns"]
         if is_a_statement_of_cash_flows(rows):
@@ -979,6 +1007,23 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
                 # a row whose label holds a stated label's words and is none of them
                 near = other_label_candidates(placed[1]) if _is_data_row(row) else []
                 shown = _figures(row[placed[0] + 1:])
+                for name, word in (excluded_candidates(placed[1]) if _is_data_row(row) else []):
+                    # a row that carries the line's key words but another measure's word: listed
+                    # as excluded with that word, never dropped
+                    for column, figure in (align_figures(shown, columns) or []):
+                        if "change" in column or column["end"] != end:
+                            continue
+                        excluded.append({"line": name, "paragraph_id": paragraph_id,
+                                         "label": placed[1], "cell": figure["text"],
+                                         "span_months": column["months"], "word": word,
+                                         "reason": f"the label carries {word!r}, another measure "
+                                                   f"than the line"})
+                    if shown and align_figures(shown, columns) is None:
+                        excluded.append({"line": name, "paragraph_id": paragraph_id,
+                                         "label": placed[1], "cell": shown[0]["text"],
+                                         "word": word,
+                                         "reason": f"the label carries {word!r}, another measure "
+                                                   f"than the line"})
                 use_columns = columns
                 if header.get("sub") and len(shown) == len(columns) * len(header["sub"]):
                     use_columns = _expand(columns, header["sub"])     # Reported, Adjustments, ...

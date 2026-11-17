@@ -3466,7 +3466,9 @@ def test_release_versus_report_the_corpus_other_label_cells_are_four_and_all_agr
 # --- round twelve: nothing silent ---------------------------------------------------------------------
 
 # The judge's own key words, written without the module's: a row whose label carries one of them is
-# a row a reader would take for that line's figure.
+# a row a reader would take for that line's figure. It excludes nothing by words: a row is accounted
+# for only if it is compared, listed beside its line, in `excluded_rows` with its reason, or in a
+# table noted unread.
 _SILENT_KEYS = (
     r"\b(?:total )?(?:net )?(?:revenues?|sales)\b",
     r"\bcosts? of (?:revenues?|sales|goods|products?|services)\b",
@@ -3478,16 +3480,6 @@ _SILENT_KEYS = (
     r"\boperating activities\b", r"\bfrom operations\b", r"\boperating cash\b",
     r"\bcapital expenditures?\b",
     r"\b(?:purchases?|payments?|acquisitions?)\b.*\b(?:property|equipment|plant|fixtures)\b")
-# Rows that are another quantity or not dollars, by the judge's own reckoning: another measure
-# (non-GAAP, adjusted, organic), a balance or a ratio, a per share count, a rate, a payment for
-# something else, or a heading with no figure.
-_SILENT_NOT = (
-    r"non-?\s*gaap|adjusted|organic|deferred|current|weighted|\bshares?\b|growth|margin|\brate\b|"
-    r"percent|%|\bchange|retained|accrued|prepaid|receivable|payable|\bnet debt|last twelve|"
-    r"\bfuture\b|aggregate|adjustments?|financ|\bdebt|\btaxes? (?:paid|related)|insurance|"
-    r"contingent|repair|materials?|\bleases?|unearned|marketable|proceeds|sales and marketing|"
-    r"selling|\bsales of\b|taxes paid|cash paid")
-
 
 def _silent_rows(ticker, accession):
     """The period-dated dollar rows of a committed release whose label carries a key word, and
@@ -3529,7 +3521,7 @@ def _silent_rows(ticker, accession):
             if not placed or not rvr._is_data_row(row) or (pid, placed[1]) in done:
                 continue
             label = re.sub("[\u2010-\u2015]", "-", placed[1].lower())
-            if re.search(_SILENT_NOT, label) or not any(re.search(k, label) for k in _SILENT_KEYS):
+            if not any(re.search(k, label) for k in _SILENT_KEYS):
                 continue
             figures = [f for f in rvr._figures(row[placed[0] + 1:]) if not f["percent"]]
             if figures:
@@ -3660,3 +3652,51 @@ def test_release_versus_report_the_lines_that_agree_where_read_are_checked_again
     nine_months = source.one_value("STX", tag, "2025-06-28..2026-04-03", "2026-08-04")
     assert cells[12]["report"]["value"] == year == 12_195e6
     assert cells[3]["report"]["value"] == year - nine_months == 3_629e6
+
+
+# --- round fourteen: a row excluded by another measure's word is listed, never dropped ------------------
+
+@pytest.mark.parametrize("line,label,word", [
+    ("net_income", "Net income for the current quarter", "current"),
+    ("net_income", "Net income before adjustments", "adjustments"),
+    ("revenue", "Revenue, current quarter", "current"),
+    ("operating_cash_flow",
+     "Net cash provided by operating activities before changes in working capital", "change"),
+    ("net_income", "Net income attributable to Acme, as reported (future periods restated)", "future"),
+    ("revenue", "Aggregate revenue", "aggregate"),
+    ("capital_expenditure", "Capital expenditures, accrued basis", "accrued"),
+    ("net_income", "Net income, GAAP, last twelve months", "last twelve months"),
+    ("revenue", "Revenue growth", "growth"),
+    ("net_income", "Non-GAAP net income", "non-gaap"),
+    ("capital_expenditure", "Payments for property taxes", "tax")])
+def test_release_versus_report_a_row_excluded_by_a_word_is_listed_with_that_word(line, label, word):
+    """The refuter's synthetic labels: each carries a line's words and another measure's word.
+    Each is in `excluded_rows` of its line with the word that excluded it, and is never compared
+    (the line is not `agrees` over it and is not told it is absent). Kills the mutants that drop
+    the excluded listing."""
+    out = _run([_row("Total assets", "9"), _row(label, "150")],
+               _fact(revenue=1e9, net_income=100e6, operating_cash_flow=700e6,
+                     capital_expenditure=50e6))
+    listed = out[line]["excluded_rows"]
+    assert [(e["label"], e["cell"], e["word"]) for e in listed] == [(label, "150", word)]
+    assert word in listed[0]["reason"]
+    assert not out[line].get("comparisons")
+    assert out[line]["verdict"] == "not_in_release"
+
+
+def test_release_versus_report_an_excluded_row_in_an_unread_table_is_listed_too():
+    unread = "\n".join(["|  | Q2 FY27 |", "| (in millions) |", "| Non-GAAP net income | 5 |"])
+    out = rvr.compare(["p:1"], [unread], "2026-06-30", _fact(net_income=1e8))
+    assert [(e["label"], e["word"]) for e in out["net_income"]["excluded_rows"]] == [
+        ("Non-GAAP net income", "non-gaap")]
+
+
+def test_release_versus_report_an_excluded_row_whose_figures_fit_no_column_is_still_listed():
+    """Three figures under a header of two columns: the row cannot be placed at the period, but it
+    carries the line's words and another measure's, so it is listed with its first figure.
+    Kills the mutant that lists only the rows it can place."""
+    out = _run([_row("Net revenue", "1,000"),
+                "| Non-GAAP net income | $ | 812 |  | $ | 700 |  | $ | 600 |"],
+               _fact(revenue=1e9, net_income=1e8))
+    assert [(e["label"], e["cell"], e["word"]) for e in out["net_income"]["excluded_rows"]] == [
+        ("Non-GAAP net income", "812", "non-gaap")]
