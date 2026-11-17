@@ -106,10 +106,12 @@ import zipfile
 from pathlib import Path
 
 try:
-    from src import cutoff_guard, interpreter_pin, market, note_tables, trends
+    from src import (cutoff_guard, interpreter_pin, market, note_tables, parse_8k,
+                     release_versus_report as release_lines, trends)
 except ImportError:  # invoked as a plain script
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from src import cutoff_guard, interpreter_pin, market, note_tables, trends
+    from src import (cutoff_guard, interpreter_pin, market, note_tables, parse_8k,
+                     release_versus_report as release_lines, trends)
 
 BAD_INPUT = 2
 INCOMPLETE = 4
@@ -211,6 +213,12 @@ TERMS: dict[str, tuple[str, tuple[str, ...]]] = {
 SHARE_TERMS: dict[str, tuple[str, str, tuple[str, ...]]] = {
     "diluted_shares": ("us-gaap", "duration", ("WeightedAverageNumberOfDilutedSharesOutstanding",)),
     "shares_outstanding": ("dei", "instant", ("EntityCommonStockSharesOutstanding",)),
+}
+
+# Terms stated per share, read from the record under the unit `USD/shares`. A
+# per-share figure is never added or differenced across periods.
+PER_SHARE_TERMS: dict[str, tuple[str, str, tuple[str, ...]]] = {
+    "diluted_earnings_per_share": ("us-gaap", "duration", ("EarningsPerShareDiluted",)),
 }
 
 # Families: a figure a statement may print on several lines. Each family is a
@@ -489,12 +497,15 @@ class Record:
         self.usd = trends.observations(document)
         self.shares = {"us-gaap": index_units(document, "us-gaap", "shares"),
                        "dei": index_units(document, "dei", "shares")}
+        self.per_share = index_units(document, "us-gaap", "USD/shares")
 
     # A term for one span, by the trend table's rule.
     def term(self, term: str, span) -> dict:
         if span is None:
             return {"missing": f"no {term}: the period it would be read for is not "
                                f"in the record"}
+        if term in PER_SHARE_TERMS:
+            return self.per_share_term(term, span)
         if term in SHARE_TERMS:
             return self.share_term(term, span)
         kind = TERMS[term][0]
@@ -545,6 +556,21 @@ class Record:
                 if "missing" in settled:
                     return settled
                 return _fact(tag, key, settled, unit="shares", namespace=namespace)
+        return {"missing": f"no row for {term} in {key[0]}..{key[1]} under "
+                           f"{', '.join(namespace + ':' + t for t in tags)}"}
+
+    def per_share_term(self, term: str, span) -> dict:
+        namespace, _, tags = PER_SHARE_TERMS[term]
+        if span is None:
+            return {"missing": f"no {term}: the period it would be read for is not in the record"}
+        key = span if isinstance(span, tuple) else (None, span)
+        for tag in tags:
+            rows = self.per_share.get(tag, {}).get(key)
+            if rows:
+                settled = trends.as_filed(rows, f"{namespace}:{tag}")
+                if "missing" in settled:
+                    return settled
+                return _fact(tag, key, settled, unit="USD/shares", namespace=namespace)
         return {"missing": f"no row for {term} in {key[0]}..{key[1]} under "
                            f"{', '.join(namespace + ':' + t for t in tags)}"}
 
@@ -3493,6 +3519,8 @@ def calculate(*, ticker: str, cutoff, period_end: str, form: str, accession: str
         "inventory_composition_and_growth_gap": inventory_composition_and_growth_gap(
             record, terms, periods),
     }
+    beside_the_release = release_versus_report(record, periods, ticker=ticker, cutoff=cutoff,
+                                               fixtures_root=fixtures_root)
 
     missing = [f"{term}: {terms['trailing_four_quarters'][term]['missing']}"
                for term in CORE_TERMS if term in terms["trailing_four_quarters"]
@@ -3535,6 +3563,7 @@ def calculate(*, ticker: str, cutoff, period_end: str, form: str, accession: str
         "ebit": sections["ebit"], "tax_rate": sections["tax_rate"],
         "earnings_versus_cash": earnings,
         **revenue_and_working_capital,
+        "release_versus_report": beside_the_release,
         "free_cash_flow": free,
         "concentration": concentration(bundle),
         "note_tables": tables,
@@ -3549,6 +3578,65 @@ def calculate(*, ticker: str, cutoff, period_end: str, form: str, accession: str
         "valuation": value,
         **beside_the_dcf,
     }
+
+
+# --- the earnings release beside the report ---------------------------------------------------
+
+RELEASE_TERMS = {line: line for line in release_lines.LINES}
+
+RELEASE_WHAT_THIS_IS = (
+    "the earnings release (8-K exhibit 99.1, furnished and not filed) printed beside the "
+    "report, line by line: for each line the release's table cell with its paragraph id, "
+    "the report's fact for the same period through the term table, the difference (the "
+    "release's value less the report's, in dollars) with its sign toward the release, and "
+    "`agrees` (at the release's own printed precision) or `differs`; `not_in_release` when no "
+    "table of the release has a row under one of the stated labels; `period_not_read` when a "
+    "table does but its header does not say its columns' periods; `report_fact_missing` when "
+    "the report has no fact for that period. Python wrote every number here")
+
+
+def release_report_reader(record: Record, periods: dict):
+    """The report's cell for a release line over a span of so many months ending on
+    the period end: the quarter's own (stated or differenced) for three months, the
+    year to date for the span the report states, nothing for any other."""
+    spans = durations(record.usd)
+    end = _date(periods["balance_now"])
+
+    def read(line: str, months: int) -> dict:
+        term = RELEASE_TERMS[line]
+        if months == 3:
+            if term in PER_SHARE_TERMS:
+                found = record.term(term, periods["quarter"])
+            else:
+                found = quarter(record, term, spans, end)
+        else:
+            span = periods["current_to_date"]
+            length = _days(*span)
+            if abs(length - months * 30.4375) > TOLERANCE:
+                return {"missing": f"the release's column covers {months} months and the "
+                                   f"report's year to date covers {length} days"}
+            found = record.term(term, span)
+        return found if "missing" in found else _brief(found)
+
+    return read
+
+
+def release_versus_report(record: Record, periods: dict, *, ticker: str, cutoff: dt.date,
+                          fixtures_root) -> dict:
+    try:
+        release = parse_8k.earnings_release(ticker, cutoff=cutoff, fixtures_root=fixtures_root)
+    except cutoff_guard.CutoffGuardError as exc:
+        return {"missing": f"no earnings release is on record at the cutoff: {exc}"}
+    item = release["item_2_02"]
+    lines = release_lines.compare(item["paragraph_ids"], item["paragraphs"],
+                                  periods["balance_now"], release_report_reader(record, periods))
+    tally: dict[str, int] = {}
+    for entry in lines.values():
+        tally[entry["verdict"]] = tally.get(entry["verdict"], 0) + 1
+    return {"what_this_is": RELEASE_WHAT_THIS_IS, "accession": release["accession"],
+            "filing_date": release["filing_date"], "period_end": periods["balance_now"],
+            "tally": tally, "lines": lines}
+
 
 
 # What the accounting and financial analysts may not see: every figure read off a

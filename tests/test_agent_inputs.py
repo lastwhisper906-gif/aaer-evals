@@ -1632,3 +1632,33 @@ def test_no_analyst_definition_spells_a_percentage_out_as_its_own_example():
     definition may."""
     assert "twelve per cent" not in _definition("valuation-analyst")
     assert "(`0.12` is 12%)" in _definition("valuation-analyst")
+
+
+# --- the earnings release printed beside the report ---------------------------------------
+
+def test_release_versus_report_reaches_the_analysts_in_the_filings_only_view():
+    """`calculator_filings_only.json` is what the accounting and financial analysts
+    read. The section holds no price, so it is in that view whole, with Dell's row
+    `Net income | $ | 4,133` (read by eye in the committed release) in it."""
+    from src import calculator
+    out = calculator.calculate(ticker="DELL", cutoff="2026-09-08", period_end="2026-07-31",
+                               form="10-Q", accession="0001571996-26-000046")
+    view = calculator.filings_only(out)
+    assert "release_versus_report" not in calculator.PRICED_SECTIONS
+    assert view["release_versus_report"] == out["release_versus_report"]
+    cell = view["release_versus_report"]["lines"]["net_income"]["comparisons"][0]
+    assert cell["release"]["cell"] == "4,133" and cell["verdict"] == "agrees"
+
+
+def test_release_versus_report_is_pointed_at_in_the_accounting_analysts_cross_document_area():
+    """One sentence in the accounting analyst's definition, in the cross-document
+    reconciliation area, and no other prompt names it: the readers' prompts are
+    unchanged because a reader never sees the calculator."""
+    prompt = (PROMPTS / "accounting-analyst.md").read_text(encoding="utf-8")
+    area = prompt.split("**Cross-document reconciliation**", 1)[1].split(
+        "**Revenue and working capital.**", 1)[0]
+    assert "does the 8-K earnings\n   release match the 10-Q?" in area
+    assert "`release_versus_report`" in area
+    assert prompt.count("`release_versus_report`") == 1
+    for name in ("numbers-reader", "notes-text-reader"):
+        assert "release_versus_report" not in (PROMPTS / f"{name}.md").read_text(encoding="utf-8")

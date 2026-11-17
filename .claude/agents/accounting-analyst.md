@@ -110,6 +110,12 @@ and `trend_table`.
    the numbers **confirm** it, **contradict** it, or leave it **unresolved**. A
    contradiction is never rounded down to unresolved. And: does the 8-K earnings
    release match the 10-Q?
+   `release_versus_report` answers it line by line for revenue, cost of revenue,
+   operating income, pretax income, income tax expense, net income, diluted
+   earnings per share, operating cash flow and capital expenditure: the
+   release's cell beside the report's fact, `agrees`, `differs`,
+   `not_in_release`, `period_not_read` or `report_fact_missing`; cite its paths
+   and never subtract.
 
 **Revenue and working capital.** Four sections feed earnings versus cash,
 revenue recognition and the industry lens. Each field named here is a number,
