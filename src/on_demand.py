@@ -24,7 +24,20 @@ then the bundle, then, when asked, the run.
    and used as it is; one whose bytes changed is refused.
 4. **The bundle**, by `src/assemble_bundle.py` over that store, into
    `runs/<ticker>/<accession>/` unless another directory is named.
-5. **The run**, by `src/run_analysis.py`, when `--run` is given.
+5. **The prices**, after the bundle and before the run: the company's own
+   series, the broad market's and its sector's, fetched by the nightly routine's
+   own functions (`nightly.price_series`, `nightly.prices_for`, the token read
+   from the environment alone) into `<run>/prices/` with the fetch record
+   `<run>/price_fetch.json`, where a nightly run has them. The company's SIC
+   code is the one `universe.json` records, or else the one EDGAR's submissions
+   index names. A fetch that did not happen (no token, a source error, a SIC the
+   map cannot place) prints the record's reason and the run goes on without
+   prices; `--no-prices` skips the fetch and touches no network for prices.
+6. **The run**, by `src/run_analysis.py`, when `--run` is given, given
+   `--prices <run>/prices` when the folder was fetched. The prices reach the
+   calculator and the valuation analyst only: `src/agent_inputs.py` routes by
+   name and no reader's, accounting analyst's or financial analyst's directory
+   receives a price file.
 
     python -m src.on_demand --ticker MSFT --form 10-Q
     python -m src.on_demand --ticker MSFT --accession 0001193125-26-191507 --run
@@ -40,17 +53,21 @@ or before the filing; a company without them is refused with what is missing.
 from __future__ import annotations
 
 import argparse
+import json
+import os
 import sys
 from pathlib import Path
 
 try:
-    from src import assemble_bundle, edgar_client, fetch_fixtures, interpreter_pin, universe
+    from src import (assemble_bundle, edgar_client, fetch_fixtures, interpreter_pin, nightly,
+                     universe)
     # the rule of what stood when a filing was accepted is the store's, shared
     # with `fetch_fixtures --accession`
     from src.fetch_fixtures import known_at, stood_before  # noqa: F401
 except ImportError:  # invoked as a plain script
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from src import assemble_bundle, edgar_client, fetch_fixtures, interpreter_pin, universe
+    from src import (assemble_bundle, edgar_client, fetch_fixtures, interpreter_pin, nightly,
+                     universe)
     from src.fetch_fixtures import known_at, stood_before  # noqa: F401
 
 TICKER_MAP = "https://www.sec.gov/files/company_tickers.json"
@@ -127,7 +144,42 @@ def fetch_store(client, ticker: str, *, form: str = "10-Q", accession: str | Non
             "period_end": filing["reportDate"], "store": store}
 
 
-def main(argv: list[str] | None = None) -> int:
+def sic_of(client, ticker: str, cik: str) -> str | None:
+    """The company's SIC code: the universe's row, else EDGAR's submissions index.
+
+    None when neither names one; `nightly.price_series` then gives the reason.
+    """
+    try:
+        if ticker.strip().upper() in universe.tickers():
+            return universe.sic(ticker)
+    except universe.UniverseError:
+        pass
+    index = client.get_json(fetch_fixtures.SUBMISSIONS_URL.format(cik=cik)) or {}
+    named = index.get("sic")
+    return str(named).strip() if named else None
+
+
+def fetch_prices_for_run(held: dict, run: str, sic, *, environ, fetch=None) -> str | None:
+    """The run's price folder through the nightly routine's own functions.
+
+    Returns the folder's path when it was fetched, else None after printing the
+    reason the fetch record gives. The token is never printed: the reason has
+    it replaced by its name.
+    """
+    out = nightly.prices_for({"ticker": held["ticker"], "filing_date": held["filing_date"]},
+                             series=nightly.price_series(held["ticker"], sic),
+                             bundle=Path(run), environ=environ, fetch=fetch)
+    if out["folder"] is None:
+        print(f"on_demand: no prices for {held['ticker']}: {out['reason']}; "
+              "the run goes on without them", file=sys.stderr)
+        return None
+    served = json.loads(Path(out["record"]).read_text(encoding="utf-8")).get("served", {})
+    rows = ", ".join(f"{symbol} {info.get('rows')} rows" for symbol, info in served.items())
+    print(f"prices: {out['folder']} ({rows})")
+    return out["folder"]
+
+
+def main(argv: list[str] | None = None, *, environ=None, fetch_prices=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--ticker", required=True)
@@ -141,6 +193,9 @@ def main(argv: list[str] | None = None) -> int:
                         help="the run directory; default runs/<ticker>/<accession>/")
     parser.add_argument("--run", action="store_true",
                         help="also run the analysis over the bundle")
+    parser.add_argument("--no-prices", action="store_true",
+                        help="do not fetch the run's price folder (the valuation then "
+                             "does not run)")
     args = parser.parse_args(argv)
     try:
         client = edgar_client.EdgarClient()
@@ -178,13 +233,22 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 print(f"on_demand: the bundle failed part-way; what it wrote is left in "
                       f"{run}", file=sys.stderr)
-    if status or not args.run:
+    if status:
+        return status
+    prices = None
+    if not args.no_prices:
+        prices = fetch_prices_for_run(
+            held, run, sic_of(client, held["ticker"], held["cik"]),
+            environ=os.environ if environ is None else environ, fetch=fetch_prices)
+    if not args.run:
         return status
     from src import run_analysis      # imported here: the fetch needs none of it
-    return run_analysis.main(["--run", run, "--ticker", held["ticker"], "--form", held["form"],
-                              "--cutoff", held["filing_date"],
-                              "--period-end", held["period_end"],
-                              "--store", str(held["store"])])
+    run_argv = ["--run", run, "--ticker", held["ticker"], "--form", held["form"],
+                "--cutoff", held["filing_date"], "--period-end", held["period_end"],
+                "--store", str(held["store"])]
+    if prices:
+        run_argv += ["--prices", prices]
+    return run_analysis.main(run_argv)
 
 
 if __name__ == "__main__":
