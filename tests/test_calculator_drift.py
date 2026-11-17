@@ -38,10 +38,35 @@ CARR = "CARR/0001783180-26-000032"
 CARR_RERUN = "CARR/0001783180-26-000032-rerun-2026-10-28"
 AAPL = "AAPL/0000320193-26-000020"
 STX = "STX/0001137789-26-000159"
-# The runs that move under the refusal of a balance as a cash-flow adjustment ("a stock cannot move
-# a flow", docs/ANALYSIS_PIPELINE.md §5): each published a supplier-finance obligation, a balance at
-# one date, as its one adjustment of free cash flow. Their adjusted free cash flow is the one cell.
-SUPPLIER_FINANCE_REFUSED = {DELL, STX}
+ANET = "ANET/0001596532-26-000175"
+ANET_RERUN = "ANET/0001596532-26-000175-rerun-2026-10-28"
+CIEN = "CIEN/0001628280-26-040767"
+NVDA = "NVDA/0001045810-26-000075"
+QCOM = "QCOM/0000804328-26-000086"
+TTMI = "TTMI/0001193125-26-335107"
+# The runs that move under today's rule for a cash-flow amount (docs/ANALYSIS_PIPELINE.md §5): a cash_flow
+# amount is a line of the company's statement of cash flows or one of three named off-statement items. Each of
+# these runs published one adjustment of free cash flow that is neither: a balance at one date (a stock cannot
+# move a flow), a balance-sheet change, a gap between two changes, or a repayment of borrowing. The cell each
+# published, and its amount as published (the run's `calculator.json`, `adjustments_applied`). Their adjusted free
+# cash flow is the one cell that moves, by exactly the amount.
+REFUSED_ADJUSTMENT = {
+    AAPL: ("earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change", 14_151 * MILLION),
+    ANET: ("earnings_versus_cash.working_capital.receivables.balance_sheet_change", 642_600_000),
+    ANET_RERUN: ("earnings_versus_cash.working_capital.receivables.balance_sheet_change", 642_600_000),
+    CIEN: ("earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change", 187_522_000),
+    DELL: ("terms.balances_now.supplier_finance_obligation", 3_100 * MILLION),
+    JCI: ("earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change", 496 * MILLION),
+    NVDA: ("earnings_versus_cash.working_capital.receivables.balance_sheet_change", 35_251 * MILLION),
+    QCOM: ("terms.cash_flow_families.borrowing_repaid", 174 * MILLION),
+    STX: ("terms.balances_now.supplier_finance_obligation", 400 * MILLION),
+    TTMI: ("earnings_versus_cash.working_capital.accounts_payable.articulation_gap", 81_229_000),
+}
+# Dell's supplier finance obligation at the period end, 2026-07-31, read by eye from the run's committed
+# `input_notes.md` line 1116: "As of July 31, 2026 and January 30, 2026, the Company had $3.1 billion and
+# $2.0 billion, respectively, included within accounts payable ... representing invoices due to suppliers
+# confirmed ..." (the filing's own `SupplierFinanceProgramObligation` for that date is not in the run's numbers).
+DELL_SUPPLIER_FINANCE = 3_100 * MILLION          # $3.1 billion
 ADJUSTED_FREE_CASH_FLOW = "free_cash_flow.free_cash_flow_quality_adjusted.value"
 CUTOFFS = {JCI: "2026-07-29", DELL: "2026-09-08", CARR: "2026-07-28", CARR_RERUN: "2026-07-28"}
 
@@ -51,10 +76,10 @@ TOTAL = "NetCashProvidedByUsedInOperatingActivities"
 
 
 def moved_by_the_refusal(row: dict) -> bool:
-    """A row of the two runs whose one published adjustment is refused today: the adjusted free
+    """A row of the runs whose one published adjustment is refused today: the adjusted free
     cash flow itself, and the leaves that existed only because the adjustment was applied (its
     own row under `adjustments_applied`, and the valuation's reading of it), which are gone."""
-    if row["run"] not in SUPPLIER_FINANCE_REFUSED or row["file"] != FINAL:
+    if row["run"] not in REFUSED_ADJUSTMENT or row["file"] != FINAL:
         return False
     return (row["path"] == ADJUSTED_FREE_CASH_FLOW
             or (row["new"] is None and row["path"].startswith((
@@ -63,9 +88,9 @@ def moved_by_the_refusal(row: dict) -> bool:
 
 
 def keyed(rows: list[dict]) -> dict:
-    """The rows by run, file and path, without those the supplier-finance refusal moves in its two
-    runs: `test_only_dell_and_seagate_move_under_the_supplier_finance_refusal` holds them, by the
-    adjustment's amount, and nothing else is left out."""
+    """The rows by run, file and path, without those today's rule for a cash-flow amount moves in the
+    runs of `REFUSED_ADJUSTMENT`: `test_only_the_named_runs_move_under_the_rule_for_a_cash_flow_amount`
+    holds them, by the adjustment's amount, and nothing else is left out."""
     return {(row["run"], row["file"], row["path"]): (row["old"], row["new"]) for row in rows
             if not moved_by_the_refusal(row)}
 
@@ -446,35 +471,40 @@ def test_the_printed_list_counts_per_run_and_names_file_old_and_new():
     assert drift.printed([]) == "no published figure changes"
 
 
-# --- the refusal of a balance as an adjustment of free cash flow -------------------------------------
+# --- the rule for a cash-flow amount: a line of the statement of cash flows or a named off-statement item -------
 
-def test_only_dell_and_seagate_move_under_the_supplier_finance_refusal():
-    """A balance at one date cannot move a flow (`docs/ANALYSIS_PIPELINE.md` §5): the rule refuses
-    a cell of `terms.balances_now` as the amount of an adjustment of free cash flow. Dell and Seagate
-    each published the supplier-finance obligation (3.1 billion and 400 million at their period ends)
-    as a reduction of free cash flow; today's calculator refuses it, so each adjusted free cash flow
-    is higher by the published adjustment's own amount, read from the run's committed
-    `analysis_accounting.json` and its view. No other run's adjusted free cash flow moves, and a
-    different amount fails. The runs stand as published (CLAUDE.md: each prediction is scored against
-    its own rules version)."""
+def test_only_the_named_runs_move_under_the_rule_for_a_cash_flow_amount():
+    """A cash_flow amount is a line of the company's statement of cash flows or one of three named
+    off-statement items (`docs/ANALYSIS_PIPELINE.md` §5). Ten of the eleven runs that published an applied
+    adjustment of free cash flow cited a balance at one date, a balance-sheet change, a gap between two changes
+    or a repayment of borrowing, which today's calculator refuses: each such run's adjusted free cash flow is
+    higher by the published adjustment's own amount (`REFUSED_ADJUSTMENT`, read from the run's committed
+    `calculator.json` and `analysis_accounting.json`). The eleventh (Littelfuse, the statement's own change in
+    accounts payable) stands. No other run's adjusted free cash flow moves. The runs stand as published
+    (CLAUDE.md: each prediction is scored against its own rules version)."""
     every = [row for row in drift.report(RUNS, STORE) if moved_by_the_refusal(row)]
-    assert {row["run"] for row in every} == SUPPLIER_FINANCE_REFUSED
+    assert {row["run"] for row in every} == set(REFUSED_ADJUSTMENT)
     rows = [row for row in every if row["path"] == ADJUSTED_FREE_CASH_FLOW]
-    assert len(rows) == 2
-    # what else of the two runs is gone is the adjustment's own row and its reading by the valuation
+    assert len(rows) == len(REFUSED_ADJUSTMENT) == 10
+    # what else of those runs is gone is the adjustment's own row and its reading by the valuation
     assert all(row["new"] is None for row in every if row not in rows)
-    amounts = {}
-    for run in SUPPLIER_FINANCE_REFUSED:
+    published_amounts = {}
+    for run, (path, amount) in REFUSED_ADJUSTMENT.items():
         held = json.loads((RUNS / run / "analysis_accounting.json").read_text(encoding="utf-8"))
         adjustment, = held["adjustments"]
-        assert adjustment["calculator_field"] == "terms.balances_now.supplier_finance_obligation"
-        assert adjustment["direction"] == "reduce" and adjustment["applies_to"] == "cash_flow"
-        view = json.loads((RUNS / run / FILINGS_ONLY).read_text(encoding="utf-8"))
-        amounts[run] = view["terms"]["balances_now"]["supplier_finance_obligation"]["value"]
-    assert amounts == {DELL: 3_100 * MILLION, STX: 400 * MILLION}          # as published
-    for row in rows:
-        published = json.loads((RUNS / row["run"] / FINAL).read_text(encoding="utf-8"))
+        assert adjustment["calculator_field"] == path, run
+        assert adjustment["direction"] == "reduce" and adjustment["applies_to"] == "cash_flow", run
+        published = json.loads((RUNS / run / FINAL).read_text(encoding="utf-8"))
         applied, = published["free_cash_flow"]["free_cash_flow_quality_adjusted"]["adjustments_applied"]
-        assert applied["amount"] == amounts[row["run"]]
+        assert applied["calculator_field"] == path and applied["amount"] == amount, run
+        published_amounts[run] = applied["amount"]
+    assert published_amounts[DELL] == DELL_SUPPLIER_FINANCE                  # as published, and as the note prints it
+    line = (RUNS / DELL / "input_notes.md").read_text(encoding="utf-8").splitlines()[1115].replace("\xa0", " ")      # line 1116, its spaces as printed
+    assert line.startswith("As of July 31, 2026 and January 30, 2026, the Company had $3.1 billion and $2.0 billion, "
+                           "respectively, included within accounts payable"), line[:160]
+    littelfuse = json.loads((RUNS / "LFUS/0001628280-26-050481" / FINAL).read_text(encoding="utf-8"))
+    applied, = littelfuse["free_cash_flow"]["free_cash_flow_quality_adjusted"]["adjustments_applied"]
+    assert applied["calculator_field"] == "earnings_versus_cash.working_capital.accounts_payable.cash_flow_statement_change"
+    for row in rows:
         # recomputed today less the published adjusted free cash flow: the reduction undone
-        assert row["new"] - row["old"] == pytest.approx(amounts[row["run"]], rel=1e-12), row["run"]
+        assert row["new"] - row["old"] == pytest.approx(published_amounts[row["run"]], rel=1e-12), row["run"]

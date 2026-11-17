@@ -183,24 +183,25 @@ concepts. `cash_flow` and `earnings` are both flows, so the cell must be a flow
 (a number over a span of dates) or a change between two balances: a note table's
 `changes` cell is a change, later minus earlier, worked out by Python. A change in cash or restricted cash, or in a total that includes cash (current assets, total
 assets), contains free cash flow and is refused whatever the adjustment applies to, as are a note
-table's cash totals. A note table's `changes` cell may be the amount of a `cash_flow` adjustment
-only if it is the change in a working-capital or financing balance that free cash flow carries in
-operating cash flow or leaves out: receivables, contract assets and liabilities, deferred revenue,
-inventory, prepaid and other current assets and deferred costs, payables, accrued liabilities and
-reserves (a warranty or restructuring reserve, employee-related and other current liabilities),
-supplier finance obligations, receivables sold or factored, and deferred or contingent acquisition
-consideration. A
-change in cash, investments, property and equipment, goodwill, intangible assets, software, a
-right-of-use asset or a total of assets is not on that list: name a calculator cell instead. A note
-table's investing-activity flows are refused as `cash_flow` amounts. A
-non-cash charge (an impairment, a write-down, a write-off) is never a `cash_flow` amount: it is an
-`earnings` adjustment. At most one `cash_flow` adjustment is taken for each balance family (receivables, contract assets,
-contract liabilities and deferred revenue, inventory, prepaid and other current assets, payables,
-accrued liabilities and reserves, supplier finance, receivables sold, acquisition consideration): a
-calculator cell is put in its family by what it measures, so the receivables' balance change, its
-share of net income, its articulation gap, the change in receivables and a note table's receivables
-are one family, and Python drops the later as counting one movement twice. Two families of one table
-both stand. A balance at
+table's cash totals. A non-cash charge (an impairment, a write-down, a write-off) is never a `cash_flow`
+amount: it is an `earnings` adjustment, as are a note table's investing-activity flows.
+**A `cash_flow` amount comes from the company's own statement of cash flows, or from one of three
+named items the statement does not carry in operating cash flow.** The statement's lines are
+disjoint and sum to operating cash flow, so a line of it can be taken once and counts nothing
+twice. (a) A line of the statement inside operating activities, as the view prints it:
+`terms.trailing_four_quarters.<line>` (net income, depreciation and amortization, the change in
+receivables, in inventory, in payables), or the statement's change in a working-capital line,
+`earnings_versus_cash.working_capital.<line>.cash_flow_statement_change`, which is the same line
+reached by another path. Each line is cited once. (b) The change in the supplier finance
+obligation, receivables sold or factored, and deferred or contingent acquisition consideration,
+each a note table's `changes` cell of that concept, each cited once. Everything else is refused as
+a `cash_flow` amount with the reason "a cash_flow amount is a line of the statement of cash flows
+or a named off-statement item": a balance-sheet change (the calculator's `balance_sheet_change`,
+`articulation_gap`, `share_of_net_income` input), a total (the change in current liabilities,
+billings), a note table's other changes (a reserve, an accrual, an inventory obligation, a
+restructuring charge, a tax or a debt line, goodwill, intangible assets, property and equipment).
+All of them stay available as `earnings` or `debt` adjustments. A second `cash_flow` adjustment of
+a statement line or a named item already cited is dropped as counting one movement twice. A balance at
 one date is not a flow, and Python drops an adjustment that names one, with that
 reason. The cell must also be of the period free cash flow covers: a span that
 begins no earlier than the first day of the trailing year the view prints
@@ -232,10 +233,12 @@ every year of the forecast. Examples of the shape:
   between two balance dates (later minus earlier); read the path in your own view, for
   `<n>` and `<k>` name different cells in every company's view
 - receivables growth tied to extended payment terms: `reduce`, `cash_flow`,
-  `earnings_versus_cash.working_capital.receivables.balance_sheet_change`
-- receivables sold or collected early, as the statement of cash flows shows it: `reduce`,
-  `cash_flow`, `terms.trailing_four_quarters.change_in_receivables`
-- a reserve release: `reduce`, `earnings`, the field that carries the release
+  `terms.trailing_four_quarters.change_in_receivables` (the statement's own line; the
+  balance sheet's `earnings_versus_cash.working_capital.receivables.balance_sheet_change`
+  is for `earnings` only)
+- a supplier finance obligation that rose: `reduce`, `cash_flow`, the note table's `changes`
+  cell of `SupplierFinanceProgramObligation`, `note_tables.tables.notes_<n>.changes.<k>`
+- a reserve release: `reduce`, `earnings`, the note table's change in the reserve
 - a balance that is refused: `terms.balances_now.supplier_finance_obligation` is the
   obligation at one date, so it cannot be the amount of an adjustment of free cash flow.
   A supplier-finance obligation is debt-like and belongs to adjusted debt, which arrives in

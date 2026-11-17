@@ -114,6 +114,22 @@ The target, beyond the research:
   own field and prints the before and after.
 - **A stock cannot move a flow.** A balance (an instant) may adjust debt; only a
   flow or a change between two balances may adjust free cash flow or income.
+- **A free cash flow adjustment comes from the company's statement of cash flows
+  or from three named items.** Earnings and debt adjustments may come from any
+  dollar cell that passes the rules above (a flow or change of the trailing
+  year, never cash, never a balance for a flow). A `cash_flow` amount is a line
+  of the company's own statement of cash flows inside operating activities, as
+  the calculator reads it (`terms.trailing_four_quarters.<line>` and the
+  statement's change in a working-capital line), or the change in the supplier
+  finance obligation, receivables sold or factored, or deferred or contingent
+  acquisition consideration, each from the filing's own note. The statement's
+  lines are disjoint and sum to operating cash flow, so each line is taken once
+  and each named item once (`calculator.cash_flow_source`); a balance-sheet
+  change, a total, a reserve or any other note-table change is refused as a
+  `cash_flow` amount ("a cash_flow amount is a line of the statement of cash
+  flows or a named off-statement item") and stays available as an earnings or
+  debt adjustment. Families inferred from names could not be made disjoint in
+  nine rounds of review; the statement already is.
 
 ## 6. Build plan
 

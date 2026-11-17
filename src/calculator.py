@@ -2450,12 +2450,17 @@ def quality_adjusted(simple: dict, compensation: dict, acquisitions: dict,
 #      covers";
 #   6. A RECURRING AMOUNT MUST COVER THE YEAR: `recurs` is read only for a cell whose span is the
 #      whole trailing year; a shorter span stands as a one-time adjustment alone.
+#   7. A CASH-FLOW AMOUNT IS A LINE OF THE STATEMENT OF CASH FLOWS OR A NAMED OFF-STATEMENT ITEM
+#      (`cash_flow_source`, below), each cited once; earnings and debt adjustments may come from any
+#      dollar cell that passes rules 1 to 6.
 #   An adjustment of `earnings` passes the same reading and is listed by `quality_adjusted`
 #   without moving free cash flow; the valuation applies it (see there).
 #
-# Nothing about debt is here. A debt effect (receivables sold, supplier finance, a guarantee)
+# Nothing about debt is decided here. A debt effect (receivables sold, supplier finance, a guarantee)
 # comes with adjusted debt in the next wave, where a balance is the right kind of cell; until
-# then a debt line of the view is a balance and is refused by rule 3.
+# then a debt line of the view is a balance and is refused by rule 3. A change in debt or in income
+# taxes payable is no line of the statement of cash flows: refused as a cash-flow amount (rule 7),
+# available as an earnings adjustment.
 
 FLOW, CHANGE, BALANCE = "flow", "change", "balance"
 BALANCE_REFUSAL = "a balance at one date is not a flow"
@@ -2508,61 +2513,36 @@ INSIDE_FREE_CASH_FLOW_CONCEPTS = (
     (r"PaymentsToAcquireBusinesses\w*", "payments to acquire businesses are subtracted in free cash flow"),
     (r"GoodwillAcquiredDuringPeriod", "goodwill acquired in the period carries acquisitions"),
 )
-# A NOTE-TABLE CHANGE (a cell with a concept, `from` and `to`) may be a cash-flow amount only when its
-# concept is a working-capital or financing-like balance whose change free cash flow either carries
-# in operating cash flow or leaves out: an ALLOW-LIST, because a list of what to refuse leaks a name
-# at a time. Matched case-insensitively on the concept's local name, in any namespace, by the words
-# below; a name with one of the excluded words anywhere, or a total of assets, is refused. Earnings
-# adjustments are not held to it.
-CASH_FLOW_CHANGE_ALLOWED = (
-    (r"receivable", "receivables, trade, unbilled or other, and receivables sold or factored"),
-    (r"contractwithcustomer(?:asset|liabilit)|contractasset|contractliabilit|deferredrevenue",
-     "contract assets and liabilities, and deferred revenue"),
-    (r"inventor", "inventory and its components"),
-    (r"prepaid|otherassetscurrent|deferredcost|capitalizedcontractcost",
-     "prepaid and other current assets, deferred costs and capitalised contract costs"),
-    (r"payable|accrued|accrual|warranty|reserve|employeerelated|otherliabilitiescurrent|othersundryliabilities",
-     "payables, accrued liabilities and reserves and their components: a reserve's change is an accrual "
-     "inside operating cash flow, which an analyst may take out"),
-    (r"supplierfinance", "supplier finance obligations"),
-    (r"transferoffinancialassets|factor", "receivables sold or factored"),
-    (r"contingentconsideration|considerationpayable|deferredconsideration|purchaseconsideration",
-     "deferred or contingent acquisition consideration"),
+# THE AMOUNT OF A CASH-FLOW ADJUSTMENT comes from the company's own statement of cash flows, whose lines
+# are disjoint and sum to operating cash flow, or from one of three named items the statement does not
+# carry in operating cash flow. No family is inferred from a name: a total and its rows, a balance-sheet
+# change and the statement's line for the same balance are told apart by where the cell comes from.
+#   (a) A STATEMENT LINE inside operating activities, as the calculator reads it: a line of
+#       `terms.trailing_four_quarters`, or the statement's change in a working-capital line under
+#       `earnings_versus_cash.working_capital.<line>.cash_flow_statement_change` (the same line, cited
+#       once however it is reached; its parts are the line's own).
+#   (b) A NAMED OFF-STATEMENT ITEM, a note-table change whose concept is of one of three families:
+#       the supplier finance obligation, receivables sold or factored, deferred or contingent
+#       acquisition consideration.
+# Anything else is refused as a cash-flow amount and stays available as earnings or debt.
+NOT_A_STATEMENT_LINE = ("a cash_flow amount is a line of the statement of cash flows or a named "
+                        "off-statement item")
+NOT_ON_THE_LIST = NOT_A_STATEMENT_LINE
+STATEMENT_LINES = (
+    "net_income", "depreciation_and_amortization", "inventory_write_down",
+    "change_in_receivables", "change_in_inventory", "change_in_payables",
 )
-# The words that refuse a name that also holds an allowed word, anywhere in it (lower-cased), and a
-# total of assets. `lease` and `land` are read as words of the camel-cased name, so that a release or
-# an island is not one. Noncurrent is not here: long-term receivables, contract balances and accrued
-# liabilities are operating balances too.
-CASH_FLOW_CHANGE_EXCLUDED = (
-    r"cash|restricted|investments|securities|fairvaluedisclosure|propertyplant|machinery|"
-    r"building|constructioninprogress|furniture|equipment|goodwill|intangible|software|rightofuse|"
-    r"deferredtax|incometax|dividend|guarantee|maximumpotential|derivative|debt|borrowing|^assets")
-CASH_FLOW_CHANGE_EXCLUDED_WORDS = ("lease", "land")
-NOT_ON_THE_LIST = ("not a balance whose change free cash flow carries in operating cash flow or leaves "
-                   "out; name a calculator cell instead")
-
-# ONE MOVEMENT, COUNTED ONCE: at most one cash-flow adjustment for each balance family. A note-table
-# concept is put in its family by its local name, in this order (a contingent consideration payable is
-# consideration before it is a payable); a calculator cell by the segment of its path that names what
-# it measures. A cell in no family is its own family, so a field is never cited twice.
-BALANCE_FAMILIES = (
-    ("acquisition consideration", r"contingentconsideration|considerationpayable|deferredconsideration|purchaseconsideration"),
-    ("supplier finance", r"supplierfinance"),
-    ("receivables sold", r"receivablessold|transferoffinancialassets|factor"),
-    ("receivables", r"receivable"),
-    ("contract assets", r"contractwithcustomerasset|contractasset"),
-    ("contract liabilities and deferred revenue", r"contractwithcustomerliabilit|contractliabilit|deferredrevenue"),
-    ("inventory", r"inventor"),
-    ("prepaid and other current assets", r"prepaid|otherassetscurrent|deferredcost|capitalizedcontractcost"),
-    ("payables", r"payable"),
-    ("accrued liabilities and reserves",
-     r"accrued|accrual|warranty|reserve|employeerelated|otherliabilitiescurrent|othersundryliabilities"),
-)
-CALCULATOR_FAMILIES = (
-    ("receivables", r"receivables|change_in_receivables"),
-    ("inventory", r"inventory|change_in_inventory"),
-    ("payables", r"accounts_payable|change_in_payables|change_in_income_taxes_payable"),
-    ("contract liabilities and deferred revenue", r"change_in_contract_liabilities"),
+STATEMENT_LINE_OF_WORKING_CAPITAL = {
+    "receivables": "change_in_receivables", "inventory": "change_in_inventory",
+    "accounts_payable": "change_in_payables",
+}
+NAMED_ITEMS = (
+    ("supplier finance", r"supplierfinanceprogramobligation(?:current|noncurrent)?"),
+    ("receivables sold", r"transferoffinancialassetsaccountedforassalesamountderecognized|"
+                         r"\w*receivablessold\w*|\w*factoredreceivables\w*|\w*factoring\w*"),
+    ("acquisition consideration",
+     r"businesscombination(?:contingent)?considerationliabilit\w*|\w*considerationpayable|"
+     r"contingentconsideration\w*|deferredconsideration\w*|purchaseconsideration\w*"),
 )
 
 # A cell that is a change in cash or restricted cash, or in a total that includes cash, CONTAINS free
@@ -2731,39 +2711,26 @@ def _date(text) -> dt.date | None:
         return None
 
 
-def _words(local: str) -> list[str]:
-    """The words of a camel-cased name, lower-cased."""
-    return [word.lower() for word in re.findall(r"[A-Z][a-z]+|[A-Z]+(?![a-z])|[a-z]+|\d+", local)]
-
-
-def cash_flow_change_problem(cell: dict) -> str | None:
-    """Why a note-table change cell may not be a cash-flow amount, or None: its concept is not on the
-    allow-list of balances whose change free cash flow carries in operating cash flow or leaves out."""
-    concept = cell.get("concept")
-    if not (isinstance(concept, str) and isinstance(cell.get("from"), dict) and isinstance(cell.get("to"), dict)):
-        return None
-    name = concept.rpartition(":")[2]
-    local = name.lower()
-    excluded = re.search(CASH_FLOW_CHANGE_EXCLUDED, local) or any(
-        word.startswith(CASH_FLOW_CHANGE_EXCLUDED_WORDS) for word in _words(name))
-    if not excluded and any(re.search(pattern, local) for pattern, _ in CASH_FLOW_CHANGE_ALLOWED):
-        return None
-    return NOT_ON_THE_LIST
-
-
-def balance_family(path: str, cell: dict) -> str | None:
-    """The balance family a cell's movement belongs to, or None: a note-table concept by its local name, a
-    calculator cell by the segment of its path that names what it measures."""
+def cash_flow_source(path: str, cell: dict) -> str | None:
+    """Where a cash-flow amount comes from, or None: the key of the statement line a calculator cell is
+    (`line:change_in_payables`), or of the named off-statement item a note-table change is
+    (`item:supplier finance`). Two adjustments with the same key count one movement twice."""
+    segments = path.split(".")
     concept = cell.get("concept")
     if isinstance(concept, str):
+        if not (isinstance(cell.get("from"), dict) and isinstance(cell.get("to"), dict)):
+            return None
         local = concept.rpartition(":")[2].lower()
-        for family, pattern in BALANCE_FAMILIES:
-            if re.search(pattern, local):
-                return family
+        for name, pattern in NAMED_ITEMS:
+            if re.fullmatch(pattern, local):
+                return f"item:{name}"
         return None
-    for family, pattern in CALCULATOR_FAMILIES:
-        if any(re.fullmatch(pattern, segment) for segment in path.split(".")):
-            return family
+    if segments[:2] == ["terms", "trailing_four_quarters"] and len(segments) > 2 and segments[2] in STATEMENT_LINES:
+        return f"line:{segments[2]}"
+    if segments[:2] == ["earnings_versus_cash", "working_capital"] and len(segments) > 3:
+        line = STATEMENT_LINE_OF_WORKING_CAPITAL.get(segments[2])
+        if line and "cash_flow_statement_change" in segments[3:]:
+            return f"line:{line}"
     return None
 
 
@@ -3018,20 +2985,17 @@ def recurrence_problem(path: str, cell: dict, kind: str, fields: dict) -> str | 
 
 def counted_twice(fields: dict, path: str, earlier: list) -> str | None:
     """Why a cash-flow adjustment counts one movement twice, or None: an earlier cash-flow adjustment
-    is in the same balance family (the receivables' balance change, its share of net income, its
-    articulation gap, the change in receivables and a note table's receivables are one), or cites the
-    same field where it is in no family. `earlier` holds the fields of the cash-flow adjustments
-    before it; two families of one table both stand."""
+    cites the same statement line (however it is reached) or the same named off-statement item.
+    `earlier` holds the fields of the cash-flow adjustments before it."""
     def key(p):
         cell = _cell_at(fields, p)
-        family = balance_family(p, cell) if isinstance(cell, dict) else None
-        return family or f"field:{p}"
+        return (cash_flow_source(p, cell) if isinstance(cell, dict) else None) or f"field:{p}"
     mine = key(path)
     for other in earlier:
         if key(other) == mine:
-            what = f"the balance family {mine}" if not mine.startswith("field:") else f"the field {path!r}"
-            return (f"it counts one movement twice: an earlier cash_flow adjustment ({other!r}) is in "
-                    f"{what}")
+            what = mine.partition(":")[2] if not mine.startswith("field:") else f"the field {path!r}"
+            return (f"it counts one movement twice: an earlier cash_flow adjustment ({other!r}) is the "
+                    f"same {'statement line' if mine.startswith('line:') else 'item'} {what}")
     return None
 
 
@@ -3070,10 +3034,8 @@ def adjustment_reading(fields: dict, path, recurs: bool = False,
         return None, why
     if kind == BALANCE:
         return None, f"{BALANCE_REFUSAL}: {why}"
-    if applies_to == "cash_flow" and kind == CHANGE:
-        problem = cash_flow_change_problem(cell)
-        if problem:
-            return None, problem
+    if applies_to == "cash_flow" and cash_flow_source(path, cell) is None:
+        return None, NOT_A_STATEMENT_LINE
     problem = period_problem(path, cell, kind, fields)
     if problem:
         return None, problem

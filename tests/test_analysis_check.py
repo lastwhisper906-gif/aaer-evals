@@ -30,7 +30,8 @@ FIELDS = {
                "profitability": {"gross_margin": {"value": 0.4, "unit": "ratio"}},
                "efficiency": {"days_sales_outstanding": {"value": 61.25, "unit": "days"}}},
     "terms": {"trailing_four_quarters": {"revenue": {"value": 1.5e9, "unit": "USD"},
-                                         "share_based_compensation": {"value": 3e7, "unit": "USD"}}},
+                                         "share_based_compensation": {"value": 3e7, "unit": "USD"},
+                                         "change_in_receivables": {"value": -2e7, "unit": "USD"}}},
     "earnings_versus_cash": {"history": {"years": [{"revenue_growth": 0.1}]}},
     "free_cash_flow": {"free_cash_flow_quality_adjusted": {"adjustments_applied": []}},
     "valuation": {"missing": "no price"},
@@ -67,7 +68,7 @@ def accounting(**changes):
                        "fields": []}],
         "adjustments": [{"name": "extended terms", "direction": "reduce",
                          "applies_to": "cash_flow",
-                         "calculator_field": "terms.trailing_four_quarters.revenue",
+                         "calculator_field": "terms.trailing_four_quarters.change_in_receivables",
                          "quote": "extended payment terms to certain customers",
                          "quote_from": "report_notes_text.md", "evidence": []}],
         "summary_ko": {"earnings_versus_cash": "매출채권 회전일수는 {ratios.efficiency.days_sales_outstanding}입니다."},
@@ -1952,6 +1953,7 @@ def test_an_adjustment_indexes_a_list_by_ascii_digits_alone(field, stands):
         "this_year_to_date": {"value": 8146000000.0, "lines": [FLOW_LINE]}}}}
     payload = accounting()
     payload["adjustments"][0]["calculator_field"] = field
+    payload["adjustments"][0]["applies_to"] = "earnings"          # a repayment is no line of operating cash flow
     out = analysis_check.check("accounting", payload, fields=fields, sources=SOURCES)
     if stands:
         assert out["dropped_count"] == 0, out["dropped_items"]

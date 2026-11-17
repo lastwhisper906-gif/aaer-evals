@@ -333,3 +333,6 @@ sixty lines; a line under a lesson that has no date is that lesson's wrapped lin
 2026-11-17 certified a rule with cells that the rule's own premise excluded (a change in cash is the sum of every cash flow); when a test picks a cell as an example of acceptance, ask what the cell contains.
 2026-11-17 kept adding names to a list of what to refuse and the next cell leaked through it; where the set of wrong cells is open and the set of right ones is small, write the allow-list first.
 2026-11-17 let a test take its expected value from the same output it checked (the cell beside the amount applied); an expected value comes from the filing or companyfacts, worked by hand.
+2026-11-17 kept adding words to lists of balances for eight rounds, and each refute found the next total beside its own rows; families inferred from names cannot be made disjoint, so take the amount from the company's own statement of cash flows, whose lines already are.
+2026-11-17 a text edit with sed on a line that also appeared in a second test changed both; check what else an edited line matches before a global substitution.
+2026-11-17 killed a mutation loop with pkill and left a mutated source file in place; restore the file from its good copy before anything else after stopping a loop.
