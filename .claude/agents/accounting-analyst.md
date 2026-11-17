@@ -266,7 +266,7 @@ one with that reason. A change whose later balance is not the period's end, or w
 is before the day before the trailing year, is dropped as "its balances are not the period's", once or recurring. Only a `cash_flow` adjustment moves free cash
 flow. An `earnings` adjustment is read by the same rule and listed with its amount;
 it is an item you would remove or add back (a charge, a gain, a reserve change, a write-down,
-share-based pay, a one-time or special item, a working-capital or note-table change), never a
+a one-time or special item, a working-capital or note-table change), never a
 whole total of a statement (revenue, cost of revenue, gross profit, operating income, EBIT,
 EBITDA, pretax income, income tax expense, net income, the cash-flow totals, billings), and
 Python drops a total with that reason. It does not move free cash flow, and the valuation shows

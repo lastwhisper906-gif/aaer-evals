@@ -583,8 +583,10 @@ def test_an_earnings_adjustment_lowers_the_margin_in_every_year():
              "nopat": None}
     out = calculator.adjusted_value(1000.0, GORDON, 0.25, 0.09, 100.0, 45.0, 10.0, 140.0,
                                     moved, ttm)
-    assert out["each"][0]["value_per_share"] == pytest.approx(132.275)
-    assert out["each"][0]["moved_per_share"] == pytest.approx(-7.725)
+    assert out["each"][0]["alone_value_per_share"] == pytest.approx(132.275)
+    assert out["each"][0]["alone_per_share"] == pytest.approx(-7.725)
+    assert "moved_per_share" not in out["each"][0]                  # shown alone, never summed
+    assert out["all_together"]["moved_per_share"] == pytest.approx(0.0, abs=1e-9)
 
 
 def test_a_filing_fact_filed_after_the_cutoff_is_not_added(tmp_path):

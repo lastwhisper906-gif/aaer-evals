@@ -934,7 +934,7 @@ def test_the_concepts_inside_free_cash_flow_are_each_refused(concept):
 
 @pytest.mark.parametrize("concept", [
     # lines inside operating cash flow stay adjustable: a legitimate analytic choice
-    "us-gaap:NetIncomeLoss", "us-gaap:DepreciationDepletionAndAmortization",
+    "us-gaap:DepreciationDepletionAndAmortization",
     "us-gaap:IncreaseDecreaseInAccountsReceivable",
     # lines that name share-based compensation and are other quantities
     "us-gaap:EmployeeServiceShareBasedCompensationTaxBenefitFromCompensationExpense",
@@ -1465,8 +1465,10 @@ def test_a_one_time_earnings_adjustment_lowers_value_by_its_amount_over_diluted_
     revenue, shares, base, out = valued([earnings_row(0, "gain", 110e6)])
     row, = out["each"]
     assert row["applies_to"] == "earnings" and row["recurs"] is False and "one-time" in row["mechanism"]
-    assert row["moved_per_share"] == pytest.approx(-110e6 / 801e6, rel=1e-12)
-    assert row["value_per_share"] == pytest.approx(base - 110e6 / 801e6, rel=1e-12)
+    assert row["alone_per_share"] == pytest.approx(-110e6 / 801e6, rel=1e-12)
+    assert row["alone_value_per_share"] == pytest.approx(base - 110e6 / 801e6, rel=1e-12)
+    assert "moved_per_share" not in row and "value_per_share" not in row       # no reader can add it in
+    assert "not part of the value" in row["mechanism"]
     # an earnings adjustment is shown alone and never summed
     assert out["all_together"]["moved_per_share"] == pytest.approx(0.0, abs=1e-9)
     assert row["summed"] == "shown alone; not summed until the special-items table exists"
@@ -1479,7 +1481,7 @@ def test_a_recurring_earnings_adjustment_cuts_the_margin_by_its_amount_over_reve
     revenue, shares, base, out = valued([earnings_row(0, "other", 76e6, recurs=True)])
     row, = out["each"]
     assert row["recurs"] is True and f"operating margin lowered by {76e6 / revenue}" in row["mechanism"]
-    assert row["moved_per_share"] == pytest.approx(-76e6 * 7.725 / 801e6, rel=1e-9)
+    assert row["alone_per_share"] == pytest.approx(-76e6 * 7.725 / 801e6, rel=1e-9)
     assert out["all_together"]["moved_per_share"] == pytest.approx(0.0, abs=1e-9)
     assert row["summed"] == "shown alone; not summed until the special-items table exists"
 
@@ -1489,7 +1491,7 @@ def test_an_increasing_earnings_adjustment_raises_value_and_a_recurring_cash_flo
                                           earnings_row(1, "flow", 54e6, applies_to="cash_flow", recurs=True)],
                                          nopat=1.5e9)
     up, flow = out["each"]
-    assert up["moved_per_share"] == pytest.approx(110e6 / 801e6, rel=1e-12)
+    assert up["alone_per_share"] == pytest.approx(110e6 / 801e6, rel=1e-12)
     # reinvestment rises by 54e6 / 1.5e9 = 0.036: value falls by revenue x 1.03 x 0.2 x 0.75 x 0.036 / 0.06
     assert "reinvestment rate raised by 0.036" in flow["mechanism"]
     assert flow["moved_per_share"] == pytest.approx(
@@ -1527,7 +1529,7 @@ def test_two_adjustments_keep_their_own_target_and_recurrence_through_the_valuat
     assert [(r["name"], r["applies_to"], r["recurs"]) for r in each] == [
         ("x", "earnings", False), ("y", "cash_flow", True)]
     assert "one-time" in each[0]["mechanism"] and "reinvestment rate raised" in each[1]["mechanism"]
-    assert each[0]["moved_per_share"] == pytest.approx(-110e6 / 801e6, rel=1e-9)   # 110 over 801 million shares
+    assert each[0]["alone_per_share"] == pytest.approx(-110e6 / 801e6, rel=1e-9)   # 110 over 801 million shares
 
 
 # --- a recurring amount must cover the year --------------------------------------------------------
@@ -1858,7 +1860,7 @@ def test_a_change_in_cash_or_in_a_total_that_includes_it_is_refused_in_every_cla
     "us-gaap:OtherAccruedLiabilitiesCurrent", "us-gaap:ProductWarrantyAccrual", "us-gaap:RestructuringReserve",
     "us-gaap:RestructuringCharges", "us-gaap:OtherLiabilitiesCurrent", "us-gaap:ContractWithCustomerAssetLiabilityNet",
     "us-gaap:ExcessInventoryPurchaseObligationsCurrent", "us-gaap:LiabilitiesCurrent", "us-gaap:DebtCurrent",
-    "us-gaap:LongTermDebtCurrent", "us-gaap:IncomeTaxesPayableCurrent", "us-gaap:IncomeTaxExpenseBenefit",
+    "us-gaap:LongTermDebtCurrent", "us-gaap:IncomeTaxesPayableCurrent",
     "us-gaap:DeferredTaxAssetsInventory", "us-gaap:DividendsPayableCurrent", "us-gaap:GuaranteeObligationsMaximumExposure",
     "us-gaap:DerivativeLiabilitiesCurrent", "us-gaap:OperatingLeaseLiabilityCurrent", "us-gaap:BorrowingsCurrent"])
 def test_a_concept_off_the_statement_is_refused_as_a_cash_flow_amount_and_stands_for_the_other_classes(concept):
@@ -2602,7 +2604,8 @@ def test_an_earnings_adjustment_is_shown_alone_and_moves_no_summed_value():
     assert [r["name"] for r in quality["adjustments_to_earnings"]] == ["n0"] and quality["adjustments_applied"] == []
     row, = accounting["each"]
     assert row["summed"] == "shown alone; not summed until the special-items table exists"
-    assert row["moved_per_share"] == pytest.approx(-97e6 / 229e6, rel=1e-12)
+    assert row["alone_per_share"] == pytest.approx(-97e6 / 229e6, rel=1e-12)
+    assert "moved_per_share" not in row                       # only `all_together` and cash_flow rows carry it
     assert accounting["all_together"]["moved_per_share"] == pytest.approx(0.0, abs=1e-9)
     assert accounting["all_together"]["value_per_share"] == pytest.approx(accounting["base_value_per_share"], rel=1e-12)
 
@@ -2619,7 +2622,7 @@ def test_a_recurring_earnings_adjustment_is_shown_alone_with_its_margin_cut_work
     assert quality["adjustments_refused"] == []
     row, = accounting["each"]
     assert row["recurs"] is True and f"operating margin lowered by {97e6 / revenue}" in row["mechanism"]
-    assert row["moved_per_share"] < 0
+    assert row["alone_per_share"] < 0 and "moved_per_share" not in row
     assert accounting["all_together"]["moved_per_share"] == pytest.approx(0.0, abs=1e-9)
 
 
@@ -2634,7 +2637,7 @@ def test_only_cash_flow_adjustments_are_summed_into_the_adjusted_value():
     assert [r["name"] for r in both["each"]] == ["n0", "n1"]
     assert both["all_together"] == alone["all_together"]
     assert both["each"][0]["moved_per_share"] == alone["each"][0]["moved_per_share"]
-    assert both["each"][1]["moved_per_share"] == pytest.approx(-97e6 / 229e6, rel=1e-12)
+    assert both["each"][1]["alone_per_share"] == pytest.approx(-97e6 / 229e6, rel=1e-12)
 
 
 REPRO_CASES = [
@@ -2866,3 +2869,89 @@ def test_a_whole_total_is_refused_by_its_name_and_a_note_fact_of_the_same_value_
     assert reading(planted, "ratios.profitability.x.inputs.revenue", False, "earnings") == (None, total)       # a copy of revenue
     assert reading(planted, "note_tables.tables.notes_1.facts.0", False, "earnings") == (9_000_000.0, None)  # its own figure
     assert reading(planted, "terms.trailing_four_quarters.research_and_development_expense", False, "earnings")[1] is None
+
+
+def a_fact_of(concept: str) -> dict:
+    return {"period_end": "2026-06-30", "note_tables": {"tables": {"notes_1": {"facts": [
+        usd(unit="iso4217:USD", concept=concept, start="2025-07-01", end="2026-06-30")]}}}}
+
+
+def test_every_item_the_definition_names_as_allowed_in_a_class_reads_as_accepted_in_that_class():
+    """The earnings items the definition lists (a charge, a gain, a reserve change, a write-down, a one-time or special
+    item, a working-capital or note-table change) each read as accepted as earnings on a planted cell, and the
+    cash_flow ones (the statement's change in receivables, inventory and payables, the supplier finance change) as
+    cash_flow. Share-based pay is not on the earnings list: it is refused in every class, since free cash flow after
+    share-based pay is its own field."""
+    text = " ".join(adjustments_section().split())
+    listed = text[text.index("it is an item you would remove or add back ("):]
+    listed = listed[:listed.index(")")]
+    for phrase in ("a charge", "a gain", "a reserve change", "a write-down", "a one-time or special item",
+                   "a working-capital or note-table change"):
+        assert phrase in listed, phrase
+    assert "share-based" not in listed
+    path = "note_tables.tables.notes_1.facts.0"
+    for concept in ("us-gaap:RestructuringCharges", "co:GainOnSettlementOfLitigation", "us-gaap:InventoryWriteDown",
+                    "co:SpecialItems"):
+        assert reading(a_fact_of(concept), path, False, "earnings") == (1_000_000.0, None), concept
+    assert reading(a_fact_of("us-gaap:InventoryWriteDown"), path, False, "cash_flow")[0] is None     # a non-cash charge
+    held, change = a_change("us-gaap:RestructuringReserve")                                           # a reserve change
+    assert reading(held, change, False, "earnings") == (1_000_000.0, None)
+    held, change = a_change("co:SomethingTheFilingTables")                                            # a note-table change
+    assert reading(held, change, False, "earnings") == (1_000_000.0, None)
+    working = with_year({"period_end": "2026-06-30", "earnings_versus_cash": {"working_capital": {
+        "receivables": {"balance_sheet_change": usd()}}}})                                            # a working-capital change
+    assert reading(working, f"{RECEIVABLES}.balance_sheet_change", False, "earnings") == (1_000_000.0, None)
+    # the cash_flow items
+    lines = with_year({"period_end": "2026-06-30", "terms": {"trailing_four_quarters": {
+        "change_in_receivables": usd(value=1e6), "change_in_inventory": usd(value=2e6),
+        "change_in_payables": usd(value=3e6)}}})
+    for line, value in (("change_in_receivables", 1e6), ("change_in_inventory", 2e6), ("change_in_payables", 3e6)):
+        assert reading(lines, f"terms.trailing_four_quarters.{line}", False, "cash_flow") == (value, None), line
+    held, change = a_change("us-gaap:SupplierFinanceProgramObligation")
+    assert reading(held, change, False, "cash_flow") == (1_000_000.0, None)
+    # share-based pay: refused in every class
+    for applies_to in ("cash_flow", "earnings"):
+        for concept in ("us-gaap:ShareBasedCompensation", "us-gaap:AllocatedShareBasedCompensationExpense"):
+            amount, reason = reading(a_fact_of(concept), path, False, applies_to)
+            assert amount is None and INSIDE in reason, (concept, applies_to, reason)
+
+
+
+def test_a_note_fact_or_change_whose_concept_is_a_statement_total_is_refused_as_earnings():
+    """Seagate's `notes_230.facts.0` is NetIncomeLoss, 3,184 million (companyfacts, the year to 2026-07-03), and
+    `notes_256.facts.9` is the revenue, 12,195 million: the name of the cell is `facts.0`, its meaning is a total."""
+    assert source.one_value("STX", "NetIncomeLoss", "2025-06-28..2026-07-03", "2026-08-04") == 3_184e6
+    assert source.one_value("STX", "RevenueFromContractWithCustomerExcludingAssessedTax", "2025-06-28..2026-07-03",
+                            "2026-08-04") == 12_195e6
+    held = printed(STX_RUN)
+    for path, concept, value in (("note_tables.tables.notes_230.facts.0", "us-gaap:NetIncomeLoss", 3_184e6),
+                                 ("note_tables.tables.notes_256.facts.9",
+                                  "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax", 12_195e6)):
+        cell = calculator._cell_at(held, path)
+        assert cell["concept"] == concept and cell["value"] == value
+        assert reading(held, path, False, "earnings") == (None, calculator.TOTAL_OF_THE_STATEMENT), path
+    for concept in ("us-gaap:ProfitLoss", "us-gaap:Revenues", "us-gaap:CostOfRevenue", "us-gaap:GrossProfit",
+                    "us-gaap:OperatingIncomeLoss", "us-gaap:IncomeTaxExpenseBenefit",
+                    "us-gaap:IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest",
+                    "us-gaap:NetCashProvidedByUsedInFinancingActivities", "us-gaap:EarningsPerShareDiluted"):
+        amount, reason = reading(a_fact_of(concept), "note_tables.tables.notes_1.facts.0", False, "earnings")
+        assert amount is None and reason in (calculator.TOTAL_OF_THE_STATEMENT, CONTAINS_OR_INSIDE) or (
+            reason.startswith(INSIDE)), (concept, reason)
+    held, change = a_change("us-gaap:NetIncomeLoss")
+    assert reading(held, change, False, "earnings") == (None, calculator.TOTAL_OF_THE_STATEMENT)
+    assert reading(a_fact_of("us-gaap:RestructuringCharges"), "note_tables.tables.notes_1.facts.0", False,
+                   "earnings") == (1_000_000.0, None)             # an item stands
+
+
+def test_the_release_versus_report_section_is_not_adjustable():
+    held = printed(STX_RUN)
+    path = "release_versus_report.lines.net_income.comparisons.1.report"
+    cell = calculator._cell_at(held, path)
+    assert cell["value"] == 3_184e6
+    for applies_to in ("cash_flow", "earnings"):
+        amount, reason = reading(held, path, False, applies_to)
+        assert amount is None and "release_versus_report is not adjustable" in reason, (applies_to, reason)
+    assert "release_versus_report" not in calculator.ADJUSTMENT_SECTIONS
+    problem = analysis_check.adjustment_problem(held)(
+        {"direction": "reduce", "applies_to": "earnings", "calculator_field": path, "quote": "q"})
+    assert "not adjustable" in problem

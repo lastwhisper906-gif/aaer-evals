@@ -2569,6 +2569,8 @@ MUST_COVER_THE_YEAR = "a recurring amount must cover the year"
 # A root an adjustment's amount is never read from, and why. The sections the filings-only
 # view removes (`PRICED_SECTIONS`, below) are refused beside these with their own reason.
 ADJUSTMENT_REFUSED_ROOTS = (
+    ("release_versus_report", "release_versus_report is not adjustable: its figures are set beside the "
+                              "release and nearly all are totals of a statement"),
     ("free_cash_flow", "an adjustment of free cash flow cannot be read from free cash flow"),
     ("valuation", "the valuation reads a price, which the analysts' view removes"),
     ("cost_of_capital", "the cost of capital reads a price, which the analysts' view removes"),
@@ -2582,7 +2584,7 @@ ADJUSTMENT_REFUSED_ROOTS = (
 ADJUSTMENT_SECTIONS = ("terms", "ratios", "ebit", "tax_rate", "earnings_versus_cash",
                        "quarterly_cash_flow_and_accruals", "receivables_extension",
                        "contract_liabilities_and_billings", "inventory_composition_and_growth_gap",
-                       "release_versus_report", "concentration", "note_tables", "rollforwards",
+                       "concentration", "note_tables", "rollforwards",
                        "trend_table")
 
 # Names that are free cash flow's own parts, as a path segment anywhere in the view (the leaf
@@ -2881,6 +2883,12 @@ STATEMENT_TOTAL_CELLS = (
     "terms.trailing_four_quarters.operating_cash_flow", "ebit", "ratios.solvency.ebitda",
     "contract_liabilities_and_billings.billings")
 TOTAL_OF_THE_STATEMENT = "a total of the statement is not an adjustment; name the item within it"
+# The same, for a note-table fact or change by its concept: the line of a statement that is a whole total.
+STATEMENT_TOTAL_CONCEPTS = (
+    r"netincomeloss\w*|profitloss|revenues|revenuefromcontractwithcustomer\w*|salesrevenue\w*|costofrevenue|"
+    r"costofgoodsandservicessold|costofgoodssold|grossprofit|operatingincomeloss|"
+    r"incomelossfromcontinuingoperationsbeforeincometaxes\w*|incometaxexpensebenefit|"
+    r"netcashprovidedbyusedin\w*|earningspershare\w*|incomelossfromcontinuingoperations")
 
 
 def statement_total(fields: dict, path: str, cell: dict) -> str | None:
@@ -2891,6 +2899,9 @@ def statement_total(fields: dict, path: str, cell: dict) -> str | None:
     elif len(segments) > 2 and segments[-2] == "lines":
         segments = segments[:-2]
     if segments and segments[-1] in STATEMENT_TOTAL_NAMES:
+        return TOTAL_OF_THE_STATEMENT
+    concept = cell.get("concept")
+    if isinstance(concept, str) and re.fullmatch(STATEMENT_TOTAL_CONCEPTS, concept.rpartition(":")[2].lower()):
         return TOTAL_OF_THE_STATEMENT
     value = cell.get("value")
     if (isinstance(value, (int, float)) and not isinstance(value, bool) and value != 0 and not period_text(cell)
@@ -3925,11 +3936,17 @@ def adjusted_value(base_revenue, drivers, tax, wacc, net_debt, leases, shares, b
         amount = item["amount"] if item["direction"] == "reduce" else -item["amount"]
         target = item.get("applies_to", "cash_flow")
         if not item.get("recurs"):
-            if target != "earnings":
-                once += amount
+            if target == "earnings":
+                rows.append({"name": item["name"], "applies_to": target, "recurs": False,
+                             "mechanism": "shown alone: one-time, value would be lowered by the amount over "
+                                          "diluted shares; not part of the value",
+                             "summed": EARNINGS_SHOWN_ALONE,
+                             "alone_value_per_share": base_value - amount / shares,
+                             "alone_per_share": -amount / shares})
+                continue
+            once += amount
             rows.append({"name": item["name"], "applies_to": target, "recurs": False,
                          "mechanism": "one-time: value lowered by the amount over diluted shares",
-                         **({"summed": EARNINGS_SHOWN_ALONE} if target == "earnings" else {}),
                          "value_per_share": base_value - amount / shares,
                          "moved_per_share": -amount / shares})
             continue
@@ -3938,8 +3955,8 @@ def adjusted_value(base_revenue, drivers, tax, wacc, net_debt, leases, shares, b
             cut = amount / revenue
             one["operating_margin_year_one"] -= cut
             one["operating_margin_year_ten"] -= cut
-            how = (f"recurring: operating margin lowered by {cut} in every year; "
-                   f"{EARNINGS_SHOWN_ALONE}")
+            how = (f"shown alone: operating margin lowered by {cut} in every year; "
+                   f"not part of the value")
         else:
             if not nopat:
                 rows.append({"name": item["name"], "missing": "after-tax operating income is "
@@ -3952,8 +3969,12 @@ def adjusted_value(base_revenue, drivers, tax, wacc, net_debt, leases, shares, b
             reinvest_add += add
             how = f"recurring: reinvestment rate raised by {add} in every year"
         value = per_share(base_revenue, one, tax, wacc, net_debt, leases, shares)
+        if target == "earnings":
+            rows.append({"name": item["name"], "applies_to": target, "recurs": True,
+                         "summed": EARNINGS_SHOWN_ALONE, "mechanism": how,
+                         "alone_value_per_share": value, "alone_per_share": value - base_value})
+            continue
         rows.append({"name": item["name"], "applies_to": target, "recurs": True,
-                     **({"summed": EARNINGS_SHOWN_ALONE} if target == "earnings" else {}),
                      "mechanism": how, "value_per_share": value,
                      "moved_per_share": value - base_value})
     together = dict(drivers)
@@ -4264,7 +4285,6 @@ def calculate(*, ticker: str, cutoff, period_end: str, form: str, accession: str
                                                           "liquidity", "solvency", "growth")},
                 "ebit": sections["ebit"], "tax_rate": sections["tax_rate"],
                 "earnings_versus_cash": earnings, **revenue_and_working_capital,
-                "release_versus_report": beside_the_release,
                 "concentration": concentration(bundle), "note_tables": tables,
                 "rollforwards": rollforwards.build(tables),
                 "trend_table": trend_values(document, cutoff, period_end)}
@@ -4336,7 +4356,7 @@ def calculate(*, ticker: str, cutoff, period_end: str, form: str, accession: str
         "ebit": sections["ebit"], "tax_rate": sections["tax_rate"],
         "earnings_versus_cash": earnings,
         **revenue_and_working_capital,
-        "release_versus_report": fields["release_versus_report"],
+        "release_versus_report": beside_the_release,
         "free_cash_flow": free,
         "concentration": fields["concentration"],
         "note_tables": tables,

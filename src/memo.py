@@ -260,6 +260,29 @@ def _absent(frame: str, missing: dict | None) -> str:
     return ABSENT_KO[frame] + (f" 이유: {reason}" if reason else "")
 
 
+EARNINGS_ALONE_KO = "이익 조정: 단독으로만 표시하며 가치에 합산하지 않음 (특별항목 표가 생길 때까지)"
+
+
+def earnings_adjustments(fields: dict) -> list[dict]:
+    """The accounting analyst's earnings adjustments, as the memo and the page print them: the amount, the
+    direction, and the per-share effect the valuation computed for the row alone. They are shown alone and are
+    never summed into the value, and the words say so."""
+    quality = (fields.get("free_cash_flow") or {}).get("free_cash_flow_quality_adjusted") or {}
+    each = (((fields.get("valuation") or {}).get("accounting_adjustments") or {}).get("each")) or []
+    effect = {row.get("name"): row for row in each if isinstance(row, dict)}
+    rows = []
+    for item in quality.get("adjustments_to_earnings") or []:
+        row = effect.get(item.get("name")) or {}
+        per_share = (korean_number(row["alone_per_share"], "USD per share")
+                     if isinstance(row.get("alone_per_share"), (int, float))
+                     else "주당 효과 계산 안 됨")
+        rows.append({"name": item.get("name"), "path": item.get("calculator_field"),
+                     "amount": korean_number(item["amount"], "USD"),
+                     "verb": "차감" if item["direction"] == "reduce" else "가산",
+                     "note": f"{EARNINGS_ALONE_KO}; 이 조정만의 효과 {per_share}"})
+    return rows
+
+
 def accounting_section(analysis: dict | None, fields: dict, *, adjusted: dict | None = None,
                        missing: dict | None = None) -> list[str]:
     out = ["## 1. 회계", "",
@@ -281,12 +304,15 @@ def accounting_section(analysis: dict | None, fields: dict, *, adjusted: dict | 
     quality = ((adjusted or fields).get("free_cash_flow") or {}).get(
         "free_cash_flow_quality_adjusted") or {}
     applied = quality.get("adjustments_applied") or []
+    alone = earnings_adjustments(adjusted or fields)
     out += ["", "**회계 조정** (금액은 분석가가 지정한 계산기 항목에서 Python이 읽음)", ""]
     for item in applied:
         verb = "차감" if item["direction"] == "reduce" else "가산"
         out.append(f"- {item.get('name')}: {korean_number(item['amount'], 'USD')} {verb} "
                    f"(`{item['calculator_field']}`)")
-    if not applied:
+    for item in alone:
+        out.append(f"- {item['name']}: {item['amount']} {item['verb']} (`{item['path']}`) — {item['note']}")
+    if not applied and not alone:
         out.append("- 없음")
     return out + ["", f"_한계: {LIMITS_KO['accounting']}_", ""]
 
@@ -332,6 +358,7 @@ def valuation_section(analysis: dict | None, fields: dict,
                 f" · 과거 3년 연평균: "
                 f"{korean_number(history.get('revenue_growth_three_year_compound'), 'ratio', percent=True)}")
         out.append("")
+        out += accounting_adjustment_lines(fields)
     out += beside_the_dcf_lines(fields)
     out += cost_of_debt_fallback_line(fields)
     if analysis is None:
@@ -344,6 +371,23 @@ def valuation_section(analysis: dict | None, fields: dict,
 
 
 FALLBACK_KO = "세전 타인자본비용은 대체값이며, WACC와 가치 범위는 이 대체값에 기대고 있습니다"
+
+
+def accounting_adjustment_lines(fields: dict) -> list[str]:
+    """What the accounting adjustments moved in the value, as the calculator printed it: the value the
+    cash-flow adjustments moved (`all_together`), then each earnings adjustment on its own, shown alone and
+    never added to it. Nothing when the valuation holds no accounting adjustment."""
+    block = (fields.get("valuation") or {}).get("accounting_adjustments")
+    if not isinstance(block, dict) or not block.get("each"):
+        return []
+    moved = (block.get("all_together") or {}).get("moved_per_share")
+    out = [f"- {VALUATION_KO['accounting_adjustments']} (잉여현금흐름 조정만 합산): "
+           f"{korean_number(moved, 'USD per share')}"]
+    for row in block["each"]:
+        if row.get("applies_to") == "earnings" and isinstance(row.get("alone_per_share"), (int, float)):
+            out.append(f"  - 이익 조정 {row.get('name')}: 단독으로만 표시 ({korean_number(row['alone_per_share'], 'USD per share')}), "
+                       f"위 가치에 더하지 않음")
+    return out + [""]
 
 
 def cost_of_debt_fallback_line(fields: dict) -> list[str]:
