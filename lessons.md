@@ -330,3 +330,4 @@ sixty lines; a line under a lesson that has no date is that lesson's wrapped lin
 2026-11-17 ran a mutation loop that a container restart cut off, leaving one spoiled line in src/calculator.py; keep a good copy of each file before such a loop and diff against it afterward.
 2026-11-17 judged rounds on four test files while the rule changed what the published runs reproduce; run the whole of tests/ once before saying a rule change is done, since the drift baselines read the same rule.
 2026-11-17 labelled a cell's span from its section's name; a span is read from the cell's own formula and inputs.
+2026-11-17 certified a rule with cells that the rule's own premise excluded (a change in cash is the sum of every cash flow); when a test picks a cell as an example of acceptance, ask what the cell contains.

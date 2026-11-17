@@ -83,9 +83,9 @@ def with_year(held: dict) -> dict:
     return out
 
 
-def reading(held: dict, path, recurs: bool = False):
+def reading(held: dict, path, recurs: bool = False, applies_to: str = "cash_flow"):
     """`calculator.adjustment_reading`, a planted view first given the trailing year."""
-    return calculator.adjustment_reading(with_year(held), path, recurs)
+    return calculator.adjustment_reading(with_year(held), path, recurs, applies_to)
 
 
 def adjustment(path: str, direction: str = "reduce", applies_to: str = "cash_flow") -> dict:
@@ -222,7 +222,8 @@ def test_apples_working_capital_changes_move_free_cash_flow_by_their_amounts():
     assert (row["signed_value"], row["class"], row["direction"], row["applies_to"]) == (
         3_841 * MILLION, "change", "reduce", "cash_flow")
     assert row["period"] is None
-    assert row["its_own_span"].startswith("no dates of its own; its two balances, 2025-06-28 and 2026-06-27, are 364 days apart")
+    assert row["its_own_span"].startswith(
+        "no dates of its own; its two dates, 2025-06-28 and 2026-06-27, are 364 days apart and the later is the period's end")
     # Apple's trailing year starts the day after the prior year to date ends (2025-06-28)
     assert row["free_cash_flow_covers"] == "the four quarters 2025-06-29..2026-06-27"
     assert row["recurs"] is False
@@ -872,10 +873,8 @@ def a_fact(concept: str) -> dict:
     "us-gaap:PaymentsToAcquireProductiveAssets", "us-gaap:PaymentsForCapitalImprovements",
     "us-gaap:ShareBasedCompensation", "us-gaap:AllocatedShareBasedCompensationExpense",
     "us-gaap:PaymentsToAcquireBusinessesNetOfCashAcquired", "us-gaap:PaymentsToAcquireBusinessesGross",
-    # a change in gross property, plant and equipment carries capital expenditure; goodwill
-    # acquired in the period carries acquisitions
-    "us-gaap:PropertyPlantAndEquipmentGross", "us-gaap:PropertyPlantAndEquipmentNet",
-    "us-gaap:PropertyPlantAndEquipmentExcludingLessorAssetUnderOperatingLeaseBeforeAccumulatedDepreciation",
+    # goodwill acquired in the period carries acquisitions (changes in the carrying amounts of
+    # property and of goodwill are held by the asset tests below)
     "us-gaap:GoodwillAcquiredDuringPeriod"])
 def test_the_concepts_inside_free_cash_flow_are_each_refused(concept):
     refused_with(a_fact(concept), "note_tables.tables.notes_1.facts.0", INSIDE)
@@ -1079,7 +1078,7 @@ def test_an_adjustment_of_neither_target_is_refused_by_the_calculator():
 # the four newer sections reach the calculator's fields
 
 @pytest.mark.parametrize("path", [
-    "quarterly_cash_flow_and_accruals.balance_sheet_accruals.inputs.change_in_cash",
+    "quarterly_cash_flow_and_accruals.balance_sheet_accruals.inputs.change_in_current_liabilities",
     "receivables_extension.days_sales_outstanding_index.inputs.revenue",
     "contract_liabilities_and_billings.billings",
     "inventory_composition_and_growth_gap.inventory_growth_minus_revenue_growth.inputs.revenue_growth.inputs.now",
@@ -1180,7 +1179,15 @@ def test_the_definition_says_the_cash_flow_rule_the_span_rule_and_the_earnings_r
             "A prior-year column, a history entry, a change between two spans and a change over two "
             "years are dropped as not the period free cash flow covers",
             "An adjustment you mark `\"recurs\": true` must cover the whole trailing year",
-            "a shorter span (a quarter, the year to date) can stand only as one-time",
+            "a shorter span (a quarter, the year to date), a cell whose two balances are not the "
+            "period's end and a year before it, and a cell whose span Python cannot read can stand "
+            "only as one-time",
+            "A change in cash, or in a total that includes cash (current assets, total assets), "
+            "contains free cash flow and is refused",
+            "so is a change in the carrying amount of goodwill or of intangible assets where free "
+            "cash flow already subtracts acquisitions, and where it subtracts none the change stands",
+            "A non-cash charge (an impairment, a write-down, a write-off) is never a `cash_flow` "
+            "amount: it is an `earnings` adjustment",
             "Only a `cash_flow` adjustment moves free cash flow",
             "it does not move free cash flow, and the valuation applies it (once, or as a margin cut "
             "where it recurs)"):
@@ -1416,20 +1423,22 @@ def refused_with_recurs(held, path):
 
 
 def test_a_table_placed_cells_span_is_read_from_its_own_formula_and_inputs_not_its_section():
-    """The span of a cell with no dates comes from what it says of itself. NVIDIA's change in cash
-    (`quarterly_cash_flow_and_accruals`) is `cash now - cash a year earlier`, its inputs the
-    balances of 2026-07-26 and 2025-07-27, 364 days apart: a year, so it may recur. Apple's
-    borrowing repaid is `prior_fiscal_year + this_year_to_date - prior_year_to_date`, the trailing
-    year, so it may recur; its `parts.this_year_to_date` names the year to date and may not."""
+    """The span of a cell with no dates comes from what it says of itself. NVIDIA's change in current
+    liabilities (`quarterly_cash_flow_and_accruals`) is `current_liabilities now - current_liabilities
+    a year earlier`, its inputs the balances of 2026-07-26 (the period's end) and 2025-07-27, 364 days
+    apart: a year, so it may recur. Apple's borrowing repaid is `prior_fiscal_year + this_year_to_date -
+    prior_year_to_date`, the trailing year, so it may recur; its `parts.this_year_to_date` names the
+    year to date and may not."""
     held = printed(AAPL_RUN)
     nvidia = printed("NVDA/0001045810-26-000075")
-    change = "quarterly_cash_flow_and_accruals.balance_sheet_accruals.inputs.change_in_cash"
+    change = "quarterly_cash_flow_and_accruals.balance_sheet_accruals.inputs.change_in_current_liabilities"
     cell = calculator._cell_at(nvidia, change)
-    assert cell["formula"] == "cash now - cash a year earlier"
+    assert cell["formula"] == "current_liabilities now - current_liabilities a year earlier"
     assert (cell["inputs"]["now"]["period"], cell["inputs"]["a_year_earlier"]["period"]) == (
         "2026-07-26", "2025-07-27")
-    assert calculator.derived_span(cell) == (
-        "year", "its two balances, 2025-07-27 and 2026-07-26, are 364 days apart")
+    assert nvidia["period_end"] == "2026-07-26"
+    assert calculator.derived_span(cell, dt.date(2026, 7, 26)) == (
+        "year", "its two dates, 2025-07-27 and 2026-07-26, are 364 days apart and the later is the period's end")
     assert reading(nvidia, change, True)[0] == cell["value"]
     borrowing = calculator._cell_at(held, "terms.cash_flow_families.borrowing_repaid")
     assert borrowing["formula"] == "prior_fiscal_year + this_year_to_date - prior_year_to_date"
@@ -1443,11 +1452,72 @@ def test_a_table_placed_cells_span_is_read_from_its_own_formula_and_inputs_not_i
 def test_a_cell_whose_two_balances_are_a_quarter_apart_may_not_recur():
     quarter = {**usd(), "formula": "x now - x a year earlier", "inputs": {
         "now": {"period": "2026-06-30"}, "a_year_earlier": {"period": "2026-03-31"}}}
-    assert calculator.derived_span(quarter) == (
-        "shorter", "its two balances, 2026-03-31 and 2026-06-30, are 91 days apart")
-    held = {"x": {"change_in_cash": quarter}}
-    assert reading(held, "x.change_in_cash", False)[0] == 1_000_000.0
-    refused_with_recurs(held, "x.change_in_cash")
+    assert calculator.derived_span(quarter, dt.date(2026, 6, 30)) == (
+        "shorter", "its two dates, 2026-03-31 and 2026-06-30, are 91 days apart")
+    held = {"x": {"change_in_current_liabilities": quarter}}
+    assert reading(held, "x.change_in_current_liabilities", False)[0] == 1_000_000.0
+    refused_with_recurs(held, "x.change_in_current_liabilities")
+
+
+def two_balances(now: str, earlier: str, **more) -> dict:
+    return {**usd(), "formula": "x now - x a year earlier",
+            "inputs": {"now": {"period": now, "unit": "USD"}, "a_year_earlier": {"period": earlier, "unit": "USD"}}, **more}
+
+
+@pytest.mark.parametrize("now, earlier", [
+    ("2026-03-31", "2025-03-31"),     # a year apart, but the later is not the period's end
+    ("2024-06-30", "2023-06-30"),     # a year apart, two years back
+    ("2026-06-30", "2025-03-31"),     # the period's end, but fifteen months
+])
+def test_two_balances_a_year_apart_that_sit_elsewhere_are_not_the_periods(now, earlier):
+    """The refuter's plants, period end 2026-06-30: the gap alone was read, never where the two
+    balances sit. A cell recurs only when its later balance is the period's end."""
+    cell = two_balances(now, earlier)
+    kind, why = calculator.derived_span(cell, dt.date(2026, 6, 30))
+    assert kind == "shorter"
+    held = {"period_end": "2026-06-30", "x": {"balance_sheet_change": cell}}
+    amount, reason = reading(held, "x.balance_sheet_change", True)
+    assert amount is None and "a recurring amount must cover the year" in reason
+    assert ("its balances are not the period's" in reason) or "days apart" in reason, reason
+    if (now, earlier) != ("2026-06-30", "2025-03-31"):
+        assert "its balances are not the period's" in reason
+    assert reading(held, "x.balance_sheet_change", False)[0] == 1_000_000.0       # once, it stands
+
+
+def test_a_cell_that_says_nothing_of_its_span_is_refused_for_recurrence_not_defaulted_to_a_year():
+    held = {"period_end": "2026-06-30", "x": {"balance_sheet_change": usd()}}
+    assert calculator.derived_span(usd(), dt.date(2026, 6, 30)) is None
+    amount, reason = reading(held, "x.balance_sheet_change", True)
+    assert amount is None and "its span is not read" in reason
+    assert reading(held, "x.balance_sheet_change", False)[0] == 1_000_000.0
+
+
+# the cells that really are a year, each deriving its span from its own formula, inputs, lines or
+# parts: the fiscal year (a 10-K), billings, ebitda, an articulation gap, a cash-flow family
+YEAR_CELLS = [
+    (STX_RUN, "terms.trailing_four_quarters.net_income", "formula 'the fiscal year' with its one part"),
+    (STX_RUN, "ebit", "formula 'the fiscal year'"),
+    (STX_RUN, "ratios.solvency.ebitda", "its inputs, each the fiscal year"),
+    (STX_RUN, "earnings_versus_cash.working_capital.receivables.articulation_gap", "a balance change and the fiscal year"),
+    (STX_RUN, "terms.cash_flow_families.borrowing_repaid", "its one dated line, the fiscal year"),
+    (AAPL_RUN, "terms.trailing_four_quarters.net_income", "the trailing sum"),
+    (AAPL_RUN, "ratios.solvency.ebitda", "ebit and depreciation, trailing sums"),
+    (AAPL_RUN, "contract_liabilities_and_billings.billings", "revenue and the change in contract liabilities"),
+    (AAPL_RUN, "earnings_versus_cash.working_capital.receivables.articulation_gap", "a balance change and a trailing sum"),
+    (AAPL_RUN, "earnings_versus_cash.working_capital.receivables.cash_flow_statement_change", "the trailing sum"),
+    (AAPL_RUN, "terms.cash_flow_families.borrowing_repaid", "the trailing sum"),
+]
+
+
+@pytest.mark.parametrize("run, path, how", YEAR_CELLS, ids=[f"{row[0][:4]}-{row[1][-34:]}" for row in YEAR_CELLS])
+def test_a_cell_that_really_is_a_year_derives_it_from_itself_and_may_recur(run, path, how):
+    held = printed(run)
+    cell = calculator._cell_at(held, path)
+    assert "value" in cell and cell.get("unit") == "USD", how
+    period_end = dt.date.fromisoformat(held["period_end"])
+    kind, why = calculator.derived_span(cell, period_end)
+    assert kind == "year", (path, why)
+    assert reading(held, path, True)[0] == cell["value"], reading(held, path, True)
 
 
 def test_no_section_name_decides_a_span():
@@ -1495,25 +1565,81 @@ def test_the_row_names_free_cash_flows_span_and_its_own_beside_it():
 
 # --- a change of an asset whose additions are investing outflows ------------------------------------
 
-ASSET_CHANGES = [
-    # (run, path, concept, the change as the filing's note reads it, by eye)
-    (PALO_RUN, "note_tables.tables.notes_102.changes.0", "us-gaap:Goodwill", 17_335e6),    # goodwill 2025-07-31 to 2026-04-30
+CIEN_RUN = "CIEN/0001628280-26-040767-note-tables-2026-11-14"
+CARRYING_AMOUNT_REASON = "carries what free cash flow already counts"
+
+
+def acquisitions_over_the_year(ticker: str, cutoff: str, spans: tuple[str, str, str], tag: str) -> float:
+    """Cash paid for acquisitions over the trailing year, through companyfacts: the fiscal year plus the
+    year to date less the year to date a year earlier; a period with no row is none."""
+    year, ytd, before = (sum(row["val"] for row in source.reported(ticker, tag, span, cutoff)[:1])
+                         for span in spans)
+    return year + ytd - before
+
+
+def test_what_free_cash_flow_subtracts_in_acquisitions_is_read_from_companyfacts():
+    """The source of each class below. Palo Alto paid 1,054.4 + 4,563.0 - 499.0 = 5,118.4 million for
+    businesses over the four quarters to 2026-04-30 (companyfacts, cutoff 2026-06-03); Apple paid none
+    (companyfacts holds no row for either acquisition tag over its fiscal year or either year to date,
+    cutoff 2026-07-31)."""
+    palo = acquisitions_over_the_year("PANW", "2026-06-03", (
+        "2024-08-01..2025-07-31", "2025-08-01..2026-04-30", "2024-08-01..2025-04-30"),
+        "PaymentsToAcquireBusinessesNetOfCashAcquired")
+    assert palo == pytest.approx(5_118.4e6)
+    for tag in ("PaymentsToAcquireBusinessesNetOfCashAcquired", "PaymentsToAcquireBusinessesAndInterestInAffiliates"):
+        for span in ("2024-09-29..2025-09-27", "2025-09-28..2026-06-27", "2024-09-29..2025-06-28"):
+            assert source.reported("AAPL", tag, span, "2026-07-31") == [], (tag, span)
+    assert calculator.acquisitions_subtracted(view(PALO_ALTO)) is True
+    assert calculator.acquisitions_subtracted(view(APPLE)) is False
+
+
+# (run, path, concept, the change as the filing's note reads it, by eye)
+REFUSED_ASSET_CHANGES = [
+    # acquisitions are subtracted (Palo Alto: 5,118.4 million, above): goodwill and intangibles refused
+    (PALO_RUN, "note_tables.tables.notes_102.changes.0", "us-gaap:Goodwill", 17_335e6),
     (PALO_RUN, "note_tables.tables.notes_105.changes.18", "us-gaap:IntangibleAssetsGrossExcludingGoodwill", 6_857e6),
-    ("CIEN/0001628280-26-040767-note-tables-2026-11-14", "note_tables.tables.notes_145.changes.3",
+    # property and equipment, combined with right-of-use assets or not: always refused
+    (CIEN_RUN, "note_tables.tables.notes_145.changes.3",
      "cien:PropertyPlantAndEquipmentFinanceLeaseRightOfUseAssetAfterAccumulatedDepreciationAndAmortizationAndOperatingLeaseRightOfUseAsset",
      58_149_000.0),                                        # notes:145 reads 483,541 against 425,392 (thousands)
+]
+
+
+@pytest.mark.parametrize("run, path, concept, value", REFUSED_ASSET_CHANGES,
+                         ids=[row[1][-22:] for row in REFUSED_ASSET_CHANGES])
+def test_a_change_in_the_carrying_amount_of_an_asset_whose_additions_are_counted_is_refused(run, path, concept, value):
+    held = printed(run)
+    cell = calculator._cell_at(held, path)
+    assert cell["concept"] == concept and cell["value"] == value
+    amount, reason = reading(held, path)
+    assert amount is None and INSIDE in reason and CARRYING_AMOUNT_REASON in reason, reason
+
+
+# Apple's acquisitions are none (above): its goodwill-free intangible changes are accepted, an analyst
+# adjusting for spending free cash flow does not count
+ACCEPTED_ASSET_CHANGES = [
     (AAPL_RUN, "note_tables.tables.notes_38.changes.0", "us-gaap:IntangibleAssetsGrossExcludingGoodwill", 13_270e6),
     (AAPL_RUN, "note_tables.tables.notes_38.changes.4", "aapl:IntangibleAssetsNetExcludingGoodwillNoncurrent", 9_249e6),
 ]
 
 
-@pytest.mark.parametrize("run, path, concept, value", ASSET_CHANGES, ids=[row[1][-22:] for row in ASSET_CHANGES])
-def test_a_change_in_goodwill_intangibles_or_property_is_refused_as_inside_free_cash_flow(run, path, concept, value):
+@pytest.mark.parametrize("run, path, concept, value", ACCEPTED_ASSET_CHANGES,
+                         ids=[row[1][-22:] for row in ACCEPTED_ASSET_CHANGES])
+def test_intangible_changes_stand_where_free_cash_flow_subtracts_no_acquisitions(run, path, concept, value):
     held = printed(run)
     cell = calculator._cell_at(held, path)
     assert cell["concept"] == concept and cell["value"] == value
-    amount, reason = reading(held, path)
-    assert amount is None and INSIDE in reason and "carries" in reason, reason
+    assert reading(held, path) == (value, None)
+
+
+def test_the_same_change_is_refused_once_free_cash_flow_subtracts_acquisitions():
+    held = copy.deepcopy(printed(AAPL_RUN))
+    path = "note_tables.tables.notes_38.changes.0"
+    assert reading(held, path)[0] == 13_270e6
+    held["free_cash_flow"]["free_cash_flow_quality_adjusted"]["inputs"]["acquisitions"]["cash_spent"] = 1.0
+    refused_with(held, path, INSIDE)
+    held["free_cash_flow"]["free_cash_flow_quality_adjusted"]["inputs"]["acquisitions"]["cash_spent"] = 0
+    assert reading(held, path)[0] == 13_270e6
 
 
 def test_the_goodwill_change_would_have_moved_free_cash_flow_by_acquisitions_it_already_subtracts():
@@ -1526,25 +1652,94 @@ def test_the_goodwill_change_would_have_moved_free_cash_flow_by_acquisitions_it_
     assert INSIDE in out["adjustments_refused"][0]["reason"]
 
 
-def test_the_us_gaap_property_and_finance_lease_concept_is_refused_too():
-    held = {"period_end": "2026-06-30", "note_tables": {"tables": {"notes_1": {"changes": [
-        {**usd(unit="iso4217:USD"), "concept": "us-gaap:PropertyPlantAndEquipmentAndFinanceLeaseRightOfUse"
-         "AssetAfterAccumulatedDepreciationAndAmortization",
+def a_change(concept: str, view_extra: dict | None = None) -> dict:
+    return {"period_end": "2026-06-30", **(view_extra or {}), "note_tables": {"tables": {"notes_1": {"changes": [
+        {**usd(unit="iso4217:USD"), "concept": concept,
          "from": {"instant": "2025-06-30"}, "to": {"instant": "2026-06-30"}}]}}}}
-    refused_with(held, "note_tables.tables.notes_1.changes.0", INSIDE)
+
+
+WITH_ACQUISITIONS = {"free_cash_flow": {"free_cash_flow_quality_adjusted": {"inputs": {"acquisitions": {"cash_spent": 5e9}}}}}
 
 
 @pytest.mark.parametrize("concept", [
-    "us-gaap:PropertyPlantAndEquipmentGross", "us-gaap:Goodwill", "us-gaap:GoodwillGross",
-    "us-gaap:IntangibleAssetsNetExcludingGoodwill", "us-gaap:FiniteLivedIntangibleAssetsNet",
-    "us-gaap:IndefiniteLivedIntangibleAssetsExcludingGoodwill", "abc:FiniteLivedIntangibleAssetsGross",
-    "us-gaap:CapitalizedComputerSoftwareNet", "xyz:OperatingLeaseRightOfUseAsset",
-    "co:PropertyPlantAndEquipmentAndRightOfUseAssetNet"])
-def test_each_family_of_asset_is_matched_by_the_concepts_local_name_in_any_namespace(concept):
-    held = {"period_end": "2026-06-30", "note_tables": {"tables": {"notes_1": {"changes": [
-        {**usd(unit="iso4217:USD"), "concept": concept,
-         "from": {"instant": "2025-06-30"}, "to": {"instant": "2026-06-30"}}]}}}}
-    refused_with(held, "note_tables.tables.notes_1.changes.0", INSIDE)
+    "us-gaap:PropertyPlantAndEquipmentGross", "us-gaap:PropertyPlantAndEquipmentNet",
+    "us-gaap:PropertyPlantAndEquipmentAndFinanceLeaseRightOfUseAssetAfterAccumulatedDepreciationAndAmortization",
+    "us-gaap:PropertyPlantAndEquipmentAndFinanceLeaseRightOfUseAssetBeforeAccumulatedDepreciationAndAmortization",
+    "us-gaap:PropertyPlantAndEquipmentExcludingLessorAssetUnderOperatingLeaseBeforeAccumulatedDepreciation",
+    "us-gaap:CapitalizedComputerSoftwareGross", "us-gaap:CapitalizedComputerSoftwareNet",
+    "co:PropertyPlantAndEquipmentAndRightOfUseAssetNet", "co:CapitalizedComputerSoftwareInternalUse",
+    "co:PropertyPlantAndEquipmentLandAndBuildings"])
+def test_property_and_software_carrying_amounts_are_refused_whatever_free_cash_flow_subtracts(concept):
+    refused_with(a_change(concept), "note_tables.tables.notes_1.changes.0", INSIDE)
+
+
+@pytest.mark.parametrize("concept", [
+    "us-gaap:Goodwill", "us-gaap:IntangibleAssetsNetExcludingGoodwill", "us-gaap:IntangibleAssetsGrossExcludingGoodwill",
+    "us-gaap:FiniteLivedIntangibleAssetsGross", "us-gaap:FiniteLivedIntangibleAssetsNet",
+    "us-gaap:IndefiniteLivedIntangibleAssetsExcludingGoodwill",
+    "co:IntangibleAssetsNetExcludingGoodwillNoncurrent", "abc:FiniteLivedIntangibleAssetsGross", "co:GoodwillNet"])
+def test_goodwill_and_intangible_carrying_amounts_are_refused_when_acquisitions_are_subtracted_and_stand_otherwise(concept):
+    refused_with(a_change(concept, WITH_ACQUISITIONS), "note_tables.tables.notes_1.changes.0", INSIDE)
+    assert reading(a_change(concept), "note_tables.tables.notes_1.changes.0") == (1_000_000.0, None)
+
+
+@pytest.mark.parametrize("concept", [
+    # the words of a quantity that is not a carrying amount, in an extension concept
+    "co:PropertyPlantAndEquipmentAccumulatedDepreciation", "co:IntangibleAssetsAccumulatedAmortization",
+    "co:PropertyPlantAndEquipmentDepreciationExpense", "co:GoodwillAmortization", "co:GoodwillImpairment",
+    "co:IntangibleAssetsImpairmentCharge", "co:IntangibleAssetsDeferredTaxLiability",
+    "co:PropertyPlantAndEquipmentHeldForSale", "co:GoodwillDisposalGroup",
+    # the us-gaap names that are not carrying amounts
+    "us-gaap:AccumulatedDepreciationDepletionAndAmortizationPropertyPlantAndEquipment",
+    "us-gaap:FiniteLivedIntangibleAssetsAccumulatedAmortization", "us-gaap:GoodwillImpairedAccumulatedImpairmentLoss",
+    "us-gaap:DeferredTaxAssetsPropertyPlantAndEquipment",
+    # a us-gaap name outside the carrying amounts is not read by its words, as an extension's is
+    "us-gaap:PropertyPlantAndEquipmentAdditionsNonCash", "us-gaap:IntangibleAssetsNetIncludingGoodwill", 
+    # a lease asset alone: lease additions are non-cash
+    "us-gaap:OperatingLeaseRightOfUseAsset", "xyz:OperatingLeaseRightOfUseAsset", "xyz:FinanceLeaseRightOfUseAsset"])
+def test_a_quantity_that_is_not_a_carrying_amount_is_not_refused_as_inside_free_cash_flow(concept):
+    held = a_change(concept, WITH_ACQUISITIONS)
+    amount, reason = reading(held, "note_tables.tables.notes_1.changes.0")
+    assert INSIDE not in (reason or "") and CONTAINS not in (reason or "")
+    if "Impair" in concept:
+        assert reason == NON_CASH                    # refused, for the reason that names it
+    else:
+        assert (amount, reason) == (1_000_000.0, None)
+
+
+NON_CASH = "a non-cash charge; it is an earnings adjustment"
+CONTAINS = "contains free cash flow"
+
+
+@pytest.mark.parametrize("run, path, concept, accepted", [
+    (AAPL_RUN, "note_tables.tables.notes_36.changes.1",
+     "us-gaap:AccumulatedDepreciationDepletionAndAmortizationPropertyPlantAndEquipment", 730e6),
+    (AAPL_RUN, "note_tables.tables.notes_38.changes.1",
+     "us-gaap:FiniteLivedIntangibleAssetsAccumulatedAmortization", 1_154e6),
+    (STX_RUN, "note_tables.tables.notes_138.changes.5", "us-gaap:DeferredTaxAssetsPropertyPlantAndEquipment", -4e6),
+    ("CSCO/0000858877-26-000078", "note_tables.tables.notes_89.changes.0", "us-gaap:OperatingLeaseRightOfUseAsset", 149e6),
+    ("CARR/0001783180-26-000032-rerun-2026-10-28", "note_tables.tables.notes_105.changes.7",
+     "carr:DisposalGroupIncludingDiscontinuedOperationOperatingLeaseRightOfUseAsset", 4e6),
+    (AAPL_RUN, "note_tables.tables.notes_36.changes.1", "us-gaap:AccumulatedDepreciationDepletionAndAmortizationPropertyPlantAndEquipment", 730e6),
+])
+def test_committed_cells_that_are_not_carrying_amounts_are_accepted(run, path, concept, accepted):
+    held = printed(run)
+    cell = calculator._cell_at(held, path)
+    assert cell["concept"] == concept and cell["value"] == accepted
+    assert reading(held, path) == (accepted, None)
+
+
+@pytest.mark.parametrize("run, path, concept", [
+    ("LFUS/0001628280-26-050481-note-tables-2026-11-08", "note_tables.tables.notes_67.changes.4", "us-gaap:GoodwillImpairedAccumulatedImpairmentLoss"),
+    ("CARR/0001783180-26-000032-rerun-2026-10-28", "note_tables.tables.notes_105.changes.9",
+     "carr:DisposalGroupIncludingDiscontinuedOperationImpairmentOnHeldForSaleAssets"),
+])
+def test_an_impairment_line_is_refused_as_a_non_cash_charge_not_as_inside_free_cash_flow(run, path, concept):
+    held = printed(run)
+    assert calculator._cell_at(held, path)["concept"].startswith(concept[:30])
+    amount, reason = reading(held, path)
+    assert (amount, reason) == (None, NON_CASH)
+    assert reading(held, path, False, "earnings")[0] is not None
 
 
 def test_a_flow_fact_of_goodwill_is_not_a_change_and_stands_once():
@@ -1567,26 +1762,103 @@ def test_a_change_of_a_liability_or_a_receivable_is_not_an_asset_family():
         assert reading(held, f"note_tables.tables.notes_1.changes.{position}")[0] == 1_000_000.0
 
 
-def test_a_sweep_counts_the_goodwill_and_intangible_changes_now_refused():
-    """A report, not a constant: over the committed runs of these companies as printed today, every
-    change cell of a goodwill or intangible concept that the older rule would have read is refused."""
+def test_accrued_purchase_consideration_stays_accepted():
+    """NVIDIA's `notes_60.changes.6`, accrued consideration payable for an acquisition (-2,935
+    million): consideration paid later, outside investing, escapes free cash flow, and an analyst may
+    adjust for it (docs/needs_judgment.md)."""
+    held = printed("NVDA/0001045810-26-000075")
+    path = "note_tables.tables.notes_60.changes.6"
+    cell = calculator._cell_at(held, path)
+    assert cell["concept"] == "nvda:BusinessCombinationConsiderationPayable" and cell["value"] == -2_935e6
+    assert reading(held, path) == (-2_935e6, None)
+
+
+# --- cells that contain free cash flow -----------------------------------------------------------
+
+@pytest.mark.parametrize("path", [
+    "quarterly_cash_flow_and_accruals.balance_sheet_accruals.inputs.change_in_cash",
+    "quarterly_cash_flow_and_accruals.balance_sheet_accruals.inputs.change_in_current_assets",
+    "quarterly_cash_flow_and_accruals.balance_sheet_less_cash_flow_accruals.inputs.balance_sheet_accruals.inputs.change_in_cash",
+    "quarterly_cash_flow_and_accruals.balance_sheet_less_cash_flow_accruals.inputs.balance_sheet_accruals.inputs.change_in_current_assets",
+])
+def test_a_change_in_cash_or_in_a_total_that_includes_cash_contains_free_cash_flow(path):
+    held = printed("NVDA/0001045810-26-000075")
+    assert calculator._cell_at(held, path)["unit"] == "USD"
+    refused_with(held, path, CONTAINS)
+
+
+@pytest.mark.parametrize("concept", [
+    "us-gaap:CashAndCashEquivalentsAtCarryingValue", "us-gaap:Cash", "us-gaap:CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents",
+    "us-gaap:CashAndShortTermInvestments", "us-gaap:AssetsCurrent", "us-gaap:Assets", "co:CashAndCashEquivalentsOther"])
+def test_a_note_table_change_in_cash_or_total_assets_contains_free_cash_flow(concept):
+    refused_with(a_change(concept), "note_tables.tables.notes_1.changes.0", CONTAINS)
+
+
+def test_a_change_in_receivables_or_current_liabilities_does_not_contain_free_cash_flow():
+    held = printed("NVDA/0001045810-26-000075")
+    for path in ("quarterly_cash_flow_and_accruals.balance_sheet_accruals.inputs.change_in_current_liabilities",
+                 "earnings_versus_cash.working_capital.receivables.balance_sheet_change"):
+        assert reading(held, path)[0] is not None, path
+    assert reading(a_change("us-gaap:CashFlowHedgeGainLoss"), "note_tables.tables.notes_1.changes.0")[0] == 1_000_000.0
+
+
+# --- a non-cash charge is an earnings adjustment -----------------------------------------------------
+
+def test_gnrcs_goodwill_impairment_is_refused_as_cash_flow_and_accepted_as_earnings():
+    """Generac's `notes_105.facts.9`, the goodwill impairment loss of the six months to 2026-06-30
+    (1.523 million): a non-cash charge, so never the amount of a cash-flow adjustment."""
+    held = printed("GNRC/0001437749-26-025669")
+    path = "note_tables.tables.notes_105.facts.9"
+    cell = calculator._cell_at(held, path)
+    assert cell["concept"] == "us-gaap:GoodwillImpairmentLoss" and cell["value"] == 1_523_000.0
+    assert reading(held, path, False, "cash_flow") == (None, NON_CASH)
+    assert reading(held, path, False, "earnings") == (1_523_000.0, None)
+    assert analysis_check.adjustment_problem(held)(
+        {"direction": "reduce", "applies_to": "cash_flow", "calculator_field": path, "quote": "q"}).endswith(NON_CASH)
+    assert analysis_check.adjustment_problem(held)(
+        {"direction": "reduce", "applies_to": "earnings", "calculator_field": path, "quote": "q"}) is None
+    out = calculator.calculate(**calculator_drift.trigger(RUNS / "GNRC" / "0001437749-26-025669"), fixtures_root=STORE,
+                               bundle=RUNS / "GNRC" / "0001437749-26-025669", accounting={"adjustments": [
+                                   adjustment(path), adjustment(path, applies_to="earnings")]})
+    quality = out["free_cash_flow"]["free_cash_flow_quality_adjusted"]
+    assert [r["reason"].endswith(NON_CASH) for r in quality["adjustments_refused"]] == [True]
+    assert len(quality["adjustments_to_earnings"]) == 1 and quality["adjustments_applied"] == []
+
+
+@pytest.mark.parametrize("path", ["terms.trailing_four_quarters.inventory_write_down", "x.asset_impairment_charges", "x.receivables_write_off"])
+def test_a_calculator_cell_named_for_a_non_cash_charge_is_refused_as_cash_flow(path):
+    held = {"period_end": "2026-06-30"}
+    node = held
+    parts = path.split(".")
+    for part in parts[:-1]:
+        node = node.setdefault(part, {})
+    node[parts[-1]] = usd(period="2025-07-01..2026-06-30")
+    assert reading(held, path, False, "cash_flow") == (None, NON_CASH)
+    assert reading(held, path, False, "earnings")[0] == 1_000_000.0
+
+
+def test_a_sweep_counts_the_goodwill_and_intangible_changes_refused_where_acquisitions_are_subtracted():
+    """A report, not a constant: over the committed runs as printed today, each goodwill or
+    intangible change cell is refused when the run's free cash flow subtracts acquisitions, and
+    accepted when it does not."""
     import collections
-    families = ("Goodwill", "IntangibleAssets")
     counted = collections.Counter()
     for name in sorted({n for n, _ in committed_views()}):
-        ticker = name.split("/")[0]
-        if ticker not in {"CARR", "CSCO", "DELL", "GNRC", "JCI", "LFUS", "NVDA", "PANW", "AAPL", "CIEN"}:
-            continue
         held = printed(name)
+        subtracts = calculator.acquisitions_subtracted(held)
         for table, body in held["note_tables"]["tables"].items():
             for position, change in enumerate(body.get("changes", [])):
-                local = change["concept"].split(":")[-1]
-                if any(word in local for word in families):
-                    path = f"note_tables.tables.{table}.changes.{position}"
-                    assert reading(held, path)[0] is None, path
-                    counted[ticker] += 1
-    print("goodwill and intangible change cells refused:", dict(counted))
-    assert counted["PANW"] >= 2
+                namespace, _, local = change["concept"].rpartition(":")
+                if not (re.search(r"Goodwill|IntangibleAssets", local)
+                        and calculator.asset_change_problem(local, namespace, {}) is None
+                        and calculator.asset_change_problem(local, namespace, WITH_ACQUISITIONS) is not None):
+                    continue
+                path = f"note_tables.tables.{table}.changes.{position}"
+                amount, reason = reading(held, path)
+                assert (amount is None) is subtracts or reason is not None, path
+                counted[(name.split("/")[0], "refused" if amount is None else "accepted")] += 1
+    print("goodwill and intangible change cells by run:", dict(counted))
+    assert counted
 
 
 # --- a name is used once, enforced at the gate --------------------------------------------------
@@ -1607,7 +1879,7 @@ ONE = {"name": "x", "direction": "reduce", "applies_to": "earnings", "recurs": F
 
 def test_the_gate_drops_an_adjustment_whose_name_repeats_an_earlier_one():
     first = ONE
-    second = {**ONE, "applies_to": "cash_flow", "recurs": True}
+    second = {**ONE, "applies_to": "cash_flow"}
     third = {**ONE, "name": "y"}
     out = gate_adjustments([first, second, third])
     assert [(item["name"], item["applies_to"]) for item in out["adjustments"]] == [

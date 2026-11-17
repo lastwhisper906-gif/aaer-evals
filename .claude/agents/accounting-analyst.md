@@ -181,9 +181,15 @@ expenditure (payments for property and equipment), share-based compensation and
 acquisitions, in the calculator's own cells and in a note table's facts of those
 concepts. `cash_flow` and `earnings` are both flows, so the cell must be a flow
 (a number over a span of dates) or a change between two balances: a note table's
-`changes` cell is a change, later minus earlier, worked out by Python. A change in property, plant and equipment, goodwill, intangible assets, capitalised software or
-right-of-use assets is refused: it carries the capital expenditure and
-acquisitions free cash flow already counts. A balance at
+`changes` cell is a change, later minus earlier, worked out by Python. A change in cash, or in a total that includes cash (current assets, total assets), contains free
+cash flow and is refused. A change in the carrying amount of property, plant and equipment
+(a lease asset only when combined with it) or of capitalised software is refused, because it carries
+the capital expenditure free cash flow already counts; so is a change in the carrying amount of
+goodwill or of intangible assets where free cash flow already subtracts acquisitions, and where it
+subtracts none the change stands. An accumulated depreciation or amortisation, an impairment, a
+deferred tax or a held-for-sale line is another quantity and is not refused for that reason. A
+non-cash charge (an impairment, a write-down, a write-off) is never a `cash_flow` amount: it is an
+`earnings` adjustment. A balance at
 one date is not a flow, and Python drops an adjustment that names one, with that
 reason. The cell must also be of the period free cash flow covers: a span that
 begins no earlier than the first day of the trailing year the view prints
@@ -192,8 +198,9 @@ between two dates that ends at the period end and begins no earlier than the day
 before that first day. A prior-year column, a history entry, a change between
 two spans and a change over two years are dropped as not the period free cash flow
 covers. An adjustment you mark `"recurs": true` must cover the whole trailing year;
-a shorter span (a quarter, the year to date) can stand only as one-time, and Python
-drops a recurring one with that reason. Only a `cash_flow` adjustment moves free cash
+a shorter span (a quarter, the year to date), a cell whose two balances are not the period's
+end and a year before it, and a cell whose span Python cannot read can stand only as one-time,
+and Python drops a recurring one with that reason. Only a `cash_flow` adjustment moves free cash
 flow. An `earnings` adjustment is read by the same rule and listed with its amount;
 it does not move free cash flow, and the valuation applies it (once, or as a margin
 cut where it recurs). Each adjustment's `name` is used once in your analysis: Python drops a name that repeats an

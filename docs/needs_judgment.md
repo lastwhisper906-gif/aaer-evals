@@ -158,6 +158,10 @@ force.
 
 [ ] **whether a store's index keeps the row of a comment letter that was filed before the triggering report and made public after it** (the index is EDGAR's list by filing date, so ADTRAN's store for the 10-Q of 2024-11-12 holds the rows of three letters made public 2024-12-04; the documents and their releases are not in the store) · default in force since 2026-11-14: the row stays and no input prints it; `input_8k.md` lists 8-Ks and late-filing notices from the index and carries letters only from the documents the store holds · dropping such rows from the index would need each letter's header read before the index is written.
 
+[ ] **whether a non-cash charge (an impairment, a write-down, a write-off) may be the amount of a cash-flow adjustment** · default in force: it never is: the gate and the calculator refuse it as a cash-flow amount, "a non-cash charge; it is an earnings adjustment", and accept it as an earnings adjustment (Generac's goodwill impairment loss is the test's case) · what changes when the owner decides: the owner may allow it where a charge is paid in cash later; the row stays open until then and nothing waits on it.
+
+[ ] **whether consideration for an acquisition paid later, outside investing, may be adjusted for** · default in force: it may: a change in accrued purchase consideration (NVIDIA's `BusinessCombinationConsiderationPayable`, -2,935 million) stays an accepted amount, because deferred consideration paid outside investing escapes free cash flow, which subtracts only what it counted as paid for businesses · what changes when the owner decides: the owner may refuse it as already counted in acquisitions; the row stays open until then and nothing waits on it.
+
 ## Settled by default
 
 Every other row that was open on 2026-09-28. Nothing waits on any of them: the
