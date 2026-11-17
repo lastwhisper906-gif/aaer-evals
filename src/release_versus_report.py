@@ -705,7 +705,7 @@ def row_lines(rows: list[list[str]]) -> list[str | None]:
     """The line each row of a table is, by its label and its heading: `Diluted` under a per share
     heading is diluted earnings per share, and under a heading about shares it is not."""
     first = next((i for i, cells in enumerate(rows) if _is_data_row(cells)), len(rows))
-    per_share, diluted, out = False, False, [None] * len(rows)
+    per_share, diluted, basic, out = False, False, False, [None] * len(rows)
     for index, row in enumerate(rows):
         placed = _label_of(row)
         if placed is None:
@@ -717,11 +717,14 @@ def row_lines(rows: list[list[str]]) -> list[str | None]:
             if text or not unit_statement(" ".join(row)):
                 per_share = is_per_share_heading(text)
                 diluted = per_share and bool(re.search(r"\bdiluted\b", normal_label(text)))
+                basic = per_share and heading_kind(text) == "basic"
             continue
         line = line_of_label(placed[1])
         if per_share and diluted and (line == "net_income" or (
                 line is None and _names_attributable_net_income(placed[1]))):
             line = "diluted_earnings_per_share"         # Net earnings under `Diluted:`
+        elif per_share and basic and line and line not in PER_SHARE:
+            line = BASIC                                # Net earnings under `Basic:`
         out[index] = line or (
             "diluted_earnings_per_share" if normal_label(placed[1]) == "diluted" and per_share
             else None) or (BASIC if basic_eps_label(placed[1]) and (
@@ -911,16 +914,11 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
             # figures look. `Basic` rows, and the rows under a `Basic:` heading, are held to
             # EarningsPerShareBasic (hint `basic`); a row under any other per share heading is
             # held to the figure its own label names, or listed unread.
-            basic_row = line == BASIC
+            basic_row = line == BASIC       # its own line, outside the nine, from `row_lines`
             if not basic_row and per_share and line not in PER_SHARE:
-                if per_kind != "basic":
-                    note(line, placed[1], "a row under a per share heading that names neither "
-                                          "basic nor diluted, whose own label names no per share "
-                                          "figure")
-                    continue
-                basic_row = True
-            if basic_row:
-                line = BASIC            # its own line, outside the nine: never filed under another
+                note(line, placed[1], "a row under a per share heading that names neither basic "
+                                      "nor diluted, whose own label names no per share figure")
+                continue
             seen.add(line)
             per_row = line in PER_SHARE or basic_row
             figures = _figures(row[placed[0] + 1:])
@@ -1063,8 +1061,9 @@ def _identity(cell: dict, rows: dict, parent_fact: dict, nci_fact: dict | None =
     that breaks the identity differs, with the three cells; a table that does not print all
     three is a fact not on record."""
     held = ("the table's own identity: consolidated net income is the parent's row plus the "
-            "noncontrolling interest's income (its sign from the tagged "
-            "NetIncomeLossAttributableToNoncontrollingInterest where the report tags it, else "
+            "noncontrolling interest's income (the tagged "
+            "NetIncomeLossAttributableToNoncontrollingInterest decides its sign and its size "
+            "where the report tags it, and the printed row is held to it; else the sign is read "
             "from the row), and the parent's row is held to NetIncomeLoss")
     nci, parent = rows.get("noncontrolling"), rows.get("parent")
     if nci is None or parent is None:
@@ -1098,7 +1097,11 @@ def _identity(cell: dict, rows: dict, parent_fact: dict, nci_fact: dict | None =
         Decimal(parent["printed"]), parent_fact["value"], parent["scale"], parent["decimals"])
     broken = not holds
     difference = residual if broken else parent_difference
-    verdict = "differs" if broken or not parent_agrees else "agrees"
+    printed_agrees = tagged is None or agrees_at_the_release_precision(
+        abs(Decimal(nci["printed"])), float(abs(tagged)), nci["scale"], nci["decimals"])
+    verdict = "differs" if broken or not parent_agrees or not printed_agrees else "agrees"
+    if not printed_agrees:
+        entry["reason"] = "the printed noncontrolling figure differs from the report's"
     if verdict == "agrees" and len(added) > 1:
         verdict = "block_not_identified"
         entry["reason"] = "the sign of the noncontrolling figure is not stated"
@@ -1106,6 +1109,16 @@ def _identity(cell: dict, rows: dict, parent_fact: dict, nci_fact: dict | None =
                  identity={"cells": cells, "residual": float(residual), "step": float(step),
                            "parent_agrees_with_the_report": parent_agrees})
     return entry
+
+
+def statement_verdict(verdicts: list[str]) -> str:
+    """The face statement's own verdict for a line, from its cells in the statement: `agrees`
+    only if every one agrees, else the weakest, most important first: `differs`,
+    `block_not_identified`, `report_fact_missing`; `not_compared` if it has none."""
+    if not verdicts:
+        return "not_compared"
+    return next((v for v in ("differs", "block_not_identified", "report_fact_missing")
+                 if v in verdicts), "agrees")
 
 
 def compare_release(paragraph_ids: list[str], paragraphs: list[str], period_end: str, read_report,
@@ -1242,12 +1255,8 @@ def compare_release(paragraph_ids: list[str], paragraphs: list[str], period_end:
             out[line]["excluded_rows"] = excluded
         # the face statement's own verdict, beside the line's and never borrowed by it
         statement = read["statement"]
-        mine = [e for e in compared if e["release"]["paragraph_id"] == statement
-                and e["verdict"] in ("agrees", "differs")]
-        out[line]["statement"] = {
-            "paragraph_id": statement,
-            "verdict": ("not_compared" if not mine else
-                        "differs" if any(e["verdict"] == "differs" for e in mine) else "agrees")}
+        mine = [e["verdict"] for e in compared if e["release"]["paragraph_id"] == statement]
+        out[line]["statement"] = {"paragraph_id": statement, "verdict": statement_verdict(mine)}
     by_kind: dict[str, list[dict]] = {}
     for line, notes in read["unread"].items():
         for item in notes:

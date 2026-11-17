@@ -1254,6 +1254,9 @@ def bulk_check(ticker: str, accession: str) -> dict:
                          and c["release"]["label"] == placed[1]
                          and c["release"]["cell"] == changed[j].strip()]
                 hit = [c for name, c in filed]
+                # the line it is filed under must be the line `row_lines` gives the row
+                assert all(name == row_line[r] for name, c in filed), (
+                    "misfiled", key, [name for name, c in filed], row_line[r])
                 if hit and all(c["verdict"] == "differs" for c in hit) and all(
                         after["lines"][name]["verdict"] in ("differs", "differs_outside_gaap")
                         for name, c in filed):
@@ -1419,7 +1422,12 @@ def test_release_versus_report_each_releases_face_statement_is_the_paragraph_rea
         assert full["statement_table"].endswith(f":8k_2_02:{number}")
     verdicts = {line: entry["statement"]["verdict"] for line, entry in full["lines"].items()}
     assert {line for line, verdict in verdicts.items() if verdict == "not_compared"} == not_compared
-    assert {verdict for verdict in verdicts.values()} <= {"agrees", "not_compared"}
+    # a statement's verdict is `agrees` only if every compared cell in it agrees, else the weakest
+    # cell's: Seagate's statement prints a fourth-quarter EPS its 10-K does not tag
+    weaker = {"STX": {"diluted_earnings_per_share": "report_fact_missing",
+                      "basic_earnings_per_share": "report_fact_missing"}}.get(ticker, {})
+    assert {line: verdict for line, verdict in verdicts.items() if verdict not in (
+        "agrees", "not_compared")} == weaker
 
 
 def test_release_versus_report_johnson_controls_revenue_is_not_compared_on_its_statement():
@@ -3235,3 +3243,78 @@ def test_release_versus_report_a_tagged_noncontrolling_income_decides_the_sign_o
     out = _run(_nci_table(consolidated, _PLAIN, "(40)"),
                _fact(net_income=501e6, revenue=6e9, net_income_to_noncontrolling=tag))
     assert out["net_income"]["comparisons"][0]["verdict"] == verdict
+
+
+# --- round ten ---------------------------------------------------------------------------------------
+
+def test_release_versus_report_a_statements_verdict_is_the_weakest_cells_in_it():
+    """`agrees` only if every compared cell of the statement agrees; else `differs`, then
+    `block_not_identified`, then `report_fact_missing`. Kills the mutants that read only the
+    agreeing and differing cells, and that reorder."""
+    assert rvr.statement_verdict([]) == "not_compared"
+    assert rvr.statement_verdict(["agrees", "agrees"]) == "agrees"
+    assert rvr.statement_verdict(["agrees", "report_fact_missing"]) == "report_fact_missing"
+    assert rvr.statement_verdict(["report_fact_missing", "block_not_identified"]) == \
+        "block_not_identified"
+    assert rvr.statement_verdict(["block_not_identified", "differs", "report_fact_missing"]) == "differs"
+
+
+def test_release_versus_report_an_identity_cell_that_is_not_identified_weakens_the_statement():
+    rows = [_row("Revenue", "6,000"), _row("Cost of revenue", "(4,000)"),
+            _row("Operating income", "900"), _row("Net income", "541"),
+            _row(_PLAIN, "(40)"), _row("Net income attributable to Acme Corp.", "501")]
+    table = _table(rows)
+    report = {"revenue": {"value": 6e9}, "cost_of_revenue": {"value": 4e9},
+              "operating_income": {"value": 900e6}, "net_income": {"value": 501e6}}
+    full = rvr.compare_release(["p:1"], [table], "2026-06-30",
+                               lambda line, months: report.get(line, {"missing": "none"}))
+    lines = full["lines"]
+    assert lines["net_income"]["comparisons"][0]["verdict"] == "block_not_identified"
+    assert lines["net_income"]["statement"]["verdict"] == "block_not_identified"
+    assert lines["revenue"]["statement"]["verdict"] == "agrees"
+
+
+def test_release_versus_report_seagates_statement_eps_reads_report_fact_missing():
+    full = _planted_full("STX", "0001137789-26-000159", {})["lines"]
+    assert full["diluted_earnings_per_share"]["statement"]["verdict"] == "report_fact_missing"
+    assert full["net_income"]["statement"]["verdict"] == "agrees"
+
+
+@pytest.mark.parametrize("consolidated", ["541", "505"])
+def test_release_versus_report_a_printed_interest_that_differs_from_the_tag_differs(consolidated):
+    """Tag 40, printed row 4: 541 fits the tag and 505 fits the printed row, and both read
+    `differs` with the reason. Kills the mutant that checks the identity alone."""
+    rows = [_row("Net income", consolidated), _row(_PLAIN, "4"),
+            _row("Net income attributable to Acme Corp.", "501")]
+    out = _run(rows, _fact(net_income=501e6, net_income_to_noncontrolling=40e6))
+    cell = out["net_income"]["comparisons"][0]
+    assert cell["verdict"] == "differs"
+    assert cell["reason"] == "the printed noncontrolling figure differs from the report's"
+    assert "decides its sign and its size" in cell["held_to"]
+
+
+@pytest.mark.parametrize("printed,tag,verdict", [
+    ("40", 40e6, "agrees"), ("(40)", -40e6, "agrees"), ("40", 40.4e6, "agrees"),
+    ("40", 41e6, "differs"), ("(234)", -234e3, "differs")])
+def test_release_versus_report_a_printed_interest_is_held_to_the_tag_at_its_precision(
+        printed, tag, verdict):
+    consolidated = "541" if tag > 0 else "461"
+    rows = [_row("Net income", consolidated), _row(_PLAIN, printed),
+            _row("Net income attributable to Acme Corp.", "501")]
+    out = _run(rows, _fact(net_income=501e6, net_income_to_noncontrolling=tag))
+    assert out["net_income"]["comparisons"][0]["verdict"] == verdict, (printed, tag)
+
+
+def test_release_versus_report_the_tenth_line_is_documented_for_the_analyst_and_in_the_section():
+    analyst = (REPO_ROOT / ".claude" / "agents" / "accounting-analyst.md").read_text(encoding="utf-8")
+    flat = " ".join(analyst.split())
+    for text in (flat, " ".join(calculator.RELEASE_WHAT_THIS_IS.split())):
+        assert "basic_earnings_per_share" in text
+        assert "outside the nine" in text
+        assert "only when the release prints a basic row" in text
+
+
+def test_release_versus_report_a_row_under_a_basic_heading_is_the_basic_line_by_row_lines():
+    rows = [rvr.cells_of(r) for r in ["| Basic: |", _row("Net income", "0.61", "0.50"),
+                                      "| Diluted: |", _row("Net income", "0.60", "0.50")]]
+    assert rvr.row_lines(rows) == [None, rvr.BASIC, None, "diluted_earnings_per_share"]

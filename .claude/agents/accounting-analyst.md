@@ -119,7 +119,10 @@ and `trend_table`.
    `agrees`, `block_not_identified`, `report_fact_missing`, `period_not_read`,
    `printed_under_another_label` (a row prints it under a label the table does
    not read) or `not_in_release`, with the face statement's own `statement`
-   verdict beside it; cite its paths and never subtract.
+   verdict beside it (`agrees` only if every compared cell in it agrees, else
+   the weakest cell's verdict); `basic_earnings_per_share` is a line outside the
+   nine, emitted only when the release prints a basic row; cite its paths and
+   never subtract.
 
 **Revenue and working capital.** Four sections feed earnings versus cash,
 revenue recognition and the industry lens. Each field named here is a number,

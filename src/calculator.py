@@ -3620,7 +3620,9 @@ RELEASE_WHAT_THIS_IS = (
     "percent are not compared to a dollar fact. `statement` beside each line is the face "
     "statement's own verdict (the table printing at least four of the lines, chosen without a "
     "value): `agrees`, `differs` or `not_compared`, never borrowed by the line's. Unread "
-    "tables are listed by kind and unread columns with their dates. Python wrote every "
+    "tables are listed by kind and unread columns with their dates. `basic_earnings_per_share` "
+    "is a line outside the nine, emitted only when the release prints a basic row, held to the "
+    "report's `EarningsPerShareBasic` and never filed under another line. Python wrote every "
     "number here")
 
 
