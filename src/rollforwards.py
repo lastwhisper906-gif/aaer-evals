@@ -405,7 +405,11 @@ def _contribution(one: dict, signs: dict, signed: bool = False) -> tuple[Decimal
 
 def _row(one: dict, signs: dict | None = None, signed: bool = False) -> dict:
     out = {"concept": one["concept"], "value": one["value"], "fact": one["fact"]}
-    if signs is not None and signed and one["value"] != 0:
+    if signs is not None and signed:
+        if one["value"] == 0:
+            # a zero has no sign to read: it adds nothing, whichever way it is printed
+            out["contribution"], out["sign_source"] = 0.0, "tagged"
+            return out
         contribution, source, disagrees = _contribution(one, signs, True)
         out["contribution"] = float(contribution)
         out["sign_source"] = source
@@ -511,8 +515,11 @@ def _balance_names(family: str, kind: str) -> tuple[str, ...]:
 def _cell(rows: list[dict], total: Decimal, signs: dict, signed: bool = False) -> dict:
     out = {"value": float(total), "facts": [one["fact"] for one in rows],
            "rows": [_row(one, signs, signed) for one in rows]}
-    sources = [row["sign_source"] for row in out["rows"] if "sign_source" in row]
-    if sources:
+    sources = [row["sign_source"] for row in out["rows"]
+               if "sign_source" in row and row["value"] != 0]
+    if signed and not sources and rows:
+        out["sign_source"], out["sign_disagrees"] = "tagged", False
+    elif sources:
         out["sign_source"] = "tagged" if "tagged" in sources else "printed"
         out["sign_disagrees"] = any(row.get("sign_disagrees") for row in out["rows"])
     return out

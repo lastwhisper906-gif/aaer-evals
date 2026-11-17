@@ -936,8 +936,11 @@ def all_filings():
 
 
 # Each period over the 72 committed filings that reads `foots` false and `complete` true. There
-# is none: the two NSSC periods that were (below) foot once a row whose element does not fix
-# its own direction takes the sign the filing prints.
+# is none today. This is a regression guard on the module's own output, not an expected value
+# from a source: it was observed after the NSSC periods that were on it (a deduction the filer
+# tags as `Recoveries` and prints in parentheses) began to foot. What would catch a rule that
+# wrongly made tables foot is `test_a_table_that_does_not_foot_as_printed_reads_foots_false`,
+# whose tables are worked by hand.
 EXPECTED_FALSE_AND_COMPLETE: list[tuple] = []
 
 
@@ -1230,3 +1233,98 @@ def test_any_row_of_other_takes_its_printed_sign_and_the_difference_is_ending_le
     year = period_of(series_of(rollforwards.build(with_signs(planted(rows), {"o1": "positive"})),
                                "allowance_for_credit_losses", "notes_1"), CLOSING)
     assert year["foots"] is False and year["difference"]["value"] == -14
+
+
+def inline_page(*rows: str) -> bytes:
+    return ('<html xmlns="http://www.w3.org/1999/xhtml" '
+            'xmlns:ix="http://www.xbrl.org/2013/inlineXBRL"><body><table>'
+            + "".join(f"<tr>{row}</tr>" for row in rows) + "</table></body></html>").encode()
+
+
+def number_cell(fact_id: str, shown: str, sign: str = "") -> str:
+    attribute = f' sign="{sign}"' if sign else ""
+    return (f'<ix:nonFraction id="{fact_id}" name="x:Y" contextRef="c" unitRef="usd"'
+            f'{attribute}>{shown}</ix:nonFraction>')
+
+
+def test_a_negative_printed_with_a_hyphen_a_minus_sign_or_an_en_dash_is_a_printed_negative():
+    page = inline_page(
+        f"<td>hyphen</td><td>-{number_cell('h', '5')}</td>",
+        f"<td>minus</td><td>\u2212{number_cell('m', '5')}</td>",
+        f"<td>en dash</td><td>$ \u2013{number_cell('e', '5')}</td>",
+        f"<td>split</td><td>(</td><td>{number_cell('p', '5')}</td><td>)</td>",
+        f"<td>plain</td><td>{number_cell('q', '5')}</td>")
+    assert note_tables.printed_signs(page) == {
+        "h": "negative", "m": "negative", "e": "negative", "p": "negative", "q": "positive"}
+
+
+def test_the_dash_of_an_empty_cell_beside_a_number_is_no_sign():
+    """Generac's "Acquisitions of businesses, net | 22,641 | - | 22,641": the "-" is a cell of
+    its own that says nothing was acquired, and the number after it is positive."""
+    page = inline_page(f"<td>Acquisitions</td><td>{number_cell('a', '22,641')}</td><td>-</td>"
+                       f"<td>{number_cell('b', '22,641')}</td>")
+    assert note_tables.printed_signs(page) == {"a": "positive", "b": "positive"}
+
+
+def test_the_tagged_sign_is_the_elements_own_and_is_kept_apart_from_the_printed_one():
+    """Cisco's shape: printed 3, tagged `sign="-"`; Johnson Controls': printed (1), tagged +."""
+    page = inline_page(f"<td>cisco</td><td>{number_cell('c', '3', '-')}</td>",
+                       f"<td>jci</td><td>(</td><td>{number_cell('j', '1')}</td><td>)</td>")
+    assert note_tables.tagged_signs(page) == {"c": "negative", "j": "positive"}
+    assert note_tables.printed_signs(page) == {"c": "positive", "j": "negative"}
+
+
+def test_a_row_printed_with_a_minus_sign_takes_it():
+    """The other row tagged +20 and printed -20: 1,000 + 400 - 300 - 20 = 1,080 foots."""
+    rows = table_of("ProductWarrantyAccrual", "ProductWarrantyAccrualWarrantiesIssued",
+                    "ProductWarrantyAccrualPayments", opening=1_000, closing=1_080, charge=400,
+                    spent=300, other=20, other_concept=TRANSLATION)
+    page = inline_page(f"<td>x</td><td>\u2212{number_cell('o1', '20')}</td>")
+    carried = with_signs(planted(rows), {key: value for key, value in
+                                         note_tables.printed_signs(page).items()})
+    year = period_of(series_of(rollforwards.build(carried), "product_warranty", "notes_1"),
+                     CLOSING)
+    assert year["foots"] is True and year["other"]["rows"][0]["sign_source"] == "printed"
+
+
+def test_a_zero_row_of_other_carries_a_sign_source_too():
+    rows = table_of("ProductWarrantyAccrual", "ProductWarrantyAccrualWarrantiesIssued",
+                    "ProductWarrantyAccrualPayments", opening=1_000, closing=1_100, charge=400,
+                    spent=300, other=0, other_concept=TRANSLATION)
+    year = period_of(series_of(rollforwards.build(planted(rows)), "product_warranty",
+                               "notes_1"), CLOSING)
+    assert year["foots"] is True
+    assert [row["sign_source"] for row in year["other"]["rows"]] == ["tagged"]
+    assert year["other"]["sign_source"] == "tagged"
+
+
+# Five tables whose printed rows do not add to the printed ending, worked by hand; each must
+# read `foots` false with the difference shown, whatever the sign rules do to a row.
+DOES_NOT_FOOT = [
+    # 1,000 + 400 - 300 = 1,100, the filer printing 1,150: 50 over
+    ("plain", dict(opening=1_000, closing=1_150, charge=400, spent=300), {}, 50),
+    # 1,000 + 400 - 300 + 20 = 1,120 (a change in estimate, printed positive), printed 1,100: -20
+    ("estimate", dict(opening=1_000, closing=1_100, charge=400, spent=300, other=20,
+                      other_concept="ProductWarrantyAccrualPreexistingIncreaseDecrease"),
+     {"o1": "positive"}, -20),
+    # translation tagged +20 and printed (20): 1,000 + 400 - 20 - 300 = 1,080, printed 1,120: 40 over
+    ("printed negative", dict(opening=1_000, closing=1_120, charge=400, spent=300, other=20,
+                              other_concept=TRANSLATION), {"o1": "negative"}, 40),
+    # translation tagged -20 and printed 20: 1,000 + 400 + 20 - 300 = 1,120, printed 1,080: -40
+    ("printed positive", dict(opening=1_000, closing=1_080, charge=400, spent=300, other=-20,
+                              other_concept=TRANSLATION), {"o1": "positive"}, -40),
+    # a usage row printed in parentheses is still taken away once: 1,000 + 400 - 300 = 1,100,
+    # printed 1,700 (what adding it back would give): 600 over
+    ("usage in parentheses", dict(opening=1_000, closing=1_700, charge=400, spent=300), {
+        "u1": "negative"}, 600),
+]
+
+
+@pytest.mark.parametrize("name,table,signs,gap", DOES_NOT_FOOT, ids=[one[0] for one in
+                                                                   DOES_NOT_FOOT])
+def test_a_table_that_does_not_foot_as_printed_reads_foots_false(name, table, signs, gap):
+    rows = table_of("ProductWarrantyAccrual", "ProductWarrantyAccrualWarrantiesIssued",
+                    "ProductWarrantyAccrualPayments", **table)
+    year = period_of(series_of(rollforwards.build(with_signs(planted(rows), signs)),
+                               "product_warranty", "notes_1"), CLOSING)
+    assert year["foots"] is False and year["difference"]["value"] == gap

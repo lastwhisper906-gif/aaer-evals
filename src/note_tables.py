@@ -91,9 +91,13 @@ def inline_tables(html: bytes) -> dict[str, list[str]]:
     return out
 
 
+MINUS_SIGNS = ("-", "\u2212", "\u2013")      # hyphen, minus sign, en dash
+
+
 def _row_tokens(row: ET.Element) -> list[tuple[str, str | None]]:
     """The text of one table row in document order, with each inline numeric fact as a
-    marker: ("text", the text) and ("fact", its id)."""
+    marker and the end of each cell as another: ("text", the text), ("fact", its id) and
+    ("cell", None)."""
     tokens: list[tuple[str, str | None]] = []
 
     def walk(node: ET.Element) -> None:
@@ -104,6 +108,8 @@ def _row_tokens(row: ET.Element) -> list[tuple[str, str | None]]:
                 tokens.append(("fact", child.get("id")))
             else:
                 walk(child)
+                if child.tag in (f"{{{XHTML}}}td", f"{{{XHTML}}}th"):
+                    tokens.append(("cell", None))
             if child.tail:
                 tokens.append(("text", child.tail))
 
@@ -111,14 +117,20 @@ def _row_tokens(row: ET.Element) -> list[tuple[str, str | None]]:
     return tokens
 
 
+def _squeeze(text: str) -> str:
+    return text.translate(str.maketrans("", "", " \t\r\n\u00a0\u200b$"))
+
+
 def printed_signs(html: bytes) -> dict[str, str]:
     """For each numeric fact of an inline document's tables, whether the number is
-    printed in parentheses -- "negative" -- or without, "positive": the sign the
-    reader of the table sees, which is the contribution of the row to its table
-    whatever sign the filer tagged (a printed "1" tagged `sign="-"`, a printed
-    "(1)" tagged +1). The parenthesis opens in the text just before the fact and
-    closes in the text just after it, across the cell boundary the renderer shows
-    as "(1,647 | )". A fact outside a table row is not listed."""
+    printed as a negative -- in parentheses, or with a hyphen, a minus sign or an en
+    dash written just before it in the same cell -- "negative", or without, "positive":
+    the sign the reader of the table sees, which is the contribution of the row to its
+    table whatever sign the filer tagged (a printed "1" tagged `sign="-"`, a printed "(1)"
+    tagged +1). The parenthesis opens in the text just before the fact and closes in the
+    text just after it, across the cell boundary the renderer shows as "(1,647 | )"; the
+    minus is in the fact's own cell, so that the "-" of an empty cell beside it is no sign.
+    A fact outside a table row is not listed."""
     root = ET.fromstring(html)
     out: dict[str, str] = {}
     for row in root.iter(f"{{{XHTML}}}tr"):
@@ -126,19 +138,33 @@ def printed_signs(html: bytes) -> dict[str, str]:
         for at, (kind, fact_id) in enumerate(tokens):
             if kind != "fact" or fact_id is None:
                 continue
-            before, after = "", ""
+            before, after, own_cell = "", "", ""
             for earlier in reversed(tokens[:at]):
                 if earlier[0] == "fact":
                     break
-                before = earlier[1] + before
+                if earlier[0] == "text":
+                    before = earlier[1] + before
+            for earlier in reversed(tokens[:at]):
+                if earlier[0] in ("fact", "cell"):
+                    break
+                own_cell = earlier[1] + own_cell
             for later in tokens[at + 1:]:
                 if later[0] == "fact":
                     break
-                after += later[1]
-            clean = str.maketrans("", "", " \t\r\n\u00a0$")
-            negative = before.translate(clean).endswith("(") and after.translate(clean).startswith(")")
-            out[fact_id] = "negative" if negative else "positive"
+                if later[0] == "text":
+                    after += later[1]
+            parenthesised = _squeeze(before).endswith("(") and _squeeze(after).startswith(")")
+            minus = _squeeze(own_cell) in MINUS_SIGNS
+            out[fact_id] = "negative" if parenthesised or minus else "positive"
     return out
+
+
+def tagged_signs(html: bytes) -> dict[str, str]:
+    """The sign the filer tagged, apart from the printed one: an inline numeric fact is
+    "negative" when its own element says `sign="-"` and "positive" otherwise."""
+    root = ET.fromstring(html)
+    return {one.get("id"): "negative" if one.get("sign") == "-" else "positive"
+            for one in root.iter(f"{{{IX}}}nonFraction") if one.get("id")}
 
 
 # The printed sign of every non-zero flow (a fact with a span) is carried with the table: a
