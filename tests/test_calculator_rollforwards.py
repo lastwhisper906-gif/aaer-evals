@@ -85,6 +85,72 @@ import pytest
 
 from src import calculator, cutoff_guard, note_tables, rollforwards
 
+# The evidence for every element of `rollforwards.ELEMENTS` and `SCHEDULE_TWO`: the
+# ticker whose committed instances use it. It lives here, not in src/, because a list of
+# tickers in a module is a second copy of the universe (tests/test_universe.py).
+# the ticker whose committed instances use each element (grep, 2026-11-17)
+CONFIRMED_IN = {
+    "AccountsReceivableGross": "ADTN",
+    "AccountsReceivableGrossCurrent": "LOGI",
+    "AllowanceForDoubtfulAccountsReceivable": "CARR",
+    "AllowanceForDoubtfulAccountsReceivableCurrent": "ADTN",
+    "AllowanceForDoubtfulAccountsReceivableWriteOffs": "CIEN",
+    "ContractWithCustomerLiability": "AAPL",
+    "ContractWithCustomerLiabilityIncreaseDecreaseForContractAcquiredInBusinessCombination": "AMSC",
+    "ContractWithCustomerLiabilityRevenueRecognized": "AAPL",
+    "FinancingReceivableAllowanceForCreditLossForeignCurrencyTranslation": "CSCO",
+    "FinancingReceivableAllowanceForCreditLossWriteoffAfterRecovery": "CSCO",
+    "FinancingReceivableAllowanceForCreditLosses": "CSCO",
+    "FinancingReceivableAllowanceForCreditLossesWriteOffs": "DELL",
+    "FinancingReceivableBeforeAllowanceForCreditLossAndFee": "CSCO",
+    "Goodwill": "ADTN",
+    "GoodwillAcquiredDuringPeriod": "AMD",
+    "GoodwillForeignCurrencyTranslationGainLoss": "ADTN",
+    "GoodwillImpairmentLoss": "ADTN",
+    "GoodwillOtherIncreaseDecrease": "CSCO",
+    "GoodwillPurchaseAccountingAdjustments": "AMD",
+    "GoodwillTransfers": "CARR",
+    "GoodwillTranslationAndPurchaseAccountingAdjustments": "JCI",
+    "GoodwillWrittenOffRelatedToSaleOfBusinessUnit": "AVGO",
+    "InventoryGross": "CIEN",
+    "InventoryValuationReserves": "AMSC",
+    "InventoryWriteDown": "ADTN",
+    "PaymentsForRestructuring": "ADTN",
+    "ProductWarrantyAccrual": "AMD",
+    "ProductWarrantyAccrualAdditionsFromBusinessAcquisition": "AMSC",
+    "ProductWarrantyAccrualPayments": "AMD",
+    "ProductWarrantyAccrualPreexistingIncreaseDecrease": "AMSC",
+    "ProductWarrantyAccrualWarrantiesIssued": "AMD",
+    "ProvisionForDoubtfulAccounts": "CIEN",
+    "ProvisionForLoanLossesExpensed": "CSCO",
+    "RestructuringCharges": "ADTN",
+    "RestructuringCosts": "ADTN",
+    "RestructuringCostsAndAssetImpairmentCharges": "AVGO",
+    "RestructuringReserve": "ADTN",
+    "RestructuringReserveAccrualAdjustment1": "CSCO",
+    "RestructuringReserveSettledWithoutCash2": "JCI",
+    "RestructuringReserveTranslationAndOtherAdjustment": "CARR",
+    "RestructuringSettlementAndImpairmentProvisions": "AVGO",
+    "StandardAndExtendedProductWarrantyAccrualForeignCurrencyTranslationGainLoss": "JCI",
+    "StandardProductWarrantyAccrual": "CLS",
+    "StandardProductWarrantyAccrualAdditionsFromBusinessAcquisition": "GNRC",
+    "StandardProductWarrantyAccrualForeignCurrencyTranslationGainLoss": "JCI",
+    "StandardProductWarrantyAccrualPayments": "CLS",
+    "StandardProductWarrantyAccrualPreexistingIncreaseDecrease": "GNRC",
+    "StandardProductWarrantyAccrualWarrantiesIssued": "FN",
+    "SupplierFinanceProgramObligation": "DELL",
+    "SupplierFinanceProgramObligationCurrent": "JCI",
+    "SupplierFinanceProgramObligationDecreaseSettlement": "DELL",
+    "SupplierFinanceProgramObligationIncrease": "DELL",
+    "ValuationAllowancesAndReservesAdjustments": "CARR",
+    "ValuationAllowancesAndReservesBalance": "ADTN",
+    "ValuationAllowancesAndReservesChargedToCostAndExpense": "ADTN",
+    "ValuationAllowancesAndReservesChargedToOtherAccounts": "CLS",
+    "ValuationAllowancesAndReservesDeductions": "ADTN",
+    "ValuationAllowancesAndReservesRecoveries": "LII",
+    "ValuationAllowancesAndReservesReservesOfBusinessesAcquired": "CSCO",
+}
+
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 ACCESSION = "0000000000-26-000001"
 GNRC_ACCESSION = "0001437749-26-004568"
@@ -295,7 +361,7 @@ def test_a_net_change_row_is_no_role_and_a_table_with_one_is_not_complete(genera
       2023: 27,664,000 + 7,443,000 - 1,206,000 = 33,901,000 against 33,925,000, row 24,000
 
     so 2024 and 2023 do not foot and are marked not complete, the row named."""
-    assert "ValuationAllowancesAndReservesPeriodIncreaseDecrease" not in rollforwards.CONFIRMED_IN
+    assert "ValuationAllowancesAndReservesPeriodIncreaseDecrease" not in CONFIRMED_IN
     series = series_of(generac, "allowance_for_credit_losses", "notes_195")
     for end, gap, row in (("2025-12-31", 0, 0), ("2024-12-31", 525_000, 525_000),
                           ("2023-12-31", 24_000, 24_000)):
@@ -679,9 +745,9 @@ def test_every_element_of_the_table_is_confirmed_in_a_committed_instance():
     named = {name for family in rollforwards.ELEMENTS.values() for names in family.values()
              for name in names}
     named |= {name for names in rollforwards.SCHEDULE_TWO.values() for name in names}
-    assert named == set(rollforwards.CONFIRMED_IN), named ^ set(rollforwards.CONFIRMED_IN)
+    assert named == set(CONFIRMED_IN), named ^ set(CONFIRMED_IN)
     blobs: dict[str, bytes] = {}
-    for element, ticker in sorted(rollforwards.CONFIRMED_IN.items()):
+    for element, ticker in sorted(CONFIRMED_IN.items()):
         blobs.setdefault(ticker, instance_text(ticker))
         blob = blobs[ticker]
         assert (f'name="us-gaap:{element}"'.encode() in blob

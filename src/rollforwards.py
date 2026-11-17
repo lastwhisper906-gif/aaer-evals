@@ -64,9 +64,9 @@ in full, not a finding. One figure the filing tags twice, for the same dates and
 one row.
 
 **The elements, and how each was confirmed.** `ELEMENTS` and `SCHEDULE_TWO` below are
-the us-gaap elements of each role, and `CONFIRMED_IN` names the ticker whose committed
-instances (`tests/fixtures`) use each one, which `tests/test_calculator_rollforwards.py`
-greps. An element nobody confirmed is not in the table. Left out for that reason or
+the us-gaap elements of each role, and `CONFIRMED_IN` in
+`tests/test_calculator_rollforwards.py` names the ticker whose committed instances
+(`tests/fixtures`) use each one, which that test greps. An element nobody confirmed is not in the table. Left out for that reason or
 because its sign or meaning is not fixed: the extended-warranty elements
 (`ExtendedProductWarrantyAccrual...`, deferred revenue, not a reserve), the current
 and noncurrent splits of a balance (`...Current`, `...Noncurrent`, `ProductWarrantyAccrualClassifiedCurrent`),
@@ -262,68 +262,6 @@ SCHEDULE_TWO = {
     ),
     "revision": (),
     "base": (),
-}
-# the ticker whose committed instances use each element (grep, 2026-11-17)
-CONFIRMED_IN = {
-    "AccountsReceivableGross": "ADTN",
-    "AccountsReceivableGrossCurrent": "LOGI",
-    "AllowanceForDoubtfulAccountsReceivable": "CARR",
-    "AllowanceForDoubtfulAccountsReceivableCurrent": "ADTN",
-    "AllowanceForDoubtfulAccountsReceivableWriteOffs": "CIEN",
-    "ContractWithCustomerLiability": "AAPL",
-    "ContractWithCustomerLiabilityIncreaseDecreaseForContractAcquiredInBusinessCombination": "AMSC",
-    "ContractWithCustomerLiabilityRevenueRecognized": "AAPL",
-    "FinancingReceivableAllowanceForCreditLossForeignCurrencyTranslation": "CSCO",
-    "FinancingReceivableAllowanceForCreditLossWriteoffAfterRecovery": "CSCO",
-    "FinancingReceivableAllowanceForCreditLosses": "CSCO",
-    "FinancingReceivableAllowanceForCreditLossesWriteOffs": "DELL",
-    "FinancingReceivableBeforeAllowanceForCreditLossAndFee": "CSCO",
-    "Goodwill": "ADTN",
-    "GoodwillAcquiredDuringPeriod": "AMD",
-    "GoodwillForeignCurrencyTranslationGainLoss": "ADTN",
-    "GoodwillImpairmentLoss": "ADTN",
-    "GoodwillOtherIncreaseDecrease": "CSCO",
-    "GoodwillPurchaseAccountingAdjustments": "AMD",
-    "GoodwillTransfers": "CARR",
-    "GoodwillTranslationAndPurchaseAccountingAdjustments": "JCI",
-    "GoodwillWrittenOffRelatedToSaleOfBusinessUnit": "AVGO",
-    "InventoryGross": "CIEN",
-    "InventoryValuationReserves": "AMSC",
-    "InventoryWriteDown": "ADTN",
-    "PaymentsForRestructuring": "ADTN",
-    "ProductWarrantyAccrual": "AMD",
-    "ProductWarrantyAccrualAdditionsFromBusinessAcquisition": "AMSC",
-    "ProductWarrantyAccrualPayments": "AMD",
-    "ProductWarrantyAccrualPreexistingIncreaseDecrease": "AMSC",
-    "ProductWarrantyAccrualWarrantiesIssued": "AMD",
-    "ProvisionForDoubtfulAccounts": "CIEN",
-    "ProvisionForLoanLossesExpensed": "CSCO",
-    "RestructuringCharges": "ADTN",
-    "RestructuringCosts": "ADTN",
-    "RestructuringCostsAndAssetImpairmentCharges": "AVGO",
-    "RestructuringReserve": "ADTN",
-    "RestructuringReserveAccrualAdjustment1": "CSCO",
-    "RestructuringReserveSettledWithoutCash2": "JCI",
-    "RestructuringReserveTranslationAndOtherAdjustment": "CARR",
-    "RestructuringSettlementAndImpairmentProvisions": "AVGO",
-    "StandardAndExtendedProductWarrantyAccrualForeignCurrencyTranslationGainLoss": "JCI",
-    "StandardProductWarrantyAccrual": "CLS",
-    "StandardProductWarrantyAccrualAdditionsFromBusinessAcquisition": "GNRC",
-    "StandardProductWarrantyAccrualForeignCurrencyTranslationGainLoss": "JCI",
-    "StandardProductWarrantyAccrualPayments": "CLS",
-    "StandardProductWarrantyAccrualPreexistingIncreaseDecrease": "GNRC",
-    "StandardProductWarrantyAccrualWarrantiesIssued": "FN",
-    "SupplierFinanceProgramObligation": "DELL",
-    "SupplierFinanceProgramObligationCurrent": "JCI",
-    "SupplierFinanceProgramObligationDecreaseSettlement": "DELL",
-    "SupplierFinanceProgramObligationIncrease": "DELL",
-    "ValuationAllowancesAndReservesAdjustments": "CARR",
-    "ValuationAllowancesAndReservesBalance": "ADTN",
-    "ValuationAllowancesAndReservesChargedToCostAndExpense": "ADTN",
-    "ValuationAllowancesAndReservesChargedToOtherAccounts": "CLS",
-    "ValuationAllowancesAndReservesDeductions": "ADTN",
-    "ValuationAllowancesAndReservesRecoveries": "LII",
-    "ValuationAllowancesAndReservesReservesOfBusinessesAcquired": "CSCO",
 }
 
 FAMILIES = tuple(ELEMENTS)
