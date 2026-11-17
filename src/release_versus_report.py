@@ -500,6 +500,34 @@ def _figures(cells: list[str]) -> list[dict]:
     return out
 
 
+# A statement of cash flows is known by what it prints, not by a value: its operating,
+# investing and financing lines, or two of them and the change in cash. A summary table
+# that prints net income beside operating cash flow is not one.
+_CASH_FLOW_LINE = re.compile(
+    r"^(?:net )?cash(?: flows?)?(?: \(?(?:provided|used|generated)[^)]*\)?)*.*"
+    r"\b(operating|investing|financing) activities|"
+    r"^change in cash from (operating|investing|financing) activities")
+_CHANGE_IN_CASH = re.compile(r"^(?:net )?(?:increase|decrease|change)[^:]* in cash\b|"
+                             r"^change in cash, cash equivalents")
+
+
+def is_a_statement_of_cash_flows(rows: list[list[str]]) -> bool:
+    """True when the table prints at least three of its operating, investing and financing
+    cash flow lines, or two of them together with a change in cash, each with a figure."""
+    kinds, change = set(), False
+    for cells in rows:
+        placed = _label_of(cells)
+        if not placed or not any(read_number(c) is not None for c in cells[placed[0] + 1:]):
+            continue
+        label = normal_label(placed[1])
+        found = _CASH_FLOW_LINE.search(label)
+        if found:
+            kinds.add(found.group(1) or found.group(2))
+        elif _CHANGE_IN_CASH.search(label):
+            change = True
+    return len(kinds) >= 3 or (len(kinds) >= 2 and change)
+
+
 _GUIDANCE = re.compile(r"guidance|outlook|forecast|expect|previous|updated|range", re.I)
 
 
@@ -522,6 +550,16 @@ def table_kind(rows: list[list[str]], reason: str, segment_labels=()) -> str:
     return "undated"
 
 
+def lines_named_in(label: str) -> list[str]:
+    """The lines one of whose stated labels is inside this row label, as whole words:
+    `Capital expenditures and capitalized software development costs` holds
+    `Capital expenditures`. Only a row no stated label matches is asked."""
+    words = normal_label(label)
+    return [line for line, stated in ROW_LABELS.items()
+            if any(re.search(rf"(?<![\w-]){re.escape(normal_label(name))}(?![\w])", words)
+                   for name in stated)]
+
+
 def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
                segment_labels=()) -> dict:
     """Every dollar cell of every table of the release under a line's labels, for the period.
@@ -536,6 +574,7 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
     """
     end = dt.date.fromisoformat(period_end)
     cells, unread, excluded, seen, unread_columns = [], {}, [], set(), []
+    cash_flow_statements, other_label_rows = set(), {}
     printed_lines: dict[str, set[str]] = {}
     last_unit, above = None, None
     for paragraph_id, paragraph in zip(paragraph_ids, paragraphs):
@@ -572,6 +611,8 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
                     seen.add(matched(row))
             continue
         columns = header["columns"]
+        if is_a_statement_of_cash_flows(rows):
+            cash_flow_statements.add(paragraph_id)
         scale_name = header["unit"] or carried
         table_segment = header["segment"] or names_a_segment(heading, segment_labels)
         if any("change" not in c and c["end"] == end for c in columns):
@@ -607,6 +648,16 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
                 component = bool(COMPONENT_HEADING.search(words))
                 continue
             if not line:
+                # a row whose label holds a stated label's words and is none of them
+                near = lines_named_in(placed[1]) if _is_data_row(row) else []
+                shown = _figures(row[placed[0] + 1:])
+                if near and len(shown) == len(columns):
+                    for column, figure in zip(columns, shown):
+                        if "change" not in column and column["end"] == end and not figure["percent"]:
+                            for name in near:
+                                other_label_rows.setdefault(name, []).append({
+                                    "label": placed[1], "paragraph_id": paragraph_id,
+                                    "cell": figure["text"], "span_months": column["months"]})
                 continue
             seen.add(line)
             figures = _figures(row[placed[0] + 1:])
@@ -664,7 +715,8 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
                                                   paragraph_ids.index(pid)))
                  if candidates else None)
     return {"cells": cells, "unread": unread, "excluded": excluded, "seen": seen,
-            "unread_columns": unread_columns, "statement": statement}
+            "unread_columns": unread_columns, "statement": statement,
+            "cash_flow_statements": cash_flow_statements, "other_label_rows": other_label_rows}
 
 
 # The order a line's verdict is taken in. A difference in a GAAP cell is the line's; a
@@ -709,8 +761,7 @@ def compare_release(paragraph_ids: list[str], paragraphs: list[str], period_end:
                          if c["line"] == "net_income" and "attributable" in c["label"].lower()}
     # a table that prints an operating cash flow line is a statement of cash flows, whose net
     # income is the consolidated one by construction
-    cash_flow_tables = {c["paragraph_id"] for c in read["cells"]
-                        if c["line"] == "operating_cash_flow"}
+    cash_flow_tables = read["cash_flow_statements"]
     out = {}
     for line in LINES:
         compared = []
@@ -771,6 +822,12 @@ def compare_release(paragraph_ids: list[str], paragraphs: list[str], period_end:
             out[line] = {"verdict": "period_not_read", "comparisons": [],
                          "reason": f"a table prints the line, and none of its columns is the "
                                    f"period ending {period_end}"}
+        elif read["other_label_rows"].get(line):
+            out[line] = {"verdict": "printed_under_another_label",
+                         "reason": "no stated label matches, and a row whose label holds one "
+                                   "of their words prints a figure for the period; it is not "
+                                   "taken to be the line",
+                         "rows": read["other_label_rows"][line]}
         else:
             out[line] = {"verdict": "not_in_release",
                          "reason": "no table of the release prints a row under one of the "

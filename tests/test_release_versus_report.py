@@ -131,13 +131,24 @@ def test_release_versus_report_dell_diluted_earnings_per_share_agrees_at_two_dec
     assert eps["report"]["value"] == 6.34 and eps["verdict"] == "agrees"
 
 
-def test_release_versus_report_dell_prints_no_row_under_a_stated_capital_expenditure_label(dell):
+def test_release_versus_report_dell_prints_capital_expenditure_under_a_label_not_read(dell):
     """Dell's cash-flow statement prints `Capital expenditures and capitalized software
-    development costs`, which is not a label of the table, so the line is not_in_release
-    rather than guessed."""
+    development costs | (1,239)` (three months, millions) and `(2,202)` (six). That is not a
+    stated label, so the line is not compared; it is not `not_in_release` either, because the
+    row prints a figure for the period: `printed_under_another_label`, with the row's label,
+    paragraph id and figure."""
     entry = dell["lines"]["capital_expenditure"]
-    assert entry["verdict"] == "not_in_release"
-    assert entry["labels"] == list(rvr.ROW_LABELS["capital_expenditure"])
+    assert entry["verdict"] == "printed_under_another_label"
+    assert "comparisons" not in entry
+    assert [(r["label"], r["paragraph_id"].split(":")[-1], r["span_months"], r["cell"])
+            for r in entry["rows"]] == [
+        ("Capital expenditures and capitalized software development costs", "74", 3, "(1,239)"),
+        ("Capital expenditures and capitalized software development costs", "74", 6, "(2,202)")]
+    text = (DELL_RUN / "input_8k.md").read_text(encoding="utf-8")
+    assert "| Capital expenditures and capitalized software development costs | (1,239) |" in text
+    # a line no row names at all stays not_in_release
+    assert _compare([_row("Net revenue", "1,000")], {"revenue": {"value": 1e9}}
+                    )["capital_expenditure"]["verdict"] == "not_in_release"
 
 
 def test_release_versus_report_second_company_nvidia_revenue(nvidia):
@@ -1427,7 +1438,10 @@ def test_release_versus_report_a_cash_flow_statements_net_income_is_held_to_prof
     report = lambda line, months: {"value": {"net_income": 501e6,   # noqa: E731
                                              "net_income_with_noncontrolling": 541e6,
                                              "operating_cash_flow": 700e6}[line]}
-    cash_flow = [_row("Net earnings (loss)", "541"), _row("Net cash provided by operating activities", "700")]
+    cash_flow = [_row("Net earnings (loss)", "541"),
+                 _row("Net cash provided by operating activities", "700"),
+                 _row("Net cash used in investing activities", "(200)"),
+                 _row("Net cash used in financing activities", "(300)")]
     cell = _run(cash_flow, report)["net_income"]["comparisons"][0]
     assert cell["verdict"] == "agrees" and cell["report"]["value"] == 541e6
     assert cell["also_against"]["net_income"]["value"] == 501e6
@@ -1444,6 +1458,7 @@ def test_release_versus_report_a_cash_flow_statements_net_income_is_held_to_prof
     only = lambda line, months: ({"value": {"net_income": 501e6, "operating_cash_flow": 7e8}[line]}   # noqa: E731
                                  if line in ("net_income", "operating_cash_flow")
                                  else {"missing": "no ProfitLoss"})
+    assert "net_income_with_noncontrolling" not in {"net_income", "operating_cash_flow"}
     cash_flow[0] = _row("Net income", "501")
     cell = _run(cash_flow, only)["net_income"]["comparisons"][0]
     assert cell["verdict"] == "agrees" and cell["report"]["value"] == 501e6
@@ -1476,3 +1491,208 @@ def test_release_versus_report_a_planted_cash_flow_net_income_differs_from_profi
     lines = _planted("GNRC", "0001437749-26-025669", {
         "106": ("| Net income | ​ | $ | 216,122 |", "| Net income | ​ | $ | 216,222 |")})
     assert lines["net_income"]["verdict"] == "differs"
+
+
+# --- what a statement of cash flows is, by what it prints ------------------------------------------
+
+def _table_rows(rows):
+    return [rvr.cells_of(line) for line in _blocks(rows).split("\n")]
+
+
+@pytest.mark.parametrize("rows,expected", [
+    ([_row("Net cash provided by operating activities", "700"),
+      _row("Net cash used in investing activities", "(200)"),
+      _row("Net cash used in financing activities", "(300)")], True),
+    ([_row("Net cash provided by operating activities", "700"),
+      _row("Net cash used in investing activities", "(200)"),
+      _row("Net change in cash", "200")], True),
+    ([_row("Change in cash from operating activities", "2,225"),
+      _row("Change in cash from investing activities", "(1,337)"),
+      _row("Change in cash, cash equivalents, and restricted cash", "(16)")], True),
+    ([_row("Net income", "100"), _row("Net cash provided by operating activities", "700")], False),
+    ([_row("Net cash provided by operating activities", "700"),
+      _row("Net cash used in investing activities", "(200)")], False),
+    ([_row("Adjustments to reconcile net income to net cash provided by operating activities",
+           "(1,908)"), _row("Net cash used in investing activities", "(200)"),
+      _row("Net cash used in financing activities", "(300)")], False),
+    ([_row("Net income", "100"), _row("Adjustments to reconcile net income to net cash provided "
+                                      "by operating activities", "(1,908)"),
+      _row("Net cash used in investing activities", "(200)")], False),
+    ([_row("Net cash provided by operating activities", "700"),
+      _row("Change in cash from operating activities", "700"),
+      _row("Net income", "100")], False),
+    (["| Cash flows from operating activities: |", "| Cash flows from investing activities: |",
+      "| Cash flows from financing activities: |", _row("Net income", "100")], False),
+])
+def test_release_versus_report_a_statement_of_cash_flows_is_known_by_what_it_prints(rows, expected):
+    assert rvr.is_a_statement_of_cash_flows(_table_rows(rows)) is expected
+
+
+def test_release_versus_report_a_highlights_table_with_operating_cash_flow_is_not_a_cash_flow_statement():
+    """A summary that prints net income beside operating cash flow keeps the default: its
+    unlabelled net income is held to the parent's `NetIncomeLoss`, with `ProfitLoss` beside
+    it. Where the two differ, the parent's figure agrees and the consolidated one does not."""
+    report = lambda line, months: {"value": {"net_income": 501e6,   # noqa: E731
+                                             "net_income_with_noncontrolling": 541e6,
+                                             "operating_cash_flow": 700e6}[line]}
+    highlights = [_row("Net income", "501"), _row("Net cash provided by operating activities", "700")]
+    cell = _run(highlights, report)["net_income"]["comparisons"][0]
+    assert cell["verdict"] == "agrees" and cell["report"]["value"] == 501e6
+    assert cell["also_against"]["net_income_with_noncontrolling"]["value"] == 541e6
+    assert cell["also_against"]["agrees"] is False
+    highlights[0] = _row("Net income", "541")
+    cell = _run(highlights, report)["net_income"]["comparisons"][0]
+    assert cell["verdict"] == "differs" and cell["difference"] == 40_000_000.0
+    # the same rows with investing and financing lines are a statement of cash flows
+    statement = highlights + [_row("Net cash used in investing activities", "(200)"),
+                              _row("Net cash used in financing activities", "(300)")]
+    cell = _run(statement, report)["net_income"]["comparisons"][0]
+    assert cell["verdict"] == "agrees" and cell["report"]["value"] == 541e6
+
+
+def test_release_versus_report_dells_summary_table_is_not_a_cash_flow_statement_and_its_statement_is():
+    from src import parse_8k
+    item = parse_8k.earnings_release("DELL", cutoff=DELL_CUTOFF)["item_2_02"]
+    by_number = {pid.split(":")[-1]: [rvr.cells_of(line) for line in paragraph.split("\n")]
+                 for pid, paragraph in zip(item["paragraph_ids"], item["paragraphs"])
+                 if paragraph.startswith("|")}
+    assert rvr.is_a_statement_of_cash_flows(by_number["74"]) is True
+    assert rvr.is_a_statement_of_cash_flows(by_number["35"]) is False
+    assert rvr.is_a_statement_of_cash_flows(by_number["63"]) is False
+
+
+# --- the expected `agrees`, read independently of the calculator -------------------------------
+
+def _filing_fact(ticker: str, accession: str, tag: str, start: str, end: str) -> float:
+    """A fact of the triggering filing with no dimension, read from the run's committed
+    `input_numbers.json` with `json` alone: the report side for the two companies whose
+    companyfacts record has not yet caught up with the filing."""
+    import json
+    run = next(iter(sorted((REPO_ROOT / "runs" / ticker).glob(f"{accession}*"))))
+    facts = json.loads((run / "input_numbers.json").read_text(encoding="utf-8"))["facts"]
+    values = {fact["number"] for fact in facts
+              if fact["tag"] == tag and fact["unit"] == "iso4217:USD"
+              and fact["source_accession"] == accession
+              and not fact["context"].get("segment") and not fact["context"].get("typed_segment")
+              and fact["context"].get("start") == start and fact["context"].get("end") == end}
+    assert len(values) == 1, (ticker, tag, start, end, values)
+    return float(values.pop())
+
+
+def _report_value(cell: dict) -> float:
+    return cell["report"]["value"]
+
+
+def test_release_versus_report_carriers_net_earnings_agree_with_profit_or_loss_read_independently():
+    """Carrier's income statement `:84` and cash-flow statement `:93`, read by eye: `Net
+    earnings (loss)` 541 (three months) and 806 (six), `... attributable to common
+    shareowners` 501 and 739. The report side is the filing's own `ProfitLoss` and
+    `NetIncomeLoss`, read from its committed facts with `json`."""
+    accession = "0001783180-26-000032"
+    profit = {3: _filing_fact("CARR", accession, "ProfitLoss", "2026-04-01", "2026-06-30"),
+              6: _filing_fact("CARR", accession, "ProfitLoss", "2026-01-01", "2026-06-30")}
+    parent = {3: _filing_fact("CARR", accession, "NetIncomeLoss", "2026-04-01", "2026-06-30"),
+              6: _filing_fact("CARR", accession, "NetIncomeLoss", "2026-01-01", "2026-06-30")}
+    assert profit == {3: 541e6, 6: 806e6} and parent == {3: 501e6, 6: 739e6}
+    lines = _planted("CARR", accession, {})
+    for number in ("84", "93"):
+        generic = {c["span_months"]: c for c in _in_table(lines["net_income"], number)
+                   if c["release"]["label"] == "Net earnings (loss)"}
+        assert {m: c["release"]["cell"] for m, c in generic.items()} == {3: "541", 6: "806"}
+        for months, cell in generic.items():
+            assert _report_value(cell) == profit[months] == cell["release"]["value"], (number, months)
+            assert cell["verdict"] == "agrees"
+    attributable = {c["span_months"]: c for c in _in_table(lines["net_income"], "84")
+                    if c["release"]["label"].startswith("Net earnings (loss) attributable")}
+    assert {m: c["release"]["cell"] for m, c in attributable.items()} == {3: "501", 6: "739"}
+    for months, cell in attributable.items():
+        assert _report_value(cell) == parent[months] == cell["release"]["value"]
+        assert cell["verdict"] == "agrees"
+
+
+def test_release_versus_report_johnson_controls_net_income_rows_agree_read_independently():
+    """JCI's statement `:72`, by eye: `Net income | 752` and `Net income attributable to
+    Johnson Controls | 749` for the three months, 1,893 and 1,886 for the nine."""
+    accession = "0000833444-26-000087"
+    profit = {3: _filing_fact("JCI", accession, "ProfitLoss", "2026-04-01", "2026-06-30"),
+              9: _filing_fact("JCI", accession, "ProfitLoss", "2025-10-01", "2026-06-30")}
+    parent = {3: _filing_fact("JCI", accession, "NetIncomeLoss", "2026-04-01", "2026-06-30"),
+              9: _filing_fact("JCI", accession, "NetIncomeLoss", "2025-10-01", "2026-06-30")}
+    assert profit == {3: 752e6, 9: 1_893e6} and parent == {3: 749e6, 9: 1_886e6}
+    lines = _planted("JCI", accession, {})
+    cells = _in_table(lines["net_income"], "72")
+    generic = {c["span_months"]: c for c in cells if c["release"]["label"] == "Net income"}
+    attributable = {c["span_months"]: c for c in cells
+                    if c["release"]["label"] == "Net income attributable to Johnson Controls"}
+    assert {m: c["release"]["cell"] for m, c in generic.items()} == {3: "752", 9: "1,893"}
+    assert {m: c["release"]["cell"] for m, c in attributable.items()} == {3: "749", 9: "1,886"}
+    for months in (3, 9):
+        assert _report_value(generic[months]) == profit[months]
+        assert _report_value(attributable[months]) == parent[months]
+        assert generic[months]["verdict"] == attributable[months]["verdict"] == "agrees"
+
+
+def test_release_versus_report_generacs_net_income_rows_agree_read_through_companyfacts():
+    """Generac's statement `:103` and cash-flow statement `:106`, by eye: `Net income`
+    143,010 and 216,122, `Net income attributable to Generac Holdings Inc.` 143,244 and
+    216,497 (thousands). The record is read through `tests/companyfacts_source.py`."""
+    cutoff = "2026-08-04"
+    profit = {3: source.one_value("GNRC", "ProfitLoss", "2026-04-01..2026-06-30", cutoff),
+              6: source.one_value("GNRC", "ProfitLoss", "2026-01-01..2026-06-30", cutoff)}
+    parent = {3: source.one_value("GNRC", "NetIncomeLoss", "2026-04-01..2026-06-30", cutoff),
+              6: source.one_value("GNRC", "NetIncomeLoss", "2026-01-01..2026-06-30", cutoff)}
+    assert profit == {3: 143_010e3, 6: 216_122e3} and parent == {3: 143_244e3, 6: 216_497e3}
+    lines = _planted("GNRC", "0001437749-26-025669", {})
+    statement = _in_table(lines["net_income"], "103")
+    generic = {c["span_months"]: c for c in statement if c["release"]["label"] == "Net income"}
+    attributable = {c["span_months"]: c for c in statement if "attributable" in c["release"]["label"]}
+    assert {m: c["release"]["cell"] for m, c in generic.items()} == {3: "143,010", 6: "216,122"}
+    assert {m: c["release"]["cell"] for m, c in attributable.items()} == {3: "143,244", 6: "216,497"}
+    for months in (3, 6):
+        assert _report_value(generic[months]) == profit[months] == generic[months]["release"]["value"]
+        assert _report_value(attributable[months]) == parent[months]
+    cash_flow, = _in_table(lines["net_income"], "106")
+    assert cash_flow["release"]["cell"] == "216,122" and cash_flow["span_months"] == 6
+    assert _report_value(cash_flow) == profit[6] and cash_flow["verdict"] == "agrees"
+
+
+# ticker -> (cutoff, statement paragraph, [(line, label as printed, the cell by eye in
+# millions, the record's tag, the record's period for the three months)])
+STATEMENT_CELLS = {
+    "DELL": ("2026-09-08", "63", "2026-05-02..2026-07-31", [
+        ("revenue", "Total net revenue", "46,971", "Revenues"),
+        ("cost_of_revenue", "Total cost of revenue", "37,141", "CostOfRevenue"),
+        ("operating_income", "Operating income", "5,385", "OperatingIncomeLoss"),
+        ("income_tax_expense", "Income tax expense", "998", "IncomeTaxExpenseBenefit"),
+        ("net_income", "Net income", "4,133", "NetIncomeLoss")]),
+    "NVDA": ("2026-08-26", "69", "2026-04-27..2026-07-26", [
+        ("revenue", "Revenue", "96,221", "Revenues"),
+        ("cost_of_revenue", "Cost of revenue", "24,079", "CostOfRevenue"),
+        ("operating_income", "Operating income", "63,734", "OperatingIncomeLoss"),
+        ("income_tax_expense", "Income tax expense", "11,819", "IncomeTaxExpenseBenefit"),
+        ("net_income", "Net income", "59,688", "NetIncomeLoss")]),
+    "AAPL": ("2026-07-31", "29", "2026-03-29..2026-06-27", [
+        ("revenue", "Total net sales", "109,417", "RevenueFromContractWithCustomerExcludingAssessedTax"),
+        ("cost_of_revenue", "Total cost of sales", "54,647", "CostOfGoodsAndServicesSold"),
+        ("operating_income", "Operating income", "35,695", "OperatingIncomeLoss"),
+        ("income_tax_expense", "Provision for income taxes", "6,478", "IncomeTaxExpenseBenefit"),
+        ("net_income", "Net income", "29,789", "NetIncomeLoss")]),
+}
+
+
+@pytest.mark.parametrize("ticker", sorted(STATEMENT_CELLS))
+def test_release_versus_report_the_face_statements_cells_equal_the_records_figures(ticker):
+    """The statement table's three-month cells, read by eye in millions, against the
+    record's own tagged figures through `tests/companyfacts_source.py`; the calculator's
+    report side must be that same figure."""
+    cutoff, number, period, rows = STATEMENT_CELLS[ticker]
+    lines = _planted(ticker, STATEMENTS[ticker][0], {})
+    for line, label, printed, tag in rows:
+        expected = source.one_value(ticker, tag, period, cutoff)
+        assert expected == float(printed.replace(",", "")) * 1_000_000, (ticker, line)
+        cells = [c for c in _in_table(lines[line], number)
+                 if c["span_months"] == 3 and c["release"]["label"] == label]
+        assert cells and {c["release"]["cell"] for c in cells} == {printed}, (ticker, line)
+        assert {_report_value(c) for c in cells} == {expected}, (ticker, line)
+        assert {c["verdict"] for c in cells} == {"agrees"}
+        assert lines[line]["statement"]["verdict"] == "agrees"
