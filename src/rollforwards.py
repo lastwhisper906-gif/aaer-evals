@@ -81,9 +81,12 @@ that fell by impairment would read as a release) and `NotesReceivableGross`. Eve
 absent from the committed instances, which tag `AllowanceForDoubtfulAccountsReceivable...`.
 Schedule II's other accounts (a filer's own members, such as Omnicell's
 `omcl:AccountsReceivableAndUnbilledReceivablesMember`) are the series of the family
-`schedule_two_other`, each with its `member`; only a tax valuation allowance, told by its name (tax, deferred or operating loss with
-valuation allowance, or the bare member) and listed under `left_out`,
-is left out. `RestructuringCosts` and `RestructuringCostsAndAssetImpairmentCharges` are the
+`schedule_two_other`, each with its `member`; the standard member of the deferred tax allowance
+is always left out, and so is a member whose balance equals the filing's own
+`DeferredTaxAssetsValuationAllowance` at every date the filing tags one (the filing decides, never
+a name); each is listed under `left_out`. Where the filing tags no such allowance and the member's
+name says valuation allowance, it stays a series with `release` null and says it may be that
+allowance, never a release. `RestructuringCosts` and `RestructuringCostsAndAssetImpairmentCharges` are the
 restructuring provision. Left out because they are no row of the family's own rollforward: the
 measurement-period adjustments `BusinessCombinationProvisionalInformationInitialAccounting
 IncompleteAdjustment...` (rows of a purchase price allocation, found beside goodwill), and
@@ -330,26 +333,43 @@ SCHEDULE_TWO_AXIS = "us-gaap:ValuationAllowancesAndReservesTypeAxis"
 # Any other account of Schedule II, the filer's own members among them (Omnicell's
 # `omcl:AccountsReceivableAndUnbilledReceivablesMember`), is a series of the family below,
 # keyed by its member. The valuation allowance of deferred tax assets is no reserve of this
-# section's and is left out, and listed under `left_out`.
+# section's and is left out, and listed under `left_out`: always when it is the standard
+# member, and for a filer's own member when its balance is the filing's own allowance.
 SCHEDULE_TWO_OTHER = "schedule_two_other"
 
 
-TAX_VALUATION_WORDS = ("tax", "deferred", "operatingloss")
+US_GAAP_TAX_MEMBER = "us-gaap:ValuationAllowanceOfDeferredTaxAssetsMember"
+FILINGS_TAX_ALLOWANCE = "us-gaap:DeferredTaxAssetsValuationAllowance"
+UNCOMPARED = ("may be the deferred tax allowance; the filing tags no allowance to compare")
 
 
-def _tax_valuation_reason(member: str) -> str | None:
-    """Why a Schedule II member is no account of this section, or None: its name says valuation
-    allowance together with tax, deferred or an operating loss, in any namespace, or it is the
-    bare `ValuationAllowanceMember`, which in Schedule II is the tax allowance."""
-    local = member.rsplit(":", 1)[-1].lower()
-    if local == "valuationallowancemember":
-        return "a bare valuation allowance in Schedule II is the allowance of deferred tax assets"
-    if "valuationallowance" in local:
-        for word in TAX_VALUATION_WORDS:
-            if word in local:
-                return (f"its name says valuation allowance with {word}: the allowance of "
-                        f"deferred tax assets, no reserve of this section's")
-    return None
+def _filings_tax_allowances(tables: dict) -> dict[str, set]:
+    """The filing's own valuation allowance of deferred tax assets (`DeferredTaxAssetsValuation
+    Allowance`, no axes) by date, from any table of its notes."""
+    out: dict[str, set] = {}
+    for table in tables.values():
+        for one in table["facts"]:
+            if (_usable(one) and one["concept"] == FILINGS_TAX_ALLOWANCE and "instant" in one
+                    and not one.get("axes")):
+                out.setdefault(one["instant"], set()).add(_dec(one["value"]))
+    return out
+
+
+def _tax_decision(group: dict, allowances: dict) -> str:
+    """Whether a filer's own Schedule II account is the deferred tax allowance, decided by the
+    filing and not by a name: "left_out" when its balance equals the filing's own allowance at
+    every date at which the filing tags one (and at one at least); "uncompared" when the
+    filing tags none at its dates and the member's name says valuation allowance, so it may be
+    that allowance; else "series"."""
+    balances = [one for one in group["roles"].get("balance", []) if "instant" in one]
+    compared = [_dec(one["value"]) in allowances[one["instant"]]
+                for one in balances if one["instant"] in allowances]
+    if compared and all(compared):
+        return "left_out"
+    member = group["axes"].get(SCHEDULE_TWO_AXIS, "").rsplit(":", 1)[-1].lower()
+    if not compared and "valuationallowance" in member:
+        return "uncompared"
+    return "series"
 
 
 SCHEDULE_TWO_MEMBERS = {
@@ -481,7 +501,7 @@ def classify(one: dict):
             del axes[SCHEDULE_TWO_AXIS]
             return (SCHEDULE_TWO_MEMBERS[member], SCHEDULE_ROLE[local], "schedule_two",
                     _axes_key(axes))
-        if member and _tax_valuation_reason(member) is None:
+        if member and member != US_GAAP_TAX_MEMBER:
             return SCHEDULE_TWO_OTHER, SCHEDULE_ROLE[local], "schedule_two", _axes_key(axes)
         return None
     if local in ROLE_OF and SCHEDULE_TWO_AXIS not in axes:
@@ -761,11 +781,15 @@ def _period(group: dict, start: str, end: str, tables: dict, signs: dict,
                                "gross base did not show the reserve falling while it rose")
     else:
         out["release"] = False
+    if group.get("uncompared"):
+        # it may be the deferred tax allowance, which is never a release of a reserve
+        out["release"], out["release_because"], out["release_note"] = None, [], UNCOMPARED
     return out
 
 
 def _family(name: str, tables: dict, signs: dict, mates: dict) -> dict:
     series = []
+    allowances = _filings_tax_allowances(tables)
     for key in sorted(tables, key=_natural):
         groups = _series_in(key, tables[key])
         balanced = [group for group in groups if group["roles"].get("balance")]
@@ -773,6 +797,10 @@ def _family(name: str, tables: dict, signs: dict, mates: dict) -> dict:
         for group in balanced:
             if group["family"] != name:
                 continue
+            decision = _tax_decision(group, allowances) if name == SCHEDULE_TWO_OTHER else None
+            if decision == "left_out":
+                continue
+            group["uncompared"] = decision == "uncompared"
             spans = sorted({(one["start"], one["end"]) for role in FLOW_ROLES
                             for one in group["roles"].get(role, [])},
                            key=lambda span: (span[1], span[0]), reverse=True)
@@ -800,14 +828,23 @@ def _family(name: str, tables: dict, signs: dict, mates: dict) -> dict:
 def _left_out(tables: dict) -> list[dict]:
     """Every Schedule II account the section leaves out, with its table and why."""
     found: dict[tuple, dict] = {}
+    allowances = _filings_tax_allowances(tables)
     for key in sorted(tables, key=_natural):
         for one in tables[key]["facts"]:
             member = (one.get("axes") or {}).get(SCHEDULE_TWO_AXIS)
-            if _local(one["concept"]) in SCHEDULE_ROLE and member:
-                reason = _tax_valuation_reason(member)
-                if reason:
-                    found.setdefault((key, member), {"table": key, "member": member,
-                                                     "reason": reason})
+            if _local(one["concept"]) in SCHEDULE_ROLE and member == US_GAAP_TAX_MEMBER:
+                found.setdefault((key, member), {
+                    "table": key, "member": member,
+                    "reason": "the standard member of the valuation allowance of deferred tax "
+                              "assets, no reserve of this section's"})
+        for group in _series_in(key, tables[key]):
+            if (group["family"] == SCHEDULE_TWO_OTHER and group["roles"].get("balance")
+                    and _tax_decision(group, allowances) == "left_out"):
+                member = group["axes"][SCHEDULE_TWO_AXIS]
+                found.setdefault((key, member), {
+                    "table": key, "member": member,
+                    "reason": f"its balance equals the filing's own {FILINGS_TAX_ALLOWANCE} "
+                              f"at the same date"})
     return list(found.values())
 
 

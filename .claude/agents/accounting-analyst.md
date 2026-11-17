@@ -158,7 +158,9 @@ None of these is an adjustment amount.
 `rollforwards.inventory_reserve`, `rollforwards.restructuring_reserve`,
 `rollforwards.contract_liabilities`, `rollforwards.supplier_finance_obligations`,
 `rollforwards.goodwill` and `rollforwards.schedule_two_other` (the accounts of Schedule II
-the filer names in its own members, each series with its `member`) each hold a
+the filer names in its own members, each series with its `member`; `left_out` names the
+ones the filing's own deferred tax allowance accounts for, and a member that may be that
+allowance has `release` null with its reason) each hold a
 `series` per table and set of axes, and
 each series its `periods`, newest first (for example
 `rollforwards.product_warranty.series.0.periods.0`); a reserve the filing does

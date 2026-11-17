@@ -186,22 +186,26 @@ def printed_signs(html: bytes) -> dict[str, str]:
 
 
 def same_cell_facts(html: bytes) -> dict[str, list[str]]:
-    """For each inline numeric fact printed in one cell of a table row with another -- a fact
-    nested in another, two tags on one figure -- the ids of the others in that cell. A figure
-    the filer tagged under two elements is one figure; two rows that print the same number are
-    two. A fact alone in its cell is not listed."""
+    """For each inline numeric fact nested in another, or holding another, the ids of the
+    others of its nest. In inline XBRL two tags on one printed figure must be nested; two figures
+    side by side in one cell (divided by a line break, a `div`, prose, or a fact before a nested
+    table) are different figures, however alike their values. A fact with nothing nested in it
+    and in nothing is not listed."""
     root = ET.fromstring(html)
     out: dict[str, list[str]] = {}
     for row in root.iter(f"{{{XHTML}}}tr"):
-        cell: list[str] = []
-        for kind, value in _row_tokens(row) + [("cell", None)]:
-            if kind in ("fact", "alias") and value:
-                cell.append(value)
-            elif kind == "cell":
-                if len(cell) > 1:
-                    for one in cell:
-                        out[one] = [other for other in cell if other != one]
-                cell = []
+        tokens = _row_tokens(row)
+        for at, (kind, fact_id) in enumerate(tokens):
+            if kind != "fact" or not fact_id:
+                continue
+            nest = [fact_id]
+            for later in tokens[at + 1:]:
+                if later[0] != "alias":
+                    break
+                nest.append(later[1])
+            if len(nest) > 1:
+                for one in nest:
+                    out[one] = [other for other in nest if other != one]
     return out
 
 

@@ -1788,49 +1788,86 @@ def test_a_period_whose_charge_was_read_has_a_release_that_is_true_or_false():
 
 # --- the deferred tax valuation allowance is told by its name ---------------------------
 
-def one_member(member: str) -> dict:
-    axes = {SCHEDULE_AXIS: member}
-    return rollforwards.build(planted([
-        fact("ValuationAllowancesAndReservesBalance", 1_000, at=OPENING, axes=axes, number="t1"),
-        fact("ValuationAllowancesAndReservesChargedToCostAndExpense", -200, **YEAR, axes=axes,
-             number="t2"),
-        fact("ValuationAllowancesAndReservesBalance", 800, at=CLOSING, axes=axes, number="t3")]))
-
-
-def assert_left_out(member: str, word: str) -> None:
-    result = one_member(member)
-    assert all("series" not in result[family] for family in rollforwards.FAMILIES), member
-    assert [(one["member"], one["table"]) for one in result["left_out"]] == [(member, "notes_1")]
-    assert word in result["left_out"][0]["reason"]
-
-
-def test_a_member_with_valuation_allowance_and_tax_is_left_out_and_listed():
-    assert_left_out("x:TaxValuationAllowanceMember", "tax")
-
-
-def test_a_member_with_valuation_allowance_and_deferred_is_left_out_and_listed():
-    assert_left_out("x:DeferredValuationAllowanceMember", "deferred")
-
-
-def test_a_member_with_valuation_allowance_and_an_operating_loss_is_left_out_and_listed():
-    assert_left_out("x:ValuationAllowanceOnNetOperatingLossesMember", "operatingloss")
-
-
-def test_the_bare_valuation_allowance_member_is_left_out_and_listed():
-    assert_left_out("x:ValuationAllowanceMember", "bare valuation allowance")
-
-
-@pytest.mark.parametrize("member", [
+ALLOWANCE = "DeferredTaxAssetsValuationAllowance"
+LEFT_OUT_NAMES = [
     "abc:IncomeTaxValuationAllowanceMember", "abc:DeferredIncomeTaxValuationAllowanceMember",
     "abc:TaxValuationAllowanceMember", "abc:ValuationAllowanceOnDeferredIncomeTaxesMember",
     "abc:SECSchedule1209ValuationAllowanceIncomeTaxesMember", "abc:ValuationAllowanceMember",
     "abc:ValuationAllowanceOnNetOperatingLossesMember",
-    "abc:DeferredTaxAssetValuationAllowanceMember",
-    "us-gaap:ValuationAllowanceOfDeferredTaxAssetsMember"])
-def test_the_tax_valuation_allowance_members_of_any_namespace_make_no_series(member):
-    result = one_member(member)
+    "abc:DeferredTaxAssetValuationAllowanceMember", "abc:DeferredValuationAllowanceMember"]
+ACCOUNT_NAMES = [
+    "abc:ValuationAllowanceForReturnsMember", "abc:SalesTaxReserveMember",
+    "abc:DeferredRevenueAllowanceMember", "abc:OperatingLossReserveMember",
+    "abc:ReturnsMember", "abc:FederalMember"]
+
+
+def one_member(member: str, *, allowance: int | None = None, extra: dict | None = None) -> dict:
+    """A Schedule II account of 1,000 falling to 800 on a -200 charge, beside the filing's own
+    allowance of deferred tax assets at the closing date (`allowance`, in another table) or none."""
+    axes = {SCHEDULE_AXIS: member, **(extra or {})}
+    tables = [
+        fact("ValuationAllowancesAndReservesBalance", 1_000, at=OPENING, axes=axes, number="t1"),
+        fact("ValuationAllowancesAndReservesChargedToCostAndExpense", -200, **YEAR, axes=axes,
+             number="t2"),
+        fact("ValuationAllowancesAndReservesBalance", 800, at=CLOSING, axes=axes, number="t3")]
+    if allowance is not None:
+        return rollforwards.build(planted(tables, [
+            fact(ALLOWANCE, 1_000, at=OPENING, number="a1"),
+            fact(ALLOWANCE, allowance, at=CLOSING, number="a2")]))
+    return rollforwards.build(planted(tables))
+
+
+@pytest.mark.parametrize("member", LEFT_OUT_NAMES + ACCOUNT_NAMES)
+def test_a_member_whose_balance_is_the_filings_own_tax_allowance_is_left_out_whatever_its_name(
+        member):
+    """The filing decides: the balance 1,000 then 800 is the filing's own
+    `DeferredTaxAssetsValuationAllowance` at both dates, so the member is no reserve, however it
+    is named."""
+    result = one_member(member, allowance=800)
     assert all("series" not in result[family] for family in rollforwards.FAMILIES)
-    assert [one["member"] for one in result["left_out"]] == [member]
+    assert [(one["member"], one["table"]) for one in result["left_out"]] == [(member, "notes_1")]
+    assert "DeferredTaxAssetsValuationAllowance" in result["left_out"][0]["reason"]
+
+
+@pytest.mark.parametrize("member", LEFT_OUT_NAMES + ACCOUNT_NAMES)
+def test_a_member_that_is_not_the_filings_tax_allowance_is_a_series_whatever_its_name(member):
+    """The filing tags 1,000 and 700, not 800: the member is an account of the section's, and a
+    -200 charge is a release (unless its name says valuation allowance, below)."""
+    result = one_member(member, allowance=700)
+    assert result["left_out"] == []
+    (series,) = result["schedule_two_other"]["series"]
+    assert series["member"] == member
+    year = series["periods"][0]
+    # a comparison was made and it is no match: a real account, and the -200 is a release
+    assert year["foots"] is True and year["release"] is True
+    assert year["release_because"] == ["charged_to_expense_negative"]
+
+
+@pytest.mark.parametrize("member", LEFT_OUT_NAMES + ACCOUNT_NAMES)
+def test_a_member_with_no_allowance_to_compare_is_a_series_and_a_valuation_name_is_no_release(
+        member):
+    result = one_member(member)
+    assert result["left_out"] == []
+    (series,) = result["schedule_two_other"]["series"]
+    year = series["periods"][0]
+    assert year["foots"] is True
+    if "valuationallowance" in member.rsplit(":", 1)[-1].lower():
+        assert year["release"] is None and year["release_because"] == []
+        assert year["release_note"] == (
+            "may be the deferred tax allowance; the filing tags no allowance to compare")
+    else:
+        assert year["release"] is True and year["release_because"] == [
+            "charged_to_expense_negative"]
+
+
+def test_the_standard_us_gaap_member_is_always_left_out_even_on_another_axis():
+    for allowance in (None, 800, 700):
+        result = one_member("us-gaap:ValuationAllowanceOfDeferredTaxAssetsMember",
+                            allowance=allowance,
+                            extra={"us-gaap:IncomeTaxAuthorityAxis": "abc:FederalMember"})
+        assert all("series" not in result[family] for family in rollforwards.FAMILIES)
+        assert [one["member"] for one in result["left_out"]] == [
+            "us-gaap:ValuationAllowanceOfDeferredTaxAssetsMember"]
 
 
 def test_a_filing_with_no_left_out_account_lists_none():
@@ -1840,14 +1877,11 @@ def test_a_filing_with_no_left_out_account_lists_none():
         spent=300)))["left_out"] == []
 
 
-@pytest.mark.parametrize("member", ["x:ValuationAllowanceForReturnsMember",
-                                    "x:SalesTaxReserveMember", "x:DeferredRevenueAllowanceMember",
-                                    "x:OperatingLossReserveMember"])
-def test_a_member_with_only_half_of_the_tax_valuation_name_is_an_account(member):
-    result = one_member(member)
-    (series,) = result["schedule_two_other"]["series"]
-    assert series["member"] == member and series["periods"][0]["foots"] is True
-    assert series["periods"][0]["release"] is True and result["left_out"] == []
+def test_a_member_matching_the_allowance_at_one_date_only_is_a_series():
+    """The balance equals the allowance at the opening date and not at the closing: one match
+    is no proof, and the account is kept."""
+    result = one_member("abc:ReturnsMember", allowance=700)
+    assert result["left_out"] == [] and result["schedule_two_other"]["series"]
 
 
 @pytest.mark.parametrize("ticker,accession,cutoff", [
@@ -1958,14 +1992,138 @@ def test_an_overlap_whose_charges_are_all_negative_is_a_release_and_a_mixed_one_
     assert zero["release"] is None
 
 
-def test_the_same_cell_facts_of_an_inline_table_are_read_from_its_cells():
+def test_only_nested_facts_are_mates_of_one_figure():
+    """In inline XBRL two tags on one printed figure must be nested. Figures side by side in one
+    cell, stacked with a line break or a `div`, split by prose, or a fact before a nested table
+    are different figures, whatever their values."""
+    nested = ('<ix:nonFraction id="o" name="x:Y" contextRef="c" unitRef="usd">'
+              + number_cell("i", "5") + "</ix:nonFraction>")
+    two_tags = ('<ix:nonFraction id="p" name="x:Y" contextRef="c" unitRef="usd">'
+                '<ix:nonFraction id="q" name="x:Z" contextRef="c" unitRef="usd">5'
+                "</ix:nonFraction></ix:nonFraction>")
     page = inline_page(
-        f"<td>nested</td><td>"
-        f'<ix:nonFraction id="o" name="x:Y" contextRef="c" unitRef="usd">'
-        f"{number_cell('i', '5')}</ix:nonFraction></td>",
-        f"<td>two tags</td><td>{number_cell('a', '5')}{number_cell('b', '5')}</td>",
-        f"<td>two rows</td><td>{number_cell('c', '5')}</td><td>{number_cell('d', '5')}</td>")
-    assert note_tables.same_cell_facts(page) == {"o": ["i"], "i": ["o"], "a": ["b"], "b": ["a"]}
+        f"<td>nested</td><td>{nested}</td>",
+        f"<td>two tags</td><td>{two_tags}</td>",
+        f"<td>adjacent</td><td>{number_cell('a', '5')}{number_cell('b', '5')}</td>",
+        f"<td>br</td><td>{number_cell('c', '5')}<br/>{number_cell('d', '5')}</td>",
+        f"<td>div</td><td><div>{number_cell('e', '5')}</div><div>{number_cell('f', '5')}</div></td>",
+        f"<td>prose</td><td>of {number_cell('g', '5')} and {number_cell('h', '5')}</td>",
+        f"<td>table</td><td>{number_cell('j', '5')}<table><tr><td>{number_cell('k', '5')}"
+        f"</td></tr></table></td>",
+        f"<td>two rows</td><td>{number_cell('l', '5')}</td><td>{number_cell('m', '5')}</td>")
+    assert note_tables.same_cell_facts(page) == {"o": ["i"], "i": ["o"], "p": ["q"], "q": ["p"]}
+
+
+def test_amds_side_by_side_share_counts_are_not_mates():
+    """AMD's balance sheet prints shares issued (f-184, f-185) and outstanding (f-186, f-187) in
+    one cell, one beside the other: different figures."""
+    path = next(FIXTURES / "AMD" / entry["path"] for entry in json.loads(
+        (FIXTURES / "AMD" / "manifest.json").read_text(encoding="utf-8"))["documents"]
+                if entry["accession"] == "0000002488-26-000018"
+                and entry["role"] == "primary_html")
+    raw = path.read_bytes() if path.exists() else gzip.open(f"{path}.gz").read()
+    raw = gzip.decompress(raw) if raw[:2] == b"\x1f\x8b" else raw
+    mates = note_tables.same_cell_facts(raw)
+    for one, other in (("f-184", "f-186"), ("f-185", "f-187"), ("f-184", "f-185"),
+                       ("f-186", "f-187")):
+        assert other not in mates.get(one, []) and one not in mates.get(other, [])
+
+
+def real_filing(rows: list[str], facts: list[tuple[str, str, str, int]]) -> dict:
+    """A planted inline table and its instance, run through `same_cell_facts`, `tables()` and
+    nothing handwritten: `rows` are table rows of HTML, `facts` the instance's facts as
+    (id, us-gaap element, context, value) with contexts `i0` and `i1` the two year ends and `d`
+    the year."""
+    html = ('<html xmlns="http://www.w3.org/1999/xhtml" '
+            'xmlns:ix="http://www.xbrl.org/2013/inlineXBRL"><body><table>'
+            + "".join(f"<tr>{row}</tr>" for row in rows) + "</table></body></html>").encode()
+
+    def context(name, at=None):
+        period = (f"<xbrli:instant>{at}</xbrli:instant>" if at else
+                  "<xbrli:startDate>2025-01-01</xbrli:startDate>"
+                  "<xbrli:endDate>2025-12-31</xbrli:endDate>")
+        return (f'<xbrli:context id="{name}"><xbrli:entity><xbrli:identifier scheme="http://www.'
+                f'sec.gov/CIK">1</xbrli:identifier></xbrli:entity><xbrli:period>{period}'
+                "</xbrli:period></xbrli:context>")
+    instance = ('<xbrli:xbrl xmlns:xbrli="http://www.xbrl.org/2003/instance" '
+                'xmlns:us-gaap="http://fasb.org/us-gaap/2025" '
+                'xmlns:iso4217="http://www.xbrl.org/2003/iso4217">'
+                + context("i0", "2024-12-31") + context("i1", "2025-12-31") + context("d")
+                + '<xbrli:unit id="usd"><xbrli:measure>iso4217:USD</xbrli:measure></xbrli:unit>'
+                + "".join(f'<us-gaap:{name} id="{number}" contextRef="{ref}" unitRef="usd" '
+                          f'decimals="0">{value}</us-gaap:{name}>'
+                          for number, name, ref, value in facts)
+                + "</xbrli:xbrl>").encode()
+    paragraphs = [(f"{ACCESSION}:notes:{at}", text)
+                  for at, text in enumerate(note_tables.inline_tables(html)) if text.startswith("|")]
+    return note_tables.tables(paragraphs, html, instance, accession=ACCESSION,
+                              cutoff="2026-02-01")
+
+
+def ix(number: str, name: str, ref: str, shown: str, inner: str = "") -> str:
+    return (f'<ix:nonFraction id="{number}" name="us-gaap:{name}" contextRef="{ref}" '
+            f'unitRef="usd" decimals="0" scale="0">{shown}{inner}</ix:nonFraction>')
+
+
+def real_restructuring(charge_rows: list[str], charge_facts, *, closing: int) -> dict:
+    rows = [f"<td>Balance at beginning</td><td>{ix('b1', 'RestructuringReserve', 'i0', '100')}</td>",
+            f"<td>Cash paid</td><td>{ix('u1', 'PaymentsForRestructuring', 'd', '30')}</td>"]
+    rows += charge_rows
+    rows.append(f"<td>Balance at end</td><td>"
+                f"{ix('b2', 'RestructuringReserve', 'i1', f'{closing:,}')}</td>")
+    facts = [("b1", "RestructuringReserve", "i0", 100), ("u1", "PaymentsForRestructuring", "d", 30),
+             ("b2", "RestructuringReserve", "i1", closing), *charge_facts]
+    tables = real_filing(rows, facts)
+    (key,) = tables["tables"]
+    return period_of(series_of(rollforwards.build(tables), "restructuring_reserve", key),
+                     CLOSING)
+
+
+def test_one_figure_tagged_twice_and_nested_in_a_real_table_is_counted_once():
+    """100 + 70 - 30 = 140, the 70 one printed figure tagged `RestructuringCosts` with
+    `RestructuringCharges` nested in it."""
+    year = real_restructuring(
+        [f"<td>Charges</td><td>{ix('c1', 'RestructuringCosts', 'd', '', ix('c2', 'RestructuringCharges', 'd', '70'))}</td>"],
+        [("c1", "RestructuringCosts", "d", 70), ("c2", "RestructuringCharges", "d", 70)],
+        closing=140)
+    assert year["charged_to_expense"]["value"] == 70
+    assert year["foots"] is True and year["complete"] is True
+
+
+def test_a_nested_pair_whose_values_differ_is_not_one_charge():
+    """The same nest with 50 and 70 (a mismatch the filer made, or a scale that differs): which
+    is the charge is not known. Kills the equal-value condition."""
+    year = real_restructuring(
+        [f"<td>Charges</td><td>{ix('c1', 'RestructuringCosts', 'd', '', ix('c2', 'RestructuringCharges', 'd', '70'))}</td>"],
+        [("c1", "RestructuringCosts", "d", 50), ("c2", "RestructuringCharges", "d", 70)],
+        closing=140)
+    assert "overlapping charge elements" in year["charged_to_expense"]["missing"]
+    assert year["complete"] is False
+
+
+def test_a_nest_of_two_and_a_third_printed_row_with_the_same_value_is_unresolved():
+    """Three charge elements of 70: two nested in one cell, the third in a row of its own. The
+    third is no mate of the others, so the period is overlapping; reading any mate as enough
+    would resolve it."""
+    year = real_restructuring(
+        [f"<td>Charges</td><td>{ix('c1', 'RestructuringCosts', 'd', '', ix('c2', 'RestructuringCharges', 'd', '70'))}</td>",
+         f"<td>Impairment</td><td>{ix('c3', 'RestructuringCostsAndAssetImpairmentCharges', 'd', '70')}</td>"],
+        [("c1", "RestructuringCosts", "d", 70), ("c2", "RestructuringCharges", "d", 70),
+         ("c3", "RestructuringCostsAndAssetImpairmentCharges", "d", 70)], closing=140)
+    assert "overlapping charge elements" in year["charged_to_expense"]["missing"]
+    assert year["complete"] is False and len(year["rows_not_placed"]) == 3
+
+
+def test_two_figures_stacked_in_one_cell_are_two_rows_and_overlapping():
+    """100 + 20 + 20 - 30 = 110, the 20 and the 20 one above the other in one cell (a line break):
+    two printed figures with equal values, not one."""
+    year = real_restructuring(
+        [f"<td>Charges</td><td>{ix('c1', 'RestructuringCharges', 'd', '20')}<br/>"
+         f"{ix('c2', 'RestructuringSettlementAndImpairmentProvisions', 'd', '20')}</td>"],
+        [("c1", "RestructuringCharges", "d", 20),
+         ("c2", "RestructuringSettlementAndImpairmentProvisions", "d", 20)], closing=110)
+    assert "overlapping charge elements" in year["charged_to_expense"]["missing"]
+    assert year["complete"] is False and year["foots"] is False
 
 
 # --- the dash rule's parenthesis ---------------------------------------------------------
@@ -1973,3 +2131,57 @@ def test_the_same_cell_facts_of_an_inline_table_are_read_from_its_cells():
 def test_an_opening_parenthesis_before_a_dash_is_no_text_of_the_cell():
     assert one_cell(f"<td>(-{number_cell('a', '5')}</td>") == {"a": "negative"}
     assert one_cell(f"<td>( − {number_cell('b', '5')}</td>") == {"b": "negative"}
+
+
+THIRTEEN = ("ADTN", "AVGO", "CARR", "CLS", "CSCO", "DELL", "FELE", "GNRC", "LITE", "LOGI", "NVDA",
+            "QCOM", "TTMI")
+
+
+@pytest.mark.parametrize("ticker", THIRTEEN)
+def test_the_standard_tax_allowance_member_of_each_committed_filer_is_left_out(ticker):
+    """The 13 committed 10-Ks whose Schedule II carries `us-gaap:ValuationAllowanceOfDeferred
+    TaxAssetsMember`: it is listed under `left_out` and is no series of any family."""
+    documents = json.loads((FIXTURES / ticker / "manifest.json").read_text(
+        encoding="utf-8"))["documents"]
+    entry = next(one for one in documents if one["role"] == "primary_html"
+                 and one["form"] == "10-K")
+    result = rollforwards.build(tables_of(ticker, entry["accession"], entry["filing_date"]))
+    assert any(one["member"] == "us-gaap:ValuationAllowanceOfDeferredTaxAssetsMember"
+               for one in result["left_out"]), ticker
+    for family in rollforwards.FAMILIES:
+        for series in result[family].get("series", []):
+            assert series.get("member") != "us-gaap:ValuationAllowanceOfDeferredTaxAssetsMember"
+            assert "ValuationAllowanceOfDeferredTaxAssetsMember" not in json.dumps(
+                series["axes"])
+
+
+def test_an_allowance_of_one_jurisdiction_is_not_the_filings_allowance():
+    """The filing's own allowance is the one with no axes: a figure for one jurisdiction that
+    happens to be 1,000 and 800 does not make the member the tax allowance."""
+    axes = {SCHEDULE_AXIS: "abc:ReturnsMember"}
+    state = {"us-gaap:IncomeTaxAuthorityAxis": "abc:FederalMember"}
+    result = rollforwards.build(planted([
+        fact("ValuationAllowancesAndReservesBalance", 1_000, at=OPENING, axes=axes, number="t1"),
+        fact("ValuationAllowancesAndReservesChargedToCostAndExpense", -200, **YEAR, axes=axes,
+             number="t2"),
+        fact("ValuationAllowancesAndReservesBalance", 800, at=CLOSING, axes=axes, number="t3")],
+        [fact(ALLOWANCE, 1_000, at=OPENING, axes=state, number="a1"),
+         fact(ALLOWANCE, 800, at=CLOSING, axes=state, number="a2")]))
+    assert result["left_out"] == [] and result["schedule_two_other"]["series"]
+
+
+def test_an_allowance_at_other_dates_is_no_comparison_for_a_member():
+    """The filing tags 1,000 and 800 at two other year ends: none at the member's own dates, so
+    nothing was compared and a valuation-allowance name is read as uncompared, not as the tax
+    allowance."""
+    axes = {SCHEDULE_AXIS: "abc:ValuationAllowanceForReturnsMember"}
+    result = rollforwards.build(planted([
+        fact("ValuationAllowancesAndReservesBalance", 1_000, at=OPENING, axes=axes, number="t1"),
+        fact("ValuationAllowancesAndReservesChargedToCostAndExpense", -200, **YEAR, axes=axes,
+             number="t2"),
+        fact("ValuationAllowancesAndReservesBalance", 800, at=CLOSING, axes=axes, number="t3")],
+        [fact(ALLOWANCE, 1_000, at="2022-12-31", number="a1"),
+         fact(ALLOWANCE, 800, at="2023-12-31", number="a2")]))
+    assert result["left_out"] == []
+    year = result["schedule_two_other"]["series"][0]["periods"][0]
+    assert year["release"] is None and "no allowance to compare" in year["release_note"]
