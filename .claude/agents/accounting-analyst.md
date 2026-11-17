@@ -186,15 +186,20 @@ assets), contains free cash flow and is refused whatever the adjustment applies 
 table's cash totals. A non-cash charge (an impairment, a write-down, a write-off) is never a `cash_flow`
 amount: it is an `earnings` adjustment, as are a note table's investing-activity flows.
 **A `cash_flow` amount comes from the company's own statement of cash flows, or from one of three
-named items the statement does not carry in operating cash flow.** The statement's lines are
-disjoint and sum to operating cash flow, so a line of it can be taken once and counts nothing
-twice. (a) A line of the statement inside operating activities, as the view prints it:
-`terms.trailing_four_quarters.<line>` (net income, depreciation and amortization, the change in
-receivables, in inventory, in payables), or the statement's change in a working-capital line,
+named items.** The statement's lines are disjoint and sum to operating cash flow, so a line of
+it can be taken once and counts nothing twice. (a) A working-capital change line of the
+statement inside operating activities, as the view prints it:
+`terms.trailing_four_quarters.<line>` (the change in receivables, in inventory, in payables;
+net income and depreciation and amortization are no working-capital line and stay `earnings`
+adjustments), or the statement's change in a working-capital line,
 `earnings_versus_cash.working_capital.<line>.cash_flow_statement_change`, which is the same line
 reached by another path. Each line is cited once. (b) The change in the supplier finance
 obligation, receivables sold or factored, and deferred or contingent acquisition consideration,
-each a note table's `changes` cell of that concept, each cited once. Everything else is refused as
+each a note table's `changes` cell of that concept. The supplier finance obligation sits inside
+accounts payable and receivables sold inside receivables, both inside operating cash flow: each is
+the same movement as the statement's change in payables or in receivables, so name that line or
+the item, never both. Acquisition consideration is cited once for each concept, so a current and a
+noncurrent balance are two. Everything else is refused as
 a `cash_flow` amount with the reason "a cash_flow amount is a line of the statement of cash flows
 or a named off-statement item": a balance-sheet change (the calculator's `balance_sheet_change`,
 `articulation_gap`, `share_of_net_income` input), a total (the change in current liabilities,

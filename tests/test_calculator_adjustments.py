@@ -1090,10 +1090,10 @@ def test_the_calculator_lists_an_earnings_adjustment_and_does_not_apply_it_to_fr
     out = calculator.quality_adjusted(
         {"value": 100.0}, {"value": 10.0}, {"value": 0.0, "formula": "x"},
         [adjustment("terms.trailing_four_quarters.revenue", "reduce", "earnings"),
-         adjustment("terms.trailing_four_quarters.net_income", "increase", "cash_flow")],
-        with_year({**PLANTED, "terms": {"trailing_four_quarters": {"revenue": usd(), "net_income": usd()}}}))
+         adjustment("terms.trailing_four_quarters.change_in_payables", "increase", "cash_flow")],
+        with_year({**PLANTED, "terms": {"trailing_four_quarters": {"revenue": usd(), "change_in_payables": usd()}}}))
     assert out["value"] == 100.0 - 10.0 + 1_000_000.0
-    assert [r["calculator_field"] for r in out["adjustments_applied"]] == ["terms.trailing_four_quarters.net_income"]
+    assert [r["calculator_field"] for r in out["adjustments_applied"]] == ["terms.trailing_four_quarters.change_in_payables"]
     earnings, = out["adjustments_to_earnings"]
     assert earnings["calculator_field"] == "terms.trailing_four_quarters.revenue"
     assert earnings["amount"] == 1_000_000.0
@@ -1279,9 +1279,14 @@ def test_the_definition_says_the_cash_flow_rule_the_span_rule_and_the_earnings_r
             "A non-cash charge (an impairment, a write-down, a write-off) is never a `cash_flow` "
             "amount: it is an `earnings` adjustment, as are a note table's investing-activity flows",
             "**A `cash_flow` amount comes from the company's own statement of cash flows, or from one of "
-            "three named items the statement does not carry in operating cash flow.**",
-            "(a) A line of the statement inside operating activities, as the view prints it: "
+            "three named items.**",
+            "(a) A working-capital change line of the statement inside operating activities, as the view prints it: "
             "`terms.trailing_four_quarters.<line>`",
+            "net income and depreciation and amortization are no working-capital line and stay `earnings` adjustments",
+            "The supplier finance obligation sits inside accounts payable and receivables sold inside receivables, both "
+            "inside operating cash flow: each is the same movement as the statement's change in payables or in "
+            "receivables, so name that line or the item, never both",
+            "so a current and a noncurrent balance are two",
             "`earnings_versus_cash.working_capital.<line>.cash_flow_statement_change`, which is the same line "
             "reached by another path. Each line is cited once. (b) The change in the supplier finance "
             "obligation, receivables sold or factored, and deferred or contingent acquisition consideration",
@@ -1465,7 +1470,7 @@ def test_two_adjustments_keep_their_own_target_and_recurrence_through_the_valuat
         {"name": "x", "direction": "reduce", "applies_to": "earnings", "recurs": False, "quote": "q",
          "calculator_field": "note_tables.tables.notes_42.facts.8"},
         {"name": "y", "direction": "reduce", "applies_to": "cash_flow", "recurs": True, "quote": "q",
-         "calculator_field": "terms.trailing_four_quarters.net_income"}]
+         "calculator_field": "terms.trailing_four_quarters.change_in_payables"}]
     out = calculator.calculate(**calculator_drift.trigger(PALO_FIRST), fixtures_root=STORE, bundle=PALO_FIRST,
                                market_data=published["market"], assumptions=assumptions,
                                accounting={"adjustments": adjustments})
@@ -1668,7 +1673,7 @@ def test_the_sections_the_adjustment_rule_reads_hold_every_section_with_a_dollar
 def test_the_row_names_free_cash_flows_span_and_its_own_beside_it():
     """A nine-month amount is never labelled as twelve months."""
     out = final_with(PALO_ALTO, [adjustment("note_tables.tables.notes_42.facts.14", applies_to="earnings"),
-                                 adjustment("terms.trailing_four_quarters.net_income", applies_to="cash_flow")])
+                                 adjustment("terms.trailing_four_quarters.change_in_payables", applies_to="cash_flow")])
     nine, year = out["adjustments_to_earnings"] + out["adjustments_applied"]
     assert nine["free_cash_flow_covers"] == year["free_cash_flow_covers"] == "the four quarters 2025-05-01..2026-04-30"
     assert nine["its_own_span"] == "2025-08-01..2026-04-30 within the four quarters ending 2026-04-30"
@@ -1831,7 +1836,9 @@ NAMED_ITEM_CONCEPTS = [
 def test_a_named_off_statement_item_stands_as_a_cash_flow_amount(concept, item):
     held, path = a_change(concept)
     assert reading(held, path, False, "cash_flow") == (1_000_000.0, None)
-    assert calculator.cash_flow_source(path, calculator._cell_at(held, path)) == f"item:{item}"
+    key = {"supplier finance": "line:change_in_payables", "receivables sold": "line:change_in_receivables",
+           "acquisition consideration": f"item:{concept.rpartition(':')[2].lower()}"}[item]
+    assert calculator.cash_flow_source(path, calculator._cell_at(held, path)) == key
 
 
 @pytest.mark.parametrize("concept", ["us-gaap:SupplierFinanceProgramObligationIncrease",
@@ -2179,7 +2186,8 @@ def test_a_line_of_the_year_earlier_or_of_another_section_is_no_source_of_a_cash
     cash flow families (borrowing, acquisitions), the statement's lines that are not operating (dividends,
     repurchases) and the income statement's lines (revenue, operating income) are refused as cash_flow."""
     held = printed(AAPL_RUN)
-    for path in ("terms.trailing_four_quarters_a_year_earlier.net_income", "terms.cash_flow_families.borrowing_repaid",
+    for path in ("terms.trailing_four_quarters_a_year_earlier.net_income", "terms.trailing_four_quarters.net_income",
+                 "terms.trailing_four_quarters.depreciation_and_amortization", "terms.cash_flow_families.borrowing_repaid",
                  "terms.trailing_four_quarters.dividends_paid", "terms.trailing_four_quarters.share_repurchases",
                  "terms.trailing_four_quarters.revenue", "terms.trailing_four_quarters.operating_income",
                  "terms.trailing_four_quarters.income_tax_expense",
@@ -2193,8 +2201,7 @@ def test_a_line_of_the_statement_inside_operating_activities_is_a_source_once():
     for line in calculator.STATEMENT_LINES:
         path = f"terms.trailing_four_quarters.{line}"
         assert calculator.cash_flow_source(path, calculator._cell_at(held, path)) == f"line:{line}", path
-    assert calculator.STATEMENT_LINES == ("net_income", "depreciation_and_amortization", "inventory_write_down",
-                                          "change_in_receivables", "change_in_inventory", "change_in_payables")
+    assert calculator.STATEMENT_LINES == ("change_in_receivables", "change_in_inventory", "change_in_payables")
     for working, line in (("receivables", "change_in_receivables"), ("inventory", "change_in_inventory"),
                           ("accounts_payable", "change_in_payables")):
         path = f"earnings_versus_cash.working_capital.{working}.cash_flow_statement_change"
@@ -2265,16 +2272,70 @@ def test_the_total_of_current_liabilities_and_billings_are_no_lines_of_the_state
 def test_a_named_item_is_cited_once_and_two_different_items_both_stand():
     held = printed(STX_RUN)
     one, two = "note_tables.tables.notes_91.changes.0", "note_tables.tables.notes_91.changes.1"
-    kept = [one]
     for path in (one, two):
-        assert calculator.cash_flow_source(path, calculator._cell_at(held, path)) == "item:supplier finance"
-    assert TWICE in calculator.counted_twice(held, two, kept) and "supplier finance" in calculator.counted_twice(held, two, kept)
+        assert calculator.cash_flow_source(path, calculator._cell_at(held, path)) == "line:change_in_payables"
+    assert TWICE in calculator.counted_twice(held, two, [one])
     assert calculator.counted_twice(held, one, []) is None
     deal = {"period_end": "2026-06-30", "note_tables": {"tables": {"notes_1": {"changes": [
         {**usd(unit="iso4217:USD"), "concept": "nvda:BusinessCombinationConsiderationPayable",
          "from": {"instant": "2025-06-30"}, "to": {"instant": "2026-06-30"}}]}}}}
     deal["note_tables"]["tables"]["notes_2"] = held["note_tables"]["tables"]["notes_91"]
     assert calculator.counted_twice(deal, "note_tables.tables.notes_1.changes.0", ["note_tables.tables.notes_2.changes.1"]) is None
+
+
+def test_the_supplier_finance_change_and_the_statements_change_in_payables_are_one_movement():
+    """Seagate's input_notes.md line 311 and Dell's line 1116 say the program sits inside accounts payable and
+    operating cash flow, so the obligation's change and the statement's change in payables are one line: the
+    statement's, 66 million (companyfacts, IncreaseDecreaseInAccountsPayable 2025-06-28..2026-07-03), then the
+    note's change of 380 million, which is refused, in either order."""
+    assert source.one_value("STX", "IncreaseDecreaseInAccountsPayable", "2025-06-28..2026-07-03", "2026-08-04") == 66e6
+    on_line(STX_RUN, 311, "recorded within Accounts payable", "included in Net cash provided by operat")
+    on_line("DELL/0001571996-26-000046", 1116, "included within accounts payable")
+    line = "terms.trailing_four_quarters.change_in_payables"
+    note = "note_tables.tables.notes_91.changes.1"
+    run = RUNS / STX_RUN
+    for order in ((line, note), (note, line)):
+        out = calculator.calculate(**calculator_drift.trigger(run), fixtures_root=STORE, bundle=run, accounting={
+            "adjustments": [{**adjustment(path, applies_to="cash_flow"), "name": path} for path in order]})
+        quality = out["free_cash_flow"]["free_cash_flow_quality_adjusted"]
+        assert [r["calculator_field"] for r in quality["adjustments_applied"]] == [order[0]]
+        refused, = quality["adjustments_refused"]
+        assert refused["calculator_field"] == order[1] and TWICE in refused["reason"]
+
+
+def test_a_planted_receivables_sold_change_and_the_statements_change_in_receivables_are_one_movement():
+    fields = with_year({"period_end": "2026-06-30",
+                        "terms": {"trailing_four_quarters": {"change_in_receivables": usd()}},
+                        "note_tables": {"tables": {"notes_1": {"changes": [
+                            {**usd(unit="iso4217:USD"), "concept": "us-gaap:TransferOfFinancialAssetsAccountedForAsSalesAmountDerecognized",
+                             "from": {"instant": "2025-06-30"}, "to": {"instant": "2026-06-30"}}]}}}})
+    line, note = "terms.trailing_four_quarters.change_in_receivables", "note_tables.tables.notes_1.changes.0"
+    for order in ((line, note), (note, line)):
+        out = calculator.quality_adjusted({"value": 100.0}, {"value": 10.0}, {"value": 0.0, "formula": "x"},
+                                          [{**adjustment(path, applies_to="cash_flow"), "name": path} for path in order], fields)
+        assert [r["calculator_field"] for r in out["adjustments_applied"]] == [order[0]]
+        refused, = out["adjustments_refused"]
+        assert refused["calculator_field"] == order[1] and TWICE in refused["reason"]
+    assert calculator.counted_twice(fields, note, ["terms.trailing_four_quarters.change_in_payables"]) is None
+
+
+def test_current_and_noncurrent_contingent_consideration_are_two_balances_and_both_stand():
+    """Palo Alto's contingent consideration, April 30, 2026 against July 31, 2025, read by eye from the run's
+    input_notes.md: the current liability 124 - 276 = -152 (line 173) and the noncurrent 116 - 238 = -122
+    (line 178), millions. A second cell of the same concept is the same balance and is refused."""
+    read_by_eye(PALO_RUN, (173, "124"), (173, "276"), M, -152e6)
+    read_by_eye(PALO_RUN, (178, "116"), (178, "238"), M, -122e6)
+    held = printed(PALO_RUN)
+    current, noncurrent = "note_tables.tables.notes_37.changes.54", "note_tables.tables.notes_37.changes.70"
+    again = "note_tables.tables.notes_37.changes.55"
+    assert [calculator._cell_at(held, p)["concept"].rpartition(":")[2] for p in (current, noncurrent, again)] == [
+        "BusinessCombinationContingentConsiderationLiabilityCurrent",
+        "BusinessCombinationContingentConsiderationLiabilityNoncurrent",
+        "BusinessCombinationContingentConsiderationLiabilityCurrent"]
+    assert reading(held, current, False, "cash_flow") == (-152e6, None)
+    assert reading(held, noncurrent, False, "cash_flow") == (-122e6, None)
+    assert calculator.counted_twice(held, noncurrent, [current]) is None
+    assert TWICE in calculator.counted_twice(held, again, [current])
 
 
 def test_a_cell_that_is_no_source_is_its_own_key_so_a_field_is_not_cited_twice():
@@ -2296,11 +2357,11 @@ def test_the_gate_drops_a_statement_line_cited_twice_and_a_cell_that_is_no_sourc
     fields = copy.deepcopy(gate.FIELDS)
     wc = fields.setdefault("earnings_versus_cash", {}).setdefault("working_capital", {})
     wc["receivables"] = {"cash_flow_statement_change": usd(), "balance_sheet_change": usd()}
-    fields["terms"]["trailing_four_quarters"]["net_income"] = usd()
+    fields["terms"]["trailing_four_quarters"]["change_in_payables"] = usd()
     first = {**base, "name": "a", "applies_to": "cash_flow", "calculator_field": "terms.trailing_four_quarters.change_in_receivables"}
     same_line = {**base, "name": "b", "applies_to": "cash_flow", "calculator_field": f"{RECEIVABLES}.cash_flow_statement_change"}
     earnings = {**base, "name": "c", "applies_to": "earnings", "calculator_field": f"{RECEIVABLES}.cash_flow_statement_change"}
-    other = {**base, "name": "d", "applies_to": "cash_flow", "calculator_field": "terms.trailing_four_quarters.net_income"}
+    other = {**base, "name": "d", "applies_to": "cash_flow", "calculator_field": "terms.trailing_four_quarters.change_in_payables"}
     sheet = {**base, "name": "e", "applies_to": "cash_flow", "calculator_field": f"{RECEIVABLES}.balance_sheet_change"}
     payload = gate.accounting()
     payload["adjustments"] = [first, same_line, earnings, other, sheet]

@@ -2514,35 +2514,37 @@ INSIDE_FREE_CASH_FLOW_CONCEPTS = (
     (r"GoodwillAcquiredDuringPeriod", "goodwill acquired in the period carries acquisitions"),
 )
 # THE AMOUNT OF A CASH-FLOW ADJUSTMENT comes from the company's own statement of cash flows, whose lines
-# are disjoint and sum to operating cash flow, or from one of three named items the statement does not
-# carry in operating cash flow. No family is inferred from a name: a total and its rows, a balance-sheet
+# are disjoint and sum to operating cash flow, or from one of three named items. No family is inferred from a name: a total and its rows, a balance-sheet
 # change and the statement's line for the same balance are told apart by where the cell comes from.
-#   (a) A STATEMENT LINE inside operating activities, as the calculator reads it: a line of
-#       `terms.trailing_four_quarters`, or the statement's change in a working-capital line under
+#   (a) A STATEMENT LINE, a working-capital change inside operating activities, as the calculator reads
+#       it: receivables, inventory, payables (net income and depreciation are no working-capital line and
+#       stay earnings adjustments), in `terms.trailing_four_quarters`, or the statement's change in a working-capital line under
 #       `earnings_versus_cash.working_capital.<line>.cash_flow_statement_change` (the same line, cited
 #       once however it is reached; its parts are the line's own).
 #   (b) A NAMED OFF-STATEMENT ITEM, a note-table change whose concept is of one of three families:
 #       the supplier finance obligation, receivables sold or factored, deferred or contingent
-#       acquisition consideration.
+#       acquisition consideration. Supplier finance sits inside accounts payable and receivables sold
+#       inside receivables, both inside operating cash flow, so each has the KEY OF ITS LINE (one of the
+#       pair may stand, never both); consideration keeps its own key, its concept, so a current and a
+#       noncurrent balance are two.
 # Anything else is refused as a cash-flow amount and stays available as earnings (a debt class arrives with adjusted debt, wave two).
 NOT_A_STATEMENT_LINE = ("a cash_flow amount is a line of the statement of cash flows or a named "
                         "off-statement item")
 NOT_ON_THE_LIST = NOT_A_STATEMENT_LINE
-STATEMENT_LINES = (
-    "net_income", "depreciation_and_amortization", "inventory_write_down",
-    "change_in_receivables", "change_in_inventory", "change_in_payables",
-)
+STATEMENT_LINES = ("change_in_receivables", "change_in_inventory", "change_in_payables")
 STATEMENT_LINE_OF_WORKING_CAPITAL = {
     "receivables": "change_in_receivables", "inventory": "change_in_inventory",
     "accounts_payable": "change_in_payables",
 }
+# (name, the concept's local name, lower-cased, the whole of it; the key, or None for the concept itself)
 NAMED_ITEMS = (
-    ("supplier finance", r"supplierfinanceprogramobligation(?:current|noncurrent)?"),
+    ("supplier finance", r"supplierfinanceprogramobligation(?:current|noncurrent)?", "line:change_in_payables"),
     ("receivables sold", r"transferoffinancialassetsaccountedforassalesamountderecognized|"
-                         r"\w*receivablessold\w*|\w*factoredreceivables\w*|\w*factoring\w*"),
+                         r"\w*receivablessold\w*|\w*factoredreceivables\w*|\w*factoring\w*",
+     "line:change_in_receivables"),
     ("acquisition consideration",
      r"businesscombination(?:contingent)?considerationliabilit\w*|\w*considerationpayable|"
-     r"contingentconsideration\w*|deferredconsideration\w*|purchaseconsideration\w*"),
+     r"contingentconsideration\w*|deferredconsideration\w*|purchaseconsideration\w*", None),
 )
 
 # A cell that is a change in cash or restricted cash, or in a total that includes cash, CONTAINS free
@@ -2714,16 +2716,17 @@ def _date(text) -> dt.date | None:
 def cash_flow_source(path: str, cell: dict) -> str | None:
     """Where a cash-flow amount comes from, or None: the key of the statement line a calculator cell is
     (`line:change_in_payables`), or of the named off-statement item a note-table change is
-    (`item:supplier finance`). Two adjustments with the same key count one movement twice."""
+    (`line:change_in_payables` for a supplier finance obligation, which sits inside payables;
+    `item:<concept>` for acquisition consideration). Two adjustments with the same key count one movement twice."""
     segments = path.split(".")
     concept = cell.get("concept")
     if isinstance(concept, str):
         if not (isinstance(cell.get("from"), dict) and isinstance(cell.get("to"), dict)):
             return None
         local = concept.rpartition(":")[2].lower()
-        for name, pattern in NAMED_ITEMS:
+        for name, pattern, key in NAMED_ITEMS:
             if re.fullmatch(pattern, local):
-                return f"item:{name}"
+                return key or f"item:{local}"
         return None
     if segments[:2] == ["terms", "trailing_four_quarters"] and len(segments) > 2 and segments[2] in STATEMENT_LINES:
         return f"line:{segments[2]}"
