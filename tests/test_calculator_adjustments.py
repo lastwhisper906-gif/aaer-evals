@@ -1011,7 +1011,11 @@ def test_palo_altos_prior_year_columns_are_refused_one_by_one_and_the_latest_sta
 def test_a_prior_year_comparative_of_the_calculator_is_refused_as_not_the_period(path):
     held = printed("NVDA/0001045810-26-000075")
     assert calculator._cell_at(held, path)["unit"] == "USD"
-    refused_with(held, path, OUTSIDE)
+    # as earnings a total of the statement is refused for what it is, before its period is asked
+    amount, reason = reading(held, path)
+    assert amount is None and (OUTSIDE in reason or reason == calculator.TOTAL_OF_THE_STATEMENT), (path, reason)
+    amount, reason = reading(held, path, False, "cash_flow")
+    assert amount is None and (OUTSIDE in reason or reason == calculator.NOT_A_STATEMENT_LINE), (path, reason)
 
 
 def test_a_history_entry_is_refused_as_not_the_period():
@@ -1697,6 +1701,7 @@ def test_a_cell_that_really_is_a_year_derives_it_from_itself_and_may_recur(run, 
     amount, reason = reading(held, path, True)
     # a whole total of a statement is refused as earnings, after the recurrence rule has passed it
     assert (amount, reason) == (cell["value"], None) or (amount, reason) == (None, calculator.TOTAL_OF_THE_STATEMENT), (amount, reason)
+    assert (reason is not None) == (calculator.statement_total(held, path, cell) is not None), (path, reason)
 
 
 def test_no_section_name_decides_a_span():
@@ -2955,3 +2960,120 @@ def test_the_release_versus_report_section_is_not_adjustable():
     problem = analysis_check.adjustment_problem(held)(
         {"direction": "reduce", "applies_to": "earnings", "calculator_field": path, "quote": "q"})
     assert "not adjustable" in problem
+
+
+# The statement totals, written here on their own (not read from the module): the lowercase local name of the
+# `tag` (a calculator cell) or `concept` (a note-table cell) of a line that is a whole total of a statement.
+TOTALS_WRITTEN_HERE = {
+    "revenues", "revenuefromcontractwithcustomerexcludingassessedtax", "revenuefromcontractwithcustomerincludingassessedtax",
+    "salesrevenuenet", "salesrevenuegoodsnet", "costofrevenue", "costofgoodsandservicessold", "costofgoodssold",
+    "grossprofit", "operatingincomeloss", "netincomeloss", "profitloss",
+    "incomelossfromcontinuingoperationsbeforeincometaxesextraordinaryitemsnoncontrollinginterest",
+    "incomelossfromcontinuingoperationsbeforeincometaxesminorityinterestandincomelossfromequitymethodinvestments",
+    "incometaxexpensebenefit", "netcashprovidedbyusedinoperatingactivities",
+    "netcashprovidedbyusedininvestingactivities", "netcashprovidedbyusedinfinancingactivities",
+    "earningspersharebasic", "earningspersharediluted", "earningspersharebasicanddiluted",
+    "operatingexpenses", "costsandexpenses",
+}
+TOTAL_PREFIXES_WRITTEN_HERE = ("othercomprehensiveincomeloss", "businessacquisitionsproforma")
+
+
+def test_no_statement_total_is_accepted_as_earnings_in_any_committed_view(todays_views):
+    """Over every view as printed today, every dollar cell whose `tag` or `concept` is a statement total is refused as
+    earnings with the totals reason (a cell under a refused root or inside free cash flow is refused before that is
+    asked, and is not counted). A cell the rule accepts must not be one. The cells are counted, so the sweep cannot pass by finding none."""
+    seen_totals = accepted = 0
+    for name, held in todays_views:
+        for path, cell in usd_cells(held):
+            names = {str(cell.get(key)).rpartition(":")[2].lower() for key in ("tag", "concept") if cell.get(key)}
+            is_total = bool(names & TOTALS_WRITTEN_HERE) or any(
+                name.startswith(TOTAL_PREFIXES_WRITTEN_HERE) for name in names)
+            amount, reason = reading(held, path, False, "earnings")
+            if amount is not None:
+                accepted += 1
+                assert not is_total, (name, path, sorted(names), amount)
+            elif is_total and not refused_root(path, cell):
+                seen_totals += 1
+                assert reason == calculator.TOTAL_OF_THE_STATEMENT, (name, path, reason)
+    assert seen_totals > 100 and accepted > 200, (seen_totals, accepted)
+
+
+def test_a_total_reached_through_ratios_growth_is_refused_as_earnings():
+    """NVIDIA's growth block reads its revenue (`Revenues`, 177,837 million for the year to date, 96,221 million
+    for the quarter) by `tag`, not `concept`."""
+    held = printed(NVDA_RUN)
+    for path, value in (("ratios.growth.revenue.trailing_four_quarters.inputs.now.parts.this_year_to_date", 177_837e6),
+                        ("ratios.growth.revenue.quarter_over_quarter.inputs.now.parts.0", 96_221e6),
+                        ("ratios.growth.revenue.this_quarter.parts.0", 96_221e6)):
+        cell = calculator._cell_at(held, path)
+        assert cell["tag"] == "Revenues" and cell["value"] == value
+        assert reading(held, path, False, "earnings") == (None, calculator.TOTAL_OF_THE_STATEMENT), path
+    operating = [path for path, cell in usd_cells(held)
+                 if path.startswith("ratios.growth.operating_income") and cell.get("tag") == "OperatingIncomeLoss"]
+    assert operating
+    for path in operating:
+        assert reading(held, path, False, "earnings") == (None, calculator.TOTAL_OF_THE_STATEMENT), path
+
+
+def test_a_total_is_known_by_any_segment_of_its_path_not_only_the_last():
+    """Growth `parts` cells carry no concept, and a ratio's inputs sit under the name of the total they read."""
+    repros = {STX_RUN: [
+        "ratios.growth.revenue.trailing_four_quarters.inputs.now.parts.0",
+        "ratios.growth.revenue.this_quarter.parts.0",
+        "ratios.growth.net_income.trailing_four_quarters.inputs.now.parts.0",
+        "ratios.growth.operating_income.trailing_four_quarters.inputs.now.parts.0",
+        "ratios.growth.operating_income.this_quarter.parts.0"],
+        AAPL_RUN: ["ratios.efficiency.days_sales_of_inventory_ending.inputs.quarter_cost_of_revenue.parts.0"]}
+    seen = 0
+    for run, paths in repros.items():
+        held = printed(run)
+        for path in paths:
+            if calculator._cell_at(held, path) is None:
+                continue
+            seen += 1
+            assert reading(held, path, False, "earnings") == (None, calculator.TOTAL_OF_THE_STATEMENT), (run, path)
+        # every `parts` cell under a growth block or a quarter_cost_of_revenue input, as the view prints it
+        for path, cell in usd_cells(held):
+            if ".parts." in path and (path.startswith("ratios.growth.") or "quarter_cost_of_revenue" in path
+                                      or "revenue_growth.inputs.now.parts" in path):
+                assert reading(held, path, False, "earnings")[0] is None, (run, path)
+    assert seen >= 5
+    held = printed(STX_RUN)
+    inputs = [path for path, _ in usd_cells(held) if "revenue_growth.inputs.now.parts" in path]
+    assert any(path.startswith(("contract_liabilities_and_billings", "inventory_composition_and_growth_gap",
+                                "receivables_extension")) for path in inputs), inputs[:3]
+    for path in inputs:
+        assert reading(held, path, False, "earnings") == (None, calculator.TOTAL_OF_THE_STATEMENT), path
+
+
+def test_the_whole_totals_of_other_statements_are_refused_as_earnings():
+    """LFUS: other comprehensive income net of tax (-24.88 million) and the pro forma net income (4.429 million)
+    are whole totals, not items within one."""
+    held = printed(LFUS_RUN)
+    for path, concept in (("note_tables.tables.notes_159.facts.68",
+                           "us-gaap:OtherComprehensiveIncomeLossNetOfTaxPortionAttributableToParent"),
+                          ("note_tables.tables.notes_54.facts.22", "us-gaap:BusinessAcquisitionsProFormaNetIncomeLoss")):
+        assert calculator._cell_at(held, path)["concept"] == concept
+        assert reading(held, path, False, "earnings") == (None, calculator.TOTAL_OF_THE_STATEMENT), path
+    for concept in ("us-gaap:OperatingExpenses", "us-gaap:CostsAndExpenses",
+                    "us-gaap:BusinessAcquisitionsProFormaRevenue"):
+        assert reading(a_fact_of(concept), "note_tables.tables.notes_1.facts.0", False,
+                       "earnings") == (None, calculator.TOTAL_OF_THE_STATEMENT), concept
+
+
+@pytest.mark.parametrize("path", [
+    "ratios.growth.revenue.this_quarter.parts.0",
+    "ratios.efficiency.days_payables_outstanding_ending.inputs.quarter_cost_of_revenue.parts.0",
+    "ratios.growth.net_income.trailing_four_quarters.inputs.now.parts.this_year_to_date",
+    "ratios.growth.operating_income.quarter_over_quarter.inputs.before.parts.1",
+    "ratios.growth.revenue.year_over_year.inputs.before.parts.prior_fiscal_year"])
+def test_a_cell_with_no_tag_or_concept_under_a_total_in_its_path_is_refused_by_the_path(path):
+    """STX's growth `parts` cells carry no concept; the name of the total anywhere in the path decides."""
+    node = {"value": 1_000_000.0, "unit": "USD"}
+    for key in reversed(path.split(".")):
+        node = {key: node}
+    held = with_year({"period_end": "2026-06-30", **node})
+    assert reading(held, path, False, "earnings") == (None, calculator.TOTAL_OF_THE_STATEMENT)
+    for item in ("ratios.solvency.ebitda.inputs.depreciation_and_amortization",
+                 "contract_liabilities_and_billings.billings.inputs.change_in_contract_liabilities"):
+        assert calculator.statement_total({}, item, {"value": 1.0, "unit": "USD"}) is None, item

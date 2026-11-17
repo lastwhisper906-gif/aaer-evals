@@ -2875,7 +2875,10 @@ STATEMENT_TOTAL_NAMES = (
     "revenue", "revenue_a_year_earlier", "cost_of_revenue", "gross_profit", "operating_income", "ebit", "ebitda",
     "pretax_income", "income_tax_expense", "net_income", "income_from_continuing_operations",
     "operating_cash_flow", "investing_cash_flow", "financing_cash_flow", "free_cash_flow", "billings",
-    "billings_a_year_earlier", "fiscal_year_revenue", "fiscal_year_cost_of_revenue", "quarter_revenue")
+    "billings_a_year_earlier", "fiscal_year_revenue", "fiscal_year_cost_of_revenue", "quarter_revenue", "quarter_cost_of_revenue",
+    "quarter_net_income", "quarter_operating_income", "fiscal_year_net_income", "fiscal_year_operating_income",
+    "revenue_a_year_earlier", "cost_of_revenue_a_year_earlier", "net_income_a_year_earlier",
+    "operating_income_a_year_earlier", "operating_expenses", "costs_and_expenses")
 STATEMENT_TOTAL_CELLS = (
     "terms.trailing_four_quarters.revenue", "terms.trailing_four_quarters.cost_of_revenue",
     "terms.trailing_four_quarters.operating_income", "terms.trailing_four_quarters.pretax_income",
@@ -2888,21 +2891,28 @@ STATEMENT_TOTAL_CONCEPTS = (
     r"netincomeloss\w*|profitloss|revenues|revenuefromcontractwithcustomer\w*|salesrevenue\w*|costofrevenue|"
     r"costofgoodsandservicessold|costofgoodssold|grossprofit|operatingincomeloss|"
     r"incomelossfromcontinuingoperationsbeforeincometaxes\w*|incometaxexpensebenefit|"
+    r"operatingexpenses|costsandexpenses|othercomprehensiveincomeloss\w*|comprehensiveincomenetoftax\w*|"
+    r"businessacquisitionsproforma\w*|"
     r"netcashprovidedbyusedin\w*|earningspershare\w*|incomelossfromcontinuingoperations")
 
 
 def statement_total(fields: dict, path: str, cell: dict) -> str | None:
     """`TOTAL_OF_THE_STATEMENT` for a cell that is a whole total of a statement, by its name or as a copy of one."""
     segments = path.split(".")
-    if len(segments) > 2 and segments[-2] == "parts":
-        segments = segments[:-2]
-    elif len(segments) > 2 and segments[-2] == "lines":
-        segments = segments[:-2]
-    if segments and segments[-1] in STATEMENT_TOTAL_NAMES:
+    # a total is known by any segment of its path (a growth `parts` cell carries no concept of its own)
+    # (not the segment that opens `inputs`: a total's inputs hold its own constituents, items such as the
+    # depreciation within EBITDA or the change in contract liabilities within billings, each read by its own name)
+    if segments[-1] in STATEMENT_TOTAL_NAMES or any(
+            segment in STATEMENT_TOTAL_NAMES and following != "inputs"
+            for segment, following in zip(segments, segments[1:])):
         return TOTAL_OF_THE_STATEMENT
-    concept = cell.get("concept")
-    if isinstance(concept, str) and re.fullmatch(STATEMENT_TOTAL_CONCEPTS, concept.rpartition(":")[2].lower()):
-        return TOTAL_OF_THE_STATEMENT
+    if len(segments) > 2 and segments[-2] in ("parts", "lines"):
+        segments = segments[:-2]
+    # a note-table cell names its line by `concept`, a calculator cell (ratios, terms, trend) by `tag`
+    for key in ("concept", "tag"):
+        name = cell.get(key)
+        if isinstance(name, str) and re.fullmatch(STATEMENT_TOTAL_CONCEPTS, name.rpartition(":")[2].lower()):
+            return TOTAL_OF_THE_STATEMENT
     value = cell.get("value")
     if (isinstance(value, (int, float)) and not isinstance(value, bool) and value != 0 and not period_text(cell)
             and segments[0] not in ("note_tables", "earnings_versus_cash")):
@@ -3229,6 +3239,11 @@ def adjustment_reading(fields: dict, path, recurs: bool = False,
     charge = non_cash_charge(path, cell)
     if charge and applies_to == "cash_flow":
         return None, charge
+    if applies_to != "cash_flow":
+        # asked before the period, so a total of any span is refused for what it is
+        total = statement_total(fields, path, cell)
+        if total:
+            return None, total
     kind, why = cell_class(path, cell)
     if kind is None:
         return None, why
@@ -3243,10 +3258,6 @@ def adjustment_reading(fields: dict, path, recurs: bool = False,
         problem = recurrence_problem(path, cell, kind, fields)
         if problem:
             return None, problem
-    if applies_to != "cash_flow":
-        total = statement_total(fields, path, cell)
-        if total:
-            return None, total
     amount = field_value(fields, path)
     if amount is None:
         return None, "its value is not a number"

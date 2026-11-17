@@ -278,15 +278,21 @@ details .orig b { color: var(--ink); font-weight: 500; }
   function accountingFrame(a) {
     var head = '<header><h2>회계</h2><p class="question">보고된 이익과 현금이 경제적 실질을 반영하는가</p></header>';
     if (!a) return '<section class="frame accounting">' + head + '<div class="block"><p class="none">회계 분석이 실행되지 않았습니다.</p></div></section>';
-    var adjust = a.adjustments.length ? '<ul class="adjust">' + a.adjustments.map(function (j) {
-      return "<li><span>" + esc(j.name) + '</span><span class="amt">' + esc(j.text) + '</span><span class="path">' + esc(j.path) + "</span></li>";
-    }).join("") + "</ul>" : '<p class="none">없음</p>';
+    function adjustList(rows) {
+      return rows.length ? '<ul class="adjust">' + rows.map(function (j) {
+        return "<li><span>" + esc(j.name) + '</span><span class="amt">' + esc(j.text) + '</span><span class="path">' + esc(j.path) + "</span></li>";
+      }).join("") + "</ul>" : '<p class="none">없음</p>';
+    }
+    var cashRows = a.adjustments.filter(function (j) { return j.applies_to !== "earnings"; });
+    var earningsRows = a.adjustments.filter(function (j) { return j.applies_to === "earnings"; });
+    var adjust = adjustList(cashRows);
     return '<section class="frame accounting">' + head +
       '<div class="block"><h3>핵심 숫자 <span>분석가가 받은 계산기 값</span></h3>' + figures(a.figures) + "</div>" +
       '<div class="block"><h3>여덟 영역</h3>' + entries(a.areas) + "</div>" +
       '<div class="block"><h3>이상 징후 <span class="mono">' + a.anomalies.length + '건, 기준 없이 모두</span></h3>' +
         filters(a.anomalies) + anomalyList(a.anomalies, true) + "</div>" +
       '<div class="block"><h3>잉여현금흐름에 적용한 회계 조정 <span>금액은 Python이 계산기에서 읽음</span></h3>' + adjust + "</div>" +
+      (earningsRows.length ? '<div class="block"><h3>가치에 합산하지 않은 이익 조정 <span>각각 단독 효과</span></h3>' + adjustList(earningsRows) + "</div>" : "") +
       '<div class="block"><p class="limits">' + (a.dropped ? "검증에서 제외된 항목 " + esc(a.dropped) + "건. " : "") + esc(a.limits) + "</p></div>" +
       "</section>";
   }

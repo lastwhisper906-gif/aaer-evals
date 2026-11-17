@@ -267,8 +267,9 @@ is before the day before the trailing year, is dropped as "its balances are not 
 flow. An `earnings` adjustment is read by the same rule and listed with its amount;
 it is an item you would remove or add back (a charge, a gain, a reserve change, a write-down,
 a one-time or special item, a working-capital or note-table change), never a
-whole total of a statement (revenue, cost of revenue, gross profit, operating income, EBIT,
-EBITDA, pretax income, income tax expense, net income, the cash-flow totals, billings), and
+whole total of a statement (revenue, cost of revenue, gross profit, operating expenses, costs and expenses, operating income, EBIT,
+EBITDA, pretax income, income tax expense, net income, the cash-flow totals, billings, other
+comprehensive income, a pro forma total), and
 Python drops a total with that reason. It does not move free cash flow, and the valuation shows
 its effect alone (once, or as a margin cut where it recurs) and does not sum it with another
 until the company's special-items table exists (wave two). Each adjustment's `name` is used once in your analysis: Python drops a name that repeats an

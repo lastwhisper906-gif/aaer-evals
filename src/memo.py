@@ -260,7 +260,8 @@ def _absent(frame: str, missing: dict | None) -> str:
     return ABSENT_KO[frame] + (f" 이유: {reason}" if reason else "")
 
 
-EARNINGS_ALONE_KO = "이익 조정: 단독으로만 표시하며 가치에 합산하지 않음 (특별항목 표가 생길 때까지)"
+# (until the special-items table exists: a note for the code, not for the reader)
+EARNINGS_ALONE_KO = "이익 조정: 단독으로만 표시하며 가치에 합산하지 않음"
 
 
 def earnings_adjustments(fields: dict) -> list[dict]:
@@ -279,7 +280,7 @@ def earnings_adjustments(fields: dict) -> list[dict]:
         rows.append({"name": item.get("name"), "path": item.get("calculator_field"),
                      "amount": korean_number(item["amount"], "USD"),
                      "verb": "차감" if item["direction"] == "reduce" else "가산",
-                     "note": f"{EARNINGS_ALONE_KO}; 이 조정만의 효과 {per_share}"})
+                     "note": f"이 조정만의 효과 {per_share}. {EARNINGS_ALONE_KO}"})
     return rows
 
 
@@ -370,6 +371,7 @@ def valuation_section(analysis: dict | None, fields: dict,
     return out + ["", f"_한계: {LIMITS_KO['valuation']}_", ""]
 
 
+ADJUSTED_VALUE_LINE_KO = "회계 조정으로 달라진 주당 가치 (잉여현금흐름 조정만 합산)"
 FALLBACK_KO = "세전 타인자본비용은 대체값이며, WACC와 가치 범위는 이 대체값에 기대고 있습니다"
 
 
@@ -381,12 +383,12 @@ def accounting_adjustment_lines(fields: dict) -> list[str]:
     if not isinstance(block, dict) or not block.get("each"):
         return []
     moved = (block.get("all_together") or {}).get("moved_per_share")
-    out = [f"- {VALUATION_KO['accounting_adjustments']} (잉여현금흐름 조정만 합산): "
+    out = [f"- {ADJUSTED_VALUE_LINE_KO}: "
            f"{korean_number(moved, 'USD per share')}"]
     for row in block["each"]:
         if row.get("applies_to") == "earnings" and isinstance(row.get("alone_per_share"), (int, float)):
             out.append(f"  - 이익 조정 {row.get('name')}: 단독으로만 표시 ({korean_number(row['alone_per_share'], 'USD per share')}), "
-                       f"위 가치에 더하지 않음")
+                       f"위 가치에 합산하지 않음")
     return out + [""]
 
 
