@@ -332,3 +332,4 @@ sixty lines; a line under a lesson that has no date is that lesson's wrapped lin
 2026-11-17 labelled a cell's span from its section's name; a span is read from the cell's own formula and inputs.
 2026-11-17 certified a rule with cells that the rule's own premise excluded (a change in cash is the sum of every cash flow); when a test picks a cell as an example of acceptance, ask what the cell contains.
 2026-11-17 kept adding names to a list of what to refuse and the next cell leaked through it; where the set of wrong cells is open and the set of right ones is small, write the allow-list first.
+2026-11-17 let a test take its expected value from the same output it checked (the cell beside the amount applied); an expected value comes from the filing or companyfacts, worked by hand.

@@ -860,13 +860,15 @@ def adjustment_problem(fields: dict):
     return check
 
 
-def adjustment_overlap(item: dict, kept: list):
-    """A cash-flow adjustment that cites a field, or a note table, an earlier kept one cited counts an
-    amount twice: the later is dropped (`calculator.counted_twice`)."""
-    if item.get("applies_to") != "cash_flow":
-        return None
-    earlier = [other.get("calculator_field") for other in kept if other.get("applies_to") == "cash_flow"]
-    return calculator.counted_twice(item.get("calculator_field"), earlier)
+def adjustment_overlap(fields: dict):
+    """A cash-flow adjustment in a balance family an earlier kept one is in counts one movement twice:
+    the later is dropped (`calculator.counted_twice`)."""
+    def check(item: dict, kept: list):
+        if item.get("applies_to") != "cash_flow":
+            return None
+        earlier = [other.get("calculator_field") for other in kept if other.get("applies_to") == "cash_flow"]
+        return calculator.counted_twice(fields, item.get("calculator_field"), earlier)
+    return check
 
 
 def reconciliation_problem(notes_ids: set[str], numbers_ids: set[str]):
@@ -1322,7 +1324,7 @@ def check(kind: str, payload: dict, *, fields: dict, sources: dict[str, str],
                     forbidden=forbidden, fallen=fallen, extra=anomaly_problem(ACCOUNTING_AREAS), filing=filing)
         _check_list(payload, "adjustments", fields, sources, upstream, dropped,
                     forbidden=forbidden, fallen=fallen, extra=adjustment_problem(fields), filing=filing, unique="name",
-                    overlap=adjustment_overlap)
+                    overlap=adjustment_overlap(fields))
     elif kind == "financial":
         _check_block(payload, "sections", FINANCIAL_SECTIONS, fields, sources, upstream,
                      dropped, forbidden=forbidden, fallen=fallen, required=True, filing=filing)

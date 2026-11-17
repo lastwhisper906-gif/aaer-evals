@@ -1075,26 +1075,76 @@ def test_an_adjustment_of_neither_target_is_refused_by_the_calculator():
 
 # the four newer sections reach the calculator's fields
 
-@pytest.mark.parametrize("path", [
-    "quarterly_cash_flow_and_accruals.balance_sheet_accruals.inputs.change_in_current_liabilities",
-    "receivables_extension.days_sales_outstanding_index.inputs.revenue",
-    "contract_liabilities_and_billings.billings",
-    "inventory_composition_and_growth_gap.inventory_growth_minus_revenue_growth.inputs.revenue_growth.inputs.now",
-    "concentration.facts.0.value",
-])
-def test_every_section_of_the_view_reaches_the_calculators_adjustments(path):
-    """NVIDIA's run, each of the four sections added since most runs were published: the
-    adjustment naming a cell of it is applied by `calculate`, to the cell's value."""
+NVDA_CUTOFF = "2026-08-26"
+NVDA_SPANS = ("2025-01-27..2026-01-25", "2026-01-26..2026-07-26", "2025-01-27..2025-07-27")   # the fiscal year, the year to date, the year to date a year earlier
+
+
+def nvda_trailing(tag: str) -> float:
+    """NVIDIA's trailing four quarters to 2026-07-26 of one tag, by hand from companyfacts through the second
+    reader: the fiscal year plus the year to date less the year to date a year earlier."""
+    year, ytd, before = (source.one_value("NVDA", tag, span, NVDA_CUTOFF) for span in NVDA_SPANS)
+    return year + ytd - before
+
+
+def nvda_expected() -> dict:
+    """Each named cell's value, worked by hand (millions in the comments), none read from the calculator's output.
+    Revenues 215,938 + 177,837 - 90,805 = 302,970. Operating income 130,387 + 117,270 - 50,078 = 197,579.
+    Income tax 21,383 + 23,400 - 7,920 = 36,863. Net income 120,067 + 118,010 - 45,197 = 192,880.
+    Billings, revenue plus the change in contract liabilities (current and noncurrent): 302,970 +
+    [(4,616 + 1,796) - (980 + 1,055)] = 302,970 + 4,377 = 307,347. The change in current liabilities,
+    43,019 at 2026-07-26 less 24,257 at 2025-07-27, is 18,762."""
+    revenue = nvda_trailing("Revenues")
+    owed = lambda day: sum(source.one_value("NVDA", tag, day, NVDA_CUTOFF) for tag in (
+        "ContractWithCustomerLiabilityCurrent", "ContractWithCustomerLiabilityNoncurrent"))
+    expected = {
+        "revenue": revenue,
+        "ebit": nvda_trailing("OperatingIncomeLoss"),
+        "income_tax": nvda_trailing("IncomeTaxExpenseBenefit"),
+        "net_income": nvda_trailing("NetIncomeLoss"),
+        "billings": revenue + (owed("2026-07-26") - owed("2025-07-27")),
+        "current_liabilities": (source.one_value("NVDA", "LiabilitiesCurrent", "2026-07-26", NVDA_CUTOFF)
+                                - source.one_value("NVDA", "LiabilitiesCurrent", "2025-07-27", NVDA_CUTOFF)),
+    }
+    assert expected == {"revenue": 302_970e6, "ebit": 197_579e6, "income_tax": 36_863e6, "net_income": 192_880e6,
+                        "billings": 307_347e6, "current_liabilities": 18_762e6}
+    return expected
+
+
+NVDA_PLUMBING = [
+    ("quarterly_cash_flow_and_accruals.balance_sheet_accruals.inputs.change_in_current_liabilities", "current_liabilities"),
+    ("receivables_extension.days_sales_outstanding_index.inputs.revenue", "revenue"),
+    ("contract_liabilities_and_billings.billings", "billings"),
+    ("inventory_composition_and_growth_gap.inventory_growth_minus_revenue_growth.inputs.revenue_growth.inputs.now", "revenue"),
+    ("ebit", "ebit"),
+    ("tax_rate.inputs.income_tax_expense", "income_tax"),
+    ("ratios.profitability.net_margin.inputs.net_income", "net_income"),
+]
+
+
+@pytest.mark.parametrize("path, name", NVDA_PLUMBING, ids=[row[0][-34:] for row in NVDA_PLUMBING])
+def test_every_section_of_the_view_reaches_the_calculators_adjustments(path, name):
+    """NVIDIA's run: a cell of each section the adjustment rule reads (the four added since most runs were
+    published, and ebit, tax_rate and the ratios) is applied by `calculate`, at the amount companyfacts
+    gives by hand (`nvda_expected`), never the amount the calculator printed beside it. The gate reads the
+    same cell the same way."""
     run = RUNS / "NVDA" / "0001045810-26-000075"
     out = calculator.calculate(**calculator_drift.trigger(run), fixtures_root=STORE, bundle=run,
                                accounting={"adjustments": [adjustment(path)]})
     quality = out["free_cash_flow"]["free_cash_flow_quality_adjusted"]
-    cell = calculator._cell_at(out, path)
-    if path.startswith("concentration"):                  # a percentage, not a dollar cell
-        assert quality["adjustments_applied"] == [] and "not a dollar cell" in quality["adjustments_refused"][0]["reason"]
-        return
     row, = quality["adjustments_applied"]
-    assert quality["adjustments_refused"] == [] and row["signed_value"] == cell["value"] != 0
+    assert quality["adjustments_refused"] == []
+    assert row["signed_value"] == pytest.approx(nvda_expected()[name], rel=1e-12)
+    assert analysis_check.adjustment_problem(printed(NVDA_RUN))(
+        {"direction": "reduce", "applies_to": "cash_flow", "calculator_field": path, "quote": "q"}) is None
+
+
+def test_a_percentage_in_the_view_is_not_a_dollar_cell_the_calculator_reads():
+    """`concentration` states percentages as the filing prints them: not a dollar cell, not an amount."""
+    run = RUNS / "NVDA" / "0001045810-26-000075"
+    out = calculator.calculate(**calculator_drift.trigger(run), fixtures_root=STORE, bundle=run, accounting={
+        "adjustments": [adjustment("concentration.facts.0.value")]})
+    quality = out["free_cash_flow"]["free_cash_flow_quality_adjusted"]
+    assert quality["adjustments_applied"] == [] and "not a dollar cell" in quality["adjustments_refused"][0]["reason"]
 
 
 def test_the_calculators_fields_carry_every_section_before_free_cash_flow():
@@ -1181,16 +1231,20 @@ def test_the_definition_says_the_cash_flow_rule_the_span_rule_and_the_earnings_r
             "year, and a cell with no dates in its own inputs can stand only as one-time",
             "A change whose later balance is not the period's end, or whose earlier balance is before the "
             "day before the trailing year, is dropped as \"its balances are not the period's\"",
-            "A change in cash, or in a total that includes cash (current assets, total assets), "
-            "contains free cash flow and is refused",
+            "A change in cash or restricted cash, or in a total that includes cash (current assets, total "
+            "assets), contains free cash flow and is refused whatever the adjustment applies to, as are a "
+            "note table's cash totals",
             "A note table's `changes` cell may be the amount of a `cash_flow` adjustment only if it is the "
             "change in a working-capital or financing balance that free cash flow carries in operating "
             "cash flow or leaves out",
+            "payables, accrued liabilities and reserves (a warranty or restructuring reserve, employee-related "
+            "and other current liabilities)",
             "is not on that list: name a calculator cell instead",
-            "A note table's cash totals and its investing-activity flows are refused as `cash_flow` amounts",
+            "A note table's investing-activity flows are refused as `cash_flow` amounts",
             "A non-cash charge (an impairment, a write-down, a write-off) is never a `cash_flow` "
             "amount: it is an `earnings` adjustment",
-            "Two `cash_flow` adjustments never cite the same field, nor two cells of one note table",
+            "At most one `cash_flow` adjustment is taken for each balance family",
+            "Python drops the later as counting one movement twice. Two families of one table both stand",
             "Only a `cash_flow` adjustment moves free cash flow",
             "it does not move free cash flow, and the valuation applies it (once, or as a margin cut "
             "where it recurs)"):
@@ -1566,19 +1620,6 @@ def test_the_sections_the_adjustment_rule_reads_hold_every_section_with_a_dollar
     assert set(calculator.ADJUSTMENT_SECTIONS) - holding <= {"concentration", "trend_table"}
 
 
-@pytest.mark.parametrize("path", ["ebit", "tax_rate.inputs.income_tax_expense",
-                                  "ratios.profitability.net_margin.inputs.net_income"])
-def test_a_cell_of_ebit_tax_rate_or_ratios_is_read_by_the_calculator_as_the_gate_reads_it(path):
-    run = RUNS / "NVDA" / "0001045810-26-000075"
-    out = calculator.calculate(**calculator_drift.trigger(run), fixtures_root=STORE, bundle=run,
-                               accounting={"adjustments": [adjustment(path)]})
-    quality = out["free_cash_flow"]["free_cash_flow_quality_adjusted"]
-    row, = quality["adjustments_applied"]
-    assert quality["adjustments_refused"] == [] and row["signed_value"] == calculator._cell_at(out, path)["value"]
-    assert analysis_check.adjustment_problem(printed("NVDA/0001045810-26-000075"))(
-        {"direction": "reduce", "applies_to": "cash_flow", "calculator_field": path, "quote": "q"}) is None
-
-
 def test_the_row_names_free_cash_flows_span_and_its_own_beside_it():
     """A nine-month amount is never labelled as twelve months."""
     out = final_with(PALO_ALTO, [adjustment("note_tables.tables.notes_42.facts.14"),
@@ -1607,64 +1648,146 @@ def a_change(concept: str, applies_to: str = "cash_flow") -> tuple:
     return held, "note_tables.tables.notes_1.changes.0"
 
 
-# the refuter's cells, each a concept the earlier lists let through: (run, path, the local name, the value
-# the note prints, by eye)
+CASH_CONTAINS = f"{CONTAINS}: a change in cash or restricted cash, or in a total that includes cash"
+CLASSES = ("cash_flow", "earnings", "debt")
+
+# the refuter's cells, each a concept the earlier lists let through, with the one exact outcome of each class:
+# (run, path, the local name, the value the note prints, by eye, then what each class gets)
+CASH = (CASH_CONTAINS,) * 3
+WORKING_ONLY_NOT_CASH_FLOW = (NOT_ON_THE_LIST, None, None)       # refused as cash_flow, standing for the others
 REFUTER_CHANGES = [
-    ("TTMI/0001193125-26-335107", "note_tables.tables.notes_45.changes.6", "MachineryAndEquipmentGross", 122_495_000.0),
-    ("TTMI/0001193125-26-335107", "note_tables.tables.notes_45.changes.8", "ConstructionInProgressGross", 81_359_000.0),
-    ("FN/0001408710-26-000016", "note_tables.tables.notes_167.changes.5", "NoncurrentAssets", 142_999_000.0),
-    ("CSCO/0000858877-26-000078", "note_tables.tables.notes_76.changes.1", "RestrictedCashAndCashEquivalentsAtCarryingValue", -564e6),
-    (STX_RUN, "note_tables.tables.notes_177.changes.0", "CashandCashEquivalentsandShorttermInvestmentsFairValueDisclosure", 248e6),
-    (STX_RUN, "note_tables.tables.notes_177.changes.3", "CashandCashEquivalentsandShorttermInvestmentsFairValueDisclosure", 248e6),
-    ("LFUS/0001628280-26-050481-note-tables-2026-11-08", "note_tables.tables.notes_67.changes.3", "GoodwillGross", -16_316_000.0),
-    (PALO_RUN, "note_tables.tables.notes_102.changes.0", "Goodwill", 17_335e6),
-    (PALO_RUN, "note_tables.tables.notes_105.changes.18", "IntangibleAssetsGrossExcludingGoodwill", 6_857e6),
-    (CIEN_RUN, "note_tables.tables.notes_145.changes.3",
+    ("TTMI/0001193125-26-335107", "note_tables.tables.notes_45.changes.6", "MachineryAndEquipmentGross", 122_495_000.0, WORKING_ONLY_NOT_CASH_FLOW),
+    ("TTMI/0001193125-26-335107", "note_tables.tables.notes_45.changes.8", "ConstructionInProgressGross", 81_359_000.0, WORKING_ONLY_NOT_CASH_FLOW),
+    ("FN/0001408710-26-000016", "note_tables.tables.notes_167.changes.5", "NoncurrentAssets", 142_999_000.0, WORKING_ONLY_NOT_CASH_FLOW),
+    ("CSCO/0000858877-26-000078", "note_tables.tables.notes_76.changes.1", "RestrictedCashAndCashEquivalentsAtCarryingValue", -564e6, CASH),
+    ("STX/0001137789-26-000159", "note_tables.tables.notes_177.changes.0", "CashandCashEquivalentsandShorttermInvestmentsFairValueDisclosure", 248e6, CASH),
+    ("STX/0001137789-26-000159", "note_tables.tables.notes_177.changes.3", "CashandCashEquivalentsandShorttermInvestmentsFairValueDisclosure", 248e6, CASH),
+    ("LFUS/0001628280-26-050481-note-tables-2026-11-08", "note_tables.tables.notes_67.changes.3", "GoodwillGross", -16_316_000.0, WORKING_ONLY_NOT_CASH_FLOW),
+    ("PANW/0001327567-26-000015-note-tables-2026-11-08", "note_tables.tables.notes_102.changes.0", "Goodwill", 17_335e6, WORKING_ONLY_NOT_CASH_FLOW),
+    ("PANW/0001327567-26-000015-note-tables-2026-11-08", "note_tables.tables.notes_105.changes.18", "IntangibleAssetsGrossExcludingGoodwill", 6_857e6, WORKING_ONLY_NOT_CASH_FLOW),
+    ("CIEN/0001628280-26-040767-note-tables-2026-11-14", "note_tables.tables.notes_145.changes.3",
      "PropertyPlantAndEquipmentFinanceLeaseRightOfUseAssetAfterAccumulatedDepreciationAndAmortizationAndOperatingLeaseRightOfUseAsset",
-     58_149_000.0),                                        # notes:145 reads 483,541 against 425,392 (thousands)
-    (AAPL_RUN, "note_tables.tables.notes_38.changes.0", "IntangibleAssetsGrossExcludingGoodwill", 13_270e6),
-    (AAPL_RUN, "note_tables.tables.notes_38.changes.4", "IntangibleAssetsNetExcludingGoodwillNoncurrent", 9_249e6),
+     58_149_000.0, WORKING_ONLY_NOT_CASH_FLOW),                 # notes:145 reads 483,541 against 425,392 (thousands)
+    ("AAPL/0000320193-26-000020-note-tables-2026-10-29", "note_tables.tables.notes_38.changes.0", "IntangibleAssetsGrossExcludingGoodwill", 13_270e6, WORKING_ONLY_NOT_CASH_FLOW),
+    ("AAPL/0000320193-26-000020-note-tables-2026-10-29", "note_tables.tables.notes_38.changes.4", "IntangibleAssetsNetExcludingGoodwillNoncurrent", 9_249e6, WORKING_ONLY_NOT_CASH_FLOW),
 ]
 
 
-@pytest.mark.parametrize("run, path, local, value", REFUTER_CHANGES, ids=[f"{r[0][:4]}-{r[1][-20:]}" for r in REFUTER_CHANGES])
-def test_a_note_table_change_not_on_the_allow_list_is_not_a_cash_flow_amount(run, path, local, value):
+@pytest.mark.parametrize("run, path, local, value, outcomes", REFUTER_CHANGES,
+                         ids=[f"{r[0][:4]}-{r[1][-20:]}" for r in REFUTER_CHANGES])
+def test_each_refuter_change_gets_one_exact_outcome_in_each_class(run, path, local, value, outcomes):
+    """Cash and a total that includes it are refused for every class; the rest of the refuter's cells are not on
+    the allow-list for a cash-flow amount and stand as earnings or debt adjustments."""
     held = printed(run)
     cell = calculator._cell_at(held, path)
     assert cell["concept"].rpartition(":")[2].lower() == local.lower() and cell["value"] == value
-    assert reading(held, path) == (None, NOT_ON_THE_LIST)
-    # an earnings adjustment is not held to the list
-    assert reading(held, path, False, "earnings")[0] == value or reading(held, path, False, "earnings")[1]
+    for applies_to, outcome in zip(CLASSES, outcomes):
+        expected = (value, None) if outcome is None else (None, outcome)
+        assert reading(held, path, False, applies_to) == expected, (applies_to, reading(held, path, False, applies_to))
+
+
+@pytest.mark.parametrize("concept", ["us-gaap:AssetsFairValueDisclosure", "us-gaap:Assets", "us-gaap:AssetsCurrent",
+                                     "us-gaap:Cash", "us-gaap:CashAndCashEquivalentsAtCarryingValue",
+                                     "us-gaap:RestrictedCash", "co:CashAndCashEquivalentsOther",
+                                     "us-gaap:CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents"])
+def test_a_change_in_cash_or_in_a_total_that_includes_it_is_refused_in_every_class(concept):
+    held, path = a_change(concept)
+    for applies_to in CLASSES:
+        assert reading(held, path, False, applies_to) == (None, CASH_CONTAINS), (concept, applies_to)
 
 
 @pytest.mark.parametrize("concept", [
-    "us-gaap:AssetsFairValueDisclosure", "us-gaap:Assets", "us-gaap:AssetsCurrent", "us-gaap:Cash",
-    "us-gaap:CashAndCashEquivalentsAtCarryingValue", "us-gaap:RestrictedCash", "us-gaap:MarketableSecuritiesCurrent",
-    "us-gaap:AvailableForSaleSecurities", "us-gaap:LongTermInvestments", "us-gaap:PropertyPlantAndEquipmentGross",
-    "us-gaap:LandAndLandImprovements", "us-gaap:BuildingsAndImprovementsGross", "us-gaap:FurnitureAndFixturesGross",
-    "us-gaap:MachineryAndEquipmentGross", "us-gaap:ConstructionInProgressGross", "us-gaap:Goodwill",
-    "us-gaap:GoodwillGross", "us-gaap:IntangibleAssetsNetExcludingGoodwill", "us-gaap:CapitalizedComputerSoftwareNet",
+    "us-gaap:SecuritiesInvestment", "us-gaap:MarketableSecuritiesCurrent", "us-gaap:AvailableForSaleSecurities",
+    "us-gaap:LongTermInvestments", "us-gaap:PropertyPlantAndEquipmentGross", "us-gaap:LandAndLandImprovements",
+    "us-gaap:BuildingsAndImprovementsGross", "us-gaap:FurnitureAndFixturesGross", "us-gaap:MachineryAndEquipmentGross",
+    "us-gaap:ConstructionInProgressGross", "us-gaap:Goodwill", "us-gaap:GoodwillGross",
+    "us-gaap:IntangibleAssetsNetExcludingGoodwill", "us-gaap:CapitalizedComputerSoftwareNet",
     "us-gaap:OperatingLeaseRightOfUseAsset", "us-gaap:NoncurrentAssets", "us-gaap:OtherAssetsNoncurrent",
     "us-gaap:DeferredTaxAssetsNet", "us-gaap:AccumulatedDepreciationDepletionAndAmortizationPropertyPlantAndEquipment",
-    "us-gaap:LongTermDebt", "us-gaap:StockholdersEquity", "co:SomethingNotListed",
-    # a receivable or a payable that is also one of the excluded words
-    "co:ReceivablesNoncurrent", "co:AccountsPayableLongTermNoncurrent", "co:RestrictedCashReceivable",
-    "co:InventoryEquipment", "co:PrepaidSoftware"])
-def test_a_concept_off_the_allow_list_or_with_an_excluded_word_is_refused_as_a_cash_flow_amount(concept):
+    "us-gaap:LongTermDebt", "us-gaap:StockholdersEquity", "co:SomethingNotListed"])
+def test_a_concept_off_the_allow_list_is_refused_as_a_cash_flow_amount_and_stands_for_the_other_classes(concept):
     held, path = a_change(concept)
+    assert reading(held, path) == (None, NOT_ON_THE_LIST)
+    assert reading(held, path, False, "earnings") == (1_000_000.0, None)
+
+
+@pytest.mark.parametrize("word", ["Restricted", "Investments", "Securities", "FairValueDisclosure", "PropertyPlant",
+                                  "Machinery", "Building", "ConstructionInProgress", "Furniture", "Equipment", "Goodwill",
+                                  "Intangible", "Software", "RightOfUse", "DeferredTax", "IncomeTax", "Dividend",
+                                  "Guarantee", "MaximumPotential", "Derivative", "Debt", "Borrowing", "Lease", "Land"])
+def test_each_excluded_word_refuses_a_name_that_also_holds_an_allowed_word(word):
+    for name in (f"co:Receivable{word}Other", f"co:{word.upper()}PAYABLE", f"co:Accrued{word}Current"):
+        held, path = a_change(name)
+        assert reading(held, path) == (None, NOT_ON_THE_LIST), name
+        assert reading(held, path, False, "earnings") == (1_000_000.0, None), name
+
+
+def test_a_cash_word_after_an_allowed_word_is_refused_as_cash_flow_and_a_name_that_begins_with_cash_in_every_class():
+    for name in ("co:ReceivableCashOther", "co:AccruedCashCurrent"):
+        held, path = a_change(name)
+        assert reading(held, path) == (None, NOT_ON_THE_LIST)
+        assert reading(held, path, False, "earnings") == (1_000_000.0, None)
+    held, path = a_change("co:CASHPAYABLE")
+    assert [reading(held, path, False, c) for c in CLASSES] == [(None, CASH_CONTAINS)] * 3
+
+
+def test_a_word_is_read_as_a_word_so_a_release_or_an_island_is_not_a_lease_or_land():
+    for concept in ("co:ReleaseOfReceivable", "co:AccruedIslandPayable", "co:ReceivableLandlordOther"):
+        held, path = a_change(concept)
+        amount, reason = reading(held, path)
+        assert (amount, reason) == ((1_000_000.0, None) if "Landlord" not in concept else (None, NOT_ON_THE_LIST)), concept
+
+
+@pytest.mark.parametrize("run, path, local", [
+    ("STX/0001137789-26-000159", "note_tables.tables.notes_138.changes.1", "DeferredTaxAssetsInventory"),
+    ("CSCO/0000858877-26-000078", "note_tables.tables.notes_196.changes.0", "GuaranteeObligationsMaximumExposure"),
+    ("CSCO/0000858877-26-000078", "note_tables.tables.notes_196.changes.1", "DeferredRevenueAssociatedWithFinancingGuarantees"),
+    ("CSCO/0000858877-26-000078", "note_tables.tables.notes_196.changes.2", "MaximumPotentialFuturePaymentsRelatingToFinancingGuaranteesNetOfDeferredRevenue"),
+    ("STX/0001137789-26-000159", "note_tables.tables.notes_83.changes.0", "DividendsPayableCurrent"),
+])
+def test_a_tax_a_guarantee_or_a_dividend_is_not_a_working_capital_balance(run, path, local):
+    held = printed(run)
+    assert calculator._cell_at(held, path)["concept"].rpartition(":")[2] == local
     assert reading(held, path) == (None, NOT_ON_THE_LIST)
 
 
+# the refuter's operating balances the narrower list refused: each is accepted, source cited by the cell
+OPERATING = [
+    ("GNRC/0001437749-26-025669-rerun-2026-10-28", "note_tables.tables.notes_114.changes.0", "StandardProductWarrantyAccrualCurrent", -1_243_000.0),
+    ("GNRC/0001437749-26-025669-rerun-2026-10-28", "note_tables.tables.notes_114.changes.4", "ExtendedProductWarrantyAccrualNoncurrent", 9_892_000.0),
+    ("CARR/0001783180-26-000032-rerun-2026-10-28", "note_tables.tables.notes_128.changes.0", "AccruedEnvironmentalLossContingenciesCurrent", 2e6),
+    ("CIEN/0001628280-26-040767-note-tables-2026-11-14", "note_tables.tables.notes_63.changes.0", "RestructuringReserve", -7_681_000.0),
+    ("LFUS/0001628280-26-050481-note-tables-2026-11-08", "note_tables.tables.notes_79.changes.0", "EmployeeRelatedLiabilitiesCurrent", -6_945_000.0),
+    ("LFUS/0001628280-26-050481-note-tables-2026-11-08", "note_tables.tables.notes_79.changes.7", "OtherCustomerReserves", -785_000.0),
+    ("QCOM/0000804328-26-000086-rerun-2026-10-28", "note_tables.tables.notes_11.changes.3", "OtherLiabilitiesCurrent", 121e6),
+    ("ANET/0001596532-26-000175-rerun-2026-10-28", "note_tables.tables.notes_31.changes.0", "DeferredCostsCurrent", 424_900_000.0),
+    ("JCI/0000833444-26-000087", "note_tables.tables.notes_47.changes.0", "CapitalizedContractCostNetCurrent", 4e6),
+    ("CIEN/0001628280-26-040767-note-tables-2026-11-14", "note_tables.tables.notes_52.changes.1", "AccountsReceivableNetNoncurrent", -7_345_000.0),
+    ("CARR/0001783180-26-000032-rerun-2026-10-28", "note_tables.tables.notes_81.changes.4", "ContractWithCustomerLiabilityNoncurrent", 14e6),
+    ("CARR/0001783180-26-000032-rerun-2026-10-28", "note_tables.tables.notes_81.changes.1", "ContractWithCustomerAssetNetNoncurrent", -69e6),
+    ("STX/0001137789-26-000159", "note_tables.tables.notes_83.changes.1", "OtherAccruedLiabilitiesCurrentAndNoncurrent", 97e6),
+]
+
+
+@pytest.mark.parametrize("run, path, local, value", OPERATING, ids=[f"{r[0][:4]}-{r[2][:28]}" for r in OPERATING])
+def test_an_operating_balance_the_narrower_list_refused_is_accepted(run, path, local, value):
+    held = printed(run)
+    cell = calculator._cell_at(held, path)
+    assert cell["concept"].rpartition(":")[2] == local and cell["value"] == value
+    assert reading(held, path) == (value, None)
+
+
 @pytest.mark.parametrize("concept", [
-    "us-gaap:AccountsReceivableNetCurrent", "us-gaap:ReceivablesNetCurrent", "co:UnbilledReceivablesCurrent",
-    "us-gaap:OtherReceivablesNetCurrent", "us-gaap:ContractWithCustomerAssetNetCurrent",
-    "us-gaap:ContractWithCustomerLiabilityCurrent", "us-gaap:DeferredRevenueCurrent", "us-gaap:InventoryNet",
-    "us-gaap:InventoryFinishedGoodsNetOfReserves", "us-gaap:InventoryRawMaterials", "us-gaap:PrepaidExpenseCurrent",
-    "us-gaap:PrepaidExpenseAndOtherAssetsCurrent", "us-gaap:OtherAssetsCurrent", "us-gaap:AccountsPayableCurrent",
-    "us-gaap:AccruedLiabilitiesCurrent", "us-gaap:AccruedSalariesCurrent", "us-gaap:OtherAccruedLiabilitiesCurrent",
+    "us-gaap:ProductWarrantyAccrual", "us-gaap:StandardProductWarrantyAccrual", "us-gaap:ProductWarrantyAccrualClassifiedCurrent",
+    "us-gaap:AccruedEnvironmentalLossContingenciesNoncurrent", "us-gaap:RestructuringReserveCurrent",
+    "us-gaap:EmployeeRelatedLiabilitiesCurrent", "us-gaap:OtherLiabilitiesCurrent", "us-gaap:OtherSundryLiabilitiesCurrent",
+    "us-gaap:DeferredCostsCurrent", "us-gaap:CapitalizedContractCostNet", "us-gaap:AccountsReceivableNetNoncurrent",
+    "us-gaap:ContractWithCustomerLiabilityNoncurrent", "us-gaap:AccruedLiabilitiesCurrentAndNoncurrent",
+    "us-gaap:AccruedLiabilitiesNoncurrent", "us-gaap:AccountsPayableCurrent", "us-gaap:InventoryNet",
     "us-gaap:SupplierFinanceProgramObligation", "co:ReceivablesSold", "us-gaap:TransferOfFinancialAssetsAccountedForAsSalesAmountDerecognized",
-    "nvda:BusinessCombinationConsiderationPayable", "us-gaap:BusinessCombinationContingentConsiderationLiabilityCurrent",
-    "co:DeferredConsiderationPayable", "co:ACCOUNTSPAYABLECURRENT"])        # case-insensitive
+    "nvda:BusinessCombinationConsiderationPayable", "co:DeferredConsiderationPayable", "co:ACCOUNTSPAYABLECURRENT",
+    "us-gaap:UnbilledReceivablesCurrent", "us-gaap:ContractWithCustomerAssetNetCurrent", "us-gaap:DeferredRevenueCurrent",
+    "us-gaap:PrepaidExpenseCurrent", "us-gaap:PrepaidExpenseAndOtherAssetsCurrent", "us-gaap:OtherAssetsCurrent"])
 def test_a_working_capital_or_financing_balance_is_on_the_allow_list(concept):
     held, path = a_change(concept)
     assert reading(held, path) == (1_000_000.0, None)
@@ -1684,16 +1807,34 @@ def test_a_calculator_cell_is_not_held_to_the_allow_list():
 
 @pytest.mark.parametrize("run, path, value", [
     (STX_RUN, "note_tables.tables.notes_91.changes.1", 380e6),            # supplier finance obligation, a year
-    (NVDA_RUN, "note_tables.tables.notes_60.changes.6", -2_935e6),        # accrued purchase consideration
 ])
-def test_the_working_capital_and_financing_cells_the_analyst_may_cite_are_accepted(run, path, value):
-    """STX's obligation (400 million at 2026-07-03 less 20 at 2025-06-27, companyfacts) and NVIDIA's
-    accrued consideration payable for an acquisition, paid later and outside investing: free cash flow
-    leaves it out, and an analyst may adjust for it (docs/needs_judgment.md)."""
+def test_the_supplier_finance_change_the_analyst_may_cite_is_accepted(run, path, value):
+    """STX's obligation: 400 million at 2026-07-03 less 20 at 2025-06-27, companyfacts through the second reader."""
+    cutoff = "2026-08-04"
+    assert (source.one_value("STX", "SupplierFinanceProgramObligation", "2026-07-03", cutoff)
+            - source.one_value("STX", "SupplierFinanceProgramObligation", "2025-06-27", cutoff)) == value
     held = printed(run)
-    cell = calculator._cell_at(held, path)
-    assert cell["value"] == value
+    assert calculator._cell_at(held, path)["value"] == value
     assert reading(held, path) == (value, None)
+
+
+def test_accrued_purchase_consideration_is_read_from_the_filings_own_note_and_stays_accepted():
+    """NVIDIA's `notes_60.changes.6`: the table at `[0001045810-26-000075:notes:60]` of the run's committed
+    `input_notes.md` (line 286) reads, in millions, "Accrued purchase consideration (3) | 986 | | | 3,921",
+    the columns being Jul 26, 2026 and Jan 25, 2026: 986 - 3,921 = -2,935. Deferred consideration paid outside
+    investing escapes free cash flow, and an analyst may adjust for it (docs/needs_judgment.md)."""
+    notes = (RUNS / "NVDA" / "0001045810-26-000075" / "input_notes.md").read_text(encoding="utf-8")
+    table = notes[notes.index("[0001045810-26-000075:notes:60]"):notes.index("[0001045810-26-000075:notes:61]")]
+    assert "| Jul 26, 2026 |  | Jan 25, 2026 |" in table
+    assert "| Accrued purchase consideration (3) | 986 |  |  | 3,921 |" in table
+    by_eye = (986 - 3_921) * MILLION
+    assert by_eye == -2_935 * MILLION
+    held = printed(NVDA_RUN)
+    path = "note_tables.tables.notes_60.changes.6"
+    cell = calculator._cell_at(held, path)
+    assert cell["concept"] == "nvda:BusinessCombinationConsiderationPayable" and cell["value"] == by_eye
+    assert cell["from"] == {"instant": "2026-01-25"} and cell["to"] == {"instant": "2026-07-26"}
+    assert reading(held, path) == (by_eye, None)
 
 
 def test_apples_working_capital_changes_stand_and_its_intangible_changes_do_not():
@@ -1714,18 +1855,29 @@ def test_apples_working_capital_changes_stand_and_its_intangible_changes_do_not(
     "us-gaap:NetCashProvidedByUsedInOperatingActivities", "us-gaap:NetCashProvidedByUsedInInvestingActivities",
     "us-gaap:NetCashProvidedByUsedInFinancingActivities", "us-gaap:NetCashProvidedByUsedInOperatingActivitiesContinuingOperations",
     "us-gaap:CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalentsPeriodIncreaseDecreaseIncludingExchangeRateEffect",
-    "us-gaap:CashAndCashEquivalentsPeriodIncreaseDecrease", "us-gaap:PaymentsToAcquireInvestments",
-    "us-gaap:PaymentsToAcquireIntangibleAssets", "us-gaap:PaymentsToAcquireMarketableSecurities",
-    "us-gaap:PaymentsForProceedsFromOtherInvestingActivities", "us-gaap:PaymentsForProceedsFromEquityMethodInvestments",
-    "us-gaap:ProceedsFromSaleOfPropertyPlantAndEquipment", "us-gaap:ProceedsFromSaleOfBusinessesNetOfCashDivested",
-    "us-gaap:ProceedsFromSaleOfIntangibleAssets", "us-gaap:NETCASHPROVIDEDBYUSEDININVESTINGACTIVITIES",
-    "co:paymentstoacquirethings"])
-def test_a_cash_total_or_an_investing_flow_contains_or_is_already_inside_free_cash_flow(concept):
+    "us-gaap:CashAndCashEquivalentsPeriodIncreaseDecrease", "us-gaap:NETCASHPROVIDEDBYUSEDININVESTINGACTIVITIES"])
+def test_a_cash_total_is_refused_in_every_class(concept):
     held = {"period_end": "2026-06-30", "note_tables": {"tables": {"notes_1": {"facts": [
         usd(unit="iso4217:USD", concept=concept, start="2025-07-01", end="2026-06-30")]}}}}
     path = "note_tables.tables.notes_1.facts.0"
-    amount, reason = reading(held, path, False, "cash_flow")
-    assert amount is None and (reason == CONTAINS_OR_INSIDE or reason.startswith(INSIDE)), reason
+    for applies_to in CLASSES:
+        amount, reason = reading(held, path, False, applies_to)
+        assert amount is None and (reason == CONTAINS_OR_INSIDE or reason.startswith(INSIDE)), (applies_to, reason)
+
+
+@pytest.mark.parametrize("concept", [
+    "us-gaap:PaymentsToAcquireInvestments", "us-gaap:PaymentsToAcquireIntangibleAssets",
+    "us-gaap:PaymentsToAcquireMarketableSecurities", "us-gaap:PaymentsForProceedsFromOtherInvestingActivities",
+    "us-gaap:PaymentsForProceedsFromEquityMethodInvestments", "us-gaap:ProceedsFromSaleOfPropertyPlantAndEquipment",
+    "us-gaap:ProceedsFromSaleOfBusinessesNetOfCashDivested", "us-gaap:ProceedsFromSaleOfIntangibleAssets",
+    "co:paymentstoacquirethings"])
+def test_an_investing_flow_is_refused_as_cash_flow_and_may_be_an_earnings_adjustment(concept):
+    held = {"period_end": "2026-06-30", "note_tables": {"tables": {"notes_1": {"facts": [
+        usd(unit="iso4217:USD", concept=concept, start="2025-07-01", end="2026-06-30")]}}}}
+    path = "note_tables.tables.notes_1.facts.0"
+    assert reading(held, path, False, "cash_flow") == (None, CONTAINS_OR_INSIDE)
+    assert reading(held, path, False, "earnings") == (1_000_000.0, None)
+    assert reading(held, path, False, "debt") == (1_000_000.0, None)
 
 
 @pytest.mark.parametrize("concept", ["us-gaap:ProceedsFromSaleOfAvailableForSaleSecurities", "us-gaap:RepaymentsOfDebt",
@@ -1734,12 +1886,6 @@ def test_other_flows_are_not_refused_as_cash_totals_or_investing(concept):
     held = {"period_end": "2026-06-30", "note_tables": {"tables": {"notes_1": {"facts": [
         usd(unit="iso4217:USD", concept=concept, start="2025-07-01", end="2026-06-30")]}}}}
     assert reading(held, "note_tables.tables.notes_1.facts.0") == (1_000_000.0, None)
-
-
-def test_an_investing_flow_may_still_be_an_earnings_adjustment():
-    held = {"period_end": "2026-06-30", "note_tables": {"tables": {"notes_1": {"facts": [
-        usd(unit="iso4217:USD", concept="us-gaap:PaymentsToAcquireInvestments", start="2025-07-01", end="2026-06-30")]}}}}
-    assert reading(held, "note_tables.tables.notes_1.facts.0", False, "earnings") == (1_000_000.0, None)
 
 
 # --- calculator cells that contain free cash flow ---------------------------------------------------------------
@@ -1846,77 +1992,129 @@ def test_a_flow_fact_of_goodwill_is_not_a_change_and_stands_once():
     refused_with_recurs(held, path)
 
 
-# --- one amount counted once ----------------------------------------------------------------------------------------
+# --- one movement, counted once ---------------------------------------------------------------------------------------------
 
-def test_a_second_cash_flow_adjustment_citing_the_same_field_is_refused_by_the_calculator_and_the_gate():
-    path = "earnings_versus_cash.working_capital.receivables.balance_sheet_change"
-    out = final_with(APPLE, [adjustment(path), {**adjustment(path), "name": "again"}])
+RECEIVABLES = "earnings_versus_cash.working_capital.receivables"
+APPLE_RECEIVABLES = [
+    f"{RECEIVABLES}.balance_sheet_change",
+    f"{RECEIVABLES}.share_of_net_income.inputs.change",
+    f"{RECEIVABLES}.articulation_gap.inputs.balance_sheet_change",
+    f"{RECEIVABLES}.articulation_gap",
+    f"{RECEIVABLES}.cash_flow_statement_change",
+    "terms.trailing_four_quarters.change_in_receivables",
+]
+TWICE = "it counts one movement twice"
+
+
+def test_the_receivables_cells_of_apples_view_are_one_family():
+    held = printed(AAPL_RUN)
+    for path in APPLE_RECEIVABLES:
+        cell = calculator._cell_at(held, path)
+        assert isinstance(cell, dict) and "value" in cell, path
+        assert calculator.balance_family(path, cell) == "receivables", path
+
+
+def test_a_note_tables_receivables_and_a_calculators_receivables_are_one_family():
+    carr = printed(CARR_RUN)
+    note = "note_tables.tables.notes_123.changes.0"
+    assert calculator._cell_at(carr, note)["concept"] == "us-gaap:ReceivablesNetCurrent"
+    assert calculator.balance_family(note, calculator._cell_at(carr, note)) == "receivables"
+    assert calculator.balance_family(APPLE_RECEIVABLES[0], calculator._cell_at(carr, APPLE_RECEIVABLES[0])) == "receivables"
+
+
+@pytest.mark.parametrize("second", APPLE_RECEIVABLES[1:])
+def test_a_second_receivables_adjustment_counts_one_movement_twice_through_calculate(second):
+    out = final_with(APPLE, [adjustment(APPLE_RECEIVABLES[0]), {**adjustment(second), "name": "again"}])
     applied, = out["adjustments_applied"]
-    assert applied["name"] == path and out["value"] == 119_136 * MILLION
+    assert applied["calculator_field"] == APPLE_RECEIVABLES[0] and out["value"] == 119_136 * MILLION
     refused, = out["adjustments_refused"]
-    assert refused["name"] == "again" and "counts one amount twice" in refused["reason"] and "cites" in refused["reason"]
+    assert refused["name"] == "again" and TWICE in refused["reason"] and "receivables" in refused["reason"]
 
 
-def test_a_second_cash_flow_adjustment_from_the_same_note_table_is_refused():
-    """A table's cells contain each other: STX's supplier-finance obligation change and its increase,
-    both of notes_91, are one amount counted twice. One adjustment for each table."""
-    held = printed(STX_RUN)
-    first, second = "note_tables.tables.notes_91.changes.1", "note_tables.tables.notes_91.facts.0"
-    assert reading(held, first)[0] is not None
-    assert calculator.counted_twice(second, [first]) is not None
-    assert "same note table, notes_91" in calculator.counted_twice(second, [first])
-    assert calculator.counted_twice("note_tables.tables.notes_92.changes.0", [first]) is None
-    assert calculator.counted_twice(first, []) is None
-    assert calculator.counted_twice("terms.trailing_four_quarters.net_income", [first]) is None
+def test_a_note_tables_receivables_after_the_calculators_is_counted_twice_through_calculate():
+    run = RUNS / "CARR" / "0001783180-26-000032"
+    out = calculator.calculate(**calculator_drift.trigger(run), fixtures_root=STORE, bundle=run, accounting={
+        "adjustments": [adjustment(f"{RECEIVABLES}.balance_sheet_change"),
+                        {**adjustment("note_tables.tables.notes_123.changes.0"), "name": "the note's"}]})
+    quality = out["free_cash_flow"]["free_cash_flow_quality_adjusted"]
+    assert [r["calculator_field"] for r in quality["adjustments_applied"]] == [f"{RECEIVABLES}.balance_sheet_change"]
+    assert TWICE in quality["adjustments_refused"][0]["reason"]
 
 
-def test_two_allowed_cells_of_one_note_table_are_counted_once_through_calculate():
-    """Two cells of NVIDIA's `notes_60` (its accrued consideration and another allowed line of the same
-    table): the first applies, the second is refused as one amount counted twice."""
+def test_two_families_of_one_note_table_both_stand_and_two_cells_of_one_family_do_not():
+    """NVIDIA's `notes_60`: the customer program accruals (an accrued liability) and taxes payable (a payable)
+    are two families of one table and both stand; the warranty accrual is the first one's family again."""
     run = RUNS / "NVDA" / "0001045810-26-000075"
     held = printed(NVDA_RUN)
-    table = held["note_tables"]["tables"]["notes_60"]
-    allowed = [i for i, c in enumerate(table["changes"])
-               if reading(held, f"note_tables.tables.notes_60.changes.{i}")[0] is not None]
-    assert len(allowed) >= 2, allowed
-    paths = [f"note_tables.tables.notes_60.changes.{i}" for i in allowed[:2]]
+    accruals, taxes, warranty = (f"note_tables.tables.notes_60.changes.{i}" for i in (0, 1, 3))
+    names = [calculator._cell_at(held, p)["concept"].rpartition(":")[2] for p in (accruals, taxes, warranty)]
+    assert names == ["AccruedCustomerProgramsCurrent", "TaxesPayableCurrent", "ProductWarrantyAccrualClassifiedCurrent"]
     out = calculator.calculate(**calculator_drift.trigger(run), fixtures_root=STORE, bundle=run, accounting={
-        "adjustments": [adjustment(paths[0]), {**adjustment(paths[1]), "name": "second"}]})
+        "adjustments": [adjustment(accruals), {**adjustment(taxes), "name": "taxes"}, {**adjustment(warranty), "name": "warranty"}]})
     quality = out["free_cash_flow"]["free_cash_flow_quality_adjusted"]
-    assert [r["calculator_field"] for r in quality["adjustments_applied"]] == [paths[0]]
-    assert "same note table, notes_60" in quality["adjustments_refused"][0]["reason"]
+    assert [r["calculator_field"] for r in quality["adjustments_applied"]] == [accruals, taxes]
+    refused, = quality["adjustments_refused"]
+    assert refused["calculator_field"] == warranty and TWICE in refused["reason"] and "accrued liabilities and reserves" in refused["reason"]
 
 
-def gate_overlap(items):
+def test_a_cell_in_no_family_is_its_own_family_so_a_field_is_not_cited_twice():
+    path = "terms.trailing_four_quarters.net_income"
+    held = printed(AAPL_RUN)
+    assert calculator.balance_family(path, calculator._cell_at(held, path)) is None
+    assert TWICE in calculator.counted_twice(held, path, [path])
+    assert calculator.counted_twice(held, path, ["terms.trailing_four_quarters.revenue"]) is None
+    assert calculator.counted_twice(held, path, []) is None
+
+
+@pytest.mark.parametrize("concept, family", [
+    ("nvda:BusinessCombinationConsiderationPayable", "acquisition consideration"),
+    ("us-gaap:SupplierFinanceProgramObligation", "supplier finance"),
+    ("us-gaap:TransferOfFinancialAssetsAccountedForAsSalesAmountDerecognized", "receivables sold"),
+    ("us-gaap:AccountsReceivableNetCurrent", "receivables"),
+    ("us-gaap:ContractWithCustomerAssetNetCurrent", "contract assets"),
+    ("us-gaap:ContractWithCustomerLiabilityCurrent", "contract liabilities and deferred revenue"),
+    ("us-gaap:DeferredRevenueCurrent", "contract liabilities and deferred revenue"),
+    ("us-gaap:InventoryNet", "inventory"),
+    ("us-gaap:PrepaidExpenseCurrent", "prepaid and other current assets"),
+    ("us-gaap:DeferredCostsCurrent", "prepaid and other current assets"),
+    ("us-gaap:AccountsPayableCurrent", "payables"),
+    ("us-gaap:ProductWarrantyAccrual", "accrued liabilities and reserves"),
+    ("us-gaap:AccruedLiabilitiesCurrent", "accrued liabilities and reserves"),
+    ("us-gaap:RestructuringReserve", "accrued liabilities and reserves"),
+    ("us-gaap:OtherLiabilitiesCurrent", "accrued liabilities and reserves"),
+    ("us-gaap:Goodwill", None)])
+def test_each_concept_is_put_in_its_balance_family(concept, family):
+    assert calculator.balance_family("x", {"concept": concept, "from": {}, "to": {}}) == family
+
+
+def test_the_gate_drops_a_second_cash_flow_adjustment_in_one_family_but_not_an_earnings_one_or_another_family():
     from tests import test_analysis_check as gate
-    payload = gate.accounting()
-    payload["adjustments"] = items
-    return analysis_check.check("accounting", payload, fields=gate.FIELDS, sources=gate.SOURCES)
-
-
-def test_the_gate_drops_a_second_cash_flow_adjustment_on_one_field_but_not_an_earnings_one():
     base = {"direction": "reduce", "recurs": False, "quote": "extended payment terms to certain customers",
-            "quote_from": "report_notes_text.md", "evidence": [],
-            "calculator_field": "terms.trailing_four_quarters.revenue"}
-    one = {**base, "name": "a", "applies_to": "cash_flow"}
-    two = {**base, "name": "b", "applies_to": "cash_flow"}
-    three = {**base, "name": "c", "applies_to": "earnings"}
-    out = gate_overlap([one, two, three])
-    assert [item["name"] for item in out["adjustments"]] == ["a", "c"]
-    dropped, = [d for d in out["dropped_items"] if "counts one amount twice" in d["reason"]]
-    assert dropped["where"] == "adjustments[1]" and "cites" in dropped["reason"]
+            "quote_from": "report_notes_text.md", "evidence": []}
+    fields = copy.deepcopy(gate.FIELDS)
+    wc = fields.setdefault("earnings_versus_cash", {}).setdefault("working_capital", {})
+    wc["receivables"] = {"balance_sheet_change": usd(), "share_of_net_income": {"inputs": {"change": usd()}}}
+    fields["terms"]["trailing_four_quarters"]["net_income"] = usd()
+    first = {**base, "name": "a", "applies_to": "cash_flow", "calculator_field": f"{RECEIVABLES}.balance_sheet_change"}
+    same_family = {**base, "name": "b", "applies_to": "cash_flow", "calculator_field": f"{RECEIVABLES}.share_of_net_income.inputs.change"}
+    earnings = {**base, "name": "c", "applies_to": "earnings", "calculator_field": f"{RECEIVABLES}.share_of_net_income.inputs.change"}
+    other = {**base, "name": "d", "applies_to": "cash_flow", "calculator_field": "terms.trailing_four_quarters.net_income"}
+    payload = gate.accounting()
+    payload["adjustments"] = [first, same_family, earnings, other]
+    out = analysis_check.check("accounting", payload, fields=fields, sources=gate.SOURCES)
+    assert [item["name"] for item in out["adjustments"]] == ["a", "c", "d"]
+    dropped, = [d for d in out["dropped_items"] if TWICE in d["reason"]]
+    assert dropped["where"] == "adjustments[1]" and "receivables" in dropped["reason"]
 
 
-def test_the_gate_drops_a_second_cash_flow_adjustment_from_one_note_table():
-    held = copy.deepcopy(printed(STX_RUN))
-    # two allowed cells of one table, the gate reading the same rule the calculator does
-    problem = analysis_check.adjustment_overlap
-    kept = [{"applies_to": "cash_flow", "calculator_field": "note_tables.tables.notes_91.changes.1"}]
-    again = {"applies_to": "cash_flow", "calculator_field": "note_tables.tables.notes_91.changes.2"}
-    assert "same note table, notes_91" in problem(again, kept)
-    assert problem({**again, "applies_to": "earnings"}, kept) is None
-    assert problem(again, [{**kept[0], "applies_to": "earnings"}]) is None
-    assert problem({**again, "calculator_field": "note_tables.tables.notes_92.changes.0"}, kept) is None
+def test_the_gate_reads_the_family_of_a_note_table_cell_and_a_calculator_cell_alike():
+    held = printed(CARR_RUN)
+    overlap = analysis_check.adjustment_overlap(held)
+    kept = [{"applies_to": "cash_flow", "calculator_field": f"{RECEIVABLES}.balance_sheet_change"}]
+    note = {"applies_to": "cash_flow", "calculator_field": "note_tables.tables.notes_123.changes.0"}
+    assert TWICE in overlap(note, kept)
+    assert overlap({**note, "applies_to": "earnings"}, kept) is None
+    assert overlap(note, [{**kept[0], "applies_to": "earnings"}]) is None
 
 
 # --- a name is used once, enforced at the gate --------------------------------------------------
@@ -1999,22 +2197,13 @@ def test_an_articulation_gap_whose_balance_change_carries_no_dates_is_not_read_a
     assert reading(held, path, False)[0] == calculator._cell_at(held, path)["value"]
 
 
-# --- the exclusions bind a name that also holds an allowed word; and dated parts are held to the year --------
+# --- a total of assets, and dated parts held to the year -----------------------------------------------------------
 
-@pytest.mark.parametrize("word", ["Cash", "Restricted", "Investments", "Securities", "FairValueDisclosure", "Noncurrent",
-                                  "PropertyPlant", "Machinery", "Building", "Land", "ConstructionInProgress", "Furniture",
-                                  "Equipment", "Goodwill", "Intangible", "Software", "RightOfUse"])
-def test_each_excluded_word_refuses_a_name_that_also_holds_an_allowed_word(word):
-    held, path = a_change(f"co:Receivable{word}Other")
-    assert reading(held, path) == (None, NOT_ON_THE_LIST)
-    held, path = a_change(f"co:{word.upper()}PAYABLE")
-    assert reading(held, path) == (None, NOT_ON_THE_LIST)
-
-
-def test_a_total_of_assets_is_refused_even_where_a_working_capital_word_follows():
+def test_a_total_of_assets_is_refused_in_every_class_even_where_a_working_capital_word_follows():
     for concept in ("co:AssetsPrepaid", "us-gaap:AssetsCurrentReceivable"):
         held, path = a_change(concept)
-        assert reading(held, path) == (None, NOT_ON_THE_LIST)
+        for applies_to in CLASSES:
+            assert reading(held, path, False, applies_to) == (None, CASH_CONTAINS), (concept, applies_to)
     held, path = a_change("us-gaap:PrepaidExpenseAndOtherAssetsCurrent")
     assert reading(held, path) == (1_000_000.0, None)
 

@@ -2378,7 +2378,7 @@ def quality_adjusted(simple: dict, compensation: dict, acquisitions: dict,
         recurs = item.get("recurs") is True
         amount, why_not = adjustment_reading(view, field, recurs, target)
         if amount is not None and target == "cash_flow":
-            why_not = counted_twice(field, [row["calculator_field"] for row in applied])
+            why_not = counted_twice(view, field, [row["calculator_field"] for row in applied])
             amount = None if why_not else amount
         if direction not in ("reduce", "increase") or target not in ("cash_flow", "earnings") \
                 or amount is None:
@@ -2519,32 +2519,69 @@ CASH_FLOW_CHANGE_ALLOWED = (
     (r"contractwithcustomer(?:asset|liabilit)|contractasset|contractliabilit|deferredrevenue",
      "contract assets and liabilities, and deferred revenue"),
     (r"inventor", "inventory and its components"),
-    (r"prepaid|otherassetscurrent", "prepaid and other current assets"),
-    (r"payable|accrued", "payables, accrued liabilities and their components"),
+    (r"prepaid|otherassetscurrent|deferredcost|capitalizedcontractcost",
+     "prepaid and other current assets, deferred costs and capitalised contract costs"),
+    (r"payable|accrued|accrual|warranty|reserve|employeerelated|otherliabilitiescurrent|othersundryliabilities",
+     "payables, accrued liabilities and reserves and their components: a reserve's change is an accrual "
+     "inside operating cash flow, which an analyst may take out"),
     (r"supplierfinance", "supplier finance obligations"),
     (r"transferoffinancialassets|factor", "receivables sold or factored"),
     (r"contingentconsideration|considerationpayable|deferredconsideration|purchaseconsideration",
      "deferred or contingent acquisition consideration"),
 )
+# The words that refuse a name that also holds an allowed word, anywhere in it (lower-cased), and a
+# total of assets. `lease` and `land` are read as words of the camel-cased name, so that a release or
+# an island is not one. Noncurrent is not here: long-term receivables, contract balances and accrued
+# liabilities are operating balances too.
 CASH_FLOW_CHANGE_EXCLUDED = (
-    r"cash|restricted|investments|securities|fairvaluedisclosure|noncurrent|propertyplant|machinery|"
-    r"building|land|constructioninprogress|furniture|equipment|goodwill|intangible|software|rightofuse"
-    r"|^assets")
+    r"cash|restricted|investments|securities|fairvaluedisclosure|propertyplant|machinery|"
+    r"building|constructioninprogress|furniture|equipment|goodwill|intangible|software|rightofuse|"
+    r"deferredtax|incometax|dividend|guarantee|maximumpotential|derivative|debt|borrowing|^assets")
+CASH_FLOW_CHANGE_EXCLUDED_WORDS = ("lease", "land")
 NOT_ON_THE_LIST = ("not a balance whose change free cash flow carries in operating cash flow or leaves "
                    "out; name a calculator cell instead")
 
-# A cell that is a change in cash, or in a total that includes cash, CONTAINS free cash flow: a change
-# in cash is the sum of every cash flow. By the cell's name in the calculator's view.
+# ONE MOVEMENT, COUNTED ONCE: at most one cash-flow adjustment for each balance family. A note-table
+# concept is put in its family by its local name, in this order (a contingent consideration payable is
+# consideration before it is a payable); a calculator cell by the segment of its path that names what
+# it measures. A cell in no family is its own family, so a field is never cited twice.
+BALANCE_FAMILIES = (
+    ("acquisition consideration", r"contingentconsideration|considerationpayable|deferredconsideration|purchaseconsideration"),
+    ("supplier finance", r"supplierfinance"),
+    ("receivables sold", r"receivablessold|transferoffinancialassets|factor"),
+    ("receivables", r"receivable"),
+    ("contract assets", r"contractwithcustomerasset|contractasset"),
+    ("contract liabilities and deferred revenue", r"contractwithcustomerliabilit|contractliabilit|deferredrevenue"),
+    ("inventory", r"inventor"),
+    ("prepaid and other current assets", r"prepaid|otherassetscurrent|deferredcost|capitalizedcontractcost"),
+    ("payables", r"payable"),
+    ("accrued liabilities and reserves",
+     r"accrued|accrual|warranty|reserve|employeerelated|otherliabilitiescurrent|othersundryliabilities"),
+)
+CALCULATOR_FAMILIES = (
+    ("receivables", r"receivables|change_in_receivables"),
+    ("inventory", r"inventory|change_in_inventory"),
+    ("payables", r"accounts_payable|change_in_payables|change_in_income_taxes_payable"),
+    ("contract liabilities and deferred revenue", r"change_in_contract_liabilities"),
+)
+
+# A cell that is a change in cash or restricted cash, or in a total that includes cash, CONTAINS free
+# cash flow: a change in cash is the sum of every cash flow. Refused for EVERY class of adjustment, by a
+# calculator cell's name and by a note-table change's concept; so are the cash totals.
 CONTAINS_FREE_CASH_FLOW_NAMES = (
     (r"change_in_cash(?:_and_\w+)?", "a change in cash is the sum of every cash flow"),
     (r"change_in_(?:current_|total_)?assets", "a change in a total that includes cash"),
 )
-# A note-table CASH TOTAL, and every investing-activity flow, contains or is already inside free cash
-# flow: refused as a cash-flow amount, case-insensitively.
+CONTAINS_FREE_CASH_FLOW_CONCEPTS = (
+    r"^cash(?!flowhedge)", r"restrictedcash", r"cashandcashequivalents", r"cashandshortterm", r"^assets",
+)
 CONTAINS_OR_INSIDE = "contains or is already inside free cash flow"
-CASH_TOTALS_AND_INVESTING_FLOWS = (
+CASH_TOTALS = (
     r"netcashprovidedbyusedin(?:operating|investing|financing)activities\w*",
     r"cash\w*periodincreasedecrease\w*",
+)
+# Investing-activity flows are refused as cash-flow amounts alone: they may be earnings adjustments.
+INVESTING_FLOWS = (
     r"paymentstoacquire\w*",
     r"paymentsforproceedsfrom\w*",
     r"proceedsfromsaleof\w*(?:property|business|intangible)\w*",
@@ -2694,25 +2731,48 @@ def _date(text) -> dt.date | None:
         return None
 
 
+def _words(local: str) -> list[str]:
+    """The words of a camel-cased name, lower-cased."""
+    return [word.lower() for word in re.findall(r"[A-Z][a-z]+|[A-Z]+(?![a-z])|[a-z]+|\d+", local)]
+
+
 def cash_flow_change_problem(cell: dict) -> str | None:
     """Why a note-table change cell may not be a cash-flow amount, or None: its concept is not on the
     allow-list of balances whose change free cash flow carries in operating cash flow or leaves out."""
     concept = cell.get("concept")
     if not (isinstance(concept, str) and isinstance(cell.get("from"), dict) and isinstance(cell.get("to"), dict)):
         return None
-    local = concept.rpartition(":")[2].lower()
-    if not re.search(CASH_FLOW_CHANGE_EXCLUDED, local) \
-            and any(re.search(pattern, local) for pattern, _ in CASH_FLOW_CHANGE_ALLOWED):
+    name = concept.rpartition(":")[2]
+    local = name.lower()
+    excluded = re.search(CASH_FLOW_CHANGE_EXCLUDED, local) or any(
+        word.startswith(CASH_FLOW_CHANGE_EXCLUDED_WORDS) for word in _words(name))
+    if not excluded and any(re.search(pattern, local) for pattern, _ in CASH_FLOW_CHANGE_ALLOWED):
         return None
     return NOT_ON_THE_LIST
+
+
+def balance_family(path: str, cell: dict) -> str | None:
+    """The balance family a cell's movement belongs to, or None: a note-table concept by its local name, a
+    calculator cell by the segment of its path that names what it measures."""
+    concept = cell.get("concept")
+    if isinstance(concept, str):
+        local = concept.rpartition(":")[2].lower()
+        for family, pattern in BALANCE_FAMILIES:
+            if re.search(pattern, local):
+                return family
+        return None
+    for family, pattern in CALCULATOR_FAMILIES:
+        if any(re.fullmatch(pattern, segment) for segment in path.split(".")):
+            return family
+    return None
 
 
 def inside_free_cash_flow(path: str, cell: dict, fields: dict | None = None,
                           applies_to: str = "cash_flow") -> str | None:
     """Why a cell is already inside free cash flow, or contains it, or None, with the label that
     says which: a segment of its path names one of free cash flow's parts or a change in cash, a
-    note-table fact's concept is one of the parts, and, for a cash-flow amount, a cash total or an
-    investing-activity flow."""
+    note-table fact's concept is one of the parts; for every class a cash total, or a change in cash or in
+    a total that includes it; and, for a cash-flow amount, an investing-activity flow."""
     segments = path.split(".")
     for segment in segments:
         for pattern, why in INSIDE_FREE_CASH_FLOW_NAMES:
@@ -2728,9 +2788,14 @@ def inside_free_cash_flow(path: str, cell: dict, fields: dict | None = None,
         for pattern, why in INSIDE_FREE_CASH_FLOW_CONCEPTS:
             if re.fullmatch(pattern, local):
                 return f"{ALREADY_INSIDE}: {why}"
-        if applies_to == "cash_flow" and any(
-                re.fullmatch(pattern, local, re.IGNORECASE) for pattern in CASH_TOTALS_AND_INVESTING_FLOWS):
+        if any(re.fullmatch(pattern, local, re.IGNORECASE) for pattern in CASH_TOTALS):
             return CONTAINS_OR_INSIDE
+        if applies_to == "cash_flow" and any(
+                re.fullmatch(pattern, local, re.IGNORECASE) for pattern in INVESTING_FLOWS):
+            return CONTAINS_OR_INSIDE
+        if isinstance(cell.get("from"), dict) and isinstance(cell.get("to"), dict) and any(
+                re.search(pattern, local.lower()) for pattern in CONTAINS_FREE_CASH_FLOW_CONCEPTS):
+            return f"{CONTAINS}: a change in cash or restricted cash, or in a total that includes cash"
     return None
 
 
@@ -2951,22 +3016,22 @@ def recurrence_problem(path: str, cell: dict, kind: str, fields: dict) -> str | 
     return None
 
 
-def note_table_of(path) -> str | None:
-    """The table a note-table path names (`note_tables.tables.notes_38`), or None."""
-    match = re.match(r"note_tables\.tables\.([^.]+)\.", path) if isinstance(path, str) else None
-    return match.group(1) if match else None
-
-
-def counted_twice(path: str, earlier: list) -> str | None:
-    """Why a cash-flow adjustment counts an amount twice, or None: it cites a field an earlier
-    cash-flow adjustment cited, or a second cell of the same note table (a table's cells contain
-    each other). `earlier` holds the fields of the cash-flow adjustments before it."""
-    if path in earlier:
-        return f"it counts one amount twice: an earlier cash_flow adjustment cites {path!r}"
-    table = note_table_of(path)
-    if table is not None and any(note_table_of(other) == table for other in earlier):
-        return (f"it counts one amount twice: an earlier cash_flow adjustment is from the same note "
-                f"table, {table}, whose cells contain each other; one adjustment for each table")
+def counted_twice(fields: dict, path: str, earlier: list) -> str | None:
+    """Why a cash-flow adjustment counts one movement twice, or None: an earlier cash-flow adjustment
+    is in the same balance family (the receivables' balance change, its share of net income, its
+    articulation gap, the change in receivables and a note table's receivables are one), or cites the
+    same field where it is in no family. `earlier` holds the fields of the cash-flow adjustments
+    before it; two families of one table both stand."""
+    def key(p):
+        cell = _cell_at(fields, p)
+        family = balance_family(p, cell) if isinstance(cell, dict) else None
+        return family or f"field:{p}"
+    mine = key(path)
+    for other in earlier:
+        if key(other) == mine:
+            what = f"the balance family {mine}" if not mine.startswith("field:") else f"the field {path!r}"
+            return (f"it counts one movement twice: an earlier cash_flow adjustment ({other!r}) is in "
+                    f"{what}")
     return None
 
 

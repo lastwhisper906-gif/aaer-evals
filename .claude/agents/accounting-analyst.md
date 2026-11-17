@@ -181,18 +181,26 @@ expenditure (payments for property and equipment), share-based compensation and
 acquisitions, in the calculator's own cells and in a note table's facts of those
 concepts. `cash_flow` and `earnings` are both flows, so the cell must be a flow
 (a number over a span of dates) or a change between two balances: a note table's
-`changes` cell is a change, later minus earlier, worked out by Python. A change in cash, or in a total that includes cash (current assets, total assets), contains free
-cash flow and is refused. A note table's `changes` cell may be the amount of a `cash_flow` adjustment
+`changes` cell is a change, later minus earlier, worked out by Python. A change in cash or restricted cash, or in a total that includes cash (current assets, total
+assets), contains free cash flow and is refused whatever the adjustment applies to, as are a note
+table's cash totals. A note table's `changes` cell may be the amount of a `cash_flow` adjustment
 only if it is the change in a working-capital or financing balance that free cash flow carries in
 operating cash flow or leaves out: receivables, contract assets and liabilities, deferred revenue,
-inventory, prepaid and other current assets, payables and accrued liabilities, supplier finance
-obligations, receivables sold or factored, and deferred or contingent acquisition consideration. A
+inventory, prepaid and other current assets and deferred costs, payables, accrued liabilities and
+reserves (a warranty or restructuring reserve, employee-related and other current liabilities),
+supplier finance obligations, receivables sold or factored, and deferred or contingent acquisition
+consideration. A
 change in cash, investments, property and equipment, goodwill, intangible assets, software, a
 right-of-use asset or a total of assets is not on that list: name a calculator cell instead. A note
-table's cash totals and its investing-activity flows are refused as `cash_flow` amounts. A
+table's investing-activity flows are refused as `cash_flow` amounts. A
 non-cash charge (an impairment, a write-down, a write-off) is never a `cash_flow` amount: it is an
-`earnings` adjustment. Two `cash_flow` adjustments never cite the same field, nor two cells of one
-note table, whose cells contain each other: Python drops the later. A balance at
+`earnings` adjustment. At most one `cash_flow` adjustment is taken for each balance family (receivables, contract assets,
+contract liabilities and deferred revenue, inventory, prepaid and other current assets, payables,
+accrued liabilities and reserves, supplier finance, receivables sold, acquisition consideration): a
+calculator cell is put in its family by what it measures, so the receivables' balance change, its
+share of net income, its articulation gap, the change in receivables and a note table's receivables
+are one family, and Python drops the later as counting one movement twice. Two families of one table
+both stand. A balance at
 one date is not a flow, and Python drops an adjustment that names one, with that
 reason. The cell must also be of the period free cash flow covers: a span that
 begins no earlier than the first day of the trailing year the view prints
