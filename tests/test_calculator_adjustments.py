@@ -3387,3 +3387,21 @@ def test_an_amount_of_zero_moves_nothing_and_takes_no_movement_key():
             "unit": "iso4217:USD", "start": "2025-08-01", "end": "2026-04-30"}
     planted = with_year({"period_end": "2026-04-30", "note_tables": {"tables": {"notes_1": {"facts": [paid]}}}})
     assert reading(planted, "note_tables.tables.notes_1.facts.0", False, "cash_flow") == (None, calculator.MOVES_NOTHING)
+
+
+def test_the_refusal_sentence_is_quoted_as_the_code_has_it_in_both_documents_and_the_analyst_prompt():
+    """`NOT_A_STATEMENT_LINE` is read from the code and found verbatim (whitespace folded) in the pipeline document,
+    the queue and the analyst's prompt, so none keeps an older wording."""
+    sentence = " ".join(calculator.NOT_A_STATEMENT_LINE.split())
+    assert sentence.endswith("or an acquisition consideration payment")
+    for path in ("docs/ANALYSIS_PIPELINE.md", "queue.md", ".claude/agents/accounting-analyst.md"):
+        text = " ".join((REPO / path).read_text(encoding="utf-8").split())
+        assert sentence in text, path
+    stale = "supplier finance, receivables sold or acquisition consideration change"
+    for path in ("docs/ANALYSIS_PIPELINE.md", ".claude/agents/accounting-analyst.md", "docs/needs_judgment.md"):
+        assert stale not in " ".join((REPO / path).read_text(encoding="utf-8").split()), path
+    needs = (REPO / "docs" / "needs_judgment.md").read_text(encoding="utf-8")
+    assert "stays an accepted amount" not in needs
+    assert needs.count("whether consideration for an acquisition paid later") == 1
+
+
