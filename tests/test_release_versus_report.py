@@ -1204,10 +1204,11 @@ def bulk_check(ticker: str, accession: str) -> dict:
         rows = paragraph.split("\n")
         if not all(row.startswith("| ") and row.endswith(" |") for row in rows):
             continue
+        row_line = rvr.row_lines([rvr.cells_of(row) for row in rows])
         for r, row in enumerate(rows):
             cells = rvr.cells_of(row)
             placed = rvr._label_of(cells)
-            if not placed or rvr.normal_label(placed[1]) not in rvr.LINE_OF_LABEL:
+            if not placed or row_line[r] is None or not rvr._is_data_row(cells):
                 continue
             for j in range(placed[0] + 1, len(cells)):
                 if rvr.read_number(cells[j]) is None or rvr._is_year(cells[j]):
@@ -1224,7 +1225,7 @@ def bulk_check(ticker: str, accession: str) -> dict:
                 paragraphs = list(item["paragraphs"])
                 paragraphs[index] = "\n".join(rows2)
                 after = read(paragraphs)
-                line = rvr.LINE_OF_LABEL[rvr.normal_label(placed[1])]
+                line = row_line[r]
                 hit = [c for c in after["lines"][line].get("comparisons", [])
                        if c["release"]["paragraph_id"] == pid and c["release"]["label"] == placed[1]
                        and c["release"]["cell"] == changed[j].strip()]
@@ -1247,11 +1248,12 @@ def test_release_versus_report_every_compared_figure_of_dells_release_flips_when
     raised one at a time, reads `differs`, and none stays `agrees`. The count is written by
     hand, table by table, from the committed release (each line twice, the quarter and the six
     months): `:35` the summary, five lines, 10; `:63` the statement, revenue, cost of revenue,
-    operating income, pretax income, tax and net income, 12; `:74` cash flows, net income and
+    operating income, pretax income, tax, net income and `Diluted | 6.34` under `Earnings per share:`
+    (round six), 14; `:74` cash flows, net income and
     operating cash flow, 4; `:98` net revenue, 2; `:103` the reconciliation, operating income and
-    net income, 4; `:110` diluted earnings per share, 2. That is 34."""
-    by_hand = {"35": 10, "63": 12, "74": 4, "98": 2, "103": 4, "110": 2}
-    assert sum(by_hand.values()) == 34
+    net income, 4; `:110` diluted earnings per share, 2. That is 36 (34 before the diluted row under its per share heading was read)."""
+    by_hand = {"35": 10, "63": 14, "74": 4, "98": 2, "103": 4, "110": 2}
+    assert sum(by_hand.values()) == 36
     outcome = bulk_check("DELL", "0001571996-26-000046")
     assert outcome["stayed"] == []
     counted: dict[str, int] = {}
@@ -2768,3 +2770,17 @@ def test_release_versus_report_a_dollar_row_under_a_share_count_heading_is_compa
     out = _run(rows, _fact(net_income=1e8))
     assert out["net_income"]["verdict"] == "differs"
     assert "excluded_rows" not in out["net_income"]
+
+
+@pytest.mark.parametrize("label", [
+    "Shares used in diluted net income per share", "Shares used in computing net income per share - diluted",
+    "Weighted average shares used in per share calculation - diluted",
+    "Number of shares for diluted earnings per share", "Diluted shares for net income per share",
+    "Amount used in diluted net income per share", "Number of diluted net income per share"])
+def test_release_versus_report_a_share_count_label_is_not_diluted_earnings_per_share(label):
+    """Fortinet's `Shares used in diluted net income per share` (739.9) read as the per share
+    line in the first bulk run of round six: a label that counts shares is not the line. Kills
+    the mutant that drops `shares`, `used` and `number of` from the excluded words."""
+    assert rvr.eps_label(label) is False, label
+    out = _run([_row(label, "739.9")], _fact(diluted_earnings_per_share=0.82))
+    assert out["diluted_earnings_per_share"]["verdict"] == "not_in_release", label

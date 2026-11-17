@@ -646,7 +646,7 @@ def capex_synonym(label: str) -> str | None:
 _SHARE_BLOCK = re.compile(r"weighted|\bshares?\b|\bunits\b")
 _PER_SHARE_WORDS = re.compile(r"\bper\s+(?:[\w-]+\s+){0,2}(?:shares?|units?)\b")
 _NOT_EPS = re.compile(r"weighted|outstanding|adjusted|non-?\s*gaap|continuing|discontinued|before|"
-                      r"dividend|book|cash flow|\bbasic\b")
+                      r"dividend|book|cash flow|\bbasic\b|\bshares\b|\bused\b|number of")
 
 
 def is_per_share_heading(text: str) -> bool:
