@@ -153,6 +153,27 @@ its share a year earlier, as
 and `inventory_composition_and_growth_gap.inventory_growth_minus_revenue_growth`.
 None of these is an adjustment amount.
 
+**Reserve rollforwards.** For each reserve the filing tables as a rollforward,
+`rollforwards.allowance_for_credit_losses`, `rollforwards.product_warranty`,
+`rollforwards.inventory_reserve`, `rollforwards.restructuring_reserve`,
+`rollforwards.contract_liabilities`, `rollforwards.supplier_finance_obligations`
+and `rollforwards.goodwill` each hold a `series` per table and set of axes, and
+each series its `periods`, newest first (for example
+`rollforwards.product_warranty.series.0.periods.0`); a reserve the filing does
+not table says `missing` and why. In a period, `foots` says whether the table's
+own rows reach its ending balance, `difference` is what is left over, and
+`complete` false means the table holds a row the filer tagged in its own
+namespace (listed under `rows_not_placed`), so a `foots` false beside a
+`complete` false is a table Python did not read in full and no finding.
+`release` is true when the charge to expense is negative or the reserve fell
+while its gross base rose (`release_because` says which), and
+`provision_over_usage` is the charge against what was used or paid out, so a
+figure under one says the reserve was drawn down faster than it was built.
+`coverage_years`, `ending_over_gross_base` and
+`prior_period_revision_over_current_expense` are read the same way, each with
+its fact ids. Cite the field and quote the filing's own words for why the
+reserve moved; do not write any arithmetic of your own on these rows.
+
 **Industry lens.** Most of the twelve are semiconductors and hardware. Also
 answer, with a finding or "nothing found" and why: inventory obsolescence;
 purchase commitments in excess of need; customer concentration
