@@ -129,6 +129,9 @@ ROW_LABELS: dict[str, tuple[str, ...]] = {
 }
 
 PER_SHARE = ("diluted_earnings_per_share",)
+# A row of basic earnings per share is the diluted line's row, held to `EarningsPerShareBasic`
+# and hinted `basic`; the name is the pseudo-line `row_lines` gives it and the report is asked.
+BASIC = "basic_earnings_per_share"
 BY_SIZE = ("capital_expenditure", "cost_of_revenue")   # printed in parentheses as an outflow
 
 
@@ -667,6 +670,26 @@ def eps_label(label: str) -> bool:
                 and not _NOT_EPS.search(words))
 
 
+def basic_eps_label(label: str) -> bool:
+    """A row label that is basic earnings per share by its own words: `Basic`, or one that says
+    basic and per share (`Basic net income per common share`)."""
+    words = normal_label(label)
+    if words == "basic":
+        return True
+    return bool(re.search(r"\bbasic\b", words) and not re.search(r"\bdiluted\b", words)
+                and _PER_SHARE_WORDS.search(words) and not _NOT_EPS.search(
+                    re.sub(r"\bbasic\b", " ", words)))
+
+
+def heading_kind(text: str) -> str | None:
+    """`basic` or `diluted` for a per share heading that says which, else None. `Basic and
+    diluted` is `diluted`: the two are equal."""
+    words = normal_label(text)
+    if re.search(r"\bdiluted\b", words):
+        return "diluted"
+    return "basic" if re.search(r"\bbasic\b", words) else None
+
+
 def line_of_label(label: str) -> str | None:
     """The line a row label is: a stated label, a diluted per share label, or a plain synonym
     of capital expenditure."""
@@ -698,14 +721,15 @@ def row_lines(rows: list[list[str]]) -> list[str | None]:
             line = "diluted_earnings_per_share"         # Net earnings under `Diluted:`
         out[index] = line or (
             "diluted_earnings_per_share" if normal_label(placed[1]) == "diluted" and per_share
-            else None)
+            else None) or (BASIC if basic_eps_label(placed[1]) and (
+                per_share or normal_label(placed[1]) != "basic") else None)
     return out
 
 
 # A row that is the net income of the noncontrolling interest, not a payment to it.
 _NCI_ROW = re.compile(r"non-?\s*controlling|minority")
 _NCI_NOT_INCOME = re.compile(r"distribution|dividend|contribution|purchase|acquisition|payment|"
-                             r"\bsale\b|equity|capital|redeem|redemption|total")
+                             r"\bsale\b|equity|capital|redemption|redeemed|total")
 
 
 def is_noncontrolling_row(label: str) -> bool:
@@ -807,7 +831,8 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
         scale_name = header["unit"] or carried
         table_segment = header["segment"] or names_a_segment(heading, segment_labels)
         if any("change" not in c and c["end"] == end for c in columns):
-            printed_lines[paragraph_id] = {name for name in lines_of if name}
+            printed_lines[paragraph_id] = {"diluted_earnings_per_share" if name == BASIC else name
+                                           for name in lines_of if name}
         for column in columns:
             near_a_year_earlier = abs((end - column.get("end", end)).days - 364) <= 20
             if "change" not in column and column["end"] != end and not near_a_year_earlier:
@@ -817,6 +842,7 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
                                        "reason": "a column that is neither the period nor "
                                                  "the year before it"})
         row_hint, per_share, component, reset_hint = None, False, False, False
+        per_kind = None
         for index, row in enumerate(rows):
             placed = _label_of(row)
             if placed is None:
@@ -863,6 +889,7 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
                 words = normal_label(own_words)
                 row_hint = heading_hint(own_words) or row_hint
                 per_share = is_per_share_heading(own_words)
+                per_kind = heading_kind(own_words) if per_share else None
                 component = bool(COMPONENT_HEADING.search(words))
                 continue
             if not line:
@@ -877,29 +904,35 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
                                     "label": placed[1], "paragraph_id": paragraph_id,
                                     "cell": figure["text"], "span_months": column["months"]})
                 continue
+            # A per share block has no closing mark, and a row in it is never dropped by how its
+            # figures look. `Basic` rows, and the rows under a `Basic:` heading, are held to
+            # EarningsPerShareBasic (hint `basic`); a row under any other per share heading is
+            # held to the figure its own label names, or listed unread.
+            basic_row = False
+            if line == BASIC:
+                line, basic_row = "diluted_earnings_per_share", True
+            elif per_share and line not in PER_SHARE:
+                if per_kind != "basic":
+                    note(line, placed[1], "a row under a per share heading that names neither "
+                                          "basic nor diluted, whose own label names no per share "
+                                          "figure")
+                    continue
+                basic_row = True
             seen.add(line)
+            per_row = line in PER_SHARE or basic_row
             figures = _figures(row[placed[0] + 1:])
-            # a per share block has no closing mark: a row in it is a per share row only if its
-            # figures are printed to cents; any other row is compared, hint `unidentified`
-            cents = bool(figures) and all(f["decimals"] == 2 for f in figures)
-            unclear = per_share and line not in PER_SHARE and not cents
-            if per_share and line not in PER_SHARE and cents:
-                excluded.append({"line": line, "paragraph_id": paragraph_id, "label": placed[1],
-                                 "cell": figures[0]["text"] if figures else "",
-                                 "reason": "a per share row, which is not dollars"})
-                continue
             use = columns
             sub = header.get("sub")
             if sub and len(figures) == len(columns) * len(sub):
                 use = _expand(columns, sub)         # Reported, Adjustments, Adjusted, ... each
             if len(figures) != len(use):
                 dollars = [f for f in figures if not f["percent"]]
-                if not dollars and line not in PER_SHARE:
+                if not dollars and not per_row:
                     excluded.append({"line": line, "paragraph_id": paragraph_id, "label": placed[1],
                                      "cell": figures[0]["text"] if figures else "",
                                      "reason": "a row printed as a percent, which is not dollars"})
                     continue
-                if len(dollars) == len(columns) and line not in PER_SHARE:
+                if len(dollars) == len(columns) and not per_row:
                     # dollars and percents in one row: the dollars are compared, the percents not
                     for f in figures:
                         if f["percent"]:
@@ -913,19 +946,19 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
                                           f"header names {len(columns)} columns")
                     continue
                 use = columns
-            if line not in PER_SHARE and scale_name is None:
+            if not per_row and scale_name is None:
                 note(line, placed[1], "no unit statement (in millions, in thousands) is "
                                       "printed for the table or a table before it")
                 continue
             for column, figure in zip(use, figures):
                 if "change" in column or column["end"] != end:
                     continue
-                if line not in PER_SHARE and figure["percent"]:
+                if not per_row and figure["percent"]:
                     excluded.append({"line": line, "paragraph_id": paragraph_id, "label": placed[1],
                                      "cell": figure["text"], "span_months": column["months"],
                                      "reason": "a cell printed as a percent, which is not dollars"})
                     continue
-                scale = 1 if line in PER_SHARE else _SCALE[scale_name]
+                scale = 1 if per_row else _SCALE[scale_name]
                 label_hint = block_of(placed[1])
                 hint = column["block"]
                 if row_hint and column["source"] != "group":
@@ -939,15 +972,18 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
                     hint = "unidentified" if label_hint == "gaap" else "not_gaap"
                 elif label_hint in ("gaap", "unidentified"):
                     hint = label_hint
-                if unclear and hint == "gaap":
-                    hint = "unidentified"
+                if basic_row:
+                    hint = "basic"
                 cells.append({
                     "line": line, "months": column["months"], "paragraph_id": paragraph_id,
+                    "fact_line": BASIC if basic_row else None,
                     "label": placed[1], "cell": figure["text"], "value": figure["value"],
-                    "decimals": figure["decimals"], "scale_value": scale, "block": hint,
+                    # a basic row is held to the cent at least: `2` or a dash is not a step of one
+                    "decimals": max(figure["decimals"], 2) if basic_row else figure["decimals"],
+                    "scale_value": scale, "block": hint,
                     "release": {"label": placed[1], "cell": figure["text"],
                                 "paragraph_id": paragraph_id, "block": hint,
-                                "scale": "dollars" if line in PER_SHARE else scale_name,
+                                "scale": "dollars" if per_row else scale_name,
                                 "printed_decimals": figure["decimals"],
                                 "value": float(figure["value"] * scale)}})
     candidates = {pid: lines for pid, lines in printed_lines.items() if len(lines) >= 4}
@@ -989,30 +1025,26 @@ def _printed_as(line: str, label: str, value: Decimal) -> Decimal:
     return abs(value) if line in BY_SIZE else value
 
 
+_INCOME_WORDS = re.compile(r"\b(?:income|earnings|profit)\b")
+_LOSS_WORDS = re.compile(r"\b(?:loss|losses)\b")
+
+
 def _income_added(label: str, printed: Decimal) -> list[Decimal]:
     """What the noncontrolling interest adds to the parent's row to make the consolidated net
-    income, read from the row's label and the figure's sign (parentheses = negative). One
-    value when the row says which way it goes, two (both ways) when it does not.
-
-    - `Less: ...` is income deducted, whether printed 40 or (40): it is added back, `+40`
-      (`Less: ... loss` is not stated, and tried both ways).
-    - `(income) loss ...`: parentheses mean income, a bare figure a loss.
-    - `income (loss) ...`: the figure's own sign.
-    - `loss ...` with no income: a loss, `-40`, printed either way.
-    - anything else (`Net income attributable to noncontrolling interests`): a bare figure
-      is income; a parenthesised one is not stated, and is tried both ways.
-    """
+    income, read from the row's words alone, never from parentheses or a prefix (filers differ,
+    and a convention guessed wrong agrees wrongly). A label with an income word (income,
+    earnings, profit) and no loss word is income, `+|figure|`, printed 40, (40) or under `Less:`;
+    a label with a loss word (loss, losses) and no income word is a loss, `-|figure|`. A label
+    with both kinds of word (`income (loss)`, `(earnings) loss`) or neither (`Minority
+    interest`) does not say, and both signs are returned."""
     words = " ".join(label.lower().split())
     size = abs(printed)
-    if re.match(r"^less\b", words):
-        return [size, -size] if re.search(r"\bloss\b", words) else [size]
-    if re.search(r"\(income\)\s*(?:/\s*)?loss", words):
-        return [size] if printed < 0 else [-size]
-    if re.search(r"income\s*(?:/\s*)?\(loss\)", words):
-        return [printed]
-    if re.search(r"\bloss\b", words) and not re.search(r"\bincome\b", words):
+    income, loss = bool(_INCOME_WORDS.search(words)), bool(_LOSS_WORDS.search(words))
+    if income and not loss:
+        return [size]
+    if loss and not income:
         return [-size]
-    return [printed] if printed >= 0 else [size, -size]
+    return [size, -size]
 
 
 def _identity(cell: dict, rows: dict, parent_fact: dict) -> dict:
@@ -1091,13 +1123,15 @@ def compare_release(paragraph_ids: list[str], paragraphs: list[str], period_end:
         for cell in (c for c in read["cells"] if c["line"] == line):
             entry = {"span_months": cell["months"], "period_end": period_end,
                      "release": cell["release"], "block": cell["block"]}
-            generic = line == "net_income" and "attributable" not in cell["label"].lower()
+            based = cell.get("fact_line")           # a basic earnings per share cell
+            generic = (line == "net_income" and "attributable" not in cell["label"].lower()
+                       and not based)
             parent, total = "net_income", "net_income_with_noncontrolling"
             # an unlabelled net income is the total before the noncontrolling interest in a table
             # with a parent's row and in a statement of cash flows: held to ProfitLoss
             wants_total = generic and (cell["paragraph_id"] in with_attributable
                                        or cell["paragraph_id"] in cash_flow_tables)
-            held = total if wants_total else line
+            held = based or (total if wants_total else line)
             fact = report(held, cell["months"])
             if wants_total and "missing" in fact and cell["paragraph_id"] in read["noncontrolling_tables"]:
                 # the table prints the noncontrolling interest: the consolidated cell is not
@@ -1117,7 +1151,8 @@ def compare_release(paragraph_ids: list[str], paragraphs: list[str], period_end:
                 entry.update(verdict="report_fact_missing", report={"missing": fact["missing"]})
                 compared.append(entry)
                 continue
-            shown = _printed_as(line, cell["label"], cell["value"])
+            shown = _printed_as("diluted_earnings_per_share" if based else line, cell["label"],
+                                cell["value"])
             scale, decimals = cell["scale_value"], cell["decimals"]
             agrees = agrees_at_the_release_precision(shown, fact["value"], scale, decimals)
             difference = shown * scale - Decimal(str(fact["value"]))

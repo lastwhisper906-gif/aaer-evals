@@ -945,15 +945,33 @@ def test_release_versus_report_shares_and_percent_headings_do_not_take_a_dollar_
     assert "excluded_rows" not in out["net_income"]
 
 
-@pytest.mark.parametrize("heading", ["Basic:", "Basic earnings per share:", "Earnings per share:",
-                                     "Net income per share"])
-def test_release_versus_report_only_per_share_rows_and_percent_cells_are_not_dollars(heading):
+@pytest.mark.parametrize("heading", ["Basic:", "Basic earnings per share:"])
+def test_release_versus_report_a_row_under_a_basic_heading_is_held_to_basic_earnings_per_share(heading):
+    rows = [_row("Net income", "100"), f"| {heading} |", _row("Net income", "0.61", "0.50"),
+            "| Operating expenses: |", _row("Net earnings", "100")]
+    out = _run(rows, _fact(net_income=1e8, basic_earnings_per_share=0.61))
+    cells = out["net_income"]["comparisons"]
+    assert [(c["release"]["cell"], c["block"]) for c in cells] == [
+        ("100", "gaap"), ("0.61", "basic"), ("100", "gaap")]
+    assert cells[1]["report"]["value"] == 0.61 and out["net_income"]["verdict"] == "agrees"
+    out = _run(rows, _fact(net_income=1e8, basic_earnings_per_share=0.62))
+    assert out["net_income"]["verdict"] == "differs_outside_gaap"
+    assert "excluded_rows" not in out["net_income"]
+
+
+@pytest.mark.parametrize("heading", ["Earnings per share:", "Net income per share"])
+def test_release_versus_report_a_row_under_a_neutral_per_share_heading_is_listed_unread(heading):
+    """Under a heading that names neither basic nor diluted, `Net income` names no per share
+    figure: it is listed unread with its reason, so the line cannot read `agrees`."""
     rows = [_row("Net income", "100"), f"| {heading} |", _row("Net income", "0.61", "0.50"),
             "| Operating expenses: |", _row("Net earnings", "100")]
     out = _run(rows, _fact(net_income=1e8))
     assert [c["release"]["cell"] for c in out["net_income"]["comparisons"]] == ["100", "100"]
-    assert out["net_income"]["verdict"] == "agrees"
-    assert [e["cell"] for e in out["net_income"]["excluded_rows"]] == ["0.61"]
+    assert out["net_income"]["verdict"] == "period_not_read"
+    assert "neither basic nor diluted" in out["net_income"]["unread"][0]["reason"]
+
+
+def test_release_versus_report_percent_cells_are_not_dollars():
     pct = _blocks(["| Net income | $ | 8.8% |  | $ | 3.9% |", "| Net income | 8.8 | % |  | 3.9 | % |",
                    _row("Net income", "100")])
     out = rvr.compare(["p:1"], [pct], "2026-06-30", _fact(net_income=1e8))
@@ -1225,7 +1243,7 @@ def bulk_check(ticker: str, accession: str) -> dict:
                 paragraphs = list(item["paragraphs"])
                 paragraphs[index] = "\n".join(rows2)
                 after = read(paragraphs)
-                line = row_line[r]
+                line = ("diluted_earnings_per_share" if row_line[r] == rvr.BASIC else row_line[r])
                 hit = [c for c in after["lines"][line].get("comparisons", [])
                        if c["release"]["paragraph_id"] == pid and c["release"]["label"] == placed[1]
                        and c["release"]["cell"] == changed[j].strip()]
@@ -1249,11 +1267,11 @@ def test_release_versus_report_every_compared_figure_of_dells_release_flips_when
     hand, table by table, from the committed release (each line twice, the quarter and the six
     months): `:35` the summary, five lines, 10; `:63` the statement, revenue, cost of revenue,
     operating income, pretax income, tax, net income and `Diluted | 6.34` under `Earnings per share:`
-    (round six), 14; `:74` cash flows, net income and
+    (round six) and `Basic | 6.41` and `11.70`, held to `EarningsPerShareBasic` (round eight), 16; `:74` cash flows, net income and
     operating cash flow, 4; `:98` net revenue, 2; `:103` the reconciliation, operating income and
-    net income, 4; `:110` diluted earnings per share, 2. That is 36 (34 before the diluted row under its per share heading was read)."""
-    by_hand = {"35": 10, "63": 14, "74": 4, "98": 2, "103": 4, "110": 2}
-    assert sum(by_hand.values()) == 36
+    net income, 4; `:110` diluted earnings per share, 2. That is 38 (36 before the basic rows under their per share heading were compared)."""
+    by_hand = {"35": 10, "63": 16, "74": 4, "98": 2, "103": 4, "110": 2}
+    assert sum(by_hand.values()) == 38
     outcome = bulk_check("DELL", "0001571996-26-000046")
     assert outcome["stayed"] == []
     counted: dict[str, int] = {}
@@ -1618,7 +1636,7 @@ def test_release_versus_report_carriers_net_earnings_agree_with_profit_or_loss_r
     lines = _planted("CARR", accession, {})
     for number in ("84", "93"):
         generic = {c["span_months"]: c for c in _in_table(lines["net_income"], number)
-                   if c["release"]["label"] == "Net earnings (loss)"}
+                   if c["release"]["label"] == "Net earnings (loss)" and c["block"] != "basic"}
         assert {m: c["release"]["cell"] for m, c in generic.items()} == {3: "541", 6: "806"}
         for months, cell in generic.items():
             assert _report_value(cell) == profit[months] == cell["release"]["value"], (number, months)
@@ -1960,8 +1978,9 @@ def test_release_versus_report_a_unit_row_between_a_heading_and_its_rows_ends_no
     out = _run(rows, _fact(cost_of_revenue=1_125.4e6))
     assert out["cost_of_revenue"]["comparisons"][0]["block"] == "component"
     rows = ["| Basic: |", UNIT_ROW, _row("Net income", "0.61", "0.50")]
-    out = _run(rows, _fact(net_income=1e8))
-    assert [e["cell"] for e in out["net_income"]["excluded_rows"]] == ["0.61"]
+    out = _run(rows, _fact(net_income=1e8, basic_earnings_per_share=0.61))
+    cell, = out["net_income"]["comparisons"]
+    assert (cell["release"]["cell"], cell["block"], cell["verdict"]) == ("0.61", "basic", "agrees")
 
 
 # --- round five: independent expected values -----------------------------------------------------------
@@ -2134,7 +2153,8 @@ def test_release_versus_report_littelfuses_diluted_earnings_per_share_is_read_fr
                                "2026-03-29", "2026-06-27")
     assert expected == 3.49
     lines = _planted("LFUS", STATEMENTS["LFUS"][0], {})
-    cell, = [c for c in _in_table(lines["diluted_earnings_per_share"], "53") if c["span_months"] == 3]
+    cell, = [c for c in _in_table(lines["diluted_earnings_per_share"], "53")
+             if c["span_months"] == 3 and c["block"] != "basic"]
     assert cell["release"]["cell"] == "3.49" and cell["report"]["value"] == expected
     assert cell["verdict"] == "agrees"
 
@@ -2255,13 +2275,17 @@ def test_release_versus_report_diluted_is_earnings_per_share_only_under_a_per_sh
     14,714,676` under `Shares used in computing earnings per share:`: the first is the line, the
     second is not."""
     aapl = _planted("AAPL", STATEMENTS["AAPL"][0], {})["diluted_earnings_per_share"]
-    assert {c["release"]["cell"] for c in aapl["comparisons"] if c["span_months"] == 3} == {"2.02"}
+    assert {c["release"]["cell"] for c in aapl["comparisons"]
+            if c["span_months"] == 3 and c["block"] != "basic"} == {"2.02"}
+    assert {c["release"]["cell"] for c in aapl["comparisons"]
+            if c["span_months"] == 3 and c["block"] == "basic"} == {"2.03"}
     assert aapl["verdict"] == "agrees"
     rows = ["| Earnings per share: |", _row("Basic", "2.03"), _row("Diluted", "2.02"),
             "| Shares used in computing earnings per share: |", _row("Basic", "14,656,110"),
             _row("Diluted", "14,714,676")]
-    out = _run(rows, _fact(diluted_earnings_per_share=2.02))
-    assert [c["release"]["cell"] for c in out["diluted_earnings_per_share"]["comparisons"]] == ["2.02"]
+    out = _run(rows, _fact(diluted_earnings_per_share=2.02, basic_earnings_per_share=2.03))
+    assert [c["release"]["cell"] for c in out["diluted_earnings_per_share"]["comparisons"]
+            if c["block"] != "basic"] == ["2.02"]
     assert out["diluted_earnings_per_share"]["verdict"] == "agrees"
     assert _run([_row("Diluted", "2.02")], _fact(diluted_earnings_per_share=2.02)
                 )["diluted_earnings_per_share"]["verdict"] == "not_in_release"
@@ -2285,10 +2309,10 @@ def test_release_versus_report_a_heading_keeps_its_own_words_and_loses_its_unit(
 def test_release_versus_report_a_heading_with_a_unit_ends_a_per_share_block():
     rows = ["| Basic earnings per share: |", _row("Net income", "0.61", "0.50"),
             "| Other financial data (in millions): |", _row("Net income", "999")]
-    out = _run(rows, _fact(net_income=100e6))
+    out = _run(rows, _fact(net_income=100e6, basic_earnings_per_share=0.61))
     assert out["net_income"]["verdict"] == "differs"
-    assert [c["release"]["cell"] for c in out["net_income"]["comparisons"]] == ["999"]
-    assert [e["cell"] for e in out["net_income"]["excluded_rows"]] == ["0.61"]
+    assert [c["release"]["cell"] for c in out["net_income"]["comparisons"] if c["block"] != "basic"] == ["999"]
+    assert [c["release"]["cell"] for c in out["net_income"]["comparisons"] if c["block"] == "basic"] == ["0.61"]
 
 
 def test_release_versus_report_a_heading_with_a_unit_ends_a_component_block():
@@ -2660,7 +2684,7 @@ def test_release_versus_report_diluted_earnings_per_share_is_read_in_the_three_s
         assert cell["report"]["value"] == expected == float(printed)
     row_label = tag if tag.startswith("Net income") else {
         "Diluted:": "Net earnings (loss)", "Diluted - GAAP": "Net earnings"}[tag]
-    assert {c["release"]["label"] for c in entry["comparisons"]} == {row_label}
+    assert {c["release"]["label"] for c in entry["comparisons"] if c["block"] != "basic"} == {row_label}
 
 
 @pytest.mark.parametrize("ticker,number,old,new", [
@@ -2676,10 +2700,12 @@ def test_release_versus_report_a_planted_diluted_earnings_per_share_differs(tick
 
 def test_release_versus_report_net_income_under_a_basic_heading_is_not_the_diluted_line():
     rows = ["| Basic: |", _row("Net earnings", "0.61", "0.50"), "| Diluted: |", _row("Net earnings", "0.60", "0.50")]
-    out = _run(rows, _fact(diluted_earnings_per_share=0.60, net_income=1e8))
+    out = _run(rows, _fact(diluted_earnings_per_share=0.60, net_income=1e8,
+                           basic_earnings_per_share=0.61))
     cells = out["diluted_earnings_per_share"]["comparisons"]
     assert [c["release"]["cell"] for c in cells] == ["0.60"]
-    assert [e["cell"] for e in out["net_income"]["excluded_rows"]] == ["0.61"]
+    assert [c["release"]["cell"] for c in out["net_income"]["comparisons"]] == ["0.61"]
+    assert out["net_income"]["comparisons"][0]["block"] == "basic"
 
 
 # --- the capex synonyms name the thing bought ---------------------------------------------------
@@ -2735,9 +2761,9 @@ def test_release_versus_report_diluted_under_a_share_count_heading_is_not_earnin
 def test_release_versus_report_a_unit_row_under_a_heading_leaves_no_stray_word(unit):
     assert rvr.heading_text(unit) == "", unit
     rows = ["| Basic: |", f"| {unit} |", _row("Net income", "0.61", "0.50")]
-    out = _run(rows, _fact(net_income=1e8))
-    assert [e["cell"] for e in out["net_income"]["excluded_rows"]] == ["0.61"]
-    assert "comparisons" not in out["net_income"] or not out["net_income"]["comparisons"]
+    out = _run(rows, _fact(net_income=1e8, basic_earnings_per_share=0.61))
+    cell, = out["net_income"]["comparisons"]
+    assert (cell["release"]["cell"], cell["block"], cell["verdict"]) == ("0.61", "basic", "agrees")
 
 
 def test_release_versus_report_the_identity_allows_the_rounding_of_one_printed_step():
@@ -2801,33 +2827,73 @@ _INCOME_OR_LOSS = "Net income (loss) attributable to noncontrolling interests"
 _PLAIN = "Net income attributable to noncontrolling interests"
 
 
-@pytest.mark.parametrize("label,printed,consolidated,verdict", [
-    (_LESS, "40", "541", "agrees"), (_LESS, "40", "461", "differs"),
-    (_LESS, "(40)", "541", "agrees"), (_LESS, "(40)", "461", "differs"),
-    (_LOSS, "40", "461", "agrees"), (_LOSS, "40", "541", "differs"),
-    (_LOSS, "(40)", "461", "agrees"), (_LOSS, "(40)", "541", "differs"),
-    (_INCOME_LOSS_PAREN, "(40)", "541", "agrees"), (_INCOME_LOSS_PAREN, "(40)", "461", "differs"),
-    (_INCOME_LOSS_PAREN, "40", "461", "agrees"), (_INCOME_LOSS_PAREN, "40", "541", "differs"),
-    (_INCOME_OR_LOSS, "40", "541", "agrees"), (_INCOME_OR_LOSS, "40", "461", "differs"),
-    (_INCOME_OR_LOSS, "(40)", "461", "agrees"), (_INCOME_OR_LOSS, "(40)", "541", "differs"),
-    (_PLAIN, "40", "541", "agrees"), (_PLAIN, "40", "461", "differs"),
-    (_PLAIN, "(40)", "541", "block_not_identified"), (_PLAIN, "(40)", "461", "block_not_identified"),
-    (_PLAIN, "(40)", "501", "differs")])
-def test_release_versus_report_the_noncontrolling_figures_sign_is_read_from_its_row(
-        label, printed, consolidated, verdict):
-    """The consolidated figure is the parent's 501 plus the noncontrolling income: `Less:` is
-    income deducted, printed either way; `loss` is a loss, printed either way; `(income) loss`
-    and `income (loss)` read the parentheses as their label says; a plain `Net income
-    attributable` with a parenthesised figure does not say, and is never `agrees`. The wrong
-    sign differs. Kills the mutants that try both signs, that read `Less:` by the printed sign,
-    and that read `loss` by the printed sign."""
-    out = _run(_nci_table(consolidated, label, printed), _fact(net_income=501e6, revenue=6e9))
-    cell = out["net_income"]["comparisons"][0]
-    assert cell["verdict"] == out["net_income"]["verdict"] == verdict, (label, printed, consolidated)
-    if verdict == "block_not_identified":
-        assert cell["reason"] == "the sign of the noncontrolling figure is not stated"
-    if verdict == "differs":
-        assert cell["difference"] != 0 and cell["sign"] in ("release_larger", "release_smaller")
+_INCOME_LABELS = [
+    _LESS, _PLAIN, "Less: Net earnings attributable to noncontrolling interests",
+    "Noncontrolling interests' share of earnings",
+    "Net earnings attributable to noncontrolling interest, net of tax",
+    "Income attributable to noncontrolling interests",
+    "Deduct: Net income attributable to noncontrolling interests",
+    "Less net income attributable to noncontrolling interests",
+    "Net (income) attributable to noncontrolling interests",
+    "Net income attributable to redeemable noncontrolling interests",
+    "Net profit attributable to noncontrolling interests"]
+_LOSS_LABELS = [_LOSS, "Net losses attributable to noncontrolling interests",
+                "Noncontrolling interests' share of losses"]
+_UNKNOWN_LABELS = [
+    _INCOME_LOSS_PAREN, _INCOME_OR_LOSS, "Net (earnings) loss attributable to noncontrolling interests",
+    "Net earnings (loss) attributable to noncontrolling interests",
+    "Net loss (income) attributable to noncontrolling interests",
+    "(Income) loss attributable to noncontrolling interests",
+    "Net (loss) income attributable to noncontrolling interests",
+    "Net income/(loss) attributable to noncontrolling interests",
+    "Loss (income) attributable to noncontrolling interests", "Minority interest"]
+
+
+@pytest.mark.parametrize("label", _INCOME_LABELS)
+@pytest.mark.parametrize("printed", ["40", "(40)"])
+def test_release_versus_report_a_noncontrolling_row_with_an_income_word_only_is_income(label, printed):
+    """An income word (income, earnings, profit) and no loss word: the noncontrolling interest's
+    income, so consolidated = parent + 40 whether printed 40, (40) or under `Less:`. 541
+    agrees and 461 differs. Kills the mutants that read the printed sign, the `Less:` prefix, or
+    the parentheses."""
+    for consolidated, verdict in (("541", "agrees"), ("461", "differs")):
+        out = _run(_nci_table(consolidated, label, printed), _fact(net_income=501e6, revenue=6e9))
+        cell = out["net_income"]["comparisons"][0]
+        assert cell["verdict"] == out["net_income"]["verdict"] == verdict, (label, printed, consolidated)
+
+
+@pytest.mark.parametrize("label", _LOSS_LABELS)
+@pytest.mark.parametrize("printed", ["40", "(40)"])
+def test_release_versus_report_a_noncontrolling_row_with_a_loss_word_only_is_a_loss(label, printed):
+    for consolidated, verdict in (("461", "agrees"), ("541", "differs")):
+        out = _run(_nci_table(consolidated, label, printed), _fact(net_income=501e6, revenue=6e9))
+        cell = out["net_income"]["comparisons"][0]
+        assert cell["verdict"] == out["net_income"]["verdict"] == verdict, (label, printed, consolidated)
+
+
+@pytest.mark.parametrize("label", _UNKNOWN_LABELS)
+@pytest.mark.parametrize("printed", ["40", "(40)"])
+def test_release_versus_report_a_noncontrolling_row_with_both_kinds_of_word_or_neither_is_unknown(
+        label, printed):
+    """`income (loss)`, `(earnings) loss` and `Minority interest` do not say which way, and
+    parentheses are no convention: neither 541 nor 461 reads `agrees` (each reads
+    `block_not_identified`, with the reason), and a figure that fits neither sign differs."""
+    for consolidated, verdict in (("541", "block_not_identified"), ("461", "block_not_identified"),
+                                  ("501", "differs")):
+        out = _run(_nci_table(consolidated, label, printed), _fact(net_income=501e6, revenue=6e9))
+        cell = out["net_income"]["comparisons"][0]
+        assert cell["verdict"] == out["net_income"]["verdict"] == verdict, (label, printed, consolidated)
+        if verdict == "block_not_identified":
+            assert cell["reason"] == "the sign of the noncontrolling figure is not stated"
+
+
+@pytest.mark.parametrize("label,expected", [
+    ("Net income attributable to redeemable noncontrolling interests", True),
+    ("Redeemable noncontrolling interests", True),
+    ("Redemption of noncontrolling interests", False),
+    ("Redeemed noncontrolling interests", False)])
+def test_release_versus_report_a_redeemable_noncontrolling_row_is_a_noncontrolling_row(label, expected):
+    assert rvr.is_noncontrolling_row(label) is expected, label
 
 
 def test_release_versus_report_a_wrong_signed_consolidated_net_income_has_one_exact_difference():
@@ -2850,29 +2916,6 @@ def test_release_versus_report_a_two_step_error_in_the_identity_differs_and_one_
                           ("541.0", "differs")):
         out = _run([_row("Net income", cons)] + rows[1:], report)
         assert out["net_income"]["comparisons"][0]["verdict"] == verdict, cons
-
-
-# --- a per share block has no closing mark ----------------------------------------------------------
-
-def test_release_versus_report_a_whole_dollar_row_after_a_basic_heading_is_compared():
-    """`Basic:` then `Net income | 0.61` (cents: a per share row, excluded) then `Net income |
-    4,233` (not cents: compared, hint `unidentified`), with no closing heading. The planted
-    4,233 against the report's 4,133 reads `differs_outside_gaap`. Kills the mutant that excludes
-    every row of the block."""
-    rows = ["| Basic: |", _row("Net income", "0.61", "0.50"), _row("Net income", "4,233", "4,000")]
-    out = _run(rows, _fact(net_income=4133e6))
-    assert [c["release"]["cell"] for c in out["net_income"]["comparisons"]] == ["4,233"]
-    assert out["net_income"]["comparisons"][0]["block"] == "unidentified"
-    assert out["net_income"]["verdict"] == "differs_outside_gaap"
-    assert [e["cell"] for e in out["net_income"]["excluded_rows"]] == ["0.61"]
-    agreeing = _run(["| Basic: |", _row("Net income", "4,133", "4,000")], _fact(net_income=4133e6))
-    assert agreeing["net_income"]["verdict"] == "block_not_identified"
-
-
-def test_release_versus_report_a_per_share_row_needs_two_decimals_to_be_excluded():
-    for printed, excluded in (("0.61", True), ("6.1", False), ("61", False), ("0.612", False)):
-        out = _run(["| Basic: |", _row("Net income", printed, "0.50")], _fact(net_income=1e8))
-        assert ("excluded_rows" in out["net_income"]) is excluded, printed
 
 
 # --- combined basic and diluted earnings per share --------------------------------------------------
@@ -2901,3 +2944,112 @@ def test_release_versus_report_discontinued_operations_capex_is_printed_under_an
                _fact(operating_cash_flow=700e6, capital_expenditure=20e6))
     assert out["capital_expenditure"]["verdict"] == "printed_under_another_label"
     assert [r["label"] for r in out["capital_expenditure"]["rows"]] == [label]
+
+
+# --- round eight: a row under a per share heading is held to the per share figure -------------------
+
+def _basic_eps(ticker: str, period: str, cutoff: str) -> float:
+    rows = [row["val"] for row in source.rows(ticker, "EarningsPerShareBasic", unit="USD/shares")
+            if source.spelled(row) == period and row["filed"] <= cutoff]
+    assert len(set(rows)) == 1, (ticker, period, rows)
+    return float(rows[0])
+
+
+@pytest.mark.parametrize("ticker", sorted(EPS_ROWS))
+def test_release_versus_report_basic_earnings_per_share_equals_the_records_figure(ticker):
+    """Each release's `Basic` row, read through companyfacts (`EarningsPerShareBasic`): the cell
+    is held to it with the hint `basic` and agrees. A plant one cent higher differs outside GAAP.
+    Kills the mutants that leave a basic row out of the comparison."""
+    cutoff, number, label, printed, period = EPS_ROWS[ticker]
+    expected = _basic_eps(ticker, period, cutoff)
+    accession = STATEMENTS[ticker][0]
+    lines = _planted(ticker, accession, {})
+    cells = [c for c in _in_table(lines["diluted_earnings_per_share"], number)
+             if c["span_months"] == 3 and c["block"] == "basic"]
+    assert len(cells) == 1 and cells[0]["report"]["tag"] == "EarningsPerShareBasic", ticker
+    cell = cells[0]
+    assert float(cell["release"]["cell"]) == expected == cell["report"]["value"]
+    assert cell["verdict"] == "agrees"
+    plant = f"{expected + 0.01:.2f}"
+    row_label = cell["release"]["label"]
+    planted = _planted(ticker, accession, {number: (cell["release"]["cell"], plant)})
+    again = [c for c in _in_table(planted["diluted_earnings_per_share"], number)
+             if c["span_months"] == 3 and c["block"] == "basic"][0]
+    # the first occurrence of the cell's text may be another figure of the table; the plant is
+    # read only where it landed on the basic row
+    if again["release"]["cell"] == plant:
+        assert again["verdict"] == "differs" and row_label == again["release"]["label"]
+        assert planted["diluted_earnings_per_share"]["verdict"] in (
+            "differs_outside_gaap", "differs")
+
+
+@pytest.mark.parametrize("current,prior,fact,verdict", [
+    ("2", "1", 2.0, "agrees"), ("2", "1", 2.4, "differs_outside_gaap"),
+    ("2", "1", 2.004, "agrees"),
+    ("(1.5)", "1.2", -1.5, "agrees"), ("(1.5)", "1.2", 1.5, "differs_outside_gaap"),
+    ("0.605", "0.500", 0.605, "agrees"), ("0.605", "0.500", 0.61, "differs_outside_gaap"),
+    ("0.6", "0.5", 0.6, "agrees"), ("0.6", "0.5", 0.61, "differs_outside_gaap"),
+    ("0.61", "—", 0.61, "agrees"), ("0.61", "—", 0.62, "differs_outside_gaap"),
+    ("—", "0.12", 0.0, "agrees"), ("—", "0.12", 0.12, "differs_outside_gaap"),
+    ("—", "0.12", 0.004, "agrees"),
+    ("2.00", "1.00", 2.0, "agrees"), ("2.00", "1.00", 3.0, "differs_outside_gaap")])
+def test_release_versus_report_a_net_income_row_under_basic_is_held_to_basic_earnings_per_share(
+        current, prior, fact, verdict):
+    """The refuter's figures under `Basic:`, whatever their decimals: held to
+    `EarningsPerShareBasic` at the printed precision but never coarser than the cent (`2` and a
+    dash are not a step of one), a dash being zero, the prior column
+    never compared. No row is dropped for how it looks. Kills the mutants that exclude by
+    decimals and that compare the dollar fact."""
+    rows = ["| Basic: |", _row("Net income", current, prior)]
+    out = _run(rows, _fact(net_income=100e6, basic_earnings_per_share=fact))
+    cell, = out["net_income"]["comparisons"]
+    assert cell["block"] == "basic" and cell["release"]["cell"] == current
+    assert out["net_income"]["verdict"] == verdict, (current, fact)
+    assert "excluded_rows" not in out["net_income"]
+
+
+def test_release_versus_report_a_dollar_figure_under_a_basic_heading_differs_visibly():
+    """`Net income | 4,133.50` under `Basic:` is compared with basic earnings per share and
+    differs, instead of vanishing; under a heading that names neither basic nor diluted it is
+    listed unread, so the line is not `agrees`."""
+    out = _run(["| Basic: |", _row("Net income", "4,133.50", "100.00")],
+               _fact(net_income=4133.5e6, basic_earnings_per_share=0.61))
+    cell, = out["net_income"]["comparisons"]
+    assert cell["verdict"] == "differs" and cell["block"] == "basic"
+    assert out["net_income"]["verdict"] == "differs_outside_gaap"
+    out = _run(["| Earnings per share: |", _row("Net income", "4,133.50", "100.00")],
+               _fact(net_income=4133.5e6, basic_earnings_per_share=0.61))
+    assert out["net_income"]["verdict"] == "period_not_read"
+    assert "comparisons" not in out["net_income"] or not out["net_income"]["comparisons"]
+
+
+def test_release_versus_report_a_basic_row_under_an_earnings_per_share_heading_is_basic():
+    rows = ["| Earnings per share: |", _row("Basic", "0.61", "0.50"), _row("Diluted", "0.60", "0.50")]
+    out = _run(rows, _fact(diluted_earnings_per_share=0.60, basic_earnings_per_share=0.61))
+    cells = {c["release"]["label"]: c for c in out["diluted_earnings_per_share"]["comparisons"]}
+    assert cells["Basic"]["block"] == "basic" and cells["Basic"]["report"]["value"] == 0.61
+    assert cells["Diluted"]["block"] == "gaap" and cells["Diluted"]["report"]["value"] == 0.60
+    assert out["diluted_earnings_per_share"]["verdict"] == "agrees"
+    out = _run(rows, _fact(diluted_earnings_per_share=0.60, basic_earnings_per_share=0.65))
+    assert out["diluted_earnings_per_share"]["verdict"] == "differs_outside_gaap"
+    # a bare `Basic` outside a per share heading is a share count, not the line
+    out = _run([_row("Net revenue", "1,000"), "| Weighted average shares: |", _row("Basic", "645")],
+               _fact(revenue=1e9, basic_earnings_per_share=0.61))
+    assert out["diluted_earnings_per_share"]["verdict"] == "not_in_release"
+    for label in ("Basic net income per common share", "Earnings per share - basic",
+                  "Basic earnings per share"):
+        assert rvr.basic_eps_label(label), label
+    for label in ("Weighted average shares - basic", "Basic shares outstanding",
+                  "Diluted net income per share", "Basic"):
+        assert (label == "Basic") == rvr.basic_eps_label(label), label
+
+
+def test_release_versus_report_a_non_per_share_row_under_a_combined_heading_is_unread_not_basic():
+    """`Basic and diluted:` is a diluted heading: a revenue row under it is held to no per share
+    figure (listed unread), not to basic earnings per share. Kills the mutant that reads a
+    heading naming basic as basic even when it names diluted."""
+    out = _run(["| Basic and diluted: |", _row("Net revenue", "0.61", "0.50")],
+               _fact(revenue=1e9, basic_earnings_per_share=0.61))
+    assert out["revenue"]["verdict"] == "period_not_read"
+    assert rvr.heading_kind("Basic and diluted:") == "diluted"
+    assert rvr.heading_kind("Basic:") == "basic" and rvr.heading_kind("Earnings per share:") is None

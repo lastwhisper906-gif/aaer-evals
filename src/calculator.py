@@ -215,6 +215,7 @@ SHARE_TERMS: dict[str, tuple[str, str, tuple[str, ...]]] = {
 # per-share figure is never added or differenced across periods.
 PER_SHARE_TERMS: dict[str, tuple[str, str, tuple[str, ...]]] = {
     "diluted_earnings_per_share": ("us-gaap", "duration", ("EarningsPerShareDiluted",)),
+    "basic_earnings_per_share": ("us-gaap", "duration", ("EarningsPerShareBasic",)),
 }
 
 # Families: a figure a statement may print on several lines. Each family is a
@@ -3594,6 +3595,8 @@ RELEASE_TERMS = {line: line for line in release_lines.LINES}
 # Net income before the noncontrolling interest's share, which a release row not labelled
 # "attributable" prints and `NetIncomeLoss` (the parent's) does not.
 RELEASE_TERMS["net_income_with_noncontrolling"] = "net_income_including_noncontrolling"
+# A release row of basic earnings per share (`Basic`, or a row under a `Basic:` heading).
+RELEASE_TERMS[release_lines.BASIC] = "basic_earnings_per_share"
 
 RELEASE_WHAT_THIS_IS = (
     "the earnings release (8-K exhibit 99.1, furnished and not filed) printed beside the "
@@ -3602,7 +3605,7 @@ RELEASE_WHAT_THIS_IS = (
     "its paragraph id beside the report's fact for the same period through the term table, "
     "the difference (the release's value less the report's, in dollars) with its sign toward "
     "the release. A heading may label a cell with a hint (`gaap`, `not_gaap`, `segment`, "
-    "`component`, `unidentified`) and never takes it out. The line verdicts, most important "
+    "`component`, `unidentified`, `basic`) and never takes it out. The line verdicts, most important "
     "first: `differs` if a `gaap` cell differs; `differs_outside_gaap` if only cells with "
     "another hint differ (each listed with its hint, paragraph id and both values); "
     "`block_not_identified` if a cell agrees but could not be told as GAAP; "
