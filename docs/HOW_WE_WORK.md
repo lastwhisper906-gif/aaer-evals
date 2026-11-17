@@ -270,7 +270,9 @@ The owner's decision of 2026-10-06 (`docs/structure_changes.md`) sets this table
 | single-agent control | Fable, **on the golden filings only** | there it is scored against the owner's cases; on other filings it measured format as much as judgment |
 | analysis-grader (`evals/`) | Opus | never the analysts' model, so it does not grade its own kind |
 | market labels (were the two comparers) | Python, `src/market_labels.py` | the label is mechanical: the sign of the abnormal return against the expected direction |
-| second lens, builder sessions, the three routines | Opus | the lens fallback runs with `LENS_FALLBACK_MODEL=opus` |
+| second lens, the three routines | Opus | the lens fallback runs with `LENS_FALLBACK_MODEL=opus` |
+| a build's specification, its expected values' sources, every review (`refute-check`), a design | Opus or Fable | judgment: what is right, and where the right answer comes from |
+| building to a written specification: code and tests the brief names, fixtures fetched, rows moved, checks run | Sonnet | the work is set down before it starts; the owner's direction of 2026-11-17 ("쉬운 tasks 들은 낮은 sonnet 같은 모델로 해주고 판단은 상위 모델이": easy tasks on a lower model such as Sonnet, judgment on a higher one) |
 | when a model change is needed | the owner decides; `--model` on `src/run_analysis.py` is the run-time override, recorded as `model_override` in the manifest | a run set on two models compares models as well as companies |
 
 **Fable, used efficiently.**
