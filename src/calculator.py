@@ -121,6 +121,11 @@ COST_OF_CAPITAL = Path(__file__).resolve().parent / "cost_of_capital"
 STATUTORY_TAX_RATE = 0.21
 
 DAYS_IN_YEAR = 365
+# A quarter is a fourth of 365 days. The days on an ending balance over a
+# quarter's own flow (`ending_balance_days`) use this, so one day of a quarter's
+# revenue is the same figure whichever fiscal calendar the company keeps; the
+# trend table divides by the quarter's own count of calendar days.
+DAYS_IN_QUARTER = DAYS_IN_YEAR / 4
 TOLERANCE = trends.TOLERANCE_DAYS
 YEAR_STEP = trends.YEAR_STEP
 QUARTER_STEP = trends.QUARTER_STEP
@@ -1189,6 +1194,56 @@ def net_working_capital(balances: dict, debt_current: dict, cash: dict) -> dict:
         - (v["current_liabilities"] - v["debt_current"]), unit="USD")
 
 
+ENDING_CONVENTION = ("the period-end balance over the flow of the quarter the report is for "
+                     "(stated, or the year to date less the one a quarter shorter), times "
+                     "91.25, a fourth of 365 days; on an annual report, the fiscal year's flow "
+                     "times 365. The `days_*` cells beside these divide the average of the "
+                     "balance now and a year earlier by the trailing four quarters' flow, "
+                     "times 365")
+
+
+def ending_balance_days(record: Record, terms: dict, periods: dict) -> dict:
+    """Days on the ending balance over the period's own flow, beside the average version.
+
+    A forensic day-one check: a balance that has grown faster than the quarter's
+    flow shows in the ending balance a quarter before it moves the average of
+    two year-ends. The flow is the quarter's own (`quarter`), never the trailing
+    year's, and `revenue_per_day_of_receivables` is what one day of that flow is
+    worth, so an analyst can cite it without dividing.
+    """
+    annual = periods["annual_trigger"]
+    days = DAYS_IN_YEAR if annual else DAYS_IN_QUARTER
+    span, key = ("fiscal year", "fiscal_year") if annual else ("quarter", "quarter")
+    if annual:
+        flows = {name: terms["trailing_four_quarters"][name]
+                 for name in ("revenue", "cost_of_revenue")}
+    else:
+        spans, end = durations(record.usd), _date(periods["balance_now"])
+        flows = {name: quarter(record, name, spans, end) for name in ("revenue", "cost_of_revenue")}
+    now = terms["balances_now"]
+    days_text = "365" if annual else "91.25"
+
+    def over(balance: str, flow: str, label: str, flow_label: str) -> dict:
+        cell = measure(f"ending {label} / {span}'s {flow_label} * {days_text}",
+                       {f"ending_{label}": now[balance], f"{key}_{flow}": flows[flow]},
+                       lambda v: v[f"ending_{label}"] / v[f"{key}_{flow}"] * days,
+                       unit="days", denominator=f"{key}_{flow}")
+        cell["convention"] = ENDING_CONVENTION
+        return cell
+
+    per_day = measure(f"{span}'s revenue / {days_text}", {f"{key}_revenue": flows["revenue"]},
+                      lambda v: v[f"{key}_revenue"] / days, unit="USD")
+    per_day["convention"] = ENDING_CONVENTION
+    return {
+        "days_sales_outstanding_ending": over("receivables", "revenue", "receivables", "revenue"),
+        "days_sales_of_inventory_ending": over("inventory", "cost_of_revenue", "inventory",
+                                               "cost_of_revenue"),
+        "days_payables_outstanding_ending": over("accounts_payable", "cost_of_revenue",
+                                                 "accounts_payable", "cost_of_revenue"),
+        "revenue_per_day_of_receivables": per_day,
+    }
+
+
 def ratios(record: Record, terms: dict, periods: dict) -> dict:
     ttm = terms["trailing_four_quarters"]
     now, ago = terms["balances_now"], terms["balances_a_year_earlier"]
@@ -1274,6 +1329,7 @@ def ratios(record: Record, terms: dict, periods: dict) -> dict:
             - v["days_payables_outstanding"], unit="days"),
         "asset_turnover": dupont["asset_turnover"],
     }
+    efficiency.update(ending_balance_days(record, terms, periods))
 
     free_simple = measure("operating_cash_flow - capital_expenditure",
                           {"operating_cash_flow": ttm["operating_cash_flow"],

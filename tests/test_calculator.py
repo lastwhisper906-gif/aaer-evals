@@ -1320,3 +1320,111 @@ def test_the_free_cash_flow_yield_and_wacc_components_never_reach_the_filings_on
         assert name not in view
         assert name in view["sections_removed_for_this_view"]
         assert name in calculator.PRICED_SECTIONS
+
+
+# --- days on the ending balance, beside the average version -------------------------------
+#
+# The expected values are read through `tests/companyfacts_source.py`, which
+# imports nothing from `src/`, and the division is done here by hand.
+
+DELL_CUTOFF = "2026-09-08"
+DELL_QUARTER = "2026-05-02..2026-07-31"
+
+
+@pytest.fixture(scope="module")
+def dell_ending():
+    return calculator.calculate(ticker="DELL", cutoff=DELL_CUTOFF, period_end="2026-07-31",
+                                form="10-Q", accession="0001571996-26-000046")
+
+
+def test_ending_balance_days_on_dell_are_the_balance_over_the_quarters_own_flow(dell_ending):
+    """Dell's receivables at 2026-07-31 (22,918 million) over the quarter's own
+    revenue (46,971 million, the 10-Q's three months) times 91.25, by hand: the
+    division is written out here and the calculator's cell must equal it."""
+    from tests import companyfacts_source as source
+    receivables = source.one_value("DELL", "AccountsReceivableNetCurrent", "2026-07-31",
+                                   DELL_CUTOFF)
+    revenue = source.one_value("DELL", "Revenues", DELL_QUARTER, DELL_CUTOFF)
+    cost = source.one_value("DELL", "CostOfRevenue", DELL_QUARTER, DELL_CUTOFF)
+    inventory = source.one_value("DELL", "InventoryNet", "2026-07-31", DELL_CUTOFF)
+    payables = source.one_value("DELL", "AccountsPayableCurrent", "2026-07-31", DELL_CUTOFF)
+    assert (receivables, revenue) == (22_918_000_000.0, 46_971_000_000.0)
+    efficiency = dell_ending["ratios"]["efficiency"]
+    assert efficiency["days_sales_outstanding_ending"]["value"] == \
+        pytest.approx(22_918 / 46_971 * 91.25, rel=1e-12)
+    assert efficiency["days_sales_of_inventory_ending"]["value"] == \
+        pytest.approx(inventory / cost * 91.25, rel=1e-12)
+    assert efficiency["days_payables_outstanding_ending"]["value"] == \
+        pytest.approx(payables / cost * 91.25, rel=1e-12)
+    assert efficiency["revenue_per_day_of_receivables"]["value"] == \
+        pytest.approx(46_971_000_000 / 91.25, rel=1e-12)
+    for name in ("days_sales_outstanding_ending", "days_sales_of_inventory_ending",
+                 "days_payables_outstanding_ending", "revenue_per_day_of_receivables"):
+        assert "91.25" in efficiency[name]["formula"], name
+        assert "91.25" in efficiency[name]["convention"], name
+        assert "average" not in efficiency[name]["formula"], name
+
+
+def test_ending_balance_days_agree_with_the_trend_tables_cell_to_the_day(dell_ending):
+    """`src/trends.py` divides by the quarter's own count of calendar days (91 for
+    this quarter); the calculator's convention is 91.25. The two cells for the
+    same quarter are the same division and must agree to the day, and the second
+    is the first scaled by 91.25 / 91 exactly."""
+    trend = dell_ending["trend_table"]["quarters-back-0"]
+    assert trend["end"] == "2026-07-31"
+    theirs = trend["ratios"]["days_sales_outstanding"]["value"]
+    mine = dell_ending["ratios"]["efficiency"]["days_sales_outstanding_ending"]["value"]
+    assert abs(mine - theirs) < 1.0
+    assert mine == pytest.approx(theirs * 91.25 / 91, rel=1e-12)
+    their_inventory = trend["ratios"]["days_sales_of_inventory"]["value"]
+    my_inventory = dell_ending["ratios"]["efficiency"]["days_sales_of_inventory_ending"]["value"]
+    assert abs(my_inventory - their_inventory) < 1.0
+
+
+def test_ending_balance_days_differ_from_the_average_version_on_the_same_inputs(dell_ending):
+    """The average cell is the mean of receivables now (22,918 million) and a year
+    earlier (15,023 million) over the trailing four quarters' revenue (151,197
+    million) times 365: 45.8 days. The ending one is 44.5. The two are different
+    numbers and their formula strings say which is which."""
+    efficiency = dell_ending["ratios"]["efficiency"]
+    average = efficiency["days_sales_outstanding"]
+    ending = efficiency["days_sales_outstanding_ending"]
+    assert average["value"] == pytest.approx((22_918 + 15_023) / 2 / 151_197 * 365, rel=1e-12)
+    assert abs(average["value"] - ending["value"]) > 1.0
+    for name in ("days_sales_outstanding", "days_sales_of_inventory",
+                 "days_payables_outstanding"):
+        assert efficiency[name]["formula"].startswith("average "), name
+        assert "ending" not in efficiency[name]["formula"], name
+        assert efficiency[name + "_ending"]["formula"].startswith("ending "), name
+
+
+def test_ending_balance_days_on_an_annual_report_use_the_fiscal_years_flow_and_365():
+    """NVIDIA's 10-K for the year to 2026-01-25: receivables 38,466 million over
+    the year's revenue 215,938 million, times 365; one day of revenue is the year
+    over 365."""
+    from tests import companyfacts_source as source
+    out = calculator.calculate(ticker="NVDA", cutoff="2026-02-25", period_end="2026-01-25",
+                               form="10-K", accession="0001045810-26-000021")
+    receivables = source.one_value("NVDA", "AccountsReceivableNetCurrent", "2026-01-25",
+                                   "2026-02-25")
+    revenue = source.one_value("NVDA", "Revenues", "2025-01-27..2026-01-25", "2026-02-25")
+    efficiency = out["ratios"]["efficiency"]
+    assert efficiency["days_sales_outstanding_ending"]["value"] == \
+        pytest.approx(38_466 / 215_938 * 365, rel=1e-12)
+    assert (receivables, revenue) == (38_466_000_000.0, 215_938_000_000.0)
+    assert "365" in efficiency["days_sales_outstanding_ending"]["formula"]
+    assert efficiency["revenue_per_day_of_receivables"]["value"] == \
+        pytest.approx(215_938_000_000 / 365, rel=1e-12)
+
+
+def test_ending_balance_days_name_the_missing_input_and_never_fill_it():
+    """A quarter with no revenue the report states or can difference is missing, with
+    the reason, in the ending cells too."""
+    record = calculator.Record({"facts": {"us-gaap": {}}})
+    periods = {"annual_trigger": False, "balance_now": "2026-07-31"}
+    terms = {"balances_now": {name: {"value": 1.0} for name in
+                              ("receivables", "inventory", "accounts_payable")}}
+    out = calculator.ending_balance_days(record, terms, periods)
+    for name in ("days_sales_outstanding_ending", "days_sales_of_inventory_ending",
+                 "days_payables_outstanding_ending", "revenue_per_day_of_receivables"):
+        assert "missing" in out[name] and "value" not in out[name], name
