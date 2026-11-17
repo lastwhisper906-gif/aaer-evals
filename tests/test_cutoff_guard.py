@@ -855,17 +855,14 @@ def _owner(node: ast.AST, aliases: dict[str, str]) -> str:
 
 
 def _read_parts(node: ast.Call, reachable: set[str], readers: dict[str, set[str]],
-                aliases: dict[str, str], shapes=READERS,
-                modules_here: frozenset = frozenset()) -> list[ast.AST] | None:
+                aliases: dict[str, str], shapes=READERS) -> list[ast.AST] | None:
     """The parts of a call that say what it reads, or None if it reads nothing.
 
     `reachable` is the set of bare names this module can call to land in a
     reader -- the ones it defines, the ones it imports and the ones it binds to
     one. `readers` maps a reader's name to the modules defining one, which is
     what resolves the qualified spelling `fetch_fixtures.read_stored(...)`.
-    `shapes` is `CONTENT_READS` where a listing must not count. `modules_here`
-    names the modules of `src/` scanned, so a call through one of them by its
-    module name is resolved by that module's own functions and nothing else.
+    `shapes` is `CONTENT_READS` where a listing must not count.
     """
     func = node.func
     handed = list(node.args) + [keyword.value for keyword in node.keywords]
@@ -884,12 +881,7 @@ def _read_parts(node: ast.Call, reachable: set[str], readers: dict[str, set[str]
     # reader *this* module defines or imports -- a class from another module
     # brings its method name with it and is outside this, as the residual list
     # above says.
-    # A receiver that is a module of `src/` is not an instance: the qualified
-    # spelling above has already resolved it against that module's own
-    # functions, and its name must not borrow a reader of this module's that
-    # happens to share it (`assemble_bundle.main` is not `on_demand.main`).
-    if (isinstance(func, ast.Attribute) and func.attr in reachable
-            and _owner(func.value, aliases) + ".py" not in modules_here):
+    if isinstance(func, ast.Attribute) and func.attr in reachable:
         return handed
     return None
 
@@ -993,7 +985,7 @@ def _readers(modules: dict[str, ast.Module]) -> dict[str, set[str]]:
                 if not isinstance(node, ast.Call):
                     continue
                 parts = _read_parts(node, reachable[module], readers, aliases[module],
-                                    CONTENT_READS, frozenset(modules))
+                                    CONTENT_READS)
                 if parts and not _writes(node) and _names_in(
                         _followed(parts, bound)) & handed:
                     readers.setdefault(called, set()).add(module)
@@ -1167,8 +1159,7 @@ def bypass_scan(src_dir: Path = SRC) -> list[str]:
             for node in own:
                 if not isinstance(node, ast.Call):
                     continue
-                parts = _read_parts(node, reachable, readers, aliases,
-                                    modules_here=frozenset(modules))
+                parts = _read_parts(node, reachable, readers, aliases)
                 if parts and _names_a_document_root(parts, bound, aliases):
                     found.append((name, node.lineno, ast.unparse(node)))
     return [f"{src_dir.name}/{module}:{line}: {call}" for module, line, call
@@ -1961,66 +1952,3 @@ if __name__ == "__main__":
     print("\n".join(lines) if lines else
           f"bypass scan: {len(list(SRC.glob('*.py')))} modules in src/, "
           f"{len(EXEMPT)} exempt ({', '.join(sorted(EXEMPT))}), 0 reads skip the gate")
-
-
-# A module's own reader and another module's function of the same name. The
-# plant's `main` reads the path it is handed, so it is a reader; the bundle's
-# `main` here hands its words to argparse and reads nothing. The scan once let
-# the plant's reader lend its name to `bundle.main(...)`, and the words
-# "--fixtures" among the arguments then made a call that reads nothing a read
-# that skips the gate (`src/on_demand.py` calling `assemble_bundle.main`).
-A_MODULE_OF_ITS_OWN_NAME = '''
-import argparse
-
-
-def main(argv):
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--fixtures")
-    return parser.parse_args(argv)
-'''
-
-A_MODULE_OF_ITS_OWN_NAME_THAT_READS = '''
-from pathlib import Path
-
-
-def main(where):
-    return Path(where).read_bytes()
-'''
-
-CALLS_ANOTHER_MODULES_MAIN = '''
-from pathlib import Path
-
-from src import bundle
-
-FIXTURES = Path(__file__).resolve().parent.parent / "tests" / "fixtures"
-
-
-def main(where, hook=None):
-    return Path(where).read_bytes()
-
-
-def build(store):
-    return bundle.main(["--fixtures", str(store), "--out", "runs/x"])
-
-
-def read_through_the_other(ticker):
-    return bundle.main(FIXTURES / ticker / "10-K.htm")
-'''
-
-
-def test_another_modules_function_does_not_borrow_this_modules_readers_name(tmp_path):
-    """`bundle.main([... "--fixtures" ...])` reads nothing: the bundle's `main`
-    is no reader, and the plant's own `main` being one must not make it one."""
-    src = _planted_src(tmp_path, "annual_reader", CALLS_ANOTHER_MODULES_MAIN)
-    (src / "bundle.py").write_text(A_MODULE_OF_ITS_OWN_NAME, encoding="utf-8")
-    assert bypass_scan(src) == []
-
-
-def test_another_modules_function_that_reads_is_still_named(tmp_path):
-    """The same call, when the other module's `main` does read what it is
-    handed: resolved by that module's own function, it is a read of a fixture
-    with no gate in front of it, and the scan names it."""
-    src = _planted_src(tmp_path, "annual_reader", CALLS_ANOTHER_MODULES_MAIN)
-    (src / "bundle.py").write_text(A_MODULE_OF_ITS_OWN_NAME_THAT_READS, encoding="utf-8")
-    found = bypass_scan(src)
-    assert any("bundle.main(FIXTURES / ticker" in line for line in found), found

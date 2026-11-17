@@ -50,6 +50,7 @@ class World:
     """The planted run: a stand-in bundle, a stand-in source, a recorded analysis."""
 
     def __init__(self, tmp_path, server, monkeypatch):
+        self.monkeypatch = monkeypatch
         fetcher = client(tmp_path, server)
         self.server = server
         monkeypatch.setattr(on_demand.edgar_client, "EdgarClient", lambda: fetcher)
@@ -109,9 +110,9 @@ class World:
         return dict(FETCH_RECORD)
 
     def main(self, *flags, environ, fetch_prices, ticker=TICKER):
-        return on_demand.main(["--ticker", ticker, "--accession", ACCESSION,
-                               "--out", str(self.out), *flags],
-                              environ=environ, fetch_prices=fetch_prices)
+        return main_with(self.monkeypatch, ["--ticker", ticker, "--accession", ACCESSION,
+                                            "--out", str(self.out), *flags],
+                         environ=environ, fetch_prices=fetch_prices)
 
     def poison_the_network_after_the_store(self, monkeypatch):
         """Any call to EDGAR once the store is built raises, and is counted."""
@@ -134,6 +135,22 @@ class World:
                          if environ is None else environ, fetch_prices=self.fetch)
 
 
+def main_with(monkeypatch, argv, *, environ, fetch_prices):
+    """`on_demand.main` with the process's environment and the price source set.
+
+    `main` takes no hooks: the token is read from the process's environment and
+    the source is `market.fetch_prices`, so a test sets those two and nothing
+    else. `environ` None leaves the process's environment as it is; a mapping
+    becomes the process's price variables (the token unset unless it names one).
+    """
+    if environ is not None:
+        monkeypatch.delenv("TIINGO_TOKEN", raising=False)
+        for name, value in environ.items():
+            monkeypatch.setenv(name, value)
+    monkeypatch.setattr(on_demand.market, "fetch_prices", fetch_prices)
+    return on_demand.main(argv)
+
+
 @pytest.fixture
 def world(tmp_path, server, monkeypatch):  # noqa: F811
     return World(tmp_path, server, monkeypatch)
@@ -142,10 +159,13 @@ def world(tmp_path, server, monkeypatch):  # noqa: F811
 def test_the_run_fetches_the_window_for_the_three_symbols_and_hands_the_folder_on(world):
     environ = {"TIINGO_TOKEN": STAND_IN_TOKEN}
     assert world.run(environ) == 0
-    assert world.asked == [{"symbols": SYMBOLS, "start": WINDOW[0], "end": WINDOW[1],
-                            "into": world.out / "prices", "environ": environ,
-                            "backend": "tiingo"}]
-    assert world.asked[0]["environ"] is environ
+    asked = [{**kwargs, "environ": None} for kwargs in world.asked]
+    assert asked == [{"symbols": SYMBOLS, "start": WINDOW[0], "end": WINDOW[1],
+                      "into": world.out / "prices", "environ": None,
+                      "backend": "tiingo"}]
+    # the token is the process's own: `main` takes no mapping to read it from
+    assert world.asked[0]["environ"] is on_demand.os.environ
+    assert world.asked[0]["environ"]["TIINGO_TOKEN"] == STAND_IN_TOKEN
     assert len(world.analysed) == 1
     argv = world.analysed[0]
     assert argv[argv.index("--prices") + 1] == str(world.out / "prices")
@@ -308,9 +328,9 @@ def test_a_name_that_is_not_the_registrants_ticker_prices_nothing(world, monkeyp
         pytest.fail("the source was asked for a series named by a label")
 
     out = world.out.parent.parent / "AAPL" / ACCESSION
-    assert on_demand.main(["--ticker", "AAPL", "--cik", CIK, "--accession", ACCESSION,
-                           "--out", str(out), "--run"],
-                          environ={"TIINGO_TOKEN": STAND_IN_TOKEN}, fetch_prices=never) == 0
+    assert main_with(monkeypatch, ["--ticker", "AAPL", "--cik", CIK, "--accession", ACCESSION,
+                                   "--out", str(out), "--run"],
+                     environ={"TIINGO_TOKEN": STAND_IN_TOKEN}, fetch_prices=never) == 0
     reason = "the run's name is not one of the registrant's tickers in EDGAR's submissions index as fetched to build the store"
     assert reason in capsys.readouterr().err
     assert "--prices" not in world.analysed[0]
@@ -321,21 +341,21 @@ def test_a_name_that_is_not_the_registrants_ticker_prices_nothing(world, monkeyp
     assert not (out / "prices").exists()
 
 
-def test_a_name_that_is_the_registrants_ticker_is_priced_under_cik(world):
-    assert on_demand.main(["--ticker", "nvda", "--cik", CIK, "--accession", ACCESSION,
-                           "--out", str(world.out), "--run"],
-                          environ={"TIINGO_TOKEN": STAND_IN_TOKEN},
-                          fetch_prices=world.fetch) == 0
+def test_a_name_that_is_the_registrants_ticker_is_priced_under_cik(world, monkeypatch):
+    assert main_with(monkeypatch, ["--ticker", "nvda", "--cik", CIK, "--accession", ACCESSION,
+                                   "--out", str(world.out), "--run"],
+                     environ={"TIINGO_TOKEN": STAND_IN_TOKEN},
+                     fetch_prices=world.fetch) == 0
     assert world.asked[0]["symbols"] == SYMBOLS
 
 
-def test_an_empty_environment_handed_in_is_not_the_process_environment(world, monkeypatch):
-    monkeypatch.setenv("TIINGO_TOKEN", STAND_IN_TOKEN)
+def test_a_process_without_the_token_fetches_no_prices(world, monkeypatch):
+    monkeypatch.delenv("TIINGO_TOKEN", raising=False)
 
     def never(**_):
-        pytest.fail("the process's own token was used though an empty mapping was handed in")
+        pytest.fail("the source was asked though the process's environment has no token")
 
-    assert world.main("--run", environ={}, fetch_prices=never) == 0
+    assert world.main("--run", environ=None, fetch_prices=never) == 0
     assert "--prices" not in world.analysed[0]
 
 

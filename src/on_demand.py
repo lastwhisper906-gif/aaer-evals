@@ -228,7 +228,7 @@ def fetch_prices_for_run(held: dict, run: str, *, environ, fetch=None) -> str | 
     return out["folder"]
 
 
-def main(argv: list[str] | None = None, *, environ=None, fetch_prices=None) -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--ticker", required=True)
@@ -286,9 +286,9 @@ def main(argv: list[str] | None = None, *, environ=None, fetch_prices=None) -> i
         return status
     prices = None
     if not args.no_prices:
-        prices = fetch_prices_for_run(
-            held, run, environ=os.environ if environ is None else environ,
-            fetch=fetch_prices)
+        # the token from the process's environment alone, and the source as
+        # `market.fetch_prices` names it when the step runs
+        prices = fetch_prices_for_run(held, run, environ=os.environ)
     if not args.run:
         return status
     from src import run_analysis      # imported here: the fetch needs none of it
