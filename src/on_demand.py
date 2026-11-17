@@ -160,7 +160,7 @@ def not_priced_because(held: dict) -> str | None:
         if registrant["tickers"] is None:
             return "the registrant's record names no tickers to check the run's name against"
         if held["ticker"] not in registrant["tickers"]:
-            return "the run's name is not one of the registrant's tickers at the cutoff"
+            return "the run's name is not one of the registrant's tickers in EDGAR's submissions index as fetched to build the store"
     return None
 
 

@@ -234,7 +234,7 @@ def test_a_name_that_is_not_the_registrants_ticker_prices_nothing(world, monkeyp
     assert on_demand.main(["--ticker", "AAPL", "--cik", CIK, "--accession", ACCESSION,
                            "--out", str(out), "--run"],
                           environ={"TIINGO_TOKEN": STAND_IN_TOKEN}, fetch_prices=never) == 0
-    reason = "the run's name is not one of the registrant's tickers at the cutoff"
+    reason = "the run's name is not one of the registrant's tickers in EDGAR's submissions index as fetched to build the store"
     assert reason in capsys.readouterr().err
     assert "--prices" not in world.analysed[0]
     assert json.loads((out / "price_fetch.json").read_text()) == {
