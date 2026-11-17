@@ -1485,3 +1485,37 @@ def test_ending_balance_days_name_the_missing_input_and_never_fill_it():
     for name in ("days_sales_outstanding_ending", "days_sales_of_inventory_ending",
                  "days_payables_outstanding_ending", "revenue_per_day_of_receivables"):
         assert "missing" in out[name] and "value" not in out[name], name
+
+
+def test_ending_balance_days_start_a_derived_quarter_the_day_after_the_earlier_year_to_date():
+    """A quarter no filing states, taken as the six months less the first three: it begins
+    the day after those three months ended (2026-04-01 after 2026-03-31), so it has 91
+    days, 2026-04-01 to 2026-06-30, and not 92."""
+    def row(start, end, value):
+        return {"start": start, "end": end, "val": value, "accn": "A-1", "fy": 2026,
+                "fp": "Q2", "form": "10-Q", "filed": "2026-08-01"}
+
+    def concept(*rows):
+        return {"units": {"USD": list(rows)}}
+
+    record = calculator.Record({"facts": {"us-gaap": {
+        "Revenues": concept(row("2026-01-01", "2026-06-30", 1800.0),
+                            row("2026-01-01", "2026-03-31", 800.0)),
+        "CostOfRevenue": concept(row("2026-01-01", "2026-06-30", 900.0),
+                                 row("2026-01-01", "2026-03-31", 400.0))}}})
+    spans = calculator.durations(record.usd)
+    derived = calculator.quarter(record, "revenue", spans, dt.date(2026, 6, 30))
+    assert derived["value"] == 1000.0
+    assert derived["formula"] == "2026-01-01..2026-06-30 less 2026-01-01..2026-03-31"
+    assert (derived["start"], derived["end"]) == ("2026-04-01", "2026-06-30")
+    ok = lambda value: {"value": value, "id": "x", "tag": "t"}      # noqa: E731
+    terms = {"balances_now": {"receivables": ok(500.0), "inventory": ok(100.0),
+                              "accounts_payable": ok(50.0)}}
+    out = calculator.ending_balance_days(
+        record, terms, {"annual_trigger": False, "balance_now": "2026-06-30"})
+    days = (dt.date(2026, 6, 30) - dt.date(2026, 4, 1)).days + 1
+    assert days == 91
+    assert out["days_sales_outstanding_ending"]["days_in_period"] == 91
+    assert out["days_sales_outstanding_ending"]["value"] == pytest.approx(500.0 / 1000.0 * 91)
+    assert out["days_sales_of_inventory_ending"]["value"] == pytest.approx(100.0 / 500.0 * 91)
+    assert out["revenue_per_day_of_receivables"]["value"] == pytest.approx(1000.0 / 91)

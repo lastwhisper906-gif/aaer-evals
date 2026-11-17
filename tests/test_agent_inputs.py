@@ -1638,16 +1638,27 @@ def test_no_analyst_definition_spells_a_percentage_out_as_its_own_example():
 
 def test_release_versus_report_reaches_the_analysts_in_the_filings_only_view():
     """`calculator_filings_only.json` is what the accounting and financial analysts
-    read. The section holds no price, so it is in that view whole, with Dell's row
-    `Net income | $ | 4,133` (read by eye in the committed release) in it."""
+    read. The section holds no price, so it is in that view whole. Dell's committed release
+    row `Net income | $ | 4,133` (millions, read by eye in
+    `runs/DELL/0001571996-26-000046/input_8k.md`) is read here against Dell's quarterly
+    `NetIncomeLoss` through `tests/companyfacts_source.py`, which imports nothing from
+    `src/`, and the section's cell must say the same two numbers."""
     from src import calculator
+    from tests import companyfacts_source as source
+    expected = source.one_value("DELL", "NetIncomeLoss", "2026-05-02..2026-07-31", "2026-09-08")
+    assert expected == 4_133 * 1_000_000
     out = calculator.calculate(ticker="DELL", cutoff="2026-09-08", period_end="2026-07-31",
                                form="10-Q", accession="0001571996-26-000046")
     view = calculator.filings_only(out)
     assert "release_versus_report" not in calculator.PRICED_SECTIONS
     assert view["release_versus_report"] == out["release_versus_report"]
-    cell = view["release_versus_report"]["lines"]["net_income"]["comparisons"][0]
-    assert cell["release"]["cell"] == "4,133" and cell["verdict"] == "agrees"
+    cells = [c for c in view["release_versus_report"]["lines"]["net_income"]["comparisons"]
+             if c["span_months"] == 3]
+    assert {c["release"]["cell"] for c in cells} == {"4,133"}
+    assert {c["release"]["value"] for c in cells} == {4_133 * 1_000_000.0} == {expected}
+    assert {c["report"]["value"] for c in cells} == {expected}
+    assert {c["verdict"] for c in cells} == {"agrees"}
+    assert view["release_versus_report"]["lines"]["net_income"]["statement"]["verdict"] == "agrees"
 
 
 def test_release_versus_report_is_pointed_at_in_the_accounting_analysts_cross_document_area():

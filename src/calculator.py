@@ -3528,7 +3528,7 @@ def calculate(*, ticker: str, cutoff, period_end: str, form: str, accession: str
             record, terms, periods),
     }
     beside_the_release = release_versus_report(record, periods, ticker=ticker, cutoff=cutoff,
-                                               fixtures_root=fixtures_root)
+                                               fixtures_root=fixtures_root, facts=facts)
 
     missing = [f"{term}: {terms['trailing_four_quarters'][term]['missing']}"
                for term in CORE_TERMS if term in terms["trailing_four_quarters"]
@@ -3597,18 +3597,21 @@ RELEASE_TERMS["net_income_with_noncontrolling"] = "net_income_including_noncontr
 
 RELEASE_WHAT_THIS_IS = (
     "the earnings release (8-K exhibit 99.1, furnished and not filed) printed beside the "
-    "report, line by line: every table of the release that prints the line for the period "
-    "votes, each row of it, each cell at its own table's printed precision, with its paragraph "
-    "id beside the report's fact for the same period through the term table, the difference "
-    "(the release's value less the report's, in dollars) with its sign toward the release, and "
-    "`agrees` or `differs`. A line is `differs` if any cell differs and `agrees` only if every "
-    "cell agrees; a cell in a block headed non-GAAP or adjusted is listed as `not_gaap` and not "
-    "compared, one in a block that cannot be told is `block_not_identified`, never `agrees`; "
-    "per share and percent rows are left out of a dollar line and listed under "
-    "`excluded_rows`. `not_in_release` when no table has a row under one of the stated labels, "
-    "`period_not_read` when a table does but its header does not date its columns, "
-    "`report_fact_missing` when the report has no fact for that period. Python wrote every "
-    "number here")
+    "report, line by line: every dollar cell of every table of the release under a line's "
+    "row labels for the period is compared, each at its own table's printed precision, with "
+    "its paragraph id beside the report's fact for the same period through the term table, "
+    "the difference (the release's value less the report's, in dollars) with its sign toward "
+    "the release. A heading may label a cell with a hint (`gaap`, `not_gaap`, `segment`, "
+    "`component`, `unidentified`) and never takes it out. The line is `differs` if a `gaap` "
+    "cell differs, `differs_outside_gaap` if only cells with another hint differ (each "
+    "listed), `agrees` only if every compared cell agrees; `block_not_identified`, "
+    "`report_fact_missing` and `period_not_read` keep a line from `agrees`; `not_in_release` "
+    "when no table has a row under one of the stated labels. Only per share rows and cells "
+    "printed as a percent are not compared to a dollar fact. `statement` beside each line is "
+    "the face statement's own verdict (the table printing at least four of the lines, "
+    "chosen without a value): `agrees`, `differs` or `not_compared`, never borrowed by "
+    "the line's. Unread tables are listed by kind and unread columns with their dates. "
+    "Python wrote every number here")
 
 
 def release_report_reader(record: Record, periods: dict):
@@ -3637,25 +3640,48 @@ def release_report_reader(record: Record, periods: dict):
     return read
 
 
+SEGMENT_AXIS = "us-gaap:StatementBusinessSegmentsAxis"
+
+
+def segment_members(facts: list | dict) -> list[str]:
+    """The names of the segments the report's own instance states on its business segments
+    axis, from the members' local names (the instance carries no labels). Empty when the
+    instance was not read, so no table is called a segment's by guess."""
+    if isinstance(facts, dict):
+        return []
+    members = {dim["member"] for fact in facts for dim in (fact.get("context") or {}).get(
+        "segment") or [] if dim.get("dimension") == SEGMENT_AXIS}
+    return sorted({release_lines.segment_label(member) for member in members})
+
+
 def release_versus_report(record: Record, periods: dict, *, ticker: str, cutoff: dt.date,
-                          fixtures_root, release: dict | None = None) -> dict:
+                          fixtures_root, release: dict | None = None,
+                          facts: list | dict | None = None) -> dict:
     """`release` is the release as `parse_8k.earnings_release` returns it; a caller that
-    holds one (a test planting a figure in a committed release) hands it in."""
+    holds one (a test planting a figure in a committed release) hands it in. `facts` are
+    the filing's own, for the segments its instance names."""
     try:
         release = release or parse_8k.earnings_release(ticker, cutoff=cutoff,
                                                        fixtures_root=fixtures_root)
     except cutoff_guard.CutoffGuardError as exc:
         return {"missing": f"no earnings release is on record at the cutoff: {exc}"}
     item = release["item_2_02"]
-    lines = release_lines.compare(item["paragraph_ids"], item["paragraphs"],
-                                  periods["balance_now"], release_report_reader(record, periods))
+    found = release_lines.compare_release(
+        item["paragraph_ids"], item["paragraphs"], periods["balance_now"],
+        release_report_reader(record, periods), segment_members(facts or []))
+    lines = found["lines"]
     tally: dict[str, int] = {}
     for entry in lines.values():
         tally[entry["verdict"]] = tally.get(entry["verdict"], 0) + 1
+    statements: dict[str, int] = {}
+    for entry in lines.values():
+        statements[entry["statement"]["verdict"]] = statements.get(
+            entry["statement"]["verdict"], 0) + 1
     return {"what_this_is": RELEASE_WHAT_THIS_IS, "accession": release["accession"],
             "filing_date": release["filing_date"], "period_end": periods["balance_now"],
-            "tally": tally, "lines": lines}
-
+            "tally": tally, "statement_table": found["statement"],
+            "statement_tally": statements, "unread_columns": found["unread_columns"],
+            "unread_tables": found["unread_tables"], "lines": lines}
 
 
 # What the accounting and financial analysts may not see: every figure read off a

@@ -32,32 +32,47 @@ read, and it keeps the line from `agrees`: `period_not_read`, with the reason. A
 or from a title line that is only that statement; a sentence that mentions millions
 is not a unit, and none is ever assumed.
 
-**Every table votes.** For a line and a span, every table of the release that prints
-it is compared, each row of it, each cell at its own table's printed precision, and
-each is listed with its paragraph id. The line is `differs` if any cell differs and
-`agrees` only if every cell agrees (`PRECEDENCE`: `differs`, then a cell no one could
-say was GAAP, then a report fact that is not there, then a table that could not be
-read, then `agrees`). Left out of a dollar line, and listed under `excluded_rows`:
-rows under a per share, shares, percent or component heading, and rows whose figure is
-printed as a percent. A table under a short heading that names no statement
-(`is_segment_heading`: "Climate Solutions Americas (CSA)") is a segment's, listed
-under `segment_cells_not_compared`.
+**A heading may label a cell, never hide it.** For a line and a span, every dollar cell of
+every table under one of the line's labels is compared, each at its own table's printed
+precision, each listed with its paragraph id. A cell carries a `block` hint (`gaap`,
+`not_gaap`, `segment`, `component`, `unidentified`) and no hint takes it out of the
+comparison. The line is `differs` if a `gaap` cell differs, `differs_outside_gaap` if
+only cells with another hint differ (each listed with its hint, paragraph id and both
+values), and `agrees` only if every compared cell agrees (`PRECEDENCE`: `differs`,
+`differs_outside_gaap`, `block_not_identified` (a cell that agrees but could not be told as
+GAAP), `report_fact_missing`, `period_not_read`, then `agrees`). The only cells not held
+to a dollar fact are per share rows (under a heading that says per share, `Basic:` or
+`Diluted:`) and cells printed as a percent, because they are not dollars.
 
-**GAAP and non-GAAP.** A heading or header cell that says non-GAAP or adjusted
-(`NON_GAAP_WORDS`) makes its block `non_gaap`: listed under `not_gaap` and not held to
-the report. One that says both, or two side-by-side blocks nothing names, are
-`unidentified`: `block_not_identified`, never `agrees`. A row label that says GAAP is
-GAAP wherever it sits, and a non-GAAP total row closes the block its heading opened.
+**Hints come from structure where structure exists.** `not_gaap` only when a column's own
+header or the row's own label says Non-GAAP, or the header is the whole word Adjusted
+(never "(As Adjusted)", "excluding" or "pro forma"). `segment` only when a header cell or
+the heading above the table is the name of a member of the report's own instance on
+`StatementBusinessSegmentsAxis` (`names_a_segment`); a company's name is not one.
+`component` is a heading's word ("Summary of ...", "by segment", "including") labelling
+the parts under it, never a row that starts with "Total". A heading that says non-GAAP
+or adjusted labels the rows under it `unidentified`; a non-GAAP total row closes it.
+
+**The face statement** is the table printing at least four of the lines under their labels
+with a column for the period, the most lines first and the earlier on a tie, chosen
+without a value. Each line carries `statement`: `agrees`, `differs` or `not_compared`,
+with the paragraph id, beside its own verdict and never lending it one. Tables that could
+not be read are grouped by kind (`guidance`, `non_gaap`, `segment_column`, `undated`,
+`unit_not_stated`) and a column that is neither the period nor the year before it is
+listed with its date.
 
 **Agreement is at the release's own precision.** A release printing `4,133` in
 millions has a step of one million, and agrees with every report fact that
 rounds, half up, to 4,133 million; a release printing `1,570.7` has a step of a
-tenth of a million; per-share figures step by the decimals printed. A cash
-outflow printed in parentheses is compared by its size, as the taxonomy states a
-payment. A net income row not labelled "attributable" is also held to the report's
-`ProfitLoss` (net income before the noncontrolling interest) and says so. The
-difference is the release's value less the report's, in dollars, and `sign` says
-which way: `release_larger`, `release_smaller` or `equal`.
+tenth of a million; per-share figures step by the decimals printed. A cost, a capital
+expenditure and an income tax expense printed in parentheses are compared by their size,
+as the taxonomy states a payment; an income tax whose label says benefit is signed,
+expense positive. In a table that prints an `attributable` net income row, an unlabelled
+net income row is the total before the noncontrolling interest and is held to `ProfitLoss`
+alone; in a table that prints none it is held to `NetIncomeLoss`, and the cell also says
+what `ProfitLoss` would have made of it. The difference is the release's value less the
+report's, in dollars, and `sign` says which way: `release_larger`, `release_smaller` or
+`equal`.
 """
 
 from __future__ import annotations
@@ -111,7 +126,7 @@ ROW_LABELS: dict[str, tuple[str, ...]] = {
 }
 
 PER_SHARE = ("diluted_earnings_per_share",)
-BY_SIZE = ("capital_expenditure",)        # printed in parentheses as an outflow
+BY_SIZE = ("capital_expenditure", "cost_of_revenue")   # printed in parentheses as an outflow
 
 
 class ReleaseLabelError(Exception):
@@ -207,18 +222,21 @@ _CHANGE = re.compile(r"change|chg|variance|y-?t-?y|y/y|q/q|yoy|qoq|growth|percen
 _UNIT = re.compile(r"\bin\s+(thousands|millions|billions)\b", re.I)
 _SCALE = {"thousands": 1_000, "millions": 1_000_000, "billions": 1_000_000_000}
 
-# Which words say a block of a table is not the GAAP statement. A heading or header
-# cell with one of these and no plain "GAAP" is non-GAAP; with both it is not
-# identified; with plain "GAAP" alone it is GAAP; a table that says neither and
-# repeats no column is read as the statement it looks like.
-NON_GAAP_WORDS = ("non-gaap", "non gaap", "nongaap", "adjusted", "pro forma", "excluding")
+# What a cell is labelled with, and never what keeps it from being compared. A hint is one
+# of: `gaap`, `not_gaap`, `segment`, `component`, `unidentified`. `not_gaap` comes only from
+# structure: a column's own header, or the row's own label, says "Non-GAAP", or the header
+# is the whole word "Adjusted" (never "(As Adjusted)", "excluding" or "pro forma").
+# A heading above rows that says non-GAAP or adjusted is prose, and labels them
+# `unidentified`.
+HINTS = ("gaap", "not_gaap", "segment", "component", "unidentified")
 _GAAP_WORD = re.compile(r"\bgaap\b")
-# A heading whose rows are not the line in dollars: per share, shares, percent, or the
-# components of an expense (a summary of share-based compensation by function).
-NOT_DOLLARS = re.compile(r"per (?:common )?(?:share|unit)|earnings per|^basic\b|^diluted\b|"
-                         r"\bshares\b|percent|% of|\bmargin\b|\bratio\b|"
-                         r"summary of|compensation|by (?:segment|region|product)|of which|"
-                         r"included in")
+_NON_GAAP = re.compile(r"non[-\s]*gaap")
+# Headings whose rows are per share: the one kind of row, with a percent cell, that is not
+# held to a dollar fact, because it is not dollars.
+PER_SHARE_HEADING = re.compile(r"per (?:common )?(?:share|unit)|earnings per|^basic\b|^diluted\b")
+# Headings whose rows are parts of a line, not the line: they are compared and labelled.
+COMPONENT_HEADING = re.compile(r"summary of|compensation|by (?:segment|region|product)|of which|"
+                               r"included in|including|by function")
 
 
 def _month_number(name: str) -> int:
@@ -231,15 +249,38 @@ def unit_statement(text: str) -> str | None:
     return found.group(1).lower() if found else None
 
 
+def _flatten(text: str) -> str:
+    return re.sub(r"non[-\s]+gaap", "non-gaap", normal_label(text))
+
+
 def block_of(text: str) -> str | None:
-    """`gaap`, `non_gaap` or `unidentified` for a heading or header cell that names one,
-    else None."""
-    words = re.sub(r"non[-\s]+gaap", "non-gaap", normal_label(text))
-    non = any(word in words for word in NON_GAAP_WORDS)
+    """The hint a row label or a heading gives: `gaap`, `not_gaap` (row labels only) or
+    `unidentified` when it names both, else None. A heading's non-GAAP is prose, and
+    `heading_hint` turns it into `unidentified`."""
+    words = _flatten(text)
+    non = bool(_NON_GAAP.search(words))
     plain = bool(_GAAP_WORD.search(words.replace("non-gaap", "")))
     if non and plain:
         return "unidentified"
-    return "non_gaap" if non else ("gaap" if plain else None)
+    return "not_gaap" if non else ("gaap" if plain else None)
+
+
+def header_hint(text: str) -> str | None:
+    """The hint a header cell gives its columns: non-GAAP, or the whole word Adjusted as the
+    column's label, is `not_gaap`; GAAP alone is `gaap`; both is `unidentified`."""
+    words = _flatten(text)
+    if re.fullmatch(r"adjusted(?: results)?", words) or words.startswith("adjusted "):
+        return "unidentified" if _GAAP_WORD.search(words.replace("non-gaap", "")) else "not_gaap"
+    return block_of(text)
+
+
+def heading_hint(text: str) -> str | None:
+    """What a heading above rows labels them: GAAP, or `unidentified` if it says non-GAAP
+    or adjusted or both."""
+    words = _flatten(text)
+    if _NON_GAAP.search(words) or re.search(r"\badjusted\b", words):
+        return "unidentified"
+    return "gaap" if _GAAP_WORD.search(words) else None
 
 
 # A paragraph that is only a unit statement, as a statement's title line prints it:
@@ -248,22 +289,28 @@ def block_of(text: str) -> str | None:
 _TITLE_UNIT = re.compile(r"^\(?[^.\d]{0,100}\bin (thousands|millions|billions)\b[^.\d]{0,80}\)?$",
                          re.I)
 
-# A short heading above a table that names none of these is a segment's or a product's
-# ("Climate Solutions Americas (CSA)"): the table's rows are that part of the company's,
-# not the line, and are listed and not compared.
-STATEMENT_WORDS = ("consolidated", "condensed", "statement", "results", "summary",
-                   "reconciliation", "balance", "cash flow", "income", "operations",
-                   "financial", "guidance", "outlook", "gaap", "unaudited", "total",
-                   "revenue", "earnings", "highlights", "supplemental")
+def segment_label(member: str) -> str:
+    """A segment member's name as words: `carr:ClimateSolutionsAmericasSegmentMember` is
+    `climate solutions americas`. The instance carries the members and not their labels,
+    so the name is the member's own local name."""
+    local = member.split(":")[-1]
+    local = re.sub(r"(?:Segment)?Member$", "", local)
+    words = re.sub(r"(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])", " ", local)
+    return re.sub(r"\s+", " ", words).strip().lower()
 
 
-def is_segment_heading(text: str | None) -> bool:
-    if not text:
+def _words_of(text: str) -> str:
+    text = re.sub(r"\([^)]*\)", " ", text.lower().replace("&", " and "))
+    return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9 ]", " ", text)).strip()
+
+
+def names_a_segment(text: str | None, segment_labels) -> bool:
+    """True when the text is the name of a segment member of the report's own instance
+    (`us-gaap:StatementBusinessSegmentsAxis`). A company's name is not one."""
+    if not text or not segment_labels:
         return False
-    words = text.strip()
-    if len(words.split()) > 12 or re.search(r"\d|[.:;]", words):
-        return False
-    return not any(word in words.lower() for word in STATEMENT_WORDS)
+    words = _words_of(text)
+    return bool(words) and any(words == _words_of(label) for label in segment_labels)
 
 
 class Unread(Exception):
@@ -295,12 +342,15 @@ def _is_data_row(cells: list[str]) -> bool:
 
 
 def _assign_blocks(columns: list[dict], labels: list[str]) -> None:
-    """Say which block each column belongs to: by the header's own group labels, shared
-    out over the columns in order; with none, a table that repeats a column is two
-    blocks nothing names, and a table that does not is the statement."""
+    """Give each column the hint its header's group labels give, shared out over the
+    columns in order (`source` is then `group`: the column's own header); one label is the
+    whole table's (`source` is `table`: a title a heading below may overrule); with none, a
+    table that repeats a column is two blocks nothing names (`unidentified`), and a table
+    that does not is read as the statement (`gaap`)."""
     count = len(columns)
     keys = [(c.get("months"), c.get("end")) for c in columns if "change" not in c]
     for index, column in enumerate(columns):
+        column["source"] = "group" if len(labels) > 1 else "table"
         if labels and len(labels) > 1 and count % len(labels) == 0:
             column["block"] = labels[index // (count // len(labels))]
         elif labels and len(labels) > 1:
@@ -313,18 +363,29 @@ def _assign_blocks(columns: list[dict], labels: list[str]) -> None:
             column["block"] = "gaap"
 
 
-def read_header(rows: list[list[str]]) -> dict:
+def _date(year: int, month: int, day: int) -> dt.date:
+    """A date a header names, or `Unread`: "February 29" in a year without one is the
+    table's problem and never an exception."""
+    try:
+        return dt.date(year, month, day)
+    except ValueError:
+        raise Unread(f"the header's date {day}/{month}/{year} is not a date") from None
+
+
+def read_header(rows: list[list[str]], segment_labels=()) -> dict:
     """The columns a table's header names, or `Unread`.
 
-    Returns `columns` (each `change` or a period with `months`, `end` and `block`),
-    `first_data_row` and `unit` (the table's own unit statement, or None).
+    Returns `columns` (each `change` or a period with `months`, `end` and `block`, the
+    hint its header gives), `first_data_row`, `unit` (the table's own unit statement, or
+    None) and `segment` (the header names a segment of the report's instance).
     """
     first = next((index for index, cells in enumerate(rows) if _is_data_row(cells)), None)
     if first is None or first == 0:
         raise Unread("the table has no header rows above its first row of figures")
     header = rows[:first]
     unit = next((u for cells in header for cell in cells if (u := unit_statement(cell))), None)
-    labels = [b for cells in header for cell in cells if cell.strip() and (b := block_of(cell))]
+    labels = [b for cells in header for cell in cells if cell.strip() and (b := header_hint(cell))]
+    segment = any(names_a_segment(cell, segment_labels) for cells in header for cell in cells)
 
     # Spans: a cell that says "Three Months Ended" (with or without its date).
     spans = []
@@ -341,11 +402,11 @@ def read_header(rows: list[list[str]]) -> dict:
             span, date = _SPAN.search(cell), _DATE.search(cell)
             if span and date and date.group(3):
                 whole.append({"months": _MONTHS_OF[(span.group(1) or span.group(2)).lower()],
-                              "end": dt.date(int(date.group(3)), _month_number(date.group(1)),
-                                             int(date.group(2)))})
+                              "end": _date(int(date.group(3)), _month_number(date.group(1)),
+                                           int(date.group(2)))})
     if whole:
         _assign_blocks(whole, labels)
-        return {"columns": whole, "first_data_row": first, "unit": unit}
+        return {"columns": whole, "first_data_row": first, "unit": unit, "segment": segment}
 
     token_rows = [_tokens(cells) for cells in header]
     numbered = [index for index, tokens in enumerate(token_rows) if len(tokens) >= 2]
@@ -360,7 +421,7 @@ def read_header(rows: list[list[str]]) -> dict:
         if column[0] == "change":
             resolved[index] = {"change": True}
         elif column[0] == "date" and column[3] is not None:
-            resolved[index] = {"end": dt.date(column[3], column[1], column[2])}
+            resolved[index] = {"end": _date(column[3], column[1], column[2])}
     year_columns = [index for index, column in enumerate(columns) if column[0] == "year"]
     if year_columns:
         sources = [token for token in earlier if token[3] is None]
@@ -373,7 +434,7 @@ def read_header(rows: list[list[str]]) -> dict:
         if len(sources) != len(year_columns):
             raise Unread("the header's month and day cannot be paired with its years")
         for index, source in zip(year_columns, sources):
-            resolved[index] = {"end": dt.date(columns[index][1], source[1], source[2])}
+            resolved[index] = {"end": _date(columns[index][1], source[1], source[2])}
     if any(column is None for column in resolved):
         raise Unread("the header's dates are not all complete")
 
@@ -386,7 +447,7 @@ def read_header(rows: list[list[str]]) -> dict:
     for index, column in enumerate(resolved):
         column["months"] = spans[min(index // size, len(spans) - 1)] if len(spans) > 1 else spans[0]
     _assign_blocks(resolved, labels)
-    return {"columns": resolved, "first_data_row": first, "unit": unit}
+    return {"columns": resolved, "first_data_row": first, "unit": unit, "segment": segment}
 
 
 # --- the cells of a release -------------------------------------------------------------
@@ -438,16 +499,43 @@ def _figures(cells: list[str]) -> list[dict]:
     return out
 
 
-def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str) -> dict:
-    """Every cell of every table of the release that is one of the lines, for the period.
+_GUIDANCE = re.compile(r"guidance|outlook|forecast|expect|previous|updated|range", re.I)
 
-    Returns `cells` (each with its line, span, label, text, value, scale, decimals,
-    paragraph id and block), `unread` (line -> tables and rows that could not be read,
-    with the reason), `excluded` (rows left out as per share or percent) and
-    `seen` (the lines some table has a row for).
+
+def table_kind(rows: list[list[str]], reason: str, segment_labels=()) -> str:
+    """What kind of table could not be read, by what its own header cells say: `guidance`,
+    `non_gaap`, `segment_column` (the figures are the segments', one column each), `undated`,
+    or what was wrong with its rows."""
+    if "unit statement" in reason:
+        return "unit_not_stated"
+    first = next((i for i, cells in enumerate(rows) if _is_data_row(cells)), len(rows))
+    text = " ".join(cell for cells in rows[:first] for cell in cells)
+    if _GUIDANCE.search(text):
+        return "guidance"
+    if _NON_GAAP.search(_flatten(text)) or re.search(r"\badjusted\b", text, re.I):
+        return "non_gaap"
+    if ("figures and the header names" in reason
+            or re.search(r"segment|reported|adjustments", text, re.I)
+            or any(names_a_segment(cell, segment_labels) for cells in rows[:first] for cell in cells)):
+        return "segment_column"
+    return "undated"
+
+
+def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
+               segment_labels=()) -> dict:
+    """Every dollar cell of every table of the release under a line's labels, for the period.
+
+    Each cell is returned with its `block` hint; no hint takes a cell out. Returns `cells`,
+    `unread` (line -> tables and rows that could not be read, each with a `kind`),
+    `excluded` (per share rows and percent cells: not dollars), `unread_columns` (columns
+    of a read table that are neither the period nor the year before it, with their date),
+    `seen` (the lines some table has a row for) and `statement` (the paragraph id of the
+    table that prints the most of the lines with a column for the period, at least four,
+    chosen without looking at a value).
     """
     end = dt.date.fromisoformat(period_end)
-    cells, unread, excluded, seen, segments = [], {}, [], set(), []
+    cells, unread, excluded, seen, unread_columns = [], {}, [], set(), []
+    printed_lines: dict[str, set[str]] = {}
     last_unit, above = None, None
     for paragraph_id, paragraph in zip(paragraph_ids, paragraphs):
         rows = _rows_of(paragraph)
@@ -461,9 +549,10 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str)
         for row in rows:
             last_unit = unit_statement(" ".join(row)) or last_unit
 
-        def note(line, label, reason):
-            unread.setdefault(line, []).append({"paragraph_id": paragraph_id, "label": label,
-                                                "reason": reason})
+        def note(line, label, reason, kind=None):
+            unread.setdefault(line, []).append({
+                "paragraph_id": paragraph_id, "label": label, "reason": reason,
+                "kind": kind or table_kind(rows, reason, segment_labels)})
 
         def matched(row):
             placed = _label_of(row)
@@ -474,7 +563,7 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str)
         if not any(matched(row) for row in rows):
             continue
         try:
-            header = read_header(rows)
+            header = read_header(rows, segment_labels)
         except Unread as reason:
             for row in rows:
                 if matched(row):
@@ -483,33 +572,54 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str)
             continue
         columns = header["columns"]
         scale_name = header["unit"] or carried
-        row_block, not_dollars, reset_block = None, False, False
+        table_segment = header["segment"] or names_a_segment(heading, segment_labels)
+        if any("change" not in c and c["end"] == end for c in columns):
+            printed_lines[paragraph_id] = {matched(row) for row in rows if matched(row)}
+        for column in columns:
+            near_a_year_earlier = abs((end - column.get("end", end)).days - 364) <= 20
+            if "change" not in column and column["end"] != end and not near_a_year_earlier:
+                unread_columns.append({"paragraph_id": paragraph_id,
+                                       "date": column["end"].isoformat(),
+                                       "span_months": column["months"],
+                                       "reason": "a column that is neither the period nor "
+                                                 "the year before it"})
+        row_hint, per_share, component, reset_hint = None, False, False, False
         for index, row in enumerate(rows):
-            if index < header["first_data_row"]:
-                continue
             placed = _label_of(row)
             if placed is None:
                 continue
-            if reset_block:
-                row_block, reset_block = None, False
-            if _is_data_row(row) and block_of(placed[1]) == "non_gaap":
-                reset_block = True      # a non-GAAP total closes the block its heading opened
+            if index < header["first_data_row"]:
+                # a heading row among the header's own rows: label in the first cell, and
+                # no date or span for a column
+                if placed[0] != 0 or _tokens(row) or _SPAN.search(" ".join(row)):
+                    continue
+            if reset_hint:
+                row_hint, reset_hint = None, False
+            if _is_data_row(row) and block_of(placed[1]) == "not_gaap":
+                reset_hint = True       # a non-GAAP total closes the block its heading opened
             line = matched(row)
             if not _is_data_row(row) and not line:
-                # a heading: it says which block, and whether the rows under it are dollars
-                row_block = block_of(placed[1]) or row_block
-                not_dollars = bool(NOT_DOLLARS.search(normal_label(placed[1])))
+                # a heading: it labels the rows under it and compares nothing away
+                words = normal_label(placed[1])
+                row_hint = heading_hint(placed[1]) or row_hint
+                per_share = bool(PER_SHARE_HEADING.search(words))
+                component = bool(COMPONENT_HEADING.search(words))
                 continue
             if not line:
                 continue
             seen.add(line)
             figures = _figures(row[placed[0] + 1:])
-            if not_dollars and line not in PER_SHARE:
+            if per_share and line not in PER_SHARE:
                 excluded.append({"paragraph_id": paragraph_id, "label": placed[1],
                                  "cell": figures[0]["text"] if figures else "",
-                                 "reason": "a per share, share count or percent row"})
+                                 "reason": "a per share row, which is not dollars"})
                 continue
             if len(figures) != len(columns):
+                if any(f["percent"] for f in figures) and line not in PER_SHARE:
+                    excluded.append({"paragraph_id": paragraph_id, "label": placed[1],
+                                     "cell": figures[0]["text"],
+                                     "reason": "a row printed as a percent, which is not dollars"})
+                    continue
                 note(line, placed[1], f"the row prints {len(figures)} figures and the header "
                                       f"names {len(columns)} columns")
                 continue
@@ -523,33 +633,45 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str)
                 if line not in PER_SHARE and figure["percent"]:
                     excluded.append({"paragraph_id": paragraph_id, "label": placed[1],
                                      "cell": figure["text"], "span_months": column["months"],
-                                     "reason": "a per share, share count or percent row"})
+                                     "reason": "a cell printed as a percent, which is not dollars"})
                     continue
                 scale = 1 if line in PER_SHARE else _SCALE[scale_name]
-                if is_segment_heading(heading):
-                    segments.append({"line": line, "span_months": column["months"],
-                                     "paragraph_id": paragraph_id, "label": placed[1],
-                                     "cell": figure["text"], "heading": heading.strip()})
-                    continue
+                label_hint = block_of(placed[1])
+                hint = column["block"]
+                if row_hint and column["source"] != "group":
+                    hint = row_hint                  # a heading below a table-wide title
+                if component and not placed[1].lower().startswith("total"):
+                    hint = "component"
+                if table_segment:
+                    hint = "segment"
+                if label_hint == "not_gaap" or (column["block"] == "not_gaap"
+                                                 and column["source"] == "group"):
+                    hint = "unidentified" if label_hint == "gaap" else "not_gaap"
+                elif label_hint in ("gaap", "unidentified"):
+                    hint = label_hint
                 cells.append({
                     "line": line, "months": column["months"], "paragraph_id": paragraph_id,
                     "label": placed[1], "cell": figure["text"], "value": figure["value"],
-                    "decimals": figure["decimals"], "scale_value": scale,
-                    "block": block_of(placed[1]) or row_block or column["block"],
+                    "decimals": figure["decimals"], "scale_value": scale, "block": hint,
                     "release": {"label": placed[1], "cell": figure["text"],
-                                "paragraph_id": paragraph_id,
+                                "paragraph_id": paragraph_id, "block": hint,
                                 "scale": "dollars" if line in PER_SHARE else scale_name,
                                 "printed_decimals": figure["decimals"],
                                 "value": float(figure["value"] * scale)}})
+    candidates = {pid: lines for pid, lines in printed_lines.items() if len(lines) >= 4}
+    statement = (min(candidates, key=lambda pid: (-len(candidates[pid]),
+                                                  paragraph_ids.index(pid)))
+                 if candidates else None)
     return {"cells": cells, "unread": unread, "excluded": excluded, "seen": seen,
-            "segments": segments}
+            "unread_columns": unread_columns, "statement": statement}
 
 
-# The order a line's verdict is taken in: a difference anywhere is the line's, a cell no
-# one could say was GAAP, a report fact that is not there, or a table that could not be
-# read each keep the line from `agrees`.
-PRECEDENCE = ("differs", "block_not_identified", "report_fact_missing", "period_not_read",
-              "agrees")
+# The order a line's verdict is taken in. A difference in a GAAP cell is the line's; a
+# difference in a cell labelled anything else is named as outside GAAP; then a cell that
+# agrees but could not be told as GAAP, a report fact that is not there, and a table that
+# could not be read each keep the line from `agrees`.
+PRECEDENCE = ("differs", "differs_outside_gaap", "block_not_identified", "report_fact_missing",
+              "period_not_read", "agrees")
 
 
 def line_verdict(verdicts) -> str:
@@ -558,15 +680,23 @@ def line_verdict(verdicts) -> str:
     return next((name for name in PRECEDENCE if name in present), "not_in_release")
 
 
-def compare(paragraph_ids: list[str], paragraphs: list[str], period_end: str, read_report) -> dict:
-    """Every line of `LINES`, every table's cell beside the report's fact.
+def _by_size(line: str, label: str) -> bool:
+    """A cost, a payment and an income tax expense are stated as their size by the taxonomy
+    and printed in parentheses by many releases; an income tax whose label says benefit is
+    signed, expense positive."""
+    return (line in BY_SIZE
+            or (line == "income_tax_expense" and "benefit" not in label.lower()))
 
-    `read_report(line, months)` is the calculator's: the report's cell for that
-    line over a span of `months` ending on the period end, or `{"missing": why}`.
-    A net income printed without "attributable" is also held to the report's
-    `net_income_with_noncontrolling` where the record carries it.
+
+def compare_release(paragraph_ids: list[str], paragraphs: list[str], period_end: str, read_report,
+                    segment_labels=()) -> dict:
+    """The release set beside the report, line by line.
+
+    `read_report(line, months)` is the calculator's: the report's cell for that line over a
+    span of `months` ending on the period end, or `{"missing": why}`. Returns `lines`, the
+    `statement` table's paragraph id, `unread_columns` and `unread_tables` by kind.
     """
-    read = read_cells(paragraph_ids, paragraphs, period_end)
+    read = read_cells(paragraph_ids, paragraphs, period_end, segment_labels)
     reports: dict[tuple[str, int], dict] = {}
 
     def report(line: str, months: int) -> dict:
@@ -574,48 +704,54 @@ def compare(paragraph_ids: list[str], paragraphs: list[str], period_end: str, re
             reports[(line, months)] = read_report(line, months)
         return reports[(line, months)]
 
+    with_attributable = {c["paragraph_id"] for c in read["cells"]
+                         if c["line"] == "net_income" and "attributable" in c["label"].lower()}
     out = {}
     for line in LINES:
-        compared, not_gaap = [], []
+        compared = []
         for cell in (c for c in read["cells"] if c["line"] == line):
             entry = {"span_months": cell["months"], "period_end": period_end,
-                     "release": cell["release"]}
-            if cell["block"] == "non_gaap":
-                entry["verdict"] = "not_gaap"
-                not_gaap.append(entry)
-                continue
-            if cell["block"] == "unidentified":
-                entry["verdict"] = "block_not_identified"
-                compared.append(entry)
-                continue
-            fact = report(line, cell["months"])
+                     "release": cell["release"], "block": cell["block"]}
+            fact_line = line
+            generic = line == "net_income" and "attributable" not in cell["label"].lower()
+            if generic and cell["paragraph_id"] in with_attributable:
+                fact_line = "net_income_with_noncontrolling"     # the table's other row is the parent's
+            fact = report(fact_line, cell["months"])
             if "missing" in fact:
                 entry.update(verdict="report_fact_missing", report={"missing": fact["missing"]})
                 compared.append(entry)
                 continue
-            shown = abs(cell["value"]) if line in BY_SIZE else cell["value"]
+            shown = abs(cell["value"]) if _by_size(line, cell["label"]) else cell["value"]
             scale, decimals = cell["scale_value"], cell["decimals"]
             agrees = agrees_at_the_release_precision(shown, fact["value"], scale, decimals)
-            held_to = fact
-            if not agrees and line == "net_income" and "attributable" not in cell["label"].lower():
-                other = report("net_income_with_noncontrolling", cell["months"])
-                if "missing" not in other and agrees_at_the_release_precision(
-                        shown, other["value"], scale, decimals):
-                    agrees, held_to = True, other
-                    entry["agrees_with"] = ("net income including the noncontrolling interest, "
-                                            "which a row not labelled attributable prints")
-            difference = shown * scale - Decimal(str(held_to["value"]))
-            entry.update(report=held_to, difference=float(difference), sign=_sign(difference),
+            difference = shown * scale - Decimal(str(fact["value"]))
+            entry.update(report=fact, difference=float(difference), sign=_sign(difference),
                          verdict="agrees" if agrees else "differs")
+            if generic and fact_line == "net_income":
+                other = report("net_income_with_noncontrolling", cell["months"])
+                if "missing" not in other and other["value"] != fact["value"]:
+                    entry["also_against"] = {
+                        "net_income_with_noncontrolling": other,
+                        "difference": float(shown * scale - Decimal(str(other["value"]))),
+                        "agrees": agrees_at_the_release_precision(shown, other["value"], scale,
+                                                                  decimals)}
             compared.append(entry)
-        verdicts = [e["verdict"] for e in compared] + (
-            ["period_not_read"] if line in read["unread"] else [])
+
+        verdicts = []
+        for entry in compared:
+            verdict, hint = entry["verdict"], entry["block"]
+            if verdict == "differs":
+                verdicts.append("differs" if hint == "gaap" else "differs_outside_gaap")
+            elif verdict == "agrees" and hint == "unidentified":
+                verdicts.append("block_not_identified")
+            else:
+                verdicts.append(verdict)
+        if line in read["unread"]:
+            verdicts.append("period_not_read")
         if compared or line in read["unread"]:
             out[line] = {"verdict": line_verdict(verdicts), "comparisons": compared}
             if line in read["unread"]:
                 out[line]["unread"] = read["unread"][line]
-        elif not_gaap:
-            out[line] = {"verdict": "not_gaap", "comparisons": []}
         elif line in read["seen"]:
             out[line] = {"verdict": "period_not_read", "comparisons": [],
                          "reason": f"a table prints the line, and none of its columns is the "
@@ -625,13 +761,34 @@ def compare(paragraph_ids: list[str], paragraphs: list[str], period_end: str, re
                          "reason": "no table of the release prints a row under one of the "
                                    "stated labels",
                          "labels": list(ROW_LABELS[line])}
-        if not_gaap:
-            out[line]["not_gaap"] = not_gaap
-        parts = [e for e in read["segments"] if e["line"] == line]
-        if parts:
-            out[line]["segment_cells_not_compared"] = parts
+        outside = [e for e in compared if e["verdict"] == "differs" and e["block"] != "gaap"]
+        if outside:
+            out[line]["differs_outside_gaap"] = [
+                {"hint": e["block"], "paragraph_id": e["release"]["paragraph_id"],
+                 "release": e["release"], "report": e["report"],
+                 "difference": e["difference"]} for e in outside]
         excluded = [e for e in read["excluded"]
                     if LINE_OF_LABEL.get(normal_label(e["label"])) == line]
         if excluded:
             out[line]["excluded_rows"] = excluded
-    return out
+        # the face statement's own verdict, beside the line's and never borrowed by it
+        statement = read["statement"]
+        mine = [e for e in compared if e["release"]["paragraph_id"] == statement
+                and e["verdict"] in ("agrees", "differs")]
+        out[line]["statement"] = {
+            "paragraph_id": statement,
+            "verdict": ("not_compared" if not mine else
+                        "differs" if any(e["verdict"] == "differs" for e in mine) else "agrees")}
+    by_kind: dict[str, list[dict]] = {}
+    for line, notes in read["unread"].items():
+        for item in notes:
+            by_kind.setdefault(item["kind"], []).append(dict(item, line=line))
+    return {"lines": out, "statement": read["statement"],
+            "unread_columns": read["unread_columns"], "unread_tables": by_kind}
+
+
+def compare(paragraph_ids: list[str], paragraphs: list[str], period_end: str, read_report,
+            segment_labels=()) -> dict:
+    """`compare_release`'s lines alone."""
+    return compare_release(paragraph_ids, paragraphs, period_end, read_report,
+                           segment_labels)["lines"]
