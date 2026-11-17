@@ -240,12 +240,15 @@ net income and depreciation and amortization are no working-capital line and sta
 adjustments), or the statement's change in a working-capital line,
 `earnings_versus_cash.working_capital.<line>.cash_flow_statement_change`, which is the same line
 reached by another path. Each line is cited once. (b) The change in the supplier finance
-obligation, receivables sold or factored, and deferred or contingent acquisition consideration,
-each a note table's `changes` cell of that concept. The supplier finance obligation sits inside
+obligation or in receivables sold or factored, each a note table's `changes` cell of that concept,
+or the period's payment of acquisition consideration (`PaymentForContingentConsiderationLiability`
+in financing, operating or investing activities, or `PaymentsForPreviousAcquisition`), a note table's
+`facts` cell, a flow over the period. The supplier finance obligation sits inside
 accounts payable and receivables sold inside receivables, both inside operating cash flow: each is
 the same movement as the statement's change in payables or in receivables, so name that line or
-the item, never both. Acquisition consideration is cited once for each concept, so a current and a
-noncurrent balance are two. A `cash_flow` adjustment takes a line's effect OUT of free cash flow and never repeats it.
+the item, never both. A payment of consideration is cited once for each concept. A change in a
+consideration liability is no `cash_flow` amount (a fall in it is a payment plus a remeasurement or
+a reclassification, and only the payment moved cash); it stays available as `earnings`. A `cash_flow` adjustment takes a line's effect OUT of free cash flow and never repeats it.
 A working-capital line is already inside operating cash flow: a receivables or inventory build
 (the statement's figure is positive) already lowered it, a payables or supplier finance rise
 (positive) already raised it, and receivables sold already raised it. So `reduce` is allowed only
@@ -253,10 +256,10 @@ for a movement that raised operating cash flow (receivables or inventory fell, p
 supplier finance obligation rose, receivables were sold), and `increase` only for one that lowered
 it; the amount is the line's whole size. Python reads the direction from the cell's sign, and drops
 the wrong one with "repeats a movement free cash flow already holds; a cash_flow adjustment takes
-a line's effect out". A change in an acquisition consideration liability takes `reduce` only, and only
-when the liability fell (it was paid); a rise moved no cash and is refused. An amount of zero moves
+a line's effect out". A payment of acquisition consideration takes `reduce` only (consideration paid
+outside the operating line escapes free cash flow). An amount of zero moves
 nothing and is refused. Everything else is refused as
-a `cash_flow` amount with the reason "a cash_flow amount is a working-capital change line of the statement, or a supplier finance, receivables sold or acquisition consideration change": a balance-sheet change (the calculator's `balance_sheet_change`,
+a `cash_flow` amount with the reason "a cash_flow amount is a working-capital change line of the statement, or a supplier finance or receivables sold change, or an acquisition consideration payment": a balance-sheet change (the calculator's `balance_sheet_change`,
 `articulation_gap`, `share_of_net_income` input), a total (the change in current liabilities,
 billings), a note table's other changes (a reserve, an accrual, an inventory obligation, a
 restructuring charge, a tax or a debt line, goodwill, intangible assets, property and equipment).

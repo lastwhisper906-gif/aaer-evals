@@ -345,3 +345,4 @@ sixty lines; a line under a lesson that has no date is that lesson's wrapped lin
 2026-11-17 a total matched only by its last path segment or a concept missed cells that carry a tag or sit under the total's name; match every route a cell can name itself by.
 2026-11-17 an adjustment direction was left to the analyst, so a line already inside operating cash flow could be taken out twice; read the sign of the cell and refuse the repeat.
 2026-11-17 a rule on direction left the amount and the cell's kind open (a rise in a liability, a zero); name each kind a movement can take before calling the rule done.
+2026-11-17 a fall in a liability was read as a payment; a liability's change mixes payment, remeasurement and reclassification, so take the flow fact that moved the cash.

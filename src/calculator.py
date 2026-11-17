@@ -2623,15 +2623,15 @@ INSIDE_FREE_CASH_FLOW_CONCEPTS = (
 #       stay earnings adjustments), in `terms.trailing_four_quarters`, or the statement's change in a working-capital line under
 #       `earnings_versus_cash.working_capital.<line>.cash_flow_statement_change` (the same line, cited
 #       once however it is reached; its parts are the line's own).
-#   (b) A NAMED OFF-STATEMENT ITEM, a note-table change whose concept is of one of three families:
-#       the supplier finance obligation, receivables sold or factored, deferred or contingent
-#       acquisition consideration. Supplier finance sits inside accounts payable and receivables sold
-#       inside receivables, both inside operating cash flow, so each has the KEY OF ITS LINE (one of the
-#       pair may stand, never both); consideration keeps its own key, its concept, so a current and a
-#       noncurrent balance are two.
+#   (b) A NAMED OFF-STATEMENT ITEM: a note-table change of the supplier finance obligation or of
+#       receivables sold or factored, or the period's PAYMENT of acquisition consideration (the flow fact,
+#       never a change in the liability: a fall in the liability is a payment plus a remeasurement or a
+#       reclassification, and only the payment moved cash). Supplier finance sits inside accounts payable
+#       and receivables sold inside receivables, both inside operating cash flow, so each has the KEY OF ITS
+#       LINE (one of the pair may stand, never both); a payment keeps its own key, its concept.
 # Anything else is refused as a cash-flow amount and stays available as earnings (a debt class arrives with adjusted debt, wave two).
 NOT_A_STATEMENT_LINE = ("a cash_flow amount is a working-capital change line of the statement, or a "
-                        "supplier finance, receivables sold or acquisition consideration change")
+                        "supplier finance or receivables sold change, or an acquisition consideration payment")
 NOT_ON_THE_LIST = NOT_A_STATEMENT_LINE
 STATEMENT_LINES = ("change_in_receivables", "change_in_inventory", "change_in_payables")
 STATEMENT_LINE_OF_WORKING_CAPITAL = {
@@ -2644,10 +2644,10 @@ NAMED_ITEMS = (
     ("receivables sold", r"transferoffinancialassetsaccountedforassalesamountderecognized|"
                          r"\w*receivablessold\w*|\w*factoredreceivables\w*|\w*factoring\w*",
      "line:change_in_receivables"),
-    ("acquisition consideration",
-     r"businesscombination(?:contingent)?considerationliabilit\w*|\w*considerationpayable|"
-     r"contingentconsideration\w*|deferredconsideration\w*|purchaseconsideration\w*", None),
 )
+# The period's payment of acquisition consideration, a flow fact (a start and an end), with its own key per concept.
+CONSIDERATION_PAYMENTS = (r"paymentforcontingentconsiderationliability(?:financing|operating|investing)activities\w*|"
+                          r"paymentsforpreviousacquisition\w*")
 
 # A cell that is a change in cash or restricted cash, or in a total that includes cash, CONTAINS free
 # cash flow: a change in cash is the sum of every cash flow. Refused for EVERY class of adjustment, by a
@@ -2819,16 +2819,20 @@ def cash_flow_source(path: str, cell: dict) -> str | None:
     """Where a cash-flow amount comes from, or None: the key of the statement line a calculator cell is
     (`line:change_in_payables`), or of the named item (a supplier finance, receivables sold or acquisition consideration change) a note-table change is
     (`line:change_in_payables` for a supplier finance obligation, which sits inside payables;
-    `item:<concept>` for acquisition consideration). Two adjustments with the same key count one movement twice."""
+    `item:<concept>` for the period's payment of acquisition consideration, a flow fact). Two adjustments with the
+    same key count one movement twice."""
     segments = path.split(".")
     concept = cell.get("concept")
     if isinstance(concept, str):
+        local = concept.rpartition(":")[2].lower()
+        if re.fullmatch(CONSIDERATION_PAYMENTS, local) and cell.get("start") and cell.get("end") \
+                and not (isinstance(cell.get("from"), dict) or isinstance(cell.get("to"), dict)):
+            return f"item:{local}"
         if not (isinstance(cell.get("from"), dict) and isinstance(cell.get("to"), dict)):
             return None
-        local = concept.rpartition(":")[2].lower()
         for name, pattern, key in NAMED_ITEMS:
             if re.fullmatch(pattern, local):
-                return key or f"item:{local}"
+                return key
         return None
     if segments[:2] == ["terms", "trailing_four_quarters"] and len(segments) > 2 and segments[2] in STATEMENT_LINES:
         return f"line:{segments[2]}"
@@ -3193,20 +3197,15 @@ def movement_keys(fields: dict, path: str) -> set:
     """The keys under which a CASH-FLOW adjustment counts a movement; two cash-flow adjustments that share one
     count one movement twice. A statement line or a named item has its own key (supplier finance and receivables
     sold share their line's); a note table's trade balance of a working-capital line, and the movement cells of
-    the balance sheet's line, have that line's key; a consideration total holds the keys of its current and its
-    noncurrent part, which hold only their own; every other cell is keyed by its field."""
+    the balance sheet's line, have that line's key; a consideration payment has its concept's key; every other cell
+    is keyed by its field."""
     cell = _cell_at(fields, path)
     if not isinstance(cell, dict):
         return {f"field:{path}"}
     source = cash_flow_source(path, cell)
     concept = cell.get("concept")
     if source:
-        keys = {source}
-        if source.startswith("item:") and isinstance(concept, str):
-            local = concept.rpartition(":")[2].lower()
-            if not local.endswith(("current", "noncurrent")):          # a total: both of its parts
-                keys |= {f"item:{local}current", f"item:{local}noncurrent"}
-        return keys
+        return {source}
     segments = path.split(".")
     for key, working, pattern in WORKING_CAPITAL_MOVEMENTS:
         if isinstance(concept, str):
@@ -3252,7 +3251,7 @@ REPEATS_A_MOVEMENT = ("repeats a movement free cash flow already holds; a cash_f
 
 def movement_effect(fields: dict, path: str, amount: float | None = None) -> float | None:
     """The effect on operating cash flow of the movement a cash_flow cell holds (positive: it raised it), or
-    None for a cell that is no statement line or named item with a known effect (acquisition consideration)."""
+    None for a cell that is no statement line or named item with a known effect (a consideration payment)."""
     cell = _cell_at(fields, path)
     if not isinstance(cell, dict):
         return None
@@ -3267,26 +3266,20 @@ def movement_effect(fields: dict, path: str, amount: float | None = None) -> flo
     return STATEMENT_LINE_EFFECT_SIGN[source.partition(":")[2]] * float(value)
 
 
-A_RISE_MOVED_NO_CASH = "a rise in consideration moved no cash"
-A_PAYMENT_IS_TAKEN_OUT_WITH_REDUCE = ("a fall in consideration is a payment, taken out with `reduce`; "
-                                      "`increase` would add cash that was never received")
+A_PAYMENT_IS_TAKEN_OUT_WITH_REDUCE = ("a payment of consideration is taken out with `reduce`; "
+                                      "`increase` would add cash that was never paid")
 MOVES_NOTHING = "an amount of zero moves nothing"
 
 
 def consideration_problem(fields: dict, path: str, direction) -> str | None:
-    """A change in an acquisition consideration liability takes `reduce` only, and only when the liability fell (it
-    was paid). A rise moved no cash. None for any other cell."""
+    """A payment of acquisition consideration (a flow fact of the period) takes `reduce` only: consideration paid
+    outside the operating line escapes free cash flow. None for any other cell."""
     cell = _cell_at(fields, path)
     if not isinstance(cell, dict):
         return None
     source = cash_flow_source(path, cell)
     if source is None or not source.startswith("item:"):
         return None
-    value = field_value(fields, path)
-    if not isinstance(value, (int, float)) or isinstance(value, bool) or value == 0:
-        return None
-    if value > 0:
-        return A_RISE_MOVED_NO_CASH
     return A_PAYMENT_IS_TAKEN_OUT_WITH_REDUCE if direction == "increase" else None
 
 

@@ -1363,13 +1363,13 @@ def test_the_definition_says_the_cash_flow_rule_the_span_rule_and_the_earnings_r
             "The supplier finance obligation sits inside accounts payable and receivables sold inside receivables, both "
             "inside operating cash flow: each is the same movement as the statement's change in payables or in "
             "receivables, so name that line or the item, never both",
-            "so a current and a noncurrent balance are two",
+            "A payment of consideration is cited once for each concept",
             "`earnings_versus_cash.working_capital.<line>.cash_flow_statement_change`, which is the same line "
             "reached by another path. Each line is cited once. (b) The change in the supplier finance "
-            "obligation, receivables sold or factored, and deferred or contingent acquisition consideration",
+            "obligation or in receivables sold or factored, each a note table's `changes` cell of that concept",
             "Everything else is refused as a `cash_flow` amount with the reason \"a cash_flow amount is a "
-            "working-capital change line of the statement, or a supplier finance, receivables sold or acquisition "
-            "consideration change\"",
+            "working-capital change line of the statement, or a supplier finance or receivables sold change, or an "
+            "acquisition consideration payment\"",
             "All of them stay available as `earnings` adjustments (there is no `debt` class yet: adjusted debt is wave two)",
             "A second `cash_flow` adjustment of a statement line or a named item already cited is dropped as "
             "counting one movement twice",
@@ -1725,18 +1725,35 @@ YEAR_CELLS = [
 ]
 
 
+# Written by hand, not read from the rule: the whole totals of a statement among the year cells.
+YEAR_CELLS_THAT_ARE_TOTALS = {
+    (STX_RUN, "terms.trailing_four_quarters.net_income"), (STX_RUN, "ebit"), (STX_RUN, "ratios.solvency.ebitda"),
+    (AAPL_RUN, "terms.trailing_four_quarters.net_income"), (AAPL_RUN, "ratios.solvency.ebitda"),
+    (AAPL_RUN, "contract_liabilities_and_billings.billings")}
+
+
 @pytest.mark.parametrize("run, path, how", YEAR_CELLS, ids=[f"{row[0][:4]}-{row[1][-34:]}" for row in YEAR_CELLS])
 def test_a_cell_that_really_is_a_year_derives_it_from_itself_and_may_recur(run, path, how):
+    """Each year cell derives a year from itself and passes the recurrence rule as it stands (asked of the rule alone,
+    before the totals rule is). As earnings, net income, EBIT, EBITDA and billings are refused as totals of the
+    statement, by the outcome written here; each other year cell is accepted, recurring too."""
     held = printed(run)
     cell = calculator._cell_at(held, path)
     assert "value" in cell and cell.get("unit") == "USD", how
     period_end = dt.date.fromisoformat(held["period_end"])
     kind, why = calculator.derived_span(cell, period_end, calculator.trailing_year_start(held))
     assert kind == "year", (path, why)
+    # the order of the rules: the span and the recurrence rule come first in `adjustment_reading` for a cash_flow
+    # amount, the totals rule is asked of an earnings amount before the period; so the recurrence rule is checked
+    # here on its own, where no totals rule intervenes
+    assert calculator.recurrence_problem(path, cell, kind, with_year(held)) is None, path
     amount, reason = reading(held, path, True)
-    # a whole total of a statement is refused as earnings, after the recurrence rule has passed it
-    assert (amount, reason) == (cell["value"], None) or (amount, reason) == (None, calculator.TOTAL_OF_THE_STATEMENT), (amount, reason)
-    assert (reason is not None) == (calculator.statement_total(held, path, cell) is not None), (path, reason)
+    if (run, path) in YEAR_CELLS_THAT_ARE_TOTALS:
+        assert (amount, reason) == (None, calculator.TOTAL_OF_THE_STATEMENT), (path, amount, reason)
+    else:
+        assert (amount, reason) == (cell["value"], None), (path, amount, reason)
+    if path.endswith("receivables.cash_flow_statement_change"):
+        assert reading(held, path, True, "cash_flow") == (cell["value"], None)       # a recurring cash_flow line
 
 
 def test_no_section_name_decides_a_span():
@@ -1914,10 +1931,6 @@ NAMED_ITEM_CONCEPTS = [
     ("us-gaap:TransferOfFinancialAssetsAccountedForAsSalesAmountDerecognized", "receivables sold"),
     ("co:ReceivablesSoldToFinancialInstitutions", "receivables sold"),
     ("co:FactoredReceivables", "receivables sold"),
-    ("nvda:BusinessCombinationConsiderationPayable", "acquisition consideration"),
-    ("us-gaap:BusinessCombinationContingentConsiderationLiabilityCurrent", "acquisition consideration"),
-    ("us-gaap:BusinessCombinationContingentConsiderationLiabilityNoncurrent", "acquisition consideration"),
-    ("co:DeferredConsiderationPayable", "acquisition consideration"),
 ]
 
 
@@ -1925,8 +1938,7 @@ NAMED_ITEM_CONCEPTS = [
 def test_a_named_off_statement_item_stands_as_a_cash_flow_amount(concept, item):
     held, path = a_change(concept)
     assert reading(held, path, False, "cash_flow") == (1_000_000.0, None)
-    key = {"supplier finance": "line:change_in_payables", "receivables sold": "line:change_in_receivables",
-           "acquisition consideration": f"item:{concept.rpartition(':')[2].lower()}"}[item]
+    key = {"supplier finance": "line:change_in_payables", "receivables sold": "line:change_in_receivables"}[item]
     assert calculator.cash_flow_source(path, calculator._cell_at(held, path)) == key
 
 
@@ -2082,7 +2094,9 @@ def test_accrued_purchase_consideration_is_read_from_the_filings_own_note_and_st
     cell = calculator._cell_at(held, path)
     assert cell["concept"] == "nvda:BusinessCombinationConsiderationPayable" and cell["value"] == by_eye
     assert cell["from"] == {"instant": "2026-01-25"} and cell["to"] == {"instant": "2026-07-26"}
-    assert reading(held, path, False, "cash_flow") == (by_eye, None)
+    # a fall in a consideration liability is no cash_flow amount (a payment plus a remeasurement or a reclassification)
+    assert reading(held, path, False, "cash_flow") == (None, NOT_A_STATEMENT_LINE)
+    assert reading(held, path, False, "earnings") == (by_eye, None)
 
 
 def test_a_planted_receivables_sold_change_stands_as_cash_flow_once():
@@ -2412,23 +2426,41 @@ def test_a_planted_receivables_sold_change_and_the_statements_change_in_receivab
     assert calculator.counted_twice(fields, note, ["terms.trailing_four_quarters.change_in_payables"]) is None
 
 
-def test_current_and_noncurrent_contingent_consideration_are_two_balances_and_both_stand():
+def test_palo_altos_contingent_consideration_balances_are_no_cash_flow_amount_and_its_payment_is():
     """Palo Alto's contingent consideration, April 30, 2026 against July 31, 2025, read by eye from the run's
     input_notes.md: the current liability 124 - 276 = -152 (line 173) and the noncurrent 116 - 238 = -122
-    (line 178), millions. A second cell of the same concept is the same balance and is refused."""
+    (line 178), millions: refused as cash_flow, each a payment plus a remeasurement (the 154 paid and 120 of
+    remeasurement make the 274 fall). They stay `earnings`. The payment itself is the filing's fact
+    `PaymentForContingentConsiderationLiabilityFinancingActivities`, 154 million (f-404 of the 10-Q), which the run's
+    view does not hold as a cell (its 154 is the fair-value table's own concept): planted here as the flow it is, it
+    stands with `reduce`, once, and `increase` is refused."""
     read_by_eye(PALO_RUN, (173, "124"), (173, "276"), M, -152e6)
     read_by_eye(PALO_RUN, (178, "116"), (178, "238"), M, -122e6)
     held = printed(PALO_RUN)
-    current, noncurrent = "note_tables.tables.notes_37.changes.54", "note_tables.tables.notes_37.changes.70"
-    again = "note_tables.tables.notes_37.changes.55"
-    assert [calculator._cell_at(held, p)["concept"].rpartition(":")[2] for p in (current, noncurrent, again)] == [
-        "BusinessCombinationContingentConsiderationLiabilityCurrent",
-        "BusinessCombinationContingentConsiderationLiabilityNoncurrent",
-        "BusinessCombinationContingentConsiderationLiabilityCurrent"]
-    assert reading(held, current, False, "cash_flow") == (-152e6, None)
-    assert reading(held, noncurrent, False, "cash_flow") == (-122e6, None)
-    assert calculator.counted_twice(held, noncurrent, [current]) is None
-    assert TWICE in calculator.counted_twice(held, again, [current])
+    for path in ("note_tables.tables.notes_37.changes.54", "note_tables.tables.notes_37.changes.70",
+                 "note_tables.tables.notes_37.changes.55"):
+        assert reading(held, path, False, "cash_flow") == (None, NOT_A_STATEMENT_LINE), path
+        assert reading(held, path, False, "earnings")[0] is not None, path
+    assert not any("PaymentForContingentConsideration" in str(cell.get("concept")) for _, cell in usd_cells(held))
+    xml = (REPO / "tests" / "fixtures" / "PANW" / "10-Q" / "panw-20260430_htm.xml").read_text(encoding="utf-8")
+    assert re.search(r'<us-gaap:PaymentForContingentConsiderationLiabilityFinancingActivities[^>]*id="f-404"[^>]*>154000000<', xml)
+    assert source.one_value("PANW", "PaymentForContingentConsiderationLiabilityFinancingActivities",
+                            "2025-08-01..2026-04-30", "2026-06-03") == 154e6
+    fact = {"concept": "us-gaap:PaymentForContingentConsiderationLiabilityFinancingActivities", "value": 154e6,
+            "unit": "iso4217:USD", "start": "2025-08-01", "end": "2026-04-30"}
+    planted = with_year({"period_end": "2026-04-30", "note_tables": {"tables": {"notes_1": {"facts": [fact, dict(fact)]}}}})
+    path = "note_tables.tables.notes_1.facts.0"
+    assert calculator.cash_flow_source(path, fact) == "item:paymentforcontingentconsiderationliabilityfinancingactivities"
+    assert reading(planted, path, False, "cash_flow") == (154e6, None)
+    assert calculator.repeats_a_movement(planted, path, "reduce") is None
+    assert calculator.repeats_a_movement(planted, path, "increase") == calculator.A_PAYMENT_IS_TAKEN_OUT_WITH_REDUCE
+    out = calculator.quality_adjusted({"value": 1e9}, {"value": 0.0}, {"value": 0.0, "formula": "x"},
+                                      [adjustment(path, "reduce", "cash_flow"),
+                                       {**adjustment("note_tables.tables.notes_1.facts.1", "reduce", "cash_flow"), "name": "again"}],
+                                      planted)
+    row, = out["adjustments_applied"]
+    assert row["amount"] == 154e6 and out["value"] == 1e9 - 154e6
+    assert TWICE in out["adjustments_refused"][0]["reason"]
 
 
 def test_a_cell_that_is_no_source_is_its_own_key_so_a_field_is_not_cited_twice():
@@ -2778,24 +2810,24 @@ def test_a_note_tables_change_in_a_balance_is_the_movement_of_its_line_in_any_cl
     assert TWICE in calculator.counted_twice(held, note, [note])
 
 
-def test_a_consideration_total_conflicts_with_its_parts_and_the_parts_do_not_conflict():
+def test_a_consideration_payment_has_its_own_key_per_concept():
     def plant(*names):
-        changes = [{**usd(unit="iso4217:USD", value=(-1_000_000.0, -2_000_000.0, -5_000_000.0)[i]), "concept": f"us-gaap:{name}",
-                    "from": {"instant": "2025-06-30"}, "to": {"instant": "2026-06-30"}} for i, name in enumerate(names)]
-        return with_year({"period_end": "2026-06-30", "note_tables": {"tables": {"notes_1": {"changes": changes}}}})
-    base = "BusinessCombinationContingentConsiderationLiability"
-    held = plant(base, base + "Current", base + "Noncurrent")
-    total, current, noncurrent = (f"note_tables.tables.notes_1.changes.{i}" for i in (0, 1, 2))
-    assert calculator.counted_twice(held, current, [noncurrent]) is None and calculator.counted_twice(held, noncurrent, [current]) is None
-    for part in (current, noncurrent):
-        assert TWICE in calculator.counted_twice(held, total, [part])
-        assert TWICE in calculator.counted_twice(held, part, [total])
-    assert TWICE in calculator.counted_twice(held, current, [current])
-    # through the calculator: the total after the current part is refused, the noncurrent part stands beside it
-    out = calculator.quality_adjusted({"value": 100.0}, {"value": 10.0}, {"value": 0.0, "formula": "x"},
-                                      [{**adjustment(p, applies_to="cash_flow"), "name": p} for p in (current, noncurrent, total)], held)
-    assert [r["calculator_field"] for r in out["adjustments_applied"]] == [current, noncurrent]
-    assert [r["calculator_field"] for r in out["adjustments_refused"]] == [total]
+        facts = [{**usd(unit="iso4217:USD", value=1_000_000.0 * (i + 1)), "concept": f"us-gaap:{name}",
+                  "start": "2025-07-01", "end": "2026-06-30"} for i, name in enumerate(names)]
+        return with_year({"period_end": "2026-06-30", "note_tables": {"tables": {"notes_1": {"facts": facts}}}})
+    held = plant("PaymentForContingentConsiderationLiabilityFinancingActivities",
+                 "PaymentForContingentConsiderationLiabilityInvestingActivities", "PaymentsForPreviousAcquisition",
+                 "PaymentForContingentConsiderationLiabilityFinancingActivities")
+    first, second, third, again = (f"note_tables.tables.notes_1.facts.{i}" for i in range(4))
+    assert calculator.counted_twice(held, second, [first]) is None and calculator.counted_twice(held, third, [first, second]) is None
+    assert TWICE in calculator.counted_twice(held, again, [first])
+    for path in (first, second, third):
+        assert calculator.movement_keys(held, path) == {calculator.cash_flow_source(path, calculator._cell_at(held, path))}
+    out = calculator.quality_adjusted({"value": 100e6}, {"value": 0.0}, {"value": 0.0, "formula": "x"},
+                                      [{**adjustment(p, "reduce", "cash_flow"), "name": p} for p in (first, second, third, again)], held)
+    assert [r["calculator_field"] for r in out["adjustments_applied"]] == [first, second, third]
+    assert [r["calculator_field"] for r in out["adjustments_refused"]] == [again]
+    assert out["value"] == 100e6 - 1e6 - 2e6 - 3e6
 
 
 # --- the key comes from the cell: anchored concepts, one figure under many paths ------------------------------------
@@ -3298,29 +3330,26 @@ def test_the_item_inputs_after_a_total_are_the_calculators_own_list(todays_views
     assert calculator.ITEM_INPUTS == {"depreciation_and_amortization", "change_in_contract_liabilities", "interest_expense"}
 
 
-def test_a_consideration_change_takes_reduce_only_and_only_when_it_fell():
-    """Generac's contingent consideration current rose by 94.683 million (notes_99.changes.4): no cash moved, both
-    directions refused. NVIDIA's consideration payable fell by 2,935 million (notes_60.changes.6): paid, `reduce`
-    stands and `increase` is refused."""
-    rise = calculator._cell_at(held := calculator_drift.recompute(RUNS / "GNRC/0001437749-26-025669", STORE),
-                               "note_tables.tables.notes_99.changes.4")
-    assert rise["value"] == 94_683_000 and rise["concept"].endswith("BusinessCombinationContingentConsiderationLiabilityCurrent")
-    for direction in ("reduce", "increase"):
-        assert calculator.repeats_a_movement(held, "note_tables.tables.notes_99.changes.4", direction) == calculator.A_RISE_MOVED_NO_CASH
-        assert analysis_check.adjustment_problem(held)(
-            {"direction": direction, "applies_to": "cash_flow", "quote": "q",
-             "calculator_field": "note_tables.tables.notes_99.changes.4"}).endswith(calculator.A_RISE_MOVED_NO_CASH)
+def test_a_change_in_a_consideration_liability_is_no_cash_flow_amount_whichever_way_it_moved():
+    """Generac's contingent consideration current rose by 94.683 million (notes_99.changes.4) and NVIDIA's
+    consideration payable fell by 2,935 million (notes_60.changes.6): a fall is a payment plus a remeasurement or a
+    reclassification, a rise moved no cash. Neither is a cash_flow amount, in either direction, by the calculator or
+    the gate; both stay available as earnings."""
+    held = calculator_drift.recompute(RUNS / "GNRC/0001437749-26-025669", STORE)
+    rise = calculator._cell_at(held, "note_tables.tables.notes_99.changes.4")
+    # by eye, input_notes.md line 472, "Accrued contingent consideration": 105,858 - 11,175 = 94,683 (thousands)
+    read_by_eye("GNRC/0001437749-26-025669", (472, "105,858"), (472, "11,175"), 1_000.0, 94_683_000)
+    assert 105_858 - 11_175 == 94_683 and rise["value"] == 94_683 * 1_000
+    assert rise["concept"].endswith("BusinessCombinationContingentConsiderationLiabilityCurrent")
     nvda = printed(NVDA_RUN)
-    path = "note_tables.tables.notes_60.changes.6"
-    assert calculator._cell_at(nvda, path)["value"] == -2_935_000_000
-    assert calculator.repeats_a_movement(nvda, path, "reduce") is None
-    assert calculator.repeats_a_movement(nvda, path, "increase") == calculator.A_PAYMENT_IS_TAKEN_OUT_WITH_REDUCE
-    out = calculator.quality_adjusted({"value": 100e9}, {"value": 0.0}, {"value": 0.0, "formula": "x"},
-                                      [adjustment(path, "increase", "cash_flow"),
-                                       {**adjustment(path, "reduce", "cash_flow"), "name": "paid"}], nvda)
-    row, = out["adjustments_applied"]
-    assert row["name"] == "paid" and row["amount"] == 2_935_000_000 and out["value"] == 100e9 - 2_935e6
-    assert calculator.A_PAYMENT_IS_TAKEN_OUT_WITH_REDUCE in out["adjustments_refused"][0]["reason"]
+    for view_, path in ((held, "note_tables.tables.notes_99.changes.4"), (nvda, "note_tables.tables.notes_60.changes.6")):
+        assert reading(view_, path, False, "cash_flow") == (None, NOT_A_STATEMENT_LINE), path
+        assert reading(view_, path, False, "earnings")[0] is not None, path
+        for direction in ("reduce", "increase"):
+            problem = analysis_check.adjustment_problem(view_)(
+                {"direction": direction, "applies_to": "cash_flow", "quote": "q", "calculator_field": path})
+            assert problem.endswith(NOT_A_STATEMENT_LINE), (path, direction)
+    assert calculator._cell_at(nvda, "note_tables.tables.notes_60.changes.6")["value"] == -2_935_000_000
 
 
 def test_an_amount_of_zero_moves_nothing_and_takes_no_movement_key():
@@ -3334,14 +3363,17 @@ def test_an_amount_of_zero_moves_nothing_and_takes_no_movement_key():
     assert cell["concept"].endswith("SupplierFinanceProgramObligation")
     cell["value"] = 0.0
     payables = "terms.trailing_four_quarters.change_in_payables"
-    line_value = calculator.field_value(zeroed, payables)
-    assert line_value
     out = calculator.quality_adjusted({"value": 100e9}, {"value": 0.0}, {"value": 0.0, "formula": "x"},
                                       [adjustment(path, "reduce", "cash_flow"),
-                                       {**adjustment(payables, "reduce" if line_value > 0 else "increase", "cash_flow"),
+                                       {**adjustment(payables, "reduce", "cash_flow"),
                                         "name": "the real line"}], zeroed)
+    # Seagate's change in payables over 2025-06-28..2026-07-03, companyfacts (IncreaseDecreaseInAccountsPayable): payables
+    # ROSE by 66 million, which already raised operating cash flow, so the line is taken out with `reduce` (by hand)
+    payables_change = source.one_value("STX", "IncreaseDecreaseInAccountsPayable", "2025-06-28..2026-07-03", "2026-08-04")
+    assert payables_change == 66e6
     row, = out["adjustments_applied"]
-    assert row["name"] == "the real line" and row["amount"] == abs(line_value)
+    assert (row["name"], row["amount"], row["direction"]) == ("the real line", 66e6, "reduce")
+    assert out["value"] == 100e9 - 66e6
     zero, = out["adjustments_refused"]
     assert calculator.MOVES_NOTHING in zero["reason"] and "moves nothing" in zero["reason"]
     assert TWICE not in zero["reason"]
@@ -3350,9 +3382,8 @@ def test_an_amount_of_zero_moves_nothing_and_takes_no_movement_key():
     assert "moves nothing" in problem
     # earnings has no such rule: a zero is listed as it always was
     assert reading(zeroed, path, False, "earnings")[0] == 0.0
-    panw = printed(PALO_RUN)
-    zeros = [p for p, c in usd_cells(panw) if p.startswith("note_tables") and ".changes." in p
-             and "ConsiderationLiability" in str(c.get("concept")) and c["value"] == 0.0]
-    assert len(zeros) == 4
-    for zero_path in zeros:
-        assert reading(panw, zero_path, False, "cash_flow") == (None, calculator.MOVES_NOTHING), zero_path
+    # a payment of consideration of zero moves nothing either
+    paid = {"concept": "us-gaap:PaymentForContingentConsiderationLiabilityFinancingActivities", "value": 0.0,
+            "unit": "iso4217:USD", "start": "2025-08-01", "end": "2026-04-30"}
+    planted = with_year({"period_end": "2026-04-30", "note_tables": {"tables": {"notes_1": {"facts": [paid]}}}})
+    assert reading(planted, "note_tables.tables.notes_1.facts.0", False, "cash_flow") == (None, calculator.MOVES_NOTHING)
