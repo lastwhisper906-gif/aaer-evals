@@ -132,6 +132,9 @@ PER_SHARE = ("diluted_earnings_per_share",)
 # A row of basic earnings per share is the diluted line's row, held to `EarningsPerShareBasic`
 # and hinted `basic`; the name is the pseudo-line `row_lines` gives it and the report is asked.
 BASIC = "basic_earnings_per_share"
+# The noncontrolling interest's income as the report tags it (a pseudo-line the reader is asked
+# for, never a line of the release): its sign, where it is tagged, decides the sign of the row.
+NCI = "net_income_to_noncontrolling"
 BY_SIZE = ("capital_expenditure", "cost_of_revenue")   # printed in parentheses as an outflow
 
 
@@ -908,16 +911,16 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
             # figures look. `Basic` rows, and the rows under a `Basic:` heading, are held to
             # EarningsPerShareBasic (hint `basic`); a row under any other per share heading is
             # held to the figure its own label names, or listed unread.
-            basic_row = False
-            if line == BASIC:
-                line, basic_row = "diluted_earnings_per_share", True
-            elif per_share and line not in PER_SHARE:
+            basic_row = line == BASIC
+            if not basic_row and per_share and line not in PER_SHARE:
                 if per_kind != "basic":
                     note(line, placed[1], "a row under a per share heading that names neither "
                                           "basic nor diluted, whose own label names no per share "
                                           "figure")
                     continue
                 basic_row = True
+            if basic_row:
+                line = BASIC            # its own line, outside the nine: never filed under another
             seen.add(line)
             per_row = line in PER_SHARE or basic_row
             figures = _figures(row[placed[0] + 1:])
@@ -972,11 +975,10 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
                     hint = "unidentified" if label_hint == "gaap" else "not_gaap"
                 elif label_hint in ("gaap", "unidentified"):
                     hint = label_hint
-                if basic_row:
-                    hint = "basic"
+                if basic_row and hint == "gaap":
+                    hint = "basic"           # the basic figure's own hint, as GAAP as the line's
                 cells.append({
                     "line": line, "months": column["months"], "paragraph_id": paragraph_id,
-                    "fact_line": BASIC if basic_row else None,
                     "label": placed[1], "cell": figure["text"], "value": figure["value"],
                     # a basic row is held to the cent at least: `2` or a dash is not a step of one
                     "decimals": max(figure["decimals"], 2) if basic_row else figure["decimals"],
@@ -1029,17 +1031,22 @@ _INCOME_WORDS = re.compile(r"\b(?:income|earnings|profit)\b")
 _LOSS_WORDS = re.compile(r"\b(?:loss|losses)\b")
 
 
-def _income_added(label: str, printed: Decimal) -> list[Decimal]:
+def _income_added(label: str, printed: Decimal, tagged: Decimal | None = None) -> list[Decimal]:
     """What the noncontrolling interest adds to the parent's row to make the consolidated net
-    income, read from the row's words alone, never from parentheses or a prefix (filers differ,
-    and a convention guessed wrong agrees wrongly). A label with an income word (income,
-    earnings, profit) and no loss word is income, `+|figure|`, printed 40, (40) or under `Less:`;
-    a label with a loss word (loss, losses) and no income word is a loss, `-|figure|`. A label
-    with both kinds of word (`income (loss)`, `(earnings) loss`) or neither (`Minority
-    interest`) does not say, and both signs are returned."""
+    income. Where the report tags the interest's income for the period (`tagged`, signed:
+    positive is income), the tag decides. Otherwise the sign is read from the row's words, never
+    from a prefix: a label with an income word (income, earnings, profit) and no loss word is
+    income, a bare figure `+|figure|`; a loss word (loss, losses) and no income word is a loss,
+    `-|figure|`. A figure in parentheses is not read from its words (filers differ, and Generac
+    prints a loss as `(234)` under an income label), and a label with both kinds of word or
+    neither does not say: both signs are returned."""
+    if tagged is not None:
+        return [tagged]
     words = " ".join(label.lower().split())
     size = abs(printed)
     income, loss = bool(_INCOME_WORDS.search(words)), bool(_LOSS_WORDS.search(words))
+    if printed < 0:
+        return [size, -size]
     if income and not loss:
         return [size]
     if loss and not income:
@@ -1047,7 +1054,7 @@ def _income_added(label: str, printed: Decimal) -> list[Decimal]:
     return [size, -size]
 
 
-def _identity(cell: dict, rows: dict, parent_fact: dict) -> dict:
+def _identity(cell: dict, rows: dict, parent_fact: dict, nci_fact: dict | None = None) -> dict:
     """A consolidated net income in a table that prints the noncontrolling interest, with no
     ProfitLoss on record: held to the table's own identity, consolidated is the parent's row
     plus the noncontrolling interest's income, at the printed precision. The sign of the
@@ -1056,7 +1063,9 @@ def _identity(cell: dict, rows: dict, parent_fact: dict) -> dict:
     that breaks the identity differs, with the three cells; a table that does not print all
     three is a fact not on record."""
     held = ("the table's own identity: consolidated net income is the parent's row plus the "
-            "noncontrolling interest's income, and the parent's row is held to NetIncomeLoss")
+            "noncontrolling interest's income (its sign from the tagged "
+            "NetIncomeLossAttributableToNoncontrollingInterest where the report tags it, else "
+            "from the row), and the parent's row is held to NetIncomeLoss")
     nci, parent = rows.get("noncontrolling"), rows.get("parent")
     if nci is None or parent is None:
         return {"verdict": "report_fact_missing", "held_to": held,
@@ -1065,7 +1074,9 @@ def _identity(cell: dict, rows: dict, parent_fact: dict) -> dict:
                                       "for the period"}}
     total = Decimal(str(cell["release"]["value"]))
     kept = Decimal(str(parent["value"]))
-    added = _income_added(nci["label"], Decimal(str(nci["value"])))
+    tagged = (Decimal(str(nci_fact["value"])) if nci_fact and "missing" not in nci_fact
+              else None)
+    added = _income_added(nci["label"], Decimal(str(nci["value"])), tagged)
     # The tolerance is one step, which is exact: each of the three printed figures is the true
     # figure rounded to the nearest step, so their residual is at most 1.5 steps, and the figures
     # all lie on the step's lattice, so a residual counted in whole steps is at most 1.
@@ -1118,41 +1129,60 @@ def compare_release(paragraph_ids: list[str], paragraphs: list[str], period_end:
     # income is the consolidated one by construction
     cash_flow_tables = read["cash_flow_statements"]
     out = {}
-    for line in LINES:
+    for line in LINES + (BASIC,):
         compared = []
         for cell in (c for c in read["cells"] if c["line"] == line):
             entry = {"span_months": cell["months"], "period_end": period_end,
                      "release": cell["release"], "block": cell["block"]}
-            based = cell.get("fact_line")           # a basic earnings per share cell
-            generic = (line == "net_income" and "attributable" not in cell["label"].lower()
-                       and not based)
+            generic = line == "net_income" and "attributable" not in cell["label"].lower()
             parent, total = "net_income", "net_income_with_noncontrolling"
             # an unlabelled net income is the total before the noncontrolling interest in a table
             # with a parent's row and in a statement of cash flows: held to ProfitLoss
             wants_total = generic and (cell["paragraph_id"] in with_attributable
                                        or cell["paragraph_id"] in cash_flow_tables)
-            held = based or (total if wants_total else line)
+            held = total if wants_total else line
             fact = report(held, cell["months"])
             if wants_total and "missing" in fact and cell["paragraph_id"] in read["noncontrolling_tables"]:
                 # the table prints the noncontrolling interest: the consolidated cell is not
                 # NetIncomeLoss. The parent's own row is held to NetIncomeLoss, and this cell to
                 # the table's identity: consolidated less noncontrolling is the parent's row
                 entry.update(_identity(cell, read["noncontrolling"].get(
-                    (cell["paragraph_id"], cell["months"]), {}), report(parent, cell["months"])))
+                    (cell["paragraph_id"], cell["months"]), {}), report(parent, cell["months"]),
+                    report(NCI, cell["months"])))
                 compared.append(entry)
                 continue
             if wants_total and "missing" in fact:
                 held = parent
                 fact = report(parent, cell["months"])
-                entry["held_to"] = ("NetIncomeLoss: ProfitLoss is not on record for the period, "
-                                    "and the table prints no noncontrolling interest, so the "
-                                    "total is the parent's")
+                nci_fact = report(NCI, cell["months"])
+                tagged = "missing" not in nci_fact
+                if read["noncontrolling_tables"] or (tagged and nci_fact["value"] != 0):
+                    # the interest exists (a table of the release prints it, or the report tags
+                    # a figure), and this table does not print it: the figure is consolidated
+                    if tagged and "missing" not in fact:
+                        fact = {"value": fact["value"] + nci_fact["value"],
+                                "tag": f"{fact['tag']} + {nci_fact['tag']}",
+                                "id": f"{fact['id']} + {nci_fact['id']}",
+                                "period": fact.get("period"), "unit": fact.get("unit")}
+                        entry["held_to"] = ("NetIncomeLoss plus the tagged "
+                                            "NetIncomeLossAttributableToNoncontrollingInterest: "
+                                            "ProfitLoss is not on record, and a noncontrolling "
+                                            "interest exists, so this table's net income is the "
+                                            "consolidated figure")
+                    else:
+                        fact = {"missing": "ProfitLoss is not on record, a noncontrolling "
+                                           "interest exists, and the report does not tag its "
+                                           "income for the period, so the consolidated net "
+                                           "income cannot be told from the parent's"}
+                else:
+                    entry["held_to"] = ("NetIncomeLoss: ProfitLoss is not on record for the "
+                                        "period, and no noncontrolling interest is printed or "
+                                        "tagged, so the total is the parent's")
             if "missing" in fact:
                 entry.update(verdict="report_fact_missing", report={"missing": fact["missing"]})
                 compared.append(entry)
                 continue
-            shown = _printed_as("diluted_earnings_per_share" if based else line, cell["label"],
-                                cell["value"])
+            shown = _printed_as(line, cell["label"], cell["value"])
             scale, decimals = cell["scale_value"], cell["decimals"]
             agrees = agrees_at_the_release_precision(shown, fact["value"], scale, decimals)
             difference = shown * scale - Decimal(str(fact["value"]))
@@ -1173,13 +1203,15 @@ def compare_release(paragraph_ids: list[str], paragraphs: list[str], period_end:
         for entry in compared:
             verdict, hint = entry["verdict"], entry["block"]
             if verdict == "differs":
-                verdicts.append("differs" if hint == "gaap" else "differs_outside_gaap")
+                verdicts.append("differs" if hint in ("gaap", "basic") else "differs_outside_gaap")
             elif verdict == "agrees" and hint == "unidentified":
                 verdicts.append("block_not_identified")
             else:
                 verdicts.append(verdict)
         if line in read["unread"]:
             verdicts.append("period_not_read")
+        if line == BASIC and not compared and line not in read["seen"]:
+            continue                 # no basic row anywhere: no tenth line
         if compared or line in read["unread"]:
             out[line] = {"verdict": line_verdict(verdicts), "comparisons": compared}
             if line in read["unread"]:
@@ -1199,7 +1231,7 @@ def compare_release(paragraph_ids: list[str], paragraphs: list[str], period_end:
                          "reason": "no table of the release prints a row under one of the "
                                    "stated labels",
                          "labels": list(ROW_LABELS[line])}
-        outside = [e for e in compared if e["verdict"] == "differs" and e["block"] != "gaap"]
+        outside = [e for e in compared if e["verdict"] == "differs" and e["block"] not in ("gaap", "basic")]
         if outside:
             out[line]["differs_outside_gaap"] = [
                 {"hint": e["block"], "paragraph_id": e["release"]["paragraph_id"],

@@ -200,6 +200,7 @@ REVENUE_AND_WORKING_CAPITAL_TERMS: dict[str, tuple[str, tuple[str, ...]]] = {
 
 TERMS: dict[str, tuple[str, tuple[str, ...]]] = {
     "net_income_including_noncontrolling": ("duration", ("ProfitLoss",)),
+    "net_income_to_noncontrolling": ("duration", ("NetIncomeLossAttributableToNoncontrollingInterest",)),
     **{term: trends.CONCEPTS[term] for term in SHARED_WITH_THE_TREND_TABLE},
     **trends.CALCULATOR_TERMS,
     **REVENUE_AND_WORKING_CAPITAL_TERMS,
@@ -3597,6 +3598,8 @@ RELEASE_TERMS = {line: line for line in release_lines.LINES}
 RELEASE_TERMS["net_income_with_noncontrolling"] = "net_income_including_noncontrolling"
 # A release row of basic earnings per share (`Basic`, or a row under a `Basic:` heading).
 RELEASE_TERMS[release_lines.BASIC] = "basic_earnings_per_share"
+# The noncontrolling interest's income, whose tagged sign decides the sign of a release row.
+RELEASE_TERMS[release_lines.NCI] = "net_income_to_noncontrolling"
 
 RELEASE_WHAT_THIS_IS = (
     "the earnings release (8-K exhibit 99.1, furnished and not filed) printed beside the "
@@ -3678,10 +3681,11 @@ def release_versus_report(record: Record, periods: dict, *, ticker: str, cutoff:
         release_report_reader(record, periods), segment_members(facts or []))
     lines = found["lines"]
     tally: dict[str, int] = {}
-    for entry in lines.values():
+    nine = {line: entry for line, entry in lines.items() if line in release_lines.LINES}
+    for entry in nine.values():
         tally[entry["verdict"]] = tally.get(entry["verdict"], 0) + 1
     statements: dict[str, int] = {}
-    for entry in lines.values():
+    for entry in nine.values():
         statements[entry["statement"]["verdict"]] = statements.get(
             entry["statement"]["verdict"], 0) + 1
     return {"what_this_is": RELEASE_WHAT_THIS_IS, "accession": release["accession"],
