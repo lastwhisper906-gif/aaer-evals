@@ -1396,7 +1396,7 @@ def test_the_note_table_paragraph_tells_both_analysts_what_a_change_is():
         paragraph = " ".join(paragraph[:paragraph.index("\n\n")].split())
         assert "`changes`" in paragraph and "later minus earlier" in paragraph, agent
         assert "never subtract" in paragraph, agent
-        assert "{note_tables.tables.notes_38.changes.0}" in paragraph, agent
+        assert "{note_tables.tables.notes_<n>.changes.<i>}" in paragraph, agent
     assert "later minus earlier" in note_tables.WHAT_THIS_IS
     assert "never subtract" in note_tables.WHAT_THIS_IS
 

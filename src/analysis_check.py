@@ -756,7 +756,10 @@ def _check_block(payload: dict, key: str, names, fields, sources, upstream, drop
 
 
 def _check_list(payload: dict, key: str, fields, sources, upstream, dropped, *, forbidden,
-                extra=None, filing=None, fallen=frozenset()) -> None:
+                extra=None, filing=None, fallen=frozenset(), unique=None, overlap=None) -> None:
+    """Each item is held to the checks; `unique` names a field no two kept items may share:
+    the later is dropped and counted, with a reason naming the repeat. `overlap(item, kept)` names a
+    reason an item counts what a kept one already counted."""
     kept = []
     for position, item in enumerate(payload.get(key) or []):
         cut, reasons = trimmed(item, fields, sources, forbidden=forbidden, filing=filing,
@@ -771,6 +774,14 @@ def _check_list(payload: dict, key: str, fields, sources, upstream, dropped, *, 
                                filing=filing, fallen=fallen)
         if problem is None and extra is not None:
             problem = extra(item)
+        if problem is None and unique is not None and isinstance(item, dict):
+            earlier = next((index for index, other in enumerate(kept)
+                            if other.get(unique) == item.get(unique)), None)
+            if earlier is not None:
+                problem = (f"{unique} {item.get(unique)!r} repeats an earlier {key} item's "
+                           f"{unique}: each name is used once")
+        if problem is None and overlap is not None and isinstance(item, dict):
+            problem = overlap(item, kept)
         if problem:
             dropped.append({"where": f"{key}[{position}]",
                             "id": item.get("id") if isinstance(item, dict) else None,
@@ -836,12 +847,30 @@ def adjustment_problem(fields: dict):
             return f"direction {item.get('direction')!r} is not one of {', '.join(DIRECTIONS)}"
         if item.get("applies_to") not in APPLIES_TO:
             return f"applies_to {item.get('applies_to')!r} is not one of {', '.join(APPLIES_TO)}"
-        if calculator.adjustment_amount(fields, item.get("calculator_field")) is None:
-            return (f"calculator_field {item.get('calculator_field')!r} is not a dollar "
-                    f"amount under {' or '.join(calculator.ADJUSTMENT_ROOTS)}")
+        # applies_to is cash_flow or earnings, both flows: the one rule the calculator
+        # reads too decides whether the cell may be an amount
+        amount, why_not = calculator.adjustment_reading(
+            fields, item.get("calculator_field"), item.get("recurs") is True, item.get("applies_to"))
+        if amount is None:
+            return (f"calculator_field {item.get('calculator_field')!r} cannot be an "
+                    f"adjustment's amount: {why_not}")
+        repeated = calculator.repeats_a_movement(
+            fields, item.get("calculator_field"), item.get("direction"), item.get("applies_to"))
+        if repeated:
+            return f"direction {item.get('direction')!r} of {item.get('calculator_field')!r}: {repeated}"
         if not item.get("quote"):
             return "an adjustment carries no quote"
         return None
+    return check
+
+
+def adjustment_overlap(fields: dict):
+    """An adjustment that cites the field an earlier kept one cites, or a cash-flow one that shares a movement
+    key with an earlier cash-flow one, counts one movement twice: the later is dropped
+    (`calculator.counted_twice`). Earnings adjustments are shown alone and not summed."""
+    def check(item: dict, kept: list):
+        earlier = [(other.get("calculator_field"), other.get("applies_to")) for other in kept]
+        return calculator.counted_twice(fields, item.get("calculator_field"), earlier, item.get("applies_to"))
     return check
 
 
@@ -1297,7 +1326,8 @@ def check(kind: str, payload: dict, *, fields: dict, sources: dict[str, str],
         _check_list(payload, "anomalies", fields, sources, upstream, dropped,
                     forbidden=forbidden, fallen=fallen, extra=anomaly_problem(ACCOUNTING_AREAS), filing=filing)
         _check_list(payload, "adjustments", fields, sources, upstream, dropped,
-                    forbidden=forbidden, fallen=fallen, extra=adjustment_problem(fields), filing=filing)
+                    forbidden=forbidden, fallen=fallen, extra=adjustment_problem(fields), filing=filing, unique="name",
+                    overlap=adjustment_overlap(fields))
     elif kind == "financial":
         _check_block(payload, "sections", FINANCIAL_SECTIONS, fields, sources, upstream,
                      dropped, forbidden=forbidden, fallen=fallen, required=True, filing=filing)

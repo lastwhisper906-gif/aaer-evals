@@ -24,15 +24,15 @@ is no composite score.
 `calculator_filings_only.json` holds, for each table of this filing's notes that
 reached the readers, the numbers the filing itself tagged in that table, read
 from its XBRL instance: each fact's concept, value, unit, period, axes and fact
-id. A table sits under its paragraph's number — `note_tables.tables.notes_38`
-is the table the notes reader names `<accession>:notes:38`, also when it writes
+id. A table sits under its paragraph's number — `note_tables.tables.notes_<n>`
+is the table the notes reader names `<accession>:notes:<n>`, also when it writes
 "amounts only" and makes no item of it — and `paragraph` carries the whole id.
-Cite a fact as any other field, `{note_tables.tables.notes_38.facts.3}`. A row
+Cite a fact as any other field, `{note_tables.tables.notes_<n>.facts.<i>}`. A row
 the table does not print is not there; you never add rows up. Where the table
 states a fact at two dates — a balance at two dates, or a flow over two spans
 of like length (within a tenth) — `changes` holds the change from each earlier date to the
 latest, later minus earlier, with the two periods and the two fact ids:
-`{note_tables.tables.notes_38.changes.0}`. A swing you need is cited there;
+`{note_tables.tables.notes_<n>.changes.<i>}`. A swing you need is cited there;
 you never subtract one fact from another.
 
 ## You never do arithmetic, and you write no number of your own
@@ -154,7 +154,8 @@ Receivables: `receivables_extension.receivables_growth_minus_revenue_growth`,
 `receivables_extension.past_due_receivables_share` beside
 `receivables_extension.past_due_receivables_share.a_year_earlier`, each read at
 the date printed with it. Contract liabilities:
-`contract_liabilities_and_billings.billings` (Fortinet's definition; the
+`contract_liabilities_and_billings.billings` (one formula for every company, revenue plus the change in deferred revenue, a definition some
+companies publish and not the company's own unless its filing says so; the
 acquired balances still inside it are named),
 `contract_liabilities_and_billings.billings_growth_minus_revenue_growth`,
 `contract_liabilities_and_billings.contract_liability_duration` (the noncurrent
@@ -218,7 +219,75 @@ softening an adverse finding and inflating a benign one are the same mistake.
 
 For each finding that should change free cash flow or earnings, write an
 adjustment: its direction, the `calculator_filings_only.json` field **whose value is the
-amount**, and a verbatim quote that justifies it. You never compute the amount,
+amount**, and a verbatim quote that justifies it. The amount may be any dollar cell
+of `calculator_filings_only.json` except free cash flow itself: an adjustment of
+free cash flow cannot be read from free cash flow. Nor may it be one of free cash
+flow's own parts, which are already inside it: operating cash flow, capital
+expenditure (payments for property and equipment), share-based compensation and
+acquisitions, in the calculator's own cells and in a note table's facts of those
+concepts. `cash_flow` and `earnings` are both flows, so the cell must be a flow
+(a number over a span of dates) or a change between two balances: a note table's
+`changes` cell is a change, later minus earlier, worked out by Python. A change in cash or restricted cash, or in a total that includes cash (current assets, total
+assets), contains free cash flow and is refused whatever the adjustment applies to, as are a note
+table's cash totals. A non-cash charge (an impairment, a write-down, a write-off) is never a `cash_flow`
+amount: it is an `earnings` adjustment, as are a note table's investing-activity flows.
+**A `cash_flow` amount comes from the company's own statement of cash flows, or from one of three
+named items.** The statement's lines are disjoint and sum to operating cash flow, so a line of
+it can be taken once and counts nothing twice. (a) A working-capital change line of the
+statement inside operating activities, as the view prints it:
+`terms.trailing_four_quarters.<line>` (the change in receivables, in inventory, in payables;
+net income and depreciation and amortization are no working-capital line and stay `earnings`
+adjustments), or the statement's change in a working-capital line,
+`earnings_versus_cash.working_capital.<line>.cash_flow_statement_change`, which is the same line
+reached by another path. Each line is cited once. (b) The change in the supplier finance
+obligation or in receivables sold or factored, each a note table's `changes` cell of that concept,
+or the period's payment of acquisition consideration (`PaymentForContingentConsiderationLiability`
+in financing or investing activities, or `PaymentsForPreviousAcquisition`; the operating-activities
+variant is already deducted inside operating cash flow and is refused), a note table's
+`facts` cell, a flow over the period. The supplier finance obligation sits inside
+accounts payable and receivables sold inside receivables, both inside operating cash flow: each is
+the same movement as the statement's change in payables or in receivables, so name that line or
+the item, never both. A payment of consideration is cited once for each concept. A change in a
+consideration liability is no `cash_flow` amount (a fall in it is a payment plus a remeasurement or
+a reclassification, and only the payment moved cash); it stays available as `earnings`. A `cash_flow` adjustment takes a line's effect OUT of free cash flow and never repeats it.
+A working-capital line is already inside operating cash flow: a receivables or inventory build
+(the statement's figure is positive) already lowered it, a payables or supplier finance rise
+(positive) already raised it, and receivables sold already raised it. So `reduce` is allowed only
+for a movement that raised operating cash flow (receivables or inventory fell, payables or the
+supplier finance obligation rose, receivables were sold), and `increase` only for one that lowered
+it; the amount is the line's whole size. Python reads the direction from the cell's sign, and drops
+the wrong one with "repeats a movement free cash flow already holds; a cash_flow adjustment takes
+a line's effect out". A payment of acquisition consideration takes `reduce` only (consideration paid
+outside the operating line escapes free cash flow). An amount of zero moves
+nothing and is refused. Everything else is refused as
+a `cash_flow` amount with the reason "a cash_flow amount is a working-capital change line of the statement, or a supplier finance or receivables sold change, or an acquisition consideration payment": a balance-sheet change (the calculator's `balance_sheet_change`,
+`articulation_gap`, `share_of_net_income` input), a total (the change in current liabilities,
+billings), a note table's other changes (a reserve, an accrual, an inventory obligation, a
+restructuring charge, a tax or a debt line, goodwill, intangible assets, property and equipment).
+All of them stay available as `earnings` adjustments (there is no `debt` class yet: adjusted debt is wave two). A second `cash_flow` adjustment of
+a statement line or a named item already cited is dropped as counting one movement twice. The same field cited twice, whatever the class, is one reading and the later is dropped. A balance at
+one date is not a flow, and Python drops an adjustment that names one, with that
+reason. The cell must also be of the period free cash flow covers: a span that
+begins no earlier than the first day of the trailing year the view prints
+(`terms.trailing_four_quarters`) and ends at the filing's period end, or a change
+between two dates that ends at the period end and begins no earlier than the day
+before that first day. A prior-year column, a history entry, a change between
+two spans and a change over two years are dropped as not the period free cash flow
+covers. An adjustment you mark `"recurs": true` must cover the whole trailing year;
+a shorter span (a quarter, the year to date), a change whose earlier balance is inside the year,
+and a cell with no dates in its own inputs can stand only as one-time, and Python drops a recurring
+one with that reason. A change whose later balance is not the period's end, or whose earlier balance
+is before the day before the trailing year, is dropped as "its balances are not the period's", once or recurring. Only a `cash_flow` adjustment moves free cash
+flow. An `earnings` adjustment is read by the same rule and listed with its amount;
+it is an item you would remove or add back (a charge, a gain, a reserve change, a write-down,
+a one-time or special item, a working-capital or note-table change), never a
+whole total of a statement (revenue, cost of revenue, gross profit, operating expenses, costs and expenses, operating income, EBIT,
+EBITDA, pretax income, income tax expense, net income, the cash-flow totals, billings, other
+comprehensive income, a pro forma total), and
+Python drops a total with that reason. It does not move free cash flow, and the valuation shows
+its effect alone (once, or as a margin cut where it recurs) and does not sum it with another
+until the company's special-items table exists (wave two). Each adjustment's `name` is used once in your analysis: Python drops a name that repeats an
+earlier one. You never compute the amount,
 and you never take a portion of a field — Python reads the whole field and
 applies it to `free_cash_flow_quality_adjusted`, and records what each one moved.
 Share-based compensation and acquisitions are already subtracted there; do not
@@ -226,11 +295,30 @@ list them again. An adjustment moves value once unless you set `"recurs": true`
 and your quote says why it will repeat; only then does Python carry it into
 every year of the forecast. Examples of the shape:
 
-- receivables growth tied to extended payment terms: `reduce`, `cash_flow`,
-  `earnings_versus_cash.working_capital.receivables.balance_sheet_change`
-- receivables factoring: `reduce`, `cash_flow`,
-  `terms.trailing_four_quarters.proceeds_from_sale_of_receivables`
-- a reserve release: `reduce`, `earnings`, the field that carries the release
+- a flow, a note table's fact over a span of dates: `reduce`, `earnings`,
+  `note_tables.tables.notes_<n>.facts.<k>`, where fact `<k>` of table `<n>` is a number
+  stated for a span that ends at the period end (payments over the year to date, say)
+- a change, a note table's `changes` cell: `reduce`, `earnings`,
+  `note_tables.tables.notes_<n>.changes.<k>`, where change `<k>` is the change in a line
+  between two balance dates (later minus earlier); read the path in your own view, for
+  `<n>` and `<k>` name different cells in every company's view
+- receivables growth tied to extended payment terms: `reduce`, `earnings`,
+  `terms.trailing_four_quarters.change_in_receivables` (a concern about the quality of the
+  earnings: the receivables build is already inside operating cash flow, which it lowered, so a
+  `cash_flow` adjustment may not reduce free cash flow by it a second time; the balance sheet's
+  `earnings_versus_cash.working_capital.receivables.balance_sheet_change` is for `earnings` only)
+- a payables stretch that flatters operating cash flow: `reduce`, `cash_flow`,
+  `terms.trailing_four_quarters.change_in_payables` (the statement's own line; payables rose,
+  which already raised operating cash flow, so `reduce` takes that effect out)
+- a supplier finance obligation that rose: `reduce`, `cash_flow`, the note table's `changes`
+  cell of `SupplierFinanceProgramObligation`, `note_tables.tables.notes_<n>.changes.<k>`
+- a reserve release: `reduce`, `earnings`, the note table's change in the reserve
+- a balance that is refused: `terms.balances_now.supplier_finance_obligation` is the
+  obligation at one date, so it cannot be the amount of an adjustment of free cash flow.
+  A supplier-finance obligation is debt-like and belongs to adjusted debt, which arrives in
+  a later wave; its cash effect is the change in the obligation, so name a note table's
+  `changes` cell for it where your view carries one, and where it carries none, leave it
+  to adjusted debt
 
 ## Citations
 
@@ -292,7 +380,8 @@ Write `analysis_accounting.json`. Nothing else, anywhere.
 - `outcome` and `numbers_vs_prose` are each one of `confirms`, `contradicts`,
   `unresolved`.
 - `direction` is `reduce` or `increase`; `applies_to` is `cash_flow` or
-  `earnings`.
+  `earnings`, and either needs `calculator_field` to be a flow or a change of the
+  period free cash flow covers, never a balance at one date; only `cash_flow` moves free cash flow.
 - `summary_ko` is, for each area, one or two plain Korean sentences a finance
   student can read, with numbers only as `{field}` paths.
   A size in Korean number words is a number too ("십 퍼센트대 중후반"): write the

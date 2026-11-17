@@ -30,7 +30,9 @@ FIELDS = {
                "profitability": {"gross_margin": {"value": 0.4, "unit": "ratio"}},
                "efficiency": {"days_sales_outstanding": {"value": 61.25, "unit": "days"}}},
     "terms": {"trailing_four_quarters": {"revenue": {"value": 1.5e9, "unit": "USD"},
-                                         "share_based_compensation": {"value": 3e7, "unit": "USD"}}},
+                                         "share_based_compensation": {"value": 3e7, "unit": "USD"},
+                                         "change_in_receivables": {"value": -2e7, "unit": "USD"},
+                                         "research_and_development_expense": {"value": 4e7, "unit": "USD"}}},
     "earnings_versus_cash": {"history": {"years": [{"revenue_growth": 0.1}]}},
     "free_cash_flow": {"free_cash_flow_quality_adjusted": {"adjustments_applied": []}},
     "valuation": {"missing": "no price"},
@@ -67,7 +69,7 @@ def accounting(**changes):
                        "fields": []}],
         "adjustments": [{"name": "extended terms", "direction": "reduce",
                          "applies_to": "cash_flow",
-                         "calculator_field": "terms.trailing_four_quarters.revenue",
+                         "calculator_field": "terms.trailing_four_quarters.change_in_receivables",
                          "quote": "extended payment terms to certain customers",
                          "quote_from": "report_notes_text.md", "evidence": []}],
         "summary_ko": {"earnings_versus_cash": "매출채권 회전일수는 {ratios.efficiency.days_sales_outstanding}입니다."},
@@ -1921,16 +1923,20 @@ def test_an_adjustment_amount_is_a_dollar_cell_and_nothing_else():
                                 sources=SOURCES)["adjustments"] == []
 
 
-# CARR's current debt, the first of the lines the calculator of its run
-# 0001783180-26-000032 printed under terms.debt_now.lines: a list of dollar cells.
-DEBT_LINE = {"tag": "DebtCurrent", "namespace": "us-gaap", "unit": "USD", "period": "2026-06-30",
-             "value": 1638000000.0, "accession": "0001783180-26-000032", "filed": "2026-07-28",
-             "id": "0001783180-26-000032:facts:DebtCurrent:2026-06-30"}
+# Apple's first repayment line of the year to date, the one line under
+# terms.cash_flow_families.borrowing_repaid.parts.this_year_to_date.lines of the committed run
+# runs/AAPL/0000320193-26-000020/calculator_filings_only.json: a list of flow cells (a duration).
+FLOW_LINE = {"tag": "RepaymentsOfLongTermDebt", "namespace": "us-gaap", "unit": "USD",
+             "period": "2025-09-28..2026-06-27", "value": 8146000000.0,
+             "accession": "0000320193-26-000020", "filed": "2026-07-31",
+             "id": "0000320193-26-000020:facts:RepaymentsOfLongTermDebt:2025-09-28..2026-06-27",
+             "direction": "outflow"}
+LINES = "terms.cash_flow_families.borrowing_repaid.parts.this_year_to_date.lines"
 
 
 @pytest.mark.parametrize("field, stands", [
-    ("terms.debt_now.lines.0", True), ("terms.debt_now.lines.²", False),
-    ("terms.debt_now.lines.①", False), ("earnings_versus_cash.history.years.²", False)],
+    (f"{LINES}.0", True), (f"{LINES}.²", False),
+    (f"{LINES}.①", False), ("earnings_versus_cash.history.years.²", False)],
     ids=["ascii_zero", "superscript_two", "circled_one", "superscript_two_in_the_history"])
 def test_an_adjustment_indexes_a_list_by_ascii_digits_alone(field, stands):
     """'²' and '①' are digits to `str.isdigit` and not to `int`: the calculator's
@@ -1938,12 +1944,17 @@ def test_an_adjustment_indexes_a_list_by_ascii_digits_alone(field, stands):
     index, which stops the run (`run_analysis.STOPS`) where one adjustment
     should have been dropped. Such a part names nothing, so the adjustment is
     dropped and counted, with the reason, and nothing raises. The other side,
-    before and after: an index of ASCII digits names its dollar cell, and the
+    before and after: an index of ASCII digits names its flow cell, and the
     adjustment stands."""
     fields = copy.deepcopy(FIELDS)
-    fields["terms"]["debt_now"] = {"value": 1638000000.0, "lines": [DEBT_LINE]}
+    fields["period_end"] = "2026-06-27"                  # Apple's own period end, as the line's
+    fields["terms"]["trailing_four_quarters"]["operating_cash_flow"] = {      # and its trailing year
+        "parts": {"prior_year_to_date": {"period": "2024-09-29..2025-06-28"}}}
+    fields["terms"]["cash_flow_families"] = {"borrowing_repaid": {"parts": {
+        "this_year_to_date": {"value": 8146000000.0, "lines": [FLOW_LINE]}}}}
     payload = accounting()
     payload["adjustments"][0]["calculator_field"] = field
+    payload["adjustments"][0]["applies_to"] = "earnings"          # a repayment is no line of operating cash flow
     out = analysis_check.check("accounting", payload, fields=fields, sources=SOURCES)
     if stands:
         assert out["dropped_count"] == 0, out["dropped_items"]
@@ -1952,8 +1963,8 @@ def test_an_adjustment_indexes_a_list_by_ascii_digits_alone(field, stands):
         assert out["adjustments"] == [] and out["dropped_count"] == 1
         assert out["dropped_items"] == [{
             "where": "adjustments[0]", "id": None,
-            "reason": f"calculator_field {field!r} is not a dollar amount under terms. or "
-                      "earnings_versus_cash."}]
+            "reason": f"calculator_field {field!r} cannot be an adjustment's amount: "
+                      "it names no cell of the analysts' view"}]
 
 
 def test_a_quarter_of_a_year_stands_and_a_labelled_quantity_does_not():

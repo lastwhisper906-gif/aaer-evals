@@ -120,7 +120,10 @@ Python has run your drivers. Read what it computed:
 - the **two assumptions value is most sensitive to**, read off the sensitivity
   grid (`valuation.sensitivity.grid`) and the scenario spread;
 - **how much the accounting adjustments moved value**
-  (`valuation.accounting_adjustments`), or that there were none.
+  (`valuation.accounting_adjustments`): the value they moved is `all_together`, which
+  sums the cash-flow adjustments only. An earnings adjustment is shown alone
+  (`alone_per_share`, no `moved_per_share`) and is not summed into the value until the
+  company's special-items table exists; never add it in. Or say that there were none.
 
 If Python could not compute the valuation — no price, no WACC — say exactly what
 is missing, quoting the reason `calculator.json` prints under `valuation.missing`
