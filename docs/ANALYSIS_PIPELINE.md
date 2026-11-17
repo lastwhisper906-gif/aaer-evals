@@ -110,10 +110,44 @@ The target, beyond the research:
   see.
 - **Each adjustment names its effect**: free cash flow (as today), operating
   income (feeding normalised operating income) or debt (feeding adjusted debt:
-  receivables sold, supplier finance, a guarantee). Python applies each to its
-  own field and prints the before and after.
+  receivables sold, supplier finance, a guarantee; the debt effect arrives with
+  adjusted debt in wave two, and the gate accepts only `cash_flow` and `earnings`
+  today). Python applies each to its own field and prints the before and after.
 - **A stock cannot move a flow.** A balance (an instant) may adjust debt; only a
   flow or a change between two balances may adjust free cash flow or income.
+- **A free cash flow adjustment is one of the statement's working-capital change
+  lines, or one of three named items.** Earnings adjustments may come from any
+  dollar cell that passes the rules above (a flow or change of the trailing
+  year, never cash, never a balance for a flow). A `cash_flow` amount is a
+  working-capital change line of the company's own statement of cash flows, as
+  the calculator reads it: the change in receivables, in inventory, in payables
+  (`terms.trailing_four_quarters.<line>`, or the statement's change under
+  `earnings_versus_cash.working_capital.<line>.cash_flow_statement_change`). Three
+  lines is the default in force: accrued liabilities, contract liabilities and
+  deferred revenue are earnings adjustments only until more of the statement is
+  read by tag (`docs/needs_judgment.md`). The named items are the change in the
+  supplier finance obligation and receivables sold or factored (each a note
+  table's change) and the period's payment of acquisition consideration (the
+  flow fact, never a change in the liability), each from the filing's own note.
+  Supplier finance sits inside payables and receivables sold inside receivables,
+  both inside operating cash flow, so each shares its line's key; a consideration
+  payment has its own, by concept, and takes `reduce` only. A cash_flow
+  adjustment takes a line's effect out and never repeats it: `reduce` only a
+  movement that raised operating cash flow, `increase` only one that lowered it,
+  and an amount of zero moves nothing. The same field cited twice, in either class, counts once, and
+  two cash-flow adjustments that share a movement key count once
+  (`calculator.counted_twice`). The valuation sums cash-flow adjustments only:
+  they are disjoint by construction. **Earnings adjustments are shown alone**, each
+  in `valuation.accounting_adjustments.each` with its own per-share effect, and
+  never summed (`all_together` holds none of them) until the company's own
+  special-items or non-GAAP reconciliation table makes earnings items disjoint
+  (wave two, normalised operating income). An earnings adjustment is an item an
+  analyst would remove or add back, never a whole total of a statement (revenue,
+  operating income, EBIT, EBITDA, net income, the cash-flow totals, billings). Everything
+  else is refused as a `cash_flow` amount ("a cash_flow amount is a working-capital change line of the statement, or a supplier finance or receivables sold change, or an acquisition consideration payment") and stays available as an
+  earnings adjustment (a debt class arrives with adjusted debt in wave two; the
+  gate accepts only `cash_flow` and `earnings` today). Families inferred from names
+  could not be made disjoint in nine rounds of review; the statement already is.
 
 ## 6. Build plan
 

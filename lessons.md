@@ -321,4 +321,28 @@ sixty lines; a line under a lesson that has no date is that lesson's wrapped lin
 2026-11-15 gave a builder fifteen phrases as the expected values of a gate and got a rule that fit those fifteen; the source was the owner's grade files, all of them, and the first brief should have named them.
 2026-11-15 spent three rounds on a rule listing where a number word counts before running the one trial that showed the definitions alone removed the fault; when a prompt change and a gate answer the same fault, run the cheap trial of the prompt first.
 2026-11-15 wrote a cleanup command whose path held the repository's name and the guard read it as a write under the owner's folder; change into the directory first and name files relative to it.
+2026-11-17 wrote a rule about a note table's dollar cells from the rule's text (unit USD) before opening one: the filing's own cells say iso4217:USD, so the rule as decided would still have dropped every note-table cell; read a cell of each file a rule is about first.
+2026-11-17 found the calculator read adjustment paths from a narrower dict than the gate's view (five sections against the whole file); a rule shared by two readers needs the same fields in both, so check what each is handed.
+2026-11-17 took the brief's expected cells on trust: Apple's cited cell was the gross change (13,270), not the net 9,249, and Palo Alto's third cell was in notes_187; read each run's dropped_items before writing an expected value.
+2026-11-17 started a mutation loop in the foreground and hit the tool's time limit with source files mutated; run such a loop in the background and do not touch the files until it ends.
+2026-11-17 let a table's slice end at a substring that also named another constant (_FLOW_NAMES inside INSIDE_FREE_CASH_FLOW_NAMES) and cut a block out of the source; search for a name with its line start before slicing a file by text.
+2026-11-17 took the brief's 366-day limit without trying it on the brief's own accepted cell (STX's 53-week year is 371 days); run a rule on the cells it must accept before writing its number.
+2026-11-17 ran a mutation loop that a container restart cut off, leaving one spoiled line in src/calculator.py; keep a good copy of each file before such a loop and diff against it afterward.
+2026-11-17 judged rounds on four test files while the rule changed what the published runs reproduce; run the whole of tests/ once before saying a rule change is done, since the drift baselines read the same rule.
+2026-11-17 labelled a cell's span from its section's name; a span is read from the cell's own formula and inputs.
+2026-11-17 certified a rule with cells that the rule's own premise excluded (a change in cash is the sum of every cash flow); when a test picks a cell as an example of acceptance, ask what the cell contains.
+2026-11-17 kept adding names to a list of what to refuse and the next cell leaked through it; where the set of wrong cells is open and the set of right ones is small, write the allow-list first.
+2026-11-17 let a test take its expected value from the same output it checked (the cell beside the amount applied); an expected value comes from the filing or companyfacts, worked by hand.
+2026-11-17 kept adding words to lists of balances for eight rounds, and each refute found the next total beside its own rows; families inferred from names cannot be made disjoint, so take the amount from the company's own statement of cash flows, whose lines already are.
+2026-11-17 a text edit with sed on a line that also appeared in a second test changed both; check what else an edited line matches before a global substitution.
+2026-11-17 killed a mutation loop with pkill and left a mutated source file in place; restore the file from its good copy before anything else after stopping a loop.
+2026-11-17 gave a named item a key of its own beside the statement line that already holds it, so the same movement stood twice; key an item by the line it sits inside.
+2026-11-17 checked a double count only within one class, so the same cell stood once as cash_flow and again as earnings; check every adjustment against every earlier one, whatever its class.
+2026-11-17 planted several cells with one value and then found a coincidence of sums read as a total; plant distinct values in a test so a figure-and-span key or a total's sum is not met by chance.
+2026-11-17 kept stacking guesses (names, a reading key, a sum of rows) to make earnings items disjoint and each one mis-merged other figures; when a source of disjoint items does not exist yet, show each alone and sum none.
 2026-11-17 merged a new src module after running only its own tests; the full suite's universe check refused a ticker-to-element map left in src — run tests/test_universe.py (and the whole suite once) before a module with literals goes up.
+2026-11-17 renamed nothing when an effect was shown alone, so a row still carried the field a reader sums; give a shown-alone figure its own name.
+2026-11-17 a total matched only by its last path segment or a concept missed cells that carry a tag or sit under the total's name; match every route a cell can name itself by.
+2026-11-17 an adjustment direction was left to the analyst, so a line already inside operating cash flow could be taken out twice; read the sign of the cell and refuse the repeat.
+2026-11-17 a rule on direction left the amount and the cell's kind open (a rise in a liability, a zero); name each kind a movement can take before calling the rule done.
+2026-11-17 a fall in a liability was read as a payment; a liability's change mixes payment, remeasurement and reclassification, so take the flow fact that moved the cash.

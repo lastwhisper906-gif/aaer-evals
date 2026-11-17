@@ -124,6 +124,9 @@ def accounting(analysis: dict | None, seen: dict, fields: dict) -> dict | None:
                              f"{'차감' if item['direction'] == 'reduce' else '가산'}"),
                     "path": item.get("calculator_field")}
                    for item in quality.get("adjustments_applied") or []]
+    adjustments += [{"name": row["name"], "text": f"{row['amount']} {row['verb']} — {row['note']}",
+                     "path": row["path"], "applies_to": "earnings"}
+                    for row in memo.earnings_adjustments(fields)]
     return {"areas": areas, "anomalies": anomalies(analysis, seen, memo.ACCOUNTING_KO),
             "adjustments": adjustments, "dropped": analysis.get("dropped_count") or 0,
             "figures": figures(seen, ACCOUNTING_FIGURES), "limits": memo.LIMITS_KO["accounting"]}

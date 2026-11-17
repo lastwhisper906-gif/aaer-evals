@@ -3109,8 +3109,11 @@ def test_a_stray_word_the_run_s_memo_contradicts_stops_the_run_before_it_is_fini
         in mechanical.check_inputs_on_record(run).failures
 
 
+# A cash_flow amount is a working-capital line of the statement (the bridge's rule), so the
+# planted adjustment cites NVIDIA's change in payables, which rose and so may be taken out
+# with `reduce`; revenue, a whole total, would be refused before its name reached the file.
 LATE_ADJUSTMENT = {"direction": "reduce", "applies_to": "cash_flow",
-                   "calculator_field": "terms.trailing_four_quarters.revenue",
+                   "calculator_field": "terms.trailing_four_quarters.change_in_payables",
                    "quote": "59.63738684902464", "quote_from": "report_numbers.md"}
 
 

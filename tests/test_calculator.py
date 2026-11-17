@@ -320,11 +320,11 @@ def test_the_sensitivity_grid_moves_wacc_by_a_point():
 def test_an_adjustment_takes_its_amount_from_the_field_it_names():
     """The analyst names a field by its path in calculator.json and a direction; the
     amount is the field's value. The field here is the trailing-four-quarter increase
-    in receivables, from NVIDIA's cash-flow statements: fiscal 2026 (15,399) in the
+    in receivables (it rose, so it lowered operating cash flow and is taken out with `increase`), from NVIDIA's cash-flow statements: fiscal 2026 (15,399) in the
     10-K, plus six months of 2027 (24,590), less six months of 2026 (4,743), in the
     10-Q -- 35,246 million."""
     accounting = {"adjustments": [
-        {"name": "working capital pulled forward", "direction": "reduce",
+        {"name": "working capital pulled forward", "direction": "increase",
          "applies_to": "cash_flow",
          "calculator_field": "terms.trailing_four_quarters.change_in_receivables",
          "quote": "q"},
@@ -339,7 +339,7 @@ def test_an_adjustment_takes_its_amount_from_the_field_it_names():
     assert [row["calculator_field"] for row in quality["adjustments_refused"]] == [
         "nowhere.at_all", "ratios.efficiency.days_sales_outstanding"]
     before = quality["adjustments_applied"][0]["before"]
-    assert quality["value"] == before - 35_246 * MILLION
+    assert quality["value"] == before + 35_246 * MILLION     # receivables rose: already lowered operating cash flow
 
 
 # --- the whole file on NVIDIA ------------------------------------------------------------------
@@ -583,8 +583,10 @@ def test_an_earnings_adjustment_lowers_the_margin_in_every_year():
              "nopat": None}
     out = calculator.adjusted_value(1000.0, GORDON, 0.25, 0.09, 100.0, 45.0, 10.0, 140.0,
                                     moved, ttm)
-    assert out["each"][0]["value_per_share"] == pytest.approx(132.275)
-    assert out["each"][0]["moved_per_share"] == pytest.approx(-7.725)
+    assert out["each"][0]["alone_value_per_share"] == pytest.approx(132.275)
+    assert out["each"][0]["alone_per_share"] == pytest.approx(-7.725)
+    assert "moved_per_share" not in out["each"][0]                  # shown alone, never summed
+    assert out["all_together"]["moved_per_share"] == pytest.approx(0.0, abs=1e-9)
 
 
 def test_a_filing_fact_filed_after_the_cutoff_is_not_added(tmp_path):
