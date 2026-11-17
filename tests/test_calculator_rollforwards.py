@@ -935,12 +935,14 @@ def all_filings():
                 yield manifest.parent.name, accession, found["primary_html"]["filing_date"]
 
 
-def recomputed_difference(year: dict) -> Decimal:
+def recomputed_difference(year: dict) -> Decimal | None:
     """The stated ending less the sum of the placed rows, from the period's own rows and
-    nothing else: the beginning, each charge row as tagged, each row of `other` at its
-    contribution (its tagged value where it has none), each usage row taken away as tagged
-    (revenue recognized out of contract liabilities, the one element read as a magnitude, by
-    its size)."""
+    nothing else: the beginning, the charge, each row of `other` at its contribution (its
+    tagged value where it has none), each usage row taken away as tagged (revenue recognized out
+    of contract liabilities, the one element read as a magnitude, by its size). Charge rows of
+    different elements are one charge: their values are equal and printed in one cell, so the
+    charge is counted once. None where the period carries overlapping charge elements, which the
+    section does not resolve and does not add up."""
     def total(cell: dict, *, usage: bool = False) -> Decimal:
         out = Decimal(0)
         for row in cell.get("rows", []):
@@ -949,18 +951,61 @@ def recomputed_difference(year: dict) -> Decimal:
                 value = abs(value)
             out += value
         return out
+
+    def charge(cell: dict) -> Decimal:
+        by_concept: dict[str, list[dict]] = {}
+        for row in cell.get("rows", []):
+            by_concept.setdefault(row["concept"], []).append(row)
+        counted = {sum((Decimal(str(row["value"])) for row in rows), Decimal(0))
+                   for rows in by_concept.values()}
+        assert len(counted) <= 1, "charge rows of different values are counted once"
+        return counted.pop() if counted else Decimal(0)
+    if "overlapping" in year["charged_to_expense"].get("missing", ""):
+        return None
     return (Decimal(str(year["ending"]["value"]))
-            - (Decimal(str(year["beginning"]["value"])) + total(year["charged_to_expense"])
+            - (Decimal(str(year["beginning"]["value"])) + charge(year["charged_to_expense"])
                + total(year["other"]) - total(year["usage"], usage=True)))
 
 
+def check_period(year: dict, where) -> int:
+    """The structural invariants of one period; 1 where it reads foots false and complete."""
+    assert year["foots"] is (year["difference"]["value"] == 0), where
+    assert year["complete"] is (not year["rows_not_placed"]), where
+    recomputed = recomputed_difference(year)
+    if recomputed is None:
+        # overlapping charge elements: not complete, and no difference to recompute
+        assert year["complete"] is False, where
+        assert year["rows_not_placed"], where
+    else:
+        assert Decimal(str(year["difference"]["value"])) == recomputed, where
+    return int(year["foots"] is False and year["complete"] is True)
+
+
+def planted_periods():
+    """Periods built here so the overlap and same-cell paths of the sweep run today: two charge
+    elements with different values, two printed rows with equal values, one figure in one cell,
+    and an overlap of negative charges."""
+    for charges, same_cell in ((((("RestructuringCharges", 50),
+                                   ("RestructuringCostsAndAssetImpairmentCharges", 70))), False),
+                               ((("RestructuringCharges", 20),
+                                 ("RestructuringSettlementAndImpairmentProvisions", 20)), False),
+                               ((("RestructuringCosts", 70), ("RestructuringCharges", 70)), True),
+                               ((("RestructuringCharges", -30), ("RestructuringCosts", -20)),
+                                False)):
+        tables = restructuring_tables(*charges, closing=140, same_cell=same_cell)
+        yield (series_of(rollforwards.build(tables), "restructuring_reserve", "notes_1")
+               ["periods"][0])
+
+
 def test_over_all_committed_filings_each_period_is_what_its_own_rows_say(capsys):
-    """Structural invariants over every period of the 72 committed filings, each worked out
-    from the period's own cells and no counts held: `foots` is true exactly when `difference`
-    is zero; `complete` is false exactly when `rows_not_placed` is not empty; and `difference`
-    is the stated ending less the sum of the placed rows, recomputed here. The independent
-    evidence that the identity is right is in the hand-worked tables, not in this sweep."""
-    filings = periods = false_and_complete = 0
+    """Structural invariants over every period of the 72 committed filings and of the periods
+    planted above, each worked out from the period's own cells and no counts held: `foots` is
+    true exactly when `difference` is zero; `complete` is false exactly when `rows_not_placed` is
+    not empty; and `difference` is the stated ending less the sum of the placed rows, recomputed
+    here (a period with overlapping charge elements is not complete and has no difference to
+    recompute). The independent evidence that the identity is right is in the hand-worked
+    tables, not in this sweep."""
+    filings = periods = false_and_complete = overlapping = 0
     for ticker, accession, cutoff in all_filings():
         filings += 1
         result = rollforwards.build(tables_of(ticker, accession, cutoff))
@@ -969,18 +1014,22 @@ def test_over_all_committed_filings_each_period_is_what_its_own_rows_say(capsys)
                 for year in series["periods"]:
                     if "foots" not in year:
                         continue
-                    where = (ticker, accession, family, series["table"], year["period"]["end"])
                     periods += 1
-                    assert year["foots"] is (year["difference"]["value"] == 0), where
-                    assert year["complete"] is (not year["rows_not_placed"]), where
-                    assert Decimal(str(year["difference"]["value"])) == recomputed_difference(
-                        year), where
-                    false_and_complete += year["foots"] is False and year["complete"] is True
+                    overlapping += recomputed_difference(year) is None
+                    false_and_complete += check_period(
+                        year, (ticker, accession, family, series["table"],
+                               year["period"]["end"]))
     assert filings == 72
     assert periods > 0
+    planted_count = 0
+    for year in planted_periods():
+        planted_count += 1
+        check_period(year, "planted")
+    assert planted_count == 4
     with capsys.disabled():
         print(f"\nrollforward sweep: {filings} filings, {periods} periods, "
-              f"{false_and_complete} read foots false with complete true")
+              f"{false_and_complete} read foots false with complete true, "
+              f"{overlapping} with overlapping charge elements; {planted_count} planted periods")
 
 
 # --- the same figure twice, a row with no dated span -------------------------------------
@@ -1532,6 +1581,9 @@ def nested_warranty():
 def test_a_table_of_nested_facts_foots_in_the_outer_and_the_inner_series():
     tables = nested_warranty()
     assert tables["printed_signs"][f"{ACCESSION}:o1m"] == "negative"
+    # a fact nested in another is in the cell of its outer fact: the figure is one
+    assert tables["same_cell_facts"][f"{ACCESSION}:c1"] == [f"{ACCESSION}:c1m"]
+    assert tables["same_cell_facts"][f"{ACCESSION}:c1m"] == [f"{ACCESSION}:c1"]
     # only flows carry a printed sign: the balances (instants) are not listed
     assert not {f"{ACCESSION}:b1", f"{ACCESSION}:b2m"} & set(tables["printed_signs"])
     result = rollforwards.build(tables)
@@ -1736,18 +1788,66 @@ def test_a_period_whose_charge_was_read_has_a_release_that_is_true_or_false():
 
 # --- the deferred tax valuation allowance is told by its name ---------------------------
 
-@pytest.mark.parametrize("member", [
-    "abc:DeferredTaxAssetValuationAllowanceMember",
-    "us-gaap:ValuationAllowanceOfDeferredTaxAssetsMember",
-    "x:TaxAssetValuationAllowanceMember"])
-def test_a_deferred_tax_valuation_member_in_any_namespace_makes_no_series(member):
+def one_member(member: str) -> dict:
     axes = {SCHEDULE_AXIS: member}
-    result = rollforwards.build(planted([
+    return rollforwards.build(planted([
         fact("ValuationAllowancesAndReservesBalance", 1_000, at=OPENING, axes=axes, number="t1"),
         fact("ValuationAllowancesAndReservesChargedToCostAndExpense", -200, **YEAR, axes=axes,
              number="t2"),
         fact("ValuationAllowancesAndReservesBalance", 800, at=CLOSING, axes=axes, number="t3")]))
+
+
+def assert_left_out(member: str, word: str) -> None:
+    result = one_member(member)
+    assert all("series" not in result[family] for family in rollforwards.FAMILIES), member
+    assert [(one["member"], one["table"]) for one in result["left_out"]] == [(member, "notes_1")]
+    assert word in result["left_out"][0]["reason"]
+
+
+def test_a_member_with_valuation_allowance_and_tax_is_left_out_and_listed():
+    assert_left_out("x:TaxValuationAllowanceMember", "tax")
+
+
+def test_a_member_with_valuation_allowance_and_deferred_is_left_out_and_listed():
+    assert_left_out("x:DeferredValuationAllowanceMember", "deferred")
+
+
+def test_a_member_with_valuation_allowance_and_an_operating_loss_is_left_out_and_listed():
+    assert_left_out("x:ValuationAllowanceOnNetOperatingLossesMember", "operatingloss")
+
+
+def test_the_bare_valuation_allowance_member_is_left_out_and_listed():
+    assert_left_out("x:ValuationAllowanceMember", "bare valuation allowance")
+
+
+@pytest.mark.parametrize("member", [
+    "abc:IncomeTaxValuationAllowanceMember", "abc:DeferredIncomeTaxValuationAllowanceMember",
+    "abc:TaxValuationAllowanceMember", "abc:ValuationAllowanceOnDeferredIncomeTaxesMember",
+    "abc:SECSchedule1209ValuationAllowanceIncomeTaxesMember", "abc:ValuationAllowanceMember",
+    "abc:ValuationAllowanceOnNetOperatingLossesMember",
+    "abc:DeferredTaxAssetValuationAllowanceMember",
+    "us-gaap:ValuationAllowanceOfDeferredTaxAssetsMember"])
+def test_the_tax_valuation_allowance_members_of_any_namespace_make_no_series(member):
+    result = one_member(member)
     assert all("series" not in result[family] for family in rollforwards.FAMILIES)
+    assert [one["member"] for one in result["left_out"]] == [member]
+
+
+def test_a_filing_with_no_left_out_account_lists_none():
+    assert rollforwards.build(planted(table_of(
+        "ProductWarrantyAccrual", "ProductWarrantyAccrualWarrantiesIssued",
+        "ProductWarrantyAccrualPayments", opening=1_000, closing=1_100, charge=400,
+        spent=300)))["left_out"] == []
+
+
+@pytest.mark.parametrize("member", ["x:ValuationAllowanceForReturnsMember",
+                                    "x:SalesTaxReserveMember", "x:DeferredRevenueAllowanceMember",
+                                    "x:OperatingLossReserveMember"])
+def test_a_member_with_only_half_of_the_tax_valuation_name_is_an_account(member):
+    result = one_member(member)
+    (series,) = result["schedule_two_other"]["series"]
+    assert series["member"] == member and series["periods"][0]["foots"] is True
+    assert series["periods"][0]["release"] is True and result["left_out"] == []
 
 
 @pytest.mark.parametrize("ticker,accession,cutoff", [
@@ -1767,23 +1867,60 @@ def test_the_real_reserve_members_of_a_schedule_two_are_still_series(ticker, acc
 
 # --- several charge elements in one period -----------------------------------------------
 
-def restructuring(*charges: tuple[str, int], closing: int) -> dict:
-    rows = [fact("RestructuringReserve", 100, at=OPENING, number="b1"),
+def restructuring_tables(*charges: tuple[str, int], closing: int, same_cell: bool = False,
+                         opening: int = 100) -> dict:
+    rows = [fact("RestructuringReserve", opening, at=OPENING, number="b1"),
             fact("PaymentsForRestructuring", 30, **YEAR, number="u1"),
             fact("RestructuringReserve", closing, at=CLOSING, number="b2")]
     rows += [fact(name, value, **YEAR, number=f"c{at}") for at, (name, value) in
              enumerate(charges)]
-    return period_of(series_of(rollforwards.build(planted(rows)), "restructuring_reserve",
-                               "notes_1"), CLOSING)
+    tables = planted(rows)
+    if same_cell:
+        names = [f"{ACCESSION}:c{at}" for at in range(len(charges))]
+        tables["same_cell_facts"] = {one: [other for other in names if other != one]
+                                     for one in names}
+    return tables
 
 
-def test_the_same_charge_tagged_under_two_elements_is_counted_once():
-    """100 + 70 - 30 = 140, with 70 tagged as both `RestructuringCosts` and `RestructuringCharges`."""
-    year = restructuring(("RestructuringCosts", 70), ("RestructuringCharges", 70), closing=140)
+def restructuring(*charges: tuple[str, int], closing: int, same_cell: bool = False) -> dict:
+    tables = restructuring_tables(*charges, closing=closing, same_cell=same_cell)
+    return period_of(series_of(rollforwards.build(tables), "restructuring_reserve", "notes_1"),
+                     CLOSING)
+
+
+def test_the_same_figure_tagged_twice_in_one_cell_is_counted_once():
+    """100 + 70 - 30 = 140, 70 tagged as both `RestructuringCosts` and `RestructuringCharges` in
+    one cell (a fact nested in another, or two tags on one figure)."""
+    year = restructuring(("RestructuringCosts", 70), ("RestructuringCharges", 70), closing=140,
+                         same_cell=True)
     assert year["charged_to_expense"]["value"] == 70
     assert len(year["charged_to_expense"]["facts"]) == 2
     assert year["foots"] is True and year["complete"] is True and year["release"] is False
     assert year["provision_over_usage"]["value"] == pytest.approx(70 / 30)
+
+
+def test_two_printed_rows_with_equal_values_are_overlapping_and_not_resolved():
+    """100 + 20 (RestructuringCharges) + 20 (RestructuringSettlementAndImpairmentProvisions) - 30
+    = 110: two rows that print the same number are two rows, and which is the charge is not
+    known."""
+    year = restructuring(("RestructuringCharges", 20),
+                         ("RestructuringSettlementAndImpairmentProvisions", 20), closing=110)
+    assert "overlapping charge elements" in year["charged_to_expense"]["missing"]
+    assert year["complete"] is False and year["foots"] is False
+    assert year["expected_ending"]["value"] == 70
+    assert sorted(row["value"] for row in year["rows_not_placed"]) == [20, 20]
+
+
+def test_the_allowances_two_provision_elements_with_equal_values_are_overlapping():
+    result = rollforwards.build(planted([
+        fact("AllowanceForDoubtfulAccountsReceivable", 100, at=OPENING, number="b1"),
+        fact("AllowanceForDoubtfulAccountsReceivable", 110, at=CLOSING, number="b2"),
+        fact("ProvisionForDoubtfulAccounts", 10, **YEAR, number="c1"),
+        fact("ProvisionForLoanLossesExpensed", 10, **YEAR, number="c2"),
+        fact("AllowanceForDoubtfulAccountsReceivableWriteOffs", 10, **YEAR, number="u1")]))
+    year = period_of(series_of(result, "allowance_for_credit_losses", "notes_1"), CLOSING)
+    assert "overlapping" in year["charged_to_expense"]["missing"]
+    assert year["complete"] is False and year["release"] is None
 
 
 def test_charge_elements_with_different_values_are_not_summed():
@@ -1800,22 +1937,39 @@ def test_charge_elements_with_different_values_are_not_summed():
     assert "missing" in year["provision_over_usage"] and year["release"] is None
 
 
+def test_an_overlapping_period_lists_none_of_the_uncounted_charge_facts_in_its_identity():
+    year = restructuring(("RestructuringCharges", 50),
+                         ("RestructuringCostsAndAssetImpairmentCharges", 70), closing=140)
+    charges = {f"{ACCESSION}:c0", f"{ACCESSION}:c1"}
+    assert not charges & set(year["expected_ending"]["facts"])
+    assert not charges & set(year["difference"]["facts"])
+    assert {row["fact"] for row in year["rows_not_placed"]} == charges
+
+
+def test_an_overlap_whose_charges_are_all_negative_is_a_release_and_a_mixed_one_is_not_read():
+    negative = restructuring(("RestructuringCharges", -30), ("RestructuringCosts", -20),
+                             closing=40)
+    assert negative["release"] is True
+    assert negative["release_because"] == ["charged_to_expense_negative"]
+    assert negative["complete"] is False
+    mixed = restructuring(("RestructuringCharges", -30), ("RestructuringCosts", 20), closing=90)
+    assert mixed["release"] is None and mixed["release_because"] == []
+    zero = restructuring(("RestructuringCharges", -30), ("RestructuringCosts", 0), closing=70)
+    assert zero["release"] is None
+
+
+def test_the_same_cell_facts_of_an_inline_table_are_read_from_its_cells():
+    page = inline_page(
+        f"<td>nested</td><td>"
+        f'<ix:nonFraction id="o" name="x:Y" contextRef="c" unitRef="usd">'
+        f"{number_cell('i', '5')}</ix:nonFraction></td>",
+        f"<td>two tags</td><td>{number_cell('a', '5')}{number_cell('b', '5')}</td>",
+        f"<td>two rows</td><td>{number_cell('c', '5')}</td><td>{number_cell('d', '5')}</td>")
+    assert note_tables.same_cell_facts(page) == {"o": ["i"], "i": ["o"], "a": ["b"], "b": ["a"]}
+
+
 # --- the dash rule's parenthesis ---------------------------------------------------------
 
 def test_an_opening_parenthesis_before_a_dash_is_no_text_of_the_cell():
     assert one_cell(f"<td>(-{number_cell('a', '5')}</td>") == {"a": "negative"}
     assert one_cell(f"<td>( − {number_cell('b', '5')}</td>") == {"b": "negative"}
-
-
-@pytest.mark.parametrize("member", ["x:ValuationAllowanceForReturnsMember",
-                                    "x:SalesTaxReserveMember", "x:DeferredRevenueAllowanceMember"])
-def test_a_member_with_only_half_of_the_tax_valuation_name_is_an_account(member):
-    axes = {SCHEDULE_AXIS: member}
-    result = rollforwards.build(planted([
-        fact("ValuationAllowancesAndReservesBalance", 1_000, at=OPENING, axes=axes, number="t1"),
-        fact("ValuationAllowancesAndReservesChargedToCostAndExpense", -200, **YEAR, axes=axes,
-             number="t2"),
-        fact("ValuationAllowancesAndReservesBalance", 800, at=CLOSING, axes=axes, number="t3")]))
-    (series,) = result["schedule_two_other"]["series"]
-    assert series["member"] == member and series["periods"][0]["foots"] is True
-    assert series["periods"][0]["release"] is True

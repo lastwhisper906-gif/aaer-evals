@@ -185,6 +185,26 @@ def printed_signs(html: bytes) -> dict[str, str]:
     return out
 
 
+def same_cell_facts(html: bytes) -> dict[str, list[str]]:
+    """For each inline numeric fact printed in one cell of a table row with another -- a fact
+    nested in another, two tags on one figure -- the ids of the others in that cell. A figure
+    the filer tagged under two elements is one figure; two rows that print the same number are
+    two. A fact alone in its cell is not listed."""
+    root = ET.fromstring(html)
+    out: dict[str, list[str]] = {}
+    for row in root.iter(f"{{{XHTML}}}tr"):
+        cell: list[str] = []
+        for kind, value in _row_tokens(row) + [("cell", None)]:
+            if kind in ("fact", "alias") and value:
+                cell.append(value)
+            elif kind == "cell":
+                if len(cell) > 1:
+                    for one in cell:
+                        out[one] = [other for other in cell if other != one]
+                cell = []
+    return out
+
+
 def tagged_signs(html: bytes) -> dict[str, str]:
     """The sign the filer tagged, apart from the printed one: an inline numeric fact is
     "negative" when its own element says `sign="-"` and "positive" otherwise."""
@@ -361,7 +381,7 @@ def tables(paragraphs: list[tuple[str, str]], html: bytes, instance: bytes, *,
              for fact in instance_facts.facts(instance, accession=accession)
              if fact["kind"] == "numeric"}
     found, unmatched, untagged, prices, later = {}, [], [], {}, {}
-    signs, printed = {}, None
+    signs, printed, mates, in_cells = {}, None, {}, None
     for paragraph, text in paragraphs:
         if not paragraph.startswith(f"{accession}:notes:") or not text.startswith("|"):
             continue
@@ -387,6 +407,11 @@ def tables(paragraphs: list[tuple[str, str]], html: bytes, instance: bytes, *,
             if same not in seen:
                 seen.add(same)
                 cells.append(cell(fact))
+                if in_cells is None:
+                    in_cells = same_cell_facts(html)
+                if one in in_cells:
+                    mates[fact["id"]] = [by_id[other]["id"] for other in in_cells[one]
+                                         if other in by_id]
                 if fact["value"] and "instant" not in fact["context"]:
                     if printed is None:
                         printed = printed_signs(html)
@@ -399,7 +424,7 @@ def tables(paragraphs: list[tuple[str, str]], html: bytes, instance: bytes, *,
                 found[key(paragraph)]["changes"] = moved
     return {"tables": found, "unmatched": unmatched, "not_in_the_instance": untagged,
             "left_out_as_a_price": prices, "left_out_ending_after_the_cutoff": later,
-            "printed_signs": signs}
+            "printed_signs": signs, "same_cell_facts": mates}
 
 
 WHAT_THIS_IS = ("for each table of the triggering filing's notes that reached the readers "

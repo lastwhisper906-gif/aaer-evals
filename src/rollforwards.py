@@ -81,7 +81,8 @@ that fell by impairment would read as a release) and `NotesReceivableGross`. Eve
 absent from the committed instances, which tag `AllowanceForDoubtfulAccountsReceivable...`.
 Schedule II's other accounts (a filer's own members, such as Omnicell's
 `omcl:AccountsReceivableAndUnbilledReceivablesMember`) are the series of the family
-`schedule_two_other`, each with its `member`; only a deferred tax valuation allowance, told by its name,
+`schedule_two_other`, each with its `member`; only a tax valuation allowance, told by its name (tax, deferred or operating loss with
+valuation allowance, or the bare member) and listed under `left_out`,
 is left out. `RestructuringCosts` and `RestructuringCostsAndAssetImpairmentCharges` are the
 restructuring provision. Left out because they are no row of the family's own rollforward: the
 measurement-period adjustments `BusinessCombinationProvisionalInformationInitialAccounting
@@ -328,17 +329,27 @@ FAMILIES = tuple(ELEMENTS)
 SCHEDULE_TWO_AXIS = "us-gaap:ValuationAllowancesAndReservesTypeAxis"
 # Any other account of Schedule II, the filer's own members among them (Omnicell's
 # `omcl:AccountsReceivableAndUnbilledReceivablesMember`), is a series of the family below,
-# keyed by its member. The deferred tax asset valuation allowance is no reserve of this
-# section's and is left out.
+# keyed by its member. The valuation allowance of deferred tax assets is no reserve of this
+# section's and is left out, and listed under `left_out`.
 SCHEDULE_TWO_OTHER = "schedule_two_other"
 
 
-def _is_a_tax_valuation_member(member: str) -> bool:
-    """A Schedule II account whose name says valuation allowance together with a deferred tax
-    or a tax asset, in any namespace: the valuation allowance of deferred tax assets, which is
-    no reserve of this section's."""
+TAX_VALUATION_WORDS = ("tax", "deferred", "operatingloss")
+
+
+def _tax_valuation_reason(member: str) -> str | None:
+    """Why a Schedule II member is no account of this section, or None: its name says valuation
+    allowance together with tax, deferred or an operating loss, in any namespace, or it is the
+    bare `ValuationAllowanceMember`, which in Schedule II is the tax allowance."""
     local = member.rsplit(":", 1)[-1].lower()
-    return "valuationallowance" in local and ("deferredtax" in local or "taxasset" in local)
+    if local == "valuationallowancemember":
+        return "a bare valuation allowance in Schedule II is the allowance of deferred tax assets"
+    if "valuationallowance" in local:
+        for word in TAX_VALUATION_WORDS:
+            if word in local:
+                return (f"its name says valuation allowance with {word}: the allowance of "
+                        f"deferred tax assets, no reserve of this section's")
+    return None
 
 
 SCHEDULE_TWO_MEMBERS = {
@@ -382,9 +393,11 @@ WHAT_THIS_IS = (
     "`prior_period_revision_over_current_expense` is the table's change-in-estimate line "
     "over the charge; `release` is true when the charge is negative or the ending "
     "reserve fell while its gross base rose, with `release_because` saying which (goodwill "
-    "has no release: it is null; where no charge row was resolved it is null too, not read). "
-    "Several charge elements in one period with equal values are one charge, with different "
-    "values none is summed and the period is not complete. "
+    "has no release: it is null; where no charge row was resolved it is null too, not read, "
+    "unless every candidate charge is negative). "
+    "Several charge elements in one period are one charge only when their values are equal "
+    "and printed in one cell; otherwise none is summed and the period is not complete. "
+    "`left_out` names each Schedule II account that is no reserve of this section's. "
     "Each cell prints the fact ids it came from. For supplier finance and goodwill the "
     "charged_to_expense line is the additions line of the table")
 
@@ -468,7 +481,7 @@ def classify(one: dict):
             del axes[SCHEDULE_TWO_AXIS]
             return (SCHEDULE_TWO_MEMBERS[member], SCHEDULE_ROLE[local], "schedule_two",
                     _axes_key(axes))
-        if member and not _is_a_tax_valuation_member(member):
+        if member and _tax_valuation_reason(member) is None:
             return SCHEDULE_TWO_OTHER, SCHEDULE_ROLE[local], "schedule_two", _axes_key(axes)
         return None
     if local in ROLE_OF and SCHEDULE_TWO_AXIS not in axes:
@@ -603,7 +616,8 @@ def _gross_base(family: str, axes: tuple, instant: str, tables: dict) -> dict:
             "table": key, "facts": [one["fact"]]}
 
 
-def _period(group: dict, start: str, end: str, tables: dict, signs: dict) -> dict:
+def _period(group: dict, start: str, end: str, tables: dict, signs: dict,
+            mates: dict) -> dict:
     span = {"start": start, "end": end, "days": (_date(end) - _date(start)).days}
     roles = {role: [one for one in group["roles"].get(role, [])
                     if one.get("start") == start and one.get("end") == end]
@@ -640,14 +654,21 @@ def _period(group: dict, start: str, end: str, tables: dict, signs: dict) -> dic
     other = roles["other"] + roles["revision"]
     begin, end_value = _dec(opening["value"]), _dec(closing["value"])
     # Several charge elements in one period (`RestructuringCharges` beside `RestructuringCosts`)
-    # are the same charge named twice when their values are equal, and counted once; when
-    # they differ the section does not know which is the charge, sums none, and says so.
+    # are one charge named twice only when their values are equal and the filing prints them in
+    # one cell (a fact nested in another, two tags on one figure). Two printed rows with equal
+    # values, or two values that differ, are overlapping: the section does not know which is
+    # the charge, sums none, and says so.
     by_concept: dict[str, list[dict]] = {}
     for one in charged:
         by_concept.setdefault(one["concept"], []).append(one)
-    totals = {_flow_total(rows, signs) for rows in by_concept.values()}
-    overlapping = len(totals) > 1
-    charge = Decimal(0) if overlapping else (totals.pop() if totals else Decimal(0))
+    totals = [_flow_total(rows, signs) for rows in by_concept.values()]
+    overlapping = len(by_concept) > 1
+    if overlapping and len(set(totals)) == 1:
+        first = {one["fact"] for one in by_concept[next(iter(by_concept))]}
+        overlapping = not all(
+            any(mate in first for one in rows for mate in mates.get(one["fact"], ()))
+            for rows in list(by_concept.values())[1:])
+    charge = Decimal(0) if overlapping else (totals[0] if totals else Decimal(0))
     charge_read = bool(charged) and not overlapping
     spent = _flow_total(usage, signs)
     rest = _flow_total(other, signs, True)
@@ -727,6 +748,9 @@ def _period(group: dict, start: str, end: str, tables: dict, signs: dict) -> dic
     if (end_value < begin and "value" in base_end and "value" in base_begin
             and _dec(base_end["value"]) > _dec(base_begin["value"])):
         because.append("reserve_fell_while_gross_base_rose")
+    if overlapping and all(_contribution(one, signs)[0] < 0 for one in charged):
+        # the charge is not known, but every candidate for it is a release
+        because.append("charged_to_expense_negative")
     out["release_because"] = because
     if because:
         out["release"] = True
@@ -740,7 +764,7 @@ def _period(group: dict, start: str, end: str, tables: dict, signs: dict) -> dic
     return out
 
 
-def _family(name: str, tables: dict, signs: dict) -> dict:
+def _family(name: str, tables: dict, signs: dict, mates: dict) -> dict:
     series = []
     for key in sorted(tables, key=_natural):
         groups = _series_in(key, tables[key])
@@ -761,7 +785,7 @@ def _family(name: str, tables: dict, signs: dict) -> dict:
                            "axes": group["axes"],
                            **({"member": group["axes"][SCHEDULE_TWO_AXIS]}
                               if name == SCHEDULE_TWO_OTHER else {}),
-                           "periods": [_period(group, start, end, tables, signs)
+                           "periods": [_period(group, start, end, tables, signs, mates)
                                        for start, end in spans]})
     if not series:
         names = ", ".join(ELEMENTS[name]["balance"]
@@ -773,13 +797,30 @@ def _family(name: str, tables: dict, signs: dict) -> dict:
     return {"series": series}
 
 
+def _left_out(tables: dict) -> list[dict]:
+    """Every Schedule II account the section leaves out, with its table and why."""
+    found: dict[tuple, dict] = {}
+    for key in sorted(tables, key=_natural):
+        for one in tables[key]["facts"]:
+            member = (one.get("axes") or {}).get(SCHEDULE_TWO_AXIS)
+            if _local(one["concept"]) in SCHEDULE_ROLE and member:
+                reason = _tax_valuation_reason(member)
+                if reason:
+                    found.setdefault((key, member), {"table": key, "member": member,
+                                                     "reason": reason})
+    return list(found.values())
+
+
 def build(note_table_facts: dict) -> dict:
     """`rollforwards` for the calculator: each family's series from the filing's note tables
-    (`note_tables.from_run`'s output), or `missing` with the reason."""
+    (`note_tables.from_run`'s output), or `missing` with the reason; `left_out` names each
+    Schedule II account that is no reserve of the section's."""
     if "tables" not in note_table_facts:
         reason = note_table_facts.get("missing", "no note table was read")
-        return {"what_this_is": WHAT_THIS_IS, **{name: {"missing": reason} for name in FAMILIES}}
+        return {"what_this_is": WHAT_THIS_IS, "left_out": [],
+                **{name: {"missing": reason} for name in FAMILIES}}
     tables = note_table_facts["tables"]
     signs = note_table_facts.get("printed_signs", {})
-    return {"what_this_is": WHAT_THIS_IS,
-            **{name: _family(name, tables, signs) for name in FAMILIES}}
+    mates = note_table_facts.get("same_cell_facts", {})
+    return {"what_this_is": WHAT_THIS_IS, "left_out": _left_out(tables),
+            **{name: _family(name, tables, signs, mates) for name in FAMILIES}}
