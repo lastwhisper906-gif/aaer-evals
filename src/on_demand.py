@@ -197,15 +197,24 @@ def fetch_prices_for_run(held: dict, run: str, *, environ, fetch=None) -> str | 
     sic, sic_from = sic_and_source(held)
     reason = not_priced_because(held)
     record_path = Path(run) / nightly.PRICE_RECORD
+    # The record is held as the source returned it, never read back from the
+    # run directory it was just written to: a read there is a read of a bundle,
+    # and the only route to one is the gate.
+    fetched = {}
+
+    def holding(**asked):
+        fetched["record"] = (fetch if fetch is not None else market.fetch_prices)(**asked)
+        return fetched["record"]
+
     if reason:
         out = {"folder": None, "reason": reason}
-        market.write_fetch_record({"fetched": False, "reason": reason}, record_path)
     else:
         out = nightly.prices_for(
             {"ticker": held["ticker"], "filing_date": held["filing_date"]},
             series=nightly.price_series(held["ticker"], sic),
-            bundle=Path(run), environ=environ, fetch=fetch)
-    record = json.loads(record_path.read_text(encoding="utf-8"))
+            bundle=Path(run), environ=environ, fetch=holding)
+    record = (dict(fetched["record"]) if out["folder"] is not None
+              else {"fetched": False, "reason": out["reason"]})
     record["read"] = {"sic": sic, "sic_from": sic_from,
                       "registrant_tickers": held["registrant"]["tickers"]}
     market.write_fetch_record(record, record_path)
@@ -213,7 +222,7 @@ def fetch_prices_for_run(held: dict, run: str, *, environ, fetch=None) -> str | 
         print(f"on_demand: no prices for {held['ticker']}: {out['reason']}; "
               "the run goes on without them", file=sys.stderr)
         return None
-    served = json.loads(Path(out["record"]).read_text(encoding="utf-8")).get("served", {})
+    served = record.get("served", {})
     rows = ", ".join(f"{symbol} {info.get('rows')} rows" for symbol, info in served.items())
     print(f"prices: {out['folder']} ({rows})")
     return out["folder"]
