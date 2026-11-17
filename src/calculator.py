@@ -2989,39 +2989,117 @@ def recurrence_problem(path: str, cell: dict, kind: str, fields: dict) -> str | 
 # A working-capital movement has one key whatever its class and however it is reached: the statement's
 # change in the line, the balance sheet's change in it (and its share of net income, its gap), and a note
 # table's change in the balance. Each named item keeps its key; every other cell is keyed by its field.
+# (the key, the balance sheet's working-capital line, the concepts that are that line's balance)
 WORKING_CAPITAL_MOVEMENTS = (
-    ("line:change_in_receivables", "receivables", r"receivable"),
-    ("line:change_in_inventory", "inventory", r"inventor"),
-    ("line:change_in_payables", "accounts_payable", r"payable"),
+    ("line:change_in_receivables", "receivables",
+     r"(?:accountsreceivable|receivablesnet|accountsnotesandloansreceivable)\w*"),
+    ("line:change_in_inventory", "inventory", r"inventory\w*"),
+    ("line:change_in_payables", "accounts_payable", r"accountspayable\w*"),
 )
+# A concept that carries one of these is a tax, a dividend, an interest, an obligation or a credit-loss
+# allowance or write-off, never a line's balance.
+NOT_A_LINE_BALANCE = r"tax|dividend|interest|obligation|allowance|creditloss|writeoff|writtenoff|doubtful"
+# The cells of `earnings_versus_cash.working_capital.<line>` that are the line's movement; its other inputs are
+# other figures (net income, the gap) and are keyed by their own reading.
+WORKING_CAPITAL_MOVEMENT_CELLS = ("balance_sheet_change", "cash_flow_statement_change")
+
+
+def reading_key(fields: dict, cell: dict) -> str | None:
+    """The key of a cell's own reading: its signed value and the span it covers (its own dates, its change's
+    two ends, or, where it carries none, the trailing year the table places it in). One figure copied under
+    several paths has one reading; a zero moves nothing and has none."""
+    value = cell.get("value")
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or value == 0:
+        return None
+    own = period_text(cell)
+    if isinstance(own, dict):
+        own = f"{own['from']}..{own['to']}"
+    span = own or f"{trailing_year_start(fields)}..{(fields or {}).get('period_end')}"
+    return f"reading:{float(value)!r}:{span}"
+
+
+def _printed_unit(values: list) -> float:
+    """The largest power of ten, at most a million, that divides every value: the precision a table prints."""
+    unit = 1_000_000.0
+    while unit > 1 and any(abs(v) % unit > 1e-6 and abs(abs(v) % unit - unit) > 1e-6 for v in values):
+        unit /= 10
+    return unit
+
+
+def table_rows_of(fields: dict, path: str) -> list:
+    """The paths of the rows a note-table change is the total of: the cells of its own table, in its own
+    column and period, immediately above it, whose values sum to its value at the table's printed precision
+    (the longest such run of two or more); empty where it is no total."""
+    parts = path.split(".")
+    if not (len(parts) == 5 and parts[:2] == ["note_tables", "tables"] and parts[3] == "changes"
+            and parts[4].isascii() and parts[4].isdigit()):
+        return []
+    cells = ((fields.get("note_tables") or {}).get("tables") or {}).get(parts[2], {}).get("changes")
+    position = int(parts[4])
+    if not isinstance(cells, list) or position >= len(cells) or not isinstance(cells[position], dict):
+        return []
+    total = cells[position]
+    if not isinstance(total.get("value"), (int, float)) or total["value"] == 0:
+        return []
+    for start in range(0, position - 1):
+        run = cells[start:position]
+        if any(not isinstance(c, dict) or c.get("from") != total.get("from") or c.get("to") != total.get("to")
+               or not isinstance(c.get("value"), (int, float)) for c in run):
+            continue
+        values = [c["value"] for c in run] + [total["value"]]
+        if abs(sum(values[:-1]) - total["value"]) <= _printed_unit(values):
+            return [f"{'.'.join(parts[:4])}.{i}" for i in range(start, position)]
+    return []
 
 
 def movement_keys(fields: dict, path: str) -> set:
+    """The keys of a cell (`_cell_keys`), and, for a note-table change that is the total of the rows above it,
+    the keys of those rows too: a total and one of its own rows never both stand, in any class, and two rows
+    of one table do."""
+    keys = _cell_keys(fields, path)
+    for row in table_rows_of(fields, path):
+        keys |= _cell_keys(fields, row)
+    return keys
+
+
+def _cell_keys(fields: dict, path: str) -> set:
     """The keys under which an adjustment counts a movement, whatever its class; two adjustments that share
-    a key count one movement twice. A statement line or a named item has its own key (supplier finance and
-    receivables sold share their line's); any other cell of the balance sheet or a note table that moves a
-    working-capital line has that line's key; a consideration total holds the keys of its current and its
-    noncurrent part, which hold only their own; every other cell is keyed by its field."""
+    a key count one movement twice. A cell carries its own reading (`reading_key`), so one figure under two
+    paths is one. A statement line or a named item has its own key (supplier finance and receivables sold
+    share their line's); a movement cell of the balance sheet or a note table's balance of a working-capital
+    line has that line's key; a consideration total holds the keys of its current and its noncurrent part,
+    which hold only their own; every other cell is keyed by its field."""
     cell = _cell_at(fields, path)
     if not isinstance(cell, dict):
         return {f"field:{path}"}
+    keys = {f"field:{path}"}
+    reading = reading_key(fields, cell)
+    if reading:
+        keys.add(reading)
     source = cash_flow_source(path, cell)
     concept = cell.get("concept")
     if source:
+        keys.discard(f"field:{path}")
+        keys.add(source)
         if source.startswith("item:") and isinstance(concept, str):
             local = concept.rpartition(":")[2].lower()
             if not local.endswith(("current", "noncurrent")):          # a total: both of its parts
-                return {source, f"item:{local}current", f"item:{local}noncurrent"}
-        return {source}
+                keys |= {f"item:{local}current", f"item:{local}noncurrent"}
+        return keys
     segments = path.split(".")
     for key, working, pattern in WORKING_CAPITAL_MOVEMENTS:
         if isinstance(concept, str):
-            if re.search(pattern, concept.rpartition(":")[2].lower()):
-                return {key}
-        elif segments[:2] == ["earnings_versus_cash", "working_capital"] and len(segments) > 2 \
-                and segments[2] == working:
-            return {key}
-    return {f"field:{path}"}
+            local = concept.rpartition(":")[2].lower()
+            if re.fullmatch(pattern, local) and not re.search(NOT_A_LINE_BALANCE, local):
+                keys.discard(f"field:{path}")
+                keys.add(key)
+                return keys
+        elif (segments[:2] == ["earnings_versus_cash", "working_capital"] and len(segments) > 3
+                and segments[2] == working and segments[-1] in WORKING_CAPITAL_MOVEMENT_CELLS):
+            keys.discard(f"field:{path}")
+            keys.add(key)
+            return keys
+    return keys
 
 
 def counted_twice(fields: dict, path: str, earlier: list) -> str | None:
@@ -3032,10 +3110,12 @@ def counted_twice(fields: dict, path: str, earlier: list) -> str | None:
     for other in earlier:
         shared = mine & movement_keys(fields, other)
         if shared:
-            key, = sorted(shared)[:1]
-            what = f"the field {path!r}" if key.startswith("field:") else key.partition(":")[2]
+            key = sorted(shared)[0]
+            kind = key.partition(":")[0]
+            what = {"field": f"the field {key.partition(':')[2]!r}", "reading": f"the figure {key.partition(':')[2]}"}.get(
+                kind, key.partition(":")[2])
             return (f"it counts one movement twice: an earlier adjustment ({other!r}) is the "
-                    f"same {'cell' if key.startswith('field:') else 'movement'} {what}")
+                    f"same {'cell' if kind == 'field' else 'figure' if kind == 'reading' else 'movement'} {what}")
     return None
 
 

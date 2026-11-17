@@ -1097,8 +1097,8 @@ def test_the_calculator_lists_an_earnings_adjustment_and_does_not_apply_it_to_fr
         {"value": 100.0}, {"value": 10.0}, {"value": 0.0, "formula": "x"},
         [adjustment("terms.trailing_four_quarters.revenue", "reduce", "earnings"),
          adjustment("terms.trailing_four_quarters.change_in_payables", "increase", "cash_flow")],
-        with_year({**PLANTED, "terms": {"trailing_four_quarters": {"revenue": usd(), "change_in_payables": usd()}}}))
-    assert out["value"] == 100.0 - 10.0 + 1_000_000.0
+        with_year({**PLANTED, "terms": {"trailing_four_quarters": {"revenue": usd(), "change_in_payables": usd(value=2_000_000.0)}}}))
+    assert out["value"] == 100.0 - 10.0 + 2_000_000.0
     assert [r["calculator_field"] for r in out["adjustments_applied"]] == ["terms.trailing_four_quarters.change_in_payables"]
     earnings, = out["adjustments_to_earnings"]
     assert earnings["calculator_field"] == "terms.trailing_four_quarters.revenue"
@@ -2560,7 +2560,7 @@ def test_one_movement_is_counted_once_through_calculate_and_the_valuation(label,
     assert refused["name"] == "n1" and TWICE in refused["reason"]
     kept = quality["adjustments_applied"] + quality["adjustments_to_earnings"]
     assert [r["name"] for r in kept] == [f"n{stands}"]
-    accounting = out["valuation"]["accounting_adjustments"]
+    accounting = out["valuation"].get("accounting_adjustments")
     assert [r["name"] for r in accounting["each"]] == ["n0"]
     # the whole is the one row's own move, nothing counted twice
     assert accounting["all_together"]["moved_per_share"] == pytest.approx(accounting["each"][0]["moved_per_share"], rel=1e-12)
@@ -2585,7 +2585,7 @@ def test_the_refutes_stx_repro_stands_once_through_calculate():
     assert [r["name"] for r in quality["adjustments_applied"]] == ["a"] and quality["adjustments_to_earnings"] == []
     assert [r["name"] for r in quality["adjustments_refused"]] == ["b", "c"]
     assert all(TWICE in r["reason"] for r in quality["adjustments_refused"])
-    accounting = out["valuation"]["accounting_adjustments"]
+    accounting = out["valuation"].get("accounting_adjustments")
     assert [r["name"] for r in accounting["each"]] == ["a"]
     assert accounting["all_together"]["moved_per_share"] == pytest.approx(accounting["each"][0]["moved_per_share"], rel=1e-12)
 
@@ -2620,8 +2620,8 @@ def test_a_note_tables_change_in_a_balance_is_the_movement_of_its_line_in_any_cl
 
 def test_a_consideration_total_conflicts_with_its_parts_and_the_parts_do_not_conflict():
     def plant(*names):
-        changes = [{**usd(unit="iso4217:USD"), "concept": f"us-gaap:{name}",
-                    "from": {"instant": "2025-06-30"}, "to": {"instant": "2026-06-30"}} for name in names]
+        changes = [{**usd(unit="iso4217:USD", value=(1_000_000.0, 2_000_000.0, 5_000_000.0)[i]), "concept": f"us-gaap:{name}",
+                    "from": {"instant": "2025-06-30"}, "to": {"instant": "2026-06-30"}} for i, name in enumerate(names)]
         return with_year({"period_end": "2026-06-30", "note_tables": {"tables": {"notes_1": {"changes": changes}}}})
     base = "BusinessCombinationContingentConsiderationLiability"
     held = plant(base, base + "Current", base + "Noncurrent")
@@ -2636,3 +2636,222 @@ def test_a_consideration_total_conflicts_with_its_parts_and_the_parts_do_not_con
                                       [{**adjustment(p, applies_to="cash_flow"), "name": p} for p in (current, noncurrent, total)], held)
     assert [r["calculator_field"] for r in out["adjustments_applied"]] == [current, noncurrent]
     assert [r["calculator_field"] for r in out["adjustments_refused"]] == [total]
+
+
+# --- the key comes from the cell: anchored concepts, one figure under many paths ------------------------------------
+
+@pytest.mark.parametrize("run, path, local, line", [
+    ("NVDA/0001045810-26-000075", "note_tables.tables.notes_60.changes.1", "TaxesPayableCurrent", "change_in_payables"),
+    ("STX/0001137789-26-000159", "note_tables.tables.notes_83.changes.0", "DividendsPayableCurrent", "change_in_payables"),
+    ("NVDA/0001045810-26-000075", "note_tables.tables.notes_60.changes.4", "ExcessInventoryPurchaseObligationsCurrent", "change_in_inventory"),
+    ("STX/0001137789-26-000159", "note_tables.tables.notes_138.changes.1", "DeferredTaxAssetsInventory", "change_in_inventory"),
+])
+def test_a_tax_a_dividend_an_obligation_and_a_deferred_tax_stand_beside_the_statement_line_of_their_word(
+        run, path, local, line):
+    held = printed(run)
+    assert calculator._cell_at(held, path)["concept"].rpartition(":")[2] == local
+    statement = f"terms.trailing_four_quarters.{line}"
+    assert f"line:{line}" in calculator.movement_keys(held, statement)
+    assert not any(key.startswith("line:") for key in calculator.movement_keys(held, path))
+    assert calculator.counted_twice(held, path, [statement]) is None
+    assert calculator.counted_twice(held, statement, [path]) is None
+
+
+@pytest.mark.parametrize("concept, line", [
+    ("us-gaap:AccountsReceivableNetCurrent", "change_in_receivables"),
+    ("us-gaap:ReceivablesNetCurrent", "change_in_receivables"),
+    ("us-gaap:AccountsNotesAndLoansReceivableNetCurrent", "change_in_receivables"),
+    ("us-gaap:InventoryNet", "change_in_inventory"), ("us-gaap:InventoryGross", "change_in_inventory"),
+    ("us-gaap:InventoryFinishedGoods", "change_in_inventory"),
+    ("us-gaap:AccountsPayableCurrent", "change_in_payables")])
+def test_a_concept_that_is_a_lines_balance_takes_the_lines_key(concept, line):
+    held, path = a_change(concept)
+    assert calculator.movement_keys(held, path) - {k for k in calculator.movement_keys(held, path) if k.startswith("reading:")} == {f"line:{line}"}
+
+
+@pytest.mark.parametrize("concept", [
+    "us-gaap:InterestReceivableCurrent", "us-gaap:IncomeTaxReceivable", "us-gaap:DividendsReceivable",
+    "us-gaap:InventoryPurchaseObligation", "us-gaap:TaxesPayableCurrent", "us-gaap:InterestPayableCurrent",
+    "us-gaap:DeferredTaxAssetsInventory", "us-gaap:OtherReceivables", "us-gaap:ExcessInventoryPurchaseObligationsCurrent"])
+def test_a_concept_that_is_not_a_lines_balance_takes_no_line_key(concept):
+    held, path = a_change(concept)
+    assert not any(key.startswith("line:") for key in calculator.movement_keys(held, path)), concept
+
+
+NET_INCOME_COPIES = [
+    "terms.trailing_four_quarters.net_income",
+    "ratios.profitability.net_margin.inputs.net_income",
+    "earnings_versus_cash.operating_cash_flow_over_net_income.inputs.net_income",
+    "earnings_versus_cash.working_capital.receivables.share_of_net_income.inputs.net_income",
+]
+
+
+def test_one_figure_copied_under_several_paths_is_one_reading():
+    """Apple's net income of the trailing four quarters stands under four paths with one value and the one span
+    the table places it in: cited as earnings under two of them, only the first stands."""
+    held = printed(AAPL_RUN)
+    values = {calculator._cell_at(held, p)["value"] for p in NET_INCOME_COPIES}
+    assert values == {128_930e6}
+    assert len({tuple(k for k in calculator.movement_keys(held, p) if k.startswith("reading:")) for p in NET_INCOME_COPIES}) == 1
+    for other in NET_INCOME_COPIES[1:]:
+        assert TWICE in calculator.counted_twice(held, other, [NET_INCOME_COPIES[0]]), other
+    out = final_with(APPLE, [adjustment(NET_INCOME_COPIES[0], applies_to="earnings"),
+                             {**adjustment(NET_INCOME_COPIES[1], applies_to="earnings"), "name": "copy"}])
+    assert [r["calculator_field"] for r in out["adjustments_to_earnings"]] == [NET_INCOME_COPIES[0]]
+    assert TWICE in out["adjustments_refused"][0]["reason"]
+    # the gate reads the same
+    overlap = analysis_check.adjustment_overlap(held)
+    assert TWICE in overlap({"applies_to": "earnings", "calculator_field": NET_INCOME_COPIES[2]},
+                            [{"applies_to": "earnings", "calculator_field": NET_INCOME_COPIES[0]}])
+
+
+def test_two_different_figures_of_one_span_stand():
+    held = printed(AAPL_RUN)
+    income, revenue = NET_INCOME_COPIES[0], "terms.trailing_four_quarters.revenue"
+    assert calculator.counted_twice(held, income, [revenue]) is None
+    out = final_with(APPLE, [adjustment(income, applies_to="earnings"),
+                             {**adjustment(revenue, applies_to="earnings"), "name": "revenue"}])
+    assert len(out["adjustments_to_earnings"]) == 2 and out["adjustments_refused"] == []
+
+
+def test_a_working_capital_sections_other_inputs_are_not_the_lines_movement():
+    """`receivables.share_of_net_income.inputs.net_income` is net income, the same reading as the statement's, and
+    does not conflict with an adjustment of the receivables line or of the balance sheet's change."""
+    held = printed(AAPL_RUN)
+    cell = f"{RECEIVABLES}.share_of_net_income.inputs.net_income"
+    reading = lambda p: {k for k in calculator.movement_keys(held, p) if k.startswith("reading:")}
+    assert reading(cell) == reading(NET_INCOME_COPIES[0]) and len(reading(cell)) == 1
+    assert not any(k.startswith("line:") for k in calculator.movement_keys(held, cell))
+    for receivables in ("terms.trailing_four_quarters.change_in_receivables", f"{RECEIVABLES}.balance_sheet_change"):
+        assert calculator.counted_twice(held, cell, [receivables]) is None
+        assert calculator.counted_twice(held, receivables, [cell]) is None
+    assert TWICE in calculator.counted_twice(held, cell, [NET_INCOME_COPIES[0]])
+    for moves in (f"{RECEIVABLES}.balance_sheet_change", f"{RECEIVABLES}.cash_flow_statement_change",
+                  f"{RECEIVABLES}.articulation_gap.inputs.cash_flow_statement_change",
+                  f"{RECEIVABLES}.articulation_gap.inputs.balance_sheet_change"):
+        assert "line:change_in_receivables" in calculator.movement_keys(held, moves), moves
+
+
+def through_calculate(run_name: str, paths: list, applies_to: str = "earnings"):
+    """`calculate` on a committed run with its own published market data and assumptions, the paths cited in order
+    under distinct names: the quality block and the valuation's accounting adjustments."""
+    run = RUNS / run_name
+    published = json.loads((run / "calculator.json").read_text(encoding="utf-8"))
+    assumptions = json.loads((run / "assumptions.json").read_text(encoding="utf-8"))
+    out = calculator.calculate(**calculator_drift.trigger(run), fixtures_root=STORE, bundle=run,
+                               market_data=published["market"], assumptions=assumptions, accounting={
+        "adjustments": [{**adjustment(path, applies_to=applies_to), "name": f"n{i}"} for i, path in enumerate(paths)]})
+    return out["free_cash_flow"]["free_cash_flow_quality_adjusted"], out["valuation"].get("accounting_adjustments")
+
+
+REFUTE_COPIES = [
+    ("STX net income", STX_RUN, ["terms.trailing_four_quarters.net_income",
+                                 "earnings_versus_cash.accruals_over_average_assets.inputs.net_income",
+                                 "ratios.profitability.net_margin.inputs.net_income"]),
+    ("STX ebit", STX_RUN, ["ebit", "ratios.profitability.operating_margin.inputs.ebit",
+                           "terms.trailing_four_quarters.operating_income"]),
+    ("CARR contract liabilities", "CARR/0001783180-26-000032", [
+        "contract_liabilities_and_billings.billings.inputs.change_in_contract_liabilities",
+        "contract_liabilities_and_billings.billings_growth_minus_revenue_growth.inputs.billings_growth.inputs.now"
+        ".inputs.change_in_contract_liabilities"]),
+]
+
+
+@pytest.mark.parametrize("label, run, paths", REFUTE_COPIES, ids=[c[0] for c in REFUTE_COPIES])
+def test_the_refutes_copied_figures_stand_once_through_calculate_and_the_valuation(label, run, paths):
+    """One figure under several paths, cited as earnings: only the first stands and the valuation holds one row."""
+    quality, accounting = through_calculate(run, paths)
+    assert [r["name"] for r in quality["adjustments_to_earnings"]] == ["n0"], label
+    assert [r["name"] for r in quality["adjustments_refused"]] == [f"n{i}" for i in range(1, len(paths))], label
+    assert all(TWICE in r["reason"] for r in quality["adjustments_refused"])
+    assert [r["name"] for r in accounting["each"]] == ["n0"]
+
+
+def test_carrs_note_table_contract_liability_is_another_figure_than_the_billings_input():
+    """Carrier's `notes_81.changes.5` (ContractWithCustomerLiability, 139 million over the half year) is not the
+    billings input (306 million over the year): different value and span, so both stand."""
+    held = printed("CARR/0001783180-26-000032")
+    note = "note_tables.tables.notes_81.changes.5"
+    billings = "contract_liabilities_and_billings.billings.inputs.change_in_contract_liabilities"
+    assert calculator._cell_at(held, note)["value"] == 139e6 and calculator._cell_at(held, billings)["value"] == 306e6
+    assert calculator.counted_twice(held, note, [billings]) is None
+
+
+def test_a_total_and_one_of_its_rows_never_both_stand_and_two_rows_do():
+    """NVIDIA's `notes_60`: the accrued total (changes.8, 5,608 million) is the sum of the rows above it in one
+    column and period (2,073 + 2,537 + 3,237 + 131 - 601 + 60 - 2,935 + 1,106 = 5,608, millions), among them the
+    contract liability row (changes.2). In either order, and in any class, the second is refused."""
+    held = printed(NVDA_RUN)
+    t = "note_tables.tables.notes_60.changes."
+    cells = [calculator._cell_at(held, f"{t}{i}")["value"] for i in range(9)]
+    assert sum(cells[:8]) == cells[8] == 5_608e6
+    assert (2_073 + 2_537 + 3_237 + 131 - 601 + 60 - 2_935 + 1_106) == 5_608
+    assert calculator.table_rows_of(held, t + "8") == [f"{t}{i}" for i in range(8)]
+    assert calculator.table_rows_of(held, t + "2") == []
+    for first, second in ((t + "2", t + "8"), (t + "8", t + "2")):
+        assert TWICE in calculator.counted_twice(held, second, [first])
+    quality, accounting = through_calculate("NVDA/0001045810-26-000075", [t + "2", t + "8"])
+    assert [r["name"] for r in quality["adjustments_to_earnings"]] == ["n0"] and len(quality["adjustments_refused"]) == 1
+    quality, _ = through_calculate("NVDA/0001045810-26-000075", [t + "8", t + "2"])
+    assert [r["name"] for r in quality["adjustments_to_earnings"]] == ["n0"] and len(quality["adjustments_refused"]) == 1
+    assert calculator.counted_twice(held, t + "2", [t + "1"]) is None and calculator.counted_twice(held, t + "1", [t + "2"]) is None
+    assert calculator.counted_twice(held, t + "0", [t + "7"]) is None
+
+
+def test_a_cell_that_is_no_sum_is_no_total():
+    rows = ((3e6, "2026-03-31"), (1e6, "2026-06-30"), (2e6, "2026-06-30"), (3e6, "2026-06-30"), (9e6, "2026-06-30"))
+    held = {"period_end": "2026-06-30", "note_tables": {"tables": {"notes_1": {"changes": [
+        {**usd(unit="iso4217:USD", value=v), "concept": f"co:Row{i}", "from": {"instant": "2025-06-30"},
+         "to": {"instant": to}} for i, (v, to) in enumerate(rows)]}}}}
+    t = "note_tables.tables.notes_1.changes."
+    assert calculator.table_rows_of(held, t + "3") == [t + "1", t + "2"]       # 1 + 2 = 3, same column and period
+    assert calculator.table_rows_of(held, t + "4") == []                        # 9 is no sum of the rows above it
+    assert calculator.table_rows_of(held, t + "2") == []                        # 1 is no sum, and 3 is another period
+
+
+def test_a_total_takes_the_longest_run_of_rows_that_sums_to_it():
+    """A zero row above two rows that sum to the total is one of its rows: the longest run."""
+    held = {"period_end": "2026-06-30", "note_tables": {"tables": {"notes_1": {"changes": [
+        {**usd(unit="iso4217:USD", value=v), "concept": f"co:Row{i}", "from": {"instant": "2025-06-30"},
+         "to": {"instant": "2026-06-30"}} for i, v in enumerate((0.0, 1e6, 2e6, 3e6))]}}}}
+    t = "note_tables.tables.notes_1.changes."
+    assert calculator.table_rows_of(held, t + "3") == [t + "0", t + "1", t + "2"]
+
+
+@pytest.mark.parametrize("concept", [
+    "us-gaap:InterestPayableCurrent", "us-gaap:InterestAndDividendsPayableCurrent", "qcom:PayablesToCustomers",
+    "us-gaap:DisposalGroupIncludingDiscontinuedOperationAccountsPayableCurrent", "us-gaap:FinancingReceivableExcludingAccruedInterestBeforeAllowanceForCreditLoss",
+    "us-gaap:LossContingencyReceivable", "us-gaap:AccountsReceivableAllowanceForCreditLossCurrent",
+    "us-gaap:AllowanceForDoubtfulAccountsReceivableCurrent", "us-gaap:AccountsReceivableWriteoff",
+    "us-gaap:FinancingReceivableAllowanceForCreditLossWriteOffs", "us-gaap:AccountsPayableInterestCurrent",
+    "us-gaap:AccountsReceivableTaxCurrent", "us-gaap:AccountsReceivableDividendsCurrent"])
+def test_a_payable_or_receivable_that_is_not_the_trade_balance_takes_no_line_key(concept):
+    held, path = a_change(concept)
+    assert not any(key.startswith("line:") for key in calculator.movement_keys(held, path)), concept
+
+
+def test_accounts_receivable_net_and_receivables_net_share_one_key():
+    first, path = a_change("us-gaap:AccountsReceivableNetCurrent")
+    second = {**first, "note_tables": {"tables": {"notes_1": {"changes": [
+        first["note_tables"]["tables"]["notes_1"]["changes"][0],
+        {**first["note_tables"]["tables"]["notes_1"]["changes"][0], "concept": "us-gaap:ReceivablesNetCurrent", "value": 2_000_000.0}]}}}}
+    assert TWICE in calculator.counted_twice(second, "note_tables.tables.notes_1.changes.1", [path])
+
+
+def test_taxes_payable_as_earnings_and_the_statements_change_in_payables_as_cash_flow_both_stand():
+    run = "NVDA/0001045810-26-000075"
+    run_path = RUNS / run
+    out = calculator.calculate(**calculator_drift.trigger(run_path), fixtures_root=STORE, bundle=run_path, accounting={
+        "adjustments": [{**adjustment("note_tables.tables.notes_60.changes.1", applies_to="earnings"), "name": "taxes"},
+                        {**adjustment("terms.trailing_four_quarters.change_in_payables", applies_to="cash_flow"), "name": "statement"}]})
+    quality = out["free_cash_flow"]["free_cash_flow_quality_adjusted"]
+    assert quality["adjustments_refused"] == []
+    assert [r["name"] for r in quality["adjustments_to_earnings"]] == ["taxes"]
+    assert [r["name"] for r in quality["adjustments_applied"]] == ["statement"]
+
+
+def test_a_zero_moves_nothing_and_has_no_reading_of_its_own():
+    held = {"period_end": "2026-06-30", "terms": {"trailing_four_quarters": {
+        "revenue": usd(value=0.0), "net_income": usd(value=0.0)}}}
+    held = with_year(held)
+    assert calculator.counted_twice(held, "terms.trailing_four_quarters.revenue", ["terms.trailing_four_quarters.net_income"]) is None
