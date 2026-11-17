@@ -112,10 +112,14 @@ and `trend_table`.
    release match the 10-Q?
    `release_versus_report` answers it line by line for revenue, cost of revenue,
    operating income, pretax income, income tax expense, net income, diluted
-   earnings per share, operating cash flow and capital expenditure: the
-   release's cell beside the report's fact, `agrees`, `differs`,
-   `not_in_release`, `period_not_read` or `report_fact_missing`; cite its paths
-   and never subtract.
+   earnings per share, operating cash flow and capital expenditure: every dollar
+   cell of every table of the release beside the report's fact, and per line one
+   of `differs` (a cell of the statement itself differs), `differs_outside_gaap`
+   (only a cell labelled non-GAAP, segment, component or unidentified differs),
+   `agrees`, `block_not_identified`, `report_fact_missing`, `period_not_read`,
+   `printed_under_another_label` (a row prints it under a label the table does
+   not read) or `not_in_release`, with the face statement's own `statement`
+   verdict beside it; cite its paths and never subtract.
 
 **Revenue and working capital.** Four sections feed earnings versus cash,
 revenue recognition and the industry lens. Each field named here is a number,

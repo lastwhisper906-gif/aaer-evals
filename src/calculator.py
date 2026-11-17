@@ -3602,16 +3602,20 @@ RELEASE_WHAT_THIS_IS = (
     "its paragraph id beside the report's fact for the same period through the term table, "
     "the difference (the release's value less the report's, in dollars) with its sign toward "
     "the release. A heading may label a cell with a hint (`gaap`, `not_gaap`, `segment`, "
-    "`component`, `unidentified`) and never takes it out. The line is `differs` if a `gaap` "
-    "cell differs, `differs_outside_gaap` if only cells with another hint differ (each "
-    "listed), `agrees` only if every compared cell agrees; `block_not_identified`, "
-    "`report_fact_missing` and `period_not_read` keep a line from `agrees`; `not_in_release` "
-    "when no table has a row under one of the stated labels. Only per share rows and cells "
-    "printed as a percent are not compared to a dollar fact. `statement` beside each line is "
-    "the face statement's own verdict (the table printing at least four of the lines, "
-    "chosen without a value): `agrees`, `differs` or `not_compared`, never borrowed by "
-    "the line's. Unread tables are listed by kind and unread columns with their dates. "
-    "Python wrote every number here")
+    "`component`, `unidentified`) and never takes it out. The line verdicts, most important "
+    "first: `differs` if a `gaap` cell differs; `differs_outside_gaap` if only cells with "
+    "another hint differ (each listed with its hint, paragraph id and both values); "
+    "`block_not_identified` if a cell agrees but could not be told as GAAP; "
+    "`report_fact_missing` if the report has no fact for the period; `period_not_read` if a "
+    "table that prints the line could not be read; `agrees` only if every compared cell "
+    "agrees; `printed_under_another_label` if no stated label matches but a row whose label "
+    "holds a stated label's words prints a dollar figure for the period (listed, not "
+    "compared); `not_in_release` if no row does. Only per share rows and cells printed as a "
+    "percent are not compared to a dollar fact. `statement` beside each line is the face "
+    "statement's own verdict (the table printing at least four of the lines, chosen without a "
+    "value): `agrees`, `differs` or `not_compared`, never borrowed by the line's. Unread "
+    "tables are listed by kind and unread columns with their dates. Python wrote every "
+    "number here")
 
 
 def release_report_reader(record: Record, periods: dict):

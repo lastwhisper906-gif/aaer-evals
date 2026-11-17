@@ -103,7 +103,8 @@ ROW_LABELS: dict[str, tuple[str, ...]] = {
                       "Income from continuing operations before income taxes",
                       "Earnings before taxes (EBT)"),
     "income_tax_expense": ("Income tax expense", "Provision for income taxes",
-                           "Income tax provision", "Income tax (benefit) expense"),
+                           "Income tax provision", "Income tax (benefit) expense",
+                           "Income tax (expense) benefit"),
     "net_income": ("Net income", "Net earnings", "Net income (loss)", "Net earnings (loss)",
                    "GAAP net income", "Net income (GAAP)",
                    "Net income attributable to Generac Holdings Inc.",
@@ -136,6 +137,9 @@ class ReleaseLabelError(Exception):
 
 _DASHES = str.maketrans({"—": "-", "–": "-", "‐": "-", "‑": "-",
                          "−": "-", "’": "'", "​": ""})
+# A reconciliation prints a line with the word that says what is done with it: `Less: Capital
+# expenditures` is the capital expenditures line, and is compared as it.
+_PREFIX = re.compile(r"^(?:less|add|plus|minus|deduct)\s*:\s*")
 _FOOTNOTE = re.compile(r"(?:\s*\((?:\d{1,2}|[a-z])\)|\s*\*+)+$")
 
 
@@ -144,6 +148,7 @@ def normal_label(text: str) -> str:
     trailing footnote mark or colon."""
     text = text.translate(_DASHES).strip().lower()
     text = re.sub(r"\s+", " ", text)
+    text = _PREFIX.sub("", text)
     text = _FOOTNOTE.sub("", text).rstrip(":").strip()
     return text
 
@@ -234,7 +239,8 @@ _GAAP_WORD = re.compile(r"\bgaap\b")
 _NON_GAAP = re.compile(r"non[-\s]*gaap")
 # Headings whose rows are per share: the one kind of row, with a percent cell, that is not
 # held to a dollar fact, because it is not dollars.
-PER_SHARE_HEADING = re.compile(r"per (?:common )?(?:share|unit)|earnings per|^basic\b|^diluted\b")
+PER_SHARE_HEADING = re.compile(r"^(?:per (?:common )?share|earnings per share|net income per share|"
+                               r"basic|diluted)\b")
 # Headings whose rows are parts of a line, not the line: they are compared and labelled.
 COMPONENT_HEADING = re.compile(r"summary of|compensation|by (?:segment|region|product)|of which|"
                                r"included in|including|by function")
@@ -364,6 +370,35 @@ def _assign_blocks(columns: list[dict], labels: list[str]) -> None:
             column["block"] = "gaap"
 
 
+_SUB_CHANGE = re.compile(r"^(?:adjustments?|change|variance)\b", re.I)
+
+
+def _sub_columns(header: list[list[str]], count: int) -> list[str] | None:
+    """The labels a period's columns split into (`Reported`, `Adjustments`, `Adjusted`), when a
+    header row prints them once for every period column, in the same order each time."""
+    for cells in header:
+        labels = [c.strip() for c in cells if c.strip() and not unit_statement(c)
+                  and not any(ch.isdigit() for ch in c)]
+        if count and len(labels) % count == 0 and len(labels) // count >= 2:
+            k = len(labels) // count
+            if labels[:k] * count == labels:
+                return labels[:k]
+    return None
+
+
+def _expand(columns: list[dict], sub: list[str]) -> list[dict]:
+    """Each period column as the sub-columns its header names: adjustments are not a dollar
+    of the line (`change`), `Adjusted` says not GAAP, `Reported` is the statement."""
+    out = []
+    for column in columns:
+        for label in sub:
+            if "change" in column or _SUB_CHANGE.match(label):
+                out.append({"change": True})
+            else:
+                out.append(dict(column, block=header_hint(label) or "gaap", source="group"))
+    return out
+
+
 def _date(year: int, month: int, day: int) -> dt.date:
     """A date a header names, or `Unread`: "February 29" in a year without one is the
     table's problem and never an exception."""
@@ -407,7 +442,8 @@ def read_header(rows: list[list[str]], segment_labels=()) -> dict:
                                            int(date.group(2)))})
     if whole:
         _assign_blocks(whole, labels)
-        return {"columns": whole, "first_data_row": first, "unit": unit, "segment": segment}
+        return {"columns": whole, "first_data_row": first, "unit": unit, "segment": segment,
+                "sub": _sub_columns(header, len(whole))}
 
     token_rows = [_tokens(cells) for cells in header]
     numbered = [index for index, tokens in enumerate(token_rows) if len(tokens) >= 2]
@@ -448,7 +484,8 @@ def read_header(rows: list[list[str]], segment_labels=()) -> dict:
     for index, column in enumerate(resolved):
         column["months"] = spans[min(index // size, len(spans) - 1)] if len(spans) > 1 else spans[0]
     _assign_blocks(resolved, labels)
-    return {"columns": resolved, "first_data_row": first, "unit": unit, "segment": segment}
+    return {"columns": resolved, "first_data_row": first, "unit": unit, "segment": segment,
+            "sub": _sub_columns(header, len(resolved))}
 
 
 # --- the cells of a release -------------------------------------------------------------
@@ -507,14 +544,15 @@ _CASH_FLOW_LINE = re.compile(
     r"^(?:net )?cash(?: flows?)?(?: \(?(?:provided|used|generated)[^)]*\)?)*.*"
     r"\b(operating|investing|financing) activities|"
     r"^change in cash from (operating|investing|financing) activities")
-_CHANGE_IN_CASH = re.compile(r"^(?:net )?(?:increase|decrease|change)[^:]* in cash\b|"
-                             r"^change in cash, cash equivalents")
+_CASH_AT_AN_END = re.compile(r"^cash\b.*\b(?:beginning|end) of (?:the )?(?:period|year)")
 
 
 def is_a_statement_of_cash_flows(rows: list[list[str]]) -> bool:
-    """True when the table prints at least three of its operating, investing and financing
-    cash flow lines, or two of them together with a change in cash, each with a figure."""
-    kinds, change = set(), False
+    """True when the table prints the cash at the beginning or the end of the period beside at
+    least two of its operating, investing and financing cash flow lines, each with a figure. A
+    change in cash alone, or a reconciliation that prints operating cash flow and capital
+    expenditure, is not one."""
+    kinds, ends = set(), False
     for cells in rows:
         placed = _label_of(cells)
         if not placed or not any(read_number(c) is not None for c in cells[placed[0] + 1:]):
@@ -523,9 +561,9 @@ def is_a_statement_of_cash_flows(rows: list[list[str]]) -> bool:
         found = _CASH_FLOW_LINE.search(label)
         if found:
             kinds.add(found.group(1) or found.group(2))
-        elif _CHANGE_IN_CASH.search(label):
-            change = True
-    return len(kinds) >= 3 or (len(kinds) >= 2 and change)
+        elif _CASH_AT_AN_END.search(label):
+            ends = True
+    return ends and len(kinds) >= 2
 
 
 _GUIDANCE = re.compile(r"guidance|outlook|forecast|expect|previous|updated|range", re.I)
@@ -550,11 +588,19 @@ def table_kind(rows: list[list[str]], reason: str, segment_labels=()) -> str:
     return "undated"
 
 
+# A row printed under another label is only a candidate for the line if it could be the line
+# in dollars: not a non-GAAP or adjusted measure, a deferred or current part, a weighted
+# average or a share count.
+_NOT_THE_LINE = re.compile(r"non-?\s*gaap|adjusted|deferred|current|weighted|\bshares?\b")
+
+
 def lines_named_in(label: str) -> list[str]:
     """The lines one of whose stated labels is inside this row label, as whole words:
     `Capital expenditures and capitalized software development costs` holds
     `Capital expenditures`. Only a row no stated label matches is asked."""
     words = normal_label(label)
+    if _NOT_THE_LINE.search(_flatten(label)):
+        return []
     return [line for line, stated in ROW_LABELS.items()
             if any(re.search(rf"(?<![\w-]){re.escape(normal_label(name))}(?![\w])", words)
                    for name in stated)]
@@ -574,7 +620,7 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
     """
     end = dt.date.fromisoformat(period_end)
     cells, unread, excluded, seen, unread_columns = [], {}, [], set(), []
-    cash_flow_statements, other_label_rows = set(), {}
+    cash_flow_statements, other_label_rows, attributable_tables = set(), {}, set()
     printed_lines: dict[str, set[str]] = {}
     last_unit, above = None, None
     for paragraph_id, paragraph in zip(paragraph_ids, paragraphs):
@@ -613,6 +659,9 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
         columns = header["columns"]
         if is_a_statement_of_cash_flows(rows):
             cash_flow_statements.add(paragraph_id)
+        if any((placed := _label_of(row)) and "attributable to" in placed[1].lower()
+               and any(read_number(c) is not None for c in row[placed[0] + 1:]) for row in rows):
+            attributable_tables.add(paragraph_id)
         scale_name = header["unit"] or carried
         table_segment = header["segment"] or names_a_segment(heading, segment_labels)
         if any("change" not in c and c["end"] == end for c in columns):
@@ -635,6 +684,8 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
                 # no date or span for a column
                 if placed[0] != 0 or _tokens(row) or _SPAN.search(" ".join(row)):
                     continue
+            if unit_statement(" ".join(row)) and not _is_data_row(row):
+                continue                 # a unit statement opens no block and excludes nothing
             if reset_hint:
                 row_hint, reset_hint = None, False
             if _is_data_row(row) and block_of(placed[1]) == "not_gaap":
@@ -666,20 +717,36 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
                                  "cell": figures[0]["text"] if figures else "",
                                  "reason": "a per share row, which is not dollars"})
                 continue
-            if len(figures) != len(columns):
-                if any(f["percent"] for f in figures) and line not in PER_SHARE:
+            use = columns
+            sub = header.get("sub")
+            if sub and len(figures) == len(columns) * len(sub):
+                use = _expand(columns, sub)         # Reported, Adjustments, Adjusted, ... each
+            if len(figures) != len(use):
+                dollars = [f for f in figures if not f["percent"]]
+                if not dollars and line not in PER_SHARE:
                     excluded.append({"paragraph_id": paragraph_id, "label": placed[1],
-                                     "cell": figures[0]["text"],
+                                     "cell": figures[0]["text"] if figures else "",
                                      "reason": "a row printed as a percent, which is not dollars"})
                     continue
-                note(line, placed[1], f"the row prints {len(figures)} figures and the header "
-                                      f"names {len(columns)} columns")
-                continue
+                if len(dollars) == len(columns) and line not in PER_SHARE:
+                    # dollars and percents in one row: the dollars are compared, the percents not
+                    for f in figures:
+                        if f["percent"]:
+                            excluded.append({
+                                "paragraph_id": paragraph_id, "label": placed[1],
+                                "cell": f["text"],
+                                "reason": "a cell printed as a percent, which is not dollars"})
+                    figures = dollars
+                else:
+                    note(line, placed[1], f"the row prints {len(figures)} figures and the "
+                                          f"header names {len(columns)} columns")
+                    continue
+                use = columns
             if line not in PER_SHARE and scale_name is None:
                 note(line, placed[1], "no unit statement (in millions, in thousands) is "
                                       "printed for the table or a table before it")
                 continue
-            for column, figure in zip(columns, figures):
+            for column, figure in zip(use, figures):
                 if "change" in column or column["end"] != end:
                     continue
                 if line not in PER_SHARE and figure["percent"]:
@@ -716,7 +783,8 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
                  if candidates else None)
     return {"cells": cells, "unread": unread, "excluded": excluded, "seen": seen,
             "unread_columns": unread_columns, "statement": statement,
-            "cash_flow_statements": cash_flow_statements, "other_label_rows": other_label_rows}
+            "cash_flow_statements": cash_flow_statements, "other_label_rows": other_label_rows,
+            "attributable_tables": attributable_tables}
 
 
 # The order a line's verdict is taken in. A difference in a GAAP cell is the line's; a
@@ -733,12 +801,18 @@ def line_verdict(verdicts) -> str:
     return next((name for name in PRECEDENCE if name in present), "not_in_release")
 
 
-def _by_size(line: str, label: str) -> bool:
-    """A cost, a payment and an income tax expense are stated as their size by the taxonomy
-    and printed in parentheses by many releases; an income tax whose label says benefit is
-    signed, expense positive."""
-    return (line in BY_SIZE
-            or (line == "income_tax_expense" and "benefit" not in label.lower()))
+def _printed_as(line: str, label: str, value: Decimal) -> Decimal:
+    """The release's figure in the taxonomy's sign. A cost, a capital expenditure and an income
+    tax expense are stated as their size and printed in parentheses by many releases, so
+    they are compared by size; an income tax whose label says benefit is signed, expense
+    positive; and a label that says `(expense) benefit` prints the expense negative and the
+    benefit positive, so its sign is turned over (Carrier's `(180)` is an expense of 180)."""
+    words = label.lower()
+    if line == "income_tax_expense":
+        if "(expense)" in words:
+            return -value
+        return value if "benefit" in words else abs(value)
+    return abs(value) if line in BY_SIZE else value
 
 
 def compare_release(paragraph_ids: list[str], paragraphs: list[str], period_end: str, read_report,
@@ -757,8 +831,7 @@ def compare_release(paragraph_ids: list[str], paragraphs: list[str], period_end:
             reports[(line, months)] = read_report(line, months)
         return reports[(line, months)]
 
-    with_attributable = {c["paragraph_id"] for c in read["cells"]
-                         if c["line"] == "net_income" and "attributable" in c["label"].lower()}
+    with_attributable = read["attributable_tables"]
     # a table that prints an operating cash flow line is a statement of cash flows, whose net
     # income is the consolidated one by construction
     cash_flow_tables = read["cash_flow_statements"]
@@ -784,7 +857,7 @@ def compare_release(paragraph_ids: list[str], paragraphs: list[str], period_end:
                 entry.update(verdict="report_fact_missing", report={"missing": fact["missing"]})
                 compared.append(entry)
                 continue
-            shown = abs(cell["value"]) if _by_size(line, cell["label"]) else cell["value"]
+            shown = _printed_as(line, cell["label"], cell["value"])
             scale, decimals = cell["scale_value"], cell["decimals"]
             agrees = agrees_at_the_release_precision(shown, fact["value"], scale, decimals)
             difference = shown * scale - Decimal(str(fact["value"]))
