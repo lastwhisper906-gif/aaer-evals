@@ -37,6 +37,12 @@ DELL = "DELL/0001571996-26-000046"
 CARR = "CARR/0001783180-26-000032"
 CARR_RERUN = "CARR/0001783180-26-000032-rerun-2026-10-28"
 AAPL = "AAPL/0000320193-26-000020"
+STX = "STX/0001137789-26-000159"
+# The runs that move under the refusal of a balance as a cash-flow adjustment ("a stock cannot move
+# a flow", docs/ANALYSIS_PIPELINE.md §5): each published a supplier-finance obligation, a balance at
+# one date, as its one adjustment of free cash flow. Their adjusted free cash flow is the one cell.
+SUPPLIER_FINANCE_REFUSED = {DELL, STX}
+ADJUSTED_FREE_CASH_FLOW = "free_cash_flow.free_cash_flow_quality_adjusted.value"
 CUTOFFS = {JCI: "2026-07-29", DELL: "2026-09-08", CARR: "2026-07-28", CARR_RERUN: "2026-07-28"}
 
 NET_INCOME = "NetIncomeLoss"
@@ -44,8 +50,24 @@ CONTINUING = "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations"
 TOTAL = "NetCashProvidedByUsedInOperatingActivities"
 
 
+def moved_by_the_refusal(row: dict) -> bool:
+    """A row of the two runs whose one published adjustment is refused today: the adjusted free
+    cash flow itself, and the leaves that existed only because the adjustment was applied (its
+    own row under `adjustments_applied`, and the valuation's reading of it), which are gone."""
+    if row["run"] not in SUPPLIER_FINANCE_REFUSED or row["file"] != FINAL:
+        return False
+    return (row["path"] == ADJUSTED_FREE_CASH_FLOW
+            or (row["new"] is None and row["path"].startswith((
+                "free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.",
+                "valuation.accounting_adjustments."))))
+
+
 def keyed(rows: list[dict]) -> dict:
-    return {(row["run"], row["file"], row["path"]): (row["old"], row["new"]) for row in rows}
+    """The rows by run, file and path, without those the supplier-finance refusal moves in its two
+    runs: `test_only_dell_and_seagate_move_under_the_supplier_finance_refusal` holds them, by the
+    adjustment's amount, and nothing else is left out."""
+    return {(row["run"], row["file"], row["path"]): (row["old"], row["new"]) for row in rows
+            if not moved_by_the_refusal(row)}
 
 
 @pytest.fixture(scope="module")
@@ -422,3 +444,37 @@ def test_the_printed_list_counts_per_run_and_names_file_old_and_new():
         "  calculator.json terms.t.value: 2,582,000,000 -> 2,938,000,000",
         "  calculator_filings_only.json ratios.r.value: 0.371 -> missing"]
     assert drift.printed([]) == "no published figure changes"
+
+
+# --- the refusal of a balance as an adjustment of free cash flow -------------------------------------
+
+def test_only_dell_and_seagate_move_under_the_supplier_finance_refusal():
+    """A balance at one date cannot move a flow (`docs/ANALYSIS_PIPELINE.md` §5): the rule refuses
+    a cell of `terms.balances_now` as the amount of an adjustment of free cash flow. Dell and Seagate
+    each published the supplier-finance obligation (3.1 billion and 400 million at their period ends)
+    as a reduction of free cash flow; today's calculator refuses it, so each adjusted free cash flow
+    is higher by the published adjustment's own amount, read from the run's committed
+    `analysis_accounting.json` and its view. No other run's adjusted free cash flow moves, and a
+    different amount fails. The runs stand as published (CLAUDE.md: each prediction is scored against
+    its own rules version)."""
+    every = [row for row in drift.report(RUNS, STORE) if moved_by_the_refusal(row)]
+    assert {row["run"] for row in every} == SUPPLIER_FINANCE_REFUSED
+    rows = [row for row in every if row["path"] == ADJUSTED_FREE_CASH_FLOW]
+    assert len(rows) == 2
+    # what else of the two runs is gone is the adjustment's own row and its reading by the valuation
+    assert all(row["new"] is None for row in every if row not in rows)
+    amounts = {}
+    for run in SUPPLIER_FINANCE_REFUSED:
+        held = json.loads((RUNS / run / "analysis_accounting.json").read_text(encoding="utf-8"))
+        adjustment, = held["adjustments"]
+        assert adjustment["calculator_field"] == "terms.balances_now.supplier_finance_obligation"
+        assert adjustment["direction"] == "reduce" and adjustment["applies_to"] == "cash_flow"
+        view = json.loads((RUNS / run / FILINGS_ONLY).read_text(encoding="utf-8"))
+        amounts[run] = view["terms"]["balances_now"]["supplier_finance_obligation"]["value"]
+    assert amounts == {DELL: 3_100 * MILLION, STX: 400 * MILLION}          # as published
+    for row in rows:
+        published = json.loads((RUNS / row["run"] / FINAL).read_text(encoding="utf-8"))
+        applied, = published["free_cash_flow"]["free_cash_flow_quality_adjusted"]["adjustments_applied"]
+        assert applied["amount"] == amounts[row["run"]]
+        # recomputed today less the published adjusted free cash flow: the reduction undone
+        assert row["new"] - row["old"] == pytest.approx(amounts[row["run"]], rel=1e-12), row["run"]
