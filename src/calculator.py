@@ -2337,10 +2337,14 @@ def quality_adjusted(simple: dict, compensation: dict, acquisitions: dict,
                      adjustments: list | None, fields: dict) -> dict:
     """Simple FCF less share-based pay less acquisitions, then the analyst's adjustments.
 
-    The analyst names each adjustment's direction and the calculator field whose
-    value is its amount; this function reads the amount and applies it, and
-    records what each one moved. An adjustment naming a field that is not a
-    number in `calculator.json` is refused and listed, never guessed at.
+    The analyst names each adjustment's direction and the field of its own view
+    whose value is its amount; this function reads the amount and applies it, and
+    records what each one moved. The field may be any dollar cell of that view but
+    free cash flow itself, and it must be a flow or a change (`adjustment_reading`
+    holds the rule and the table of classes). An adjustment naming any other field,
+    a balance at one date among them, is refused with its reason and listed, never
+    guessed at. Nothing about debt is applied here: a debt effect comes with adjusted
+    debt in the next wave.
     """
     formula = ("free_cash_flow_simple - share_based_compensation - acquisitions "
                "- (each reducing adjustment) + (each increasing adjustment)")
@@ -2356,14 +2360,13 @@ def quality_adjusted(simple: dict, compensation: dict, acquisitions: dict,
     for position, item in enumerate(adjustments or []):
         field = item.get("calculator_field")
         direction = item.get("direction")
-        amount = adjustment_amount(fields, field)
+        amount, why_not = adjustment_reading(fields, field)
         if direction not in ("reduce", "increase") or amount is None:
             refused.append({"position": position, "name": item.get("name"),
                             "calculator_field": field, "direction": direction,
                             "reason": ("direction is not 'reduce' or 'increase'"
                                        if direction not in ("reduce", "increase") else
-                                       f"{field!r} is not a dollar amount under "
-                                       f"{' or '.join(ADJUSTMENT_ROOTS)}")})
+                                       f"{field!r} cannot be an adjustment's amount: {why_not}")})
             continue
         before = value
         value = value - abs(amount) if direction == "reduce" else value + abs(amount)
@@ -2381,19 +2384,134 @@ def quality_adjusted(simple: dict, compensation: dict, acquisitions: dict,
                     "its direction is the analyst's"}
 
 
-# Where an adjustment's amount may come from: a dollar cell of the terms or of the
-# earnings-versus-cash section. A ratio or a count of days named as an amount
-# would be subtracted from free cash flow as though it were dollars.
-ADJUSTMENT_ROOTS = ("terms.", "earnings_versus_cash.")
+# --- where an adjustment's amount may come from ---------------------------------------------
+#
+# The accounting analyst names a dollar cell of its own view (`calculator_filings_only.json`)
+# whose value is the amount of an adjustment of free cash flow or of earnings. One function,
+# `adjustment_reading`, decides it, and the analysis gate and the calculator both read it.
+#
+# The rule, in the order it is applied:
+#   1. a path under a root named in `ADJUSTMENT_REFUSED_ROOTS`, or one the filings-only view
+#      removes (`PRICED_SECTIONS`), is refused with that root's reason;
+#   2. the path must name a dict cell whose `unit` is USD, in the file's spelling (`USD`) or
+#      the filing's own (`iso4217:USD`, as a note table's facts carry it);
+#   3. A STOCK CANNOT MOVE A FLOW. `applies_to` is `cash_flow` or `earnings`, both flows, so
+#      the cell must be a flow (a duration) or a change between two balances or two spans.
+#      A balance at one date is refused: "a balance at one date is not a flow".
+#
+# The period of a cell is read from the cell first (`cell_period`); a cell that carries none
+# is classed by the table `CELL_CLASSES`, which names its class by the section or the name of
+# the quantity as this file writes it, one line of why per entry.
+# A cell that is neither marked nor in the table is refused, never guessed at.
+#
+# Nothing about debt is here. A debt effect (receivables sold, supplier finance, a guarantee)
+# comes with adjusted debt in the next wave, where a balance is the right kind of cell; until
+# then a debt line of the view is a balance and is refused by rule 3.
+
+FLOW, CHANGE, BALANCE = "flow", "change", "balance"
+BALANCE_REFUSAL = "a balance at one date is not a flow"
+# `USD` as the calculator writes a cell, `iso4217:USD` as the filing's own facts carry it
+# (a note table's cells).
+USD_UNITS = ("USD", "iso4217:USD")
+
+# A root an adjustment's amount is never read from, and why. The sections the filings-only
+# view removes (`PRICED_SECTIONS`, below) are refused beside these with their own reason.
+ADJUSTMENT_REFUSED_ROOTS = (
+    ("free_cash_flow", "an adjustment of free cash flow cannot be read from free cash flow"),
+    ("valuation", "the valuation reads a price, which the analysts' view removes"),
+    ("cost_of_capital", "the cost of capital reads a price, which the analysts' view removes"),
+    ("market", "the market table is a price, which the analysts' view removes"),
+)
+
+_ONE = r"[^.]+"
+_FLOW_NAMES = (
+    "revenue|revenue_a_year_earlier|net_income|cost_of_revenue|ebit|ebitda|pretax_income|"
+    "income_tax_expense|interest_expense|operating_cash_flow|operating_cash_flow_discontinued|"
+    "operating_cash_flow_of_continuing_operations|income_from_continuing_operations|"
+    "capital_expenditure|depreciation_and_amortization|free_cash_flow_simple|"
+    "free_cash_flow_accruals|billings|billings_a_year_earlier")
+_BALANCE_NAMES = (
+    "balances_now|balances_a_year_earlier|debt_now|debt_a_year_earlier|"
+    "cash_and_short_term_investments_now|debt_at_the_start|debt_at_the_end|"
+    "operating_lease_liability|total_debt|net_debt|invested_capital")
+_CHANGE_NAMES = (
+    "balance_sheet_change|articulation_gap|change_in_cash|change_in_current_assets|"
+    "change_in_current_liabilities|change_in_debt_in_current_liabilities|"
+    "change_in_income_taxes_payable|change_in_contract_liabilities")
+
+# (class, a regular expression the whole dotted path must match, why), for a cell that
+# carries no period of its own. Index parts of a path are digits. Each class here is
+# held by tests/test_calculator_adjustments.py over every USD cell of every committed
+# run's analysts' view: no such cell matches entries of two classes, and none is left out.
+CELL_CLASSES = (
+    (BALANCE, rf"(?:{_ONE}\.)*(?:{_BALANCE_NAMES})(?:\.{_ONE})*",
+     "a line of the balance sheet, or a sum of such lines, stated at one date"),
+    (BALANCE, rf"(?:{_ONE}\.)*change_in_{_ONE}\.inputs\.(?:now|a_year_earlier)",
+     "the two balances, now and a year earlier, that a change is taken between"),
+    (CHANGE, rf"(?:{_ONE}\.)*(?:{_CHANGE_NAMES})",
+     "a quantity named a change or a gap between two changes: later minus earlier, worked out by Python"),
+    (CHANGE, rf"earnings_versus_cash\.working_capital\.{_ONE}\.share_of_net_income\.inputs\.change",
+     "the change in a working capital line, the numerator of its share of net income"),
+    (FLOW, rf"terms\.(?:trailing_four_quarters|trailing_four_quarters_a_year_earlier|cash_flow_families)\.{_ONE}"
+           rf"(?:\.parts\.{_ONE})?",
+     "a line of the statements of income or cash flow, summed over a year or the year to date"),
+    (FLOW, rf"(?:{_ONE}\.)*(?:{_FLOW_NAMES})",
+     "a line of the statement of income or of cash flow, or a sum of such lines, over a span"),
+    (FLOW, rf"(?:{_ONE}\.)*parts\.(?:prior_fiscal_year|prior_year_to_date|this_year_to_date)",
+     "a part of a trailing sum: a fiscal year or a year to date of a statement line"),
+    (FLOW, rf"(?:{_ONE}\.)*cash_flow_statement_change",
+     "the change in a working capital line as the statement of cash flows states it, over the span"),
+    (FLOW, rf"(?:{_ONE}\.)*(?:ratios\.growth\.{_ONE}\.trailing_four_quarters|(?:revenue|billings)_growth)\.inputs\.(?:now|before)",
+     "the two trailing four quarters a growth rate compares, each a sum of a statement line"),
+    (FLOW, r"quarterly_cash_flow_and_accruals\.operating_cash_flow_quarterly(?:\.history\.\d+)?",
+     "a quarter of operating cash flow, the cell's `end` being the quarter's last day"),
+)
+PLACED_BY_THE_TABLE = "placed by the table of CELL_CLASSES"
 
 
-def adjustment_amount(fields: dict, path) -> float | None:
-    """The dollar amount at a path an adjustment names, or None. One rule, read by
-    the analysis gate and by the calculator alike. A list is indexed by a part
-    of ASCII digits alone. '²' and '①' are digits to `str.isdigit` and not to
-    `int`: reading one raised ValueError, which stopped the run at the analysis
-    gate; such a part names nothing, and the gate drops the adjustment."""
-    if not isinstance(path, str) or not path.startswith(ADJUSTMENT_ROOTS):
+def cell_period(cell: dict) -> tuple[str, str] | None:
+    """The class of a cell from the period the cell itself carries, and a line saying
+    what it carries; None when it carries none. A change carries `from` and `to`, a
+    note table's fact carries `instant` or `start` and `end`, a calculator cell
+    carries `period` as one date or as two dates joined by `..`."""
+    kinds = []
+    if isinstance(cell.get("from"), dict) and isinstance(cell.get("to"), dict):
+        kinds.append((CHANGE, f"a change from {cell['from']} to {cell['to']}"))
+    if isinstance(cell.get("period"), str):
+        period = cell["period"]
+        kinds.append((FLOW, f"a duration, {period}") if ".." in period
+                     else (BALANCE, f"one date, {period}"))
+    if isinstance(cell.get("instant"), str):
+        kinds.append((BALANCE, f"one date, {cell['instant']}"))
+    if isinstance(cell.get("start"), str) and isinstance(cell.get("end"), str):
+        kinds.append((FLOW, f"a duration, {cell['start']}..{cell['end']}"))
+    if len({kind for kind, _ in kinds}) > 1:
+        return None, "the cell states periods of more than one kind"
+    return kinds[0] if kinds else None
+
+
+def cell_class(path: str, cell: dict) -> tuple[str | None, str]:
+    """The class of a USD cell, FLOW, CHANGE or BALANCE, and the line that says why;
+    the class is None, with the line, where the cell's periods disagree or neither
+    the cell nor the table places it."""
+    own = cell_period(cell)
+    if own is not None:
+        return own
+    matches = {(kind, why) for kind, pattern, why in CELL_CLASSES if re.fullmatch(pattern, path)}
+    if len({kind for kind, _ in matches}) == 1:
+        kind, why = sorted(matches)[0]
+        return kind, f"{why} ({PLACED_BY_THE_TABLE})"
+    return None, ("it carries no period and "
+                  + ("the table of CELL_CLASSES places it in two classes" if matches
+                     else "the table of CELL_CLASSES does not place it"))
+
+
+def _cell_at(fields: dict, path):
+    """The node at a dotted path, or None. A list is indexed by a part of ASCII digits
+    alone: '²' and '①' are digits to `str.isdigit` and not to `int`, and reading one
+    raised ValueError, which stopped the run at the analysis gate; such a part names
+    nothing, and the gate drops the adjustment."""
+    if not isinstance(path, str):
         return None
     node = fields
     for part in path.split("."):
@@ -2403,9 +2521,45 @@ def adjustment_amount(fields: dict, path) -> float | None:
             node = node[int(part)]
         else:
             return None
-    if not isinstance(node, dict) or node.get("unit") != "USD":
-        return None
-    return field_value(fields, path)
+    return node
+
+
+def adjustment_reading(fields: dict, path) -> tuple[float | None, str | None]:
+    """(amount, None) for a path an adjustment may name, or (None, the reason it may not).
+    One rule, read by the analysis gate and by the calculator alike: any dollar cell of
+    the analysts' view but free cash flow and the priced sections, and a flow or a change,
+    never a balance at one date (the comment above says why, and in what order).
+
+    Nothing about debt is decided here. A debt effect comes with adjusted debt in the
+    next wave; until then a debt line is a balance and is refused as one."""
+    if not isinstance(path, str) or not path:
+        return None, "it names no path"
+    root = path.split(".")[0]
+    for name, why in ADJUSTMENT_REFUSED_ROOTS:
+        if root == name or (name == "market" and root.startswith("market")):
+            return None, f"it is under {name}: {why}"
+    if root in PRICED_SECTIONS:
+        return None, f"it is under {root}, a section the analysts' view removes because it reads a price"
+    cell = _cell_at(fields, path)
+    if cell is None:
+        return None, "it names no cell of the analysts' view"
+    if not isinstance(cell, dict) or cell.get("unit") not in USD_UNITS:
+        return None, "it is not a dollar cell (a dict whose unit is USD)"
+    kind, why = cell_class(path, cell)
+    if kind is None:
+        return None, why
+    if kind == BALANCE:
+        return None, f"{BALANCE_REFUSAL}: {why}"
+    amount = field_value(fields, path)
+    if amount is None:
+        return None, "its value is not a number"
+    return amount, None
+
+
+def adjustment_amount(fields: dict, path) -> float | None:
+    """The dollar amount at a path an adjustment names, or None; `adjustment_reading`
+    says why it is None."""
+    return adjustment_reading(fields, path)[0]
 
 
 def field_value(fields: dict, path: str | None) -> float | None:
@@ -3393,15 +3547,31 @@ def calculate(*, ticker: str, cutoff, period_end: str, form: str, accession: str
     periods = trigger_periods(record.usd, period_end, form)
     terms = gather(record, periods)
     sections = ratios(record, terms, periods)
-    # The paths an adjustment names are paths into calculator.json as it is written
-    # -- `terms.trailing_four_quarters....`, `earnings_versus_cash....` -- so the
-    # fields it is read from have that shape, and a path the gate admitted against
-    # the analyst's file is the path this reads.
+    # The paths an adjustment names are paths into the analysts' view of this file
+    # (`calculator_filings_only.json`), which is this file less its priced sections, so
+    # `fields` is every section of the view that is computed before free cash flow --
+    # the note tables and the later sections included -- and a path the gate admitted
+    # against the analyst's file is the path this reads. `free_cash_flow` and the
+    # priced sections are not in it: no adjustment is read from them.
     earnings = earnings_versus_cash(record, terms, periods)
-    fields = {"terms": terms, "earnings_versus_cash": earnings,
+    facts = instance_facts(bundle, cutoff)
+    revenue_and_working_capital = {
+        "quarterly_cash_flow_and_accruals": quarterly_cash_flow_and_accruals(record, terms, periods),
+        "receivables_extension": receivables_extension(record, terms, periods, facts),
+        "contract_liabilities_and_billings": contract_liabilities_and_billings(
+            record, terms, periods, facts),
+        "inventory_composition_and_growth_gap": inventory_composition_and_growth_gap(
+            record, terms, periods),
+    }
+    tables = note_tables.from_run(ticker, accession, cutoff, fixtures_root=fixtures_root,
+                                  bundle=bundle)
+    fields = {"terms": terms,
               "ratios": {key: sections[key] for key in ("profitability", "efficiency",
                                                         "liquidity", "solvency", "growth")},
-              "ebit": sections["ebit"], "tax_rate": sections["tax_rate"]}
+              "ebit": sections["ebit"], "tax_rate": sections["tax_rate"],
+              "earnings_versus_cash": earnings, **revenue_and_working_capital,
+              "concentration": concentration(bundle), "note_tables": tables,
+              "trend_table": trend_values(document, cutoff, period_end)}
     adjustments = (accounting or {}).get("adjustments")
     free = free_cash_flows(terms, sections, adjustments, fields)
     if market_data is None:
@@ -3428,15 +3598,6 @@ def calculate(*, ticker: str, cutoff, period_end: str, form: str, accession: str
             value, earnings["history"]),
     }
 
-    facts = instance_facts(bundle, cutoff)
-    revenue_and_working_capital = {
-        "quarterly_cash_flow_and_accruals": quarterly_cash_flow_and_accruals(record, terms, periods),
-        "receivables_extension": receivables_extension(record, terms, periods, facts),
-        "contract_liabilities_and_billings": contract_liabilities_and_billings(
-            record, terms, periods, facts),
-        "inventory_composition_and_growth_gap": inventory_composition_and_growth_gap(
-            record, terms, periods),
-    }
 
     missing = [f"{term}: {terms['trailing_four_quarters'][term]['missing']}"
                for term in CORE_TERMS if term in terms["trailing_four_quarters"]
@@ -3454,8 +3615,6 @@ def calculate(*, ticker: str, cutoff, period_end: str, form: str, accession: str
         missing.append(f"wacc: {capital.get('missing')}")
     if "missing" in value:
         missing.append(f"valuation: {value['missing']}")
-    tables = note_tables.from_run(ticker, accession, cutoff, fixtures_root=fixtures_root,
-                                  bundle=bundle)
     if bundle is not None and "missing" in tables:
         # a run's bundle whose tables cannot be read; a call with no bundle at
         # all (the command line's default) never had any to read
@@ -3480,9 +3639,9 @@ def calculate(*, ticker: str, cutoff, period_end: str, form: str, accession: str
         "earnings_versus_cash": earnings,
         **revenue_and_working_capital,
         "free_cash_flow": free,
-        "concentration": concentration(bundle),
+        "concentration": fields["concentration"],
         "note_tables": tables,
-        "trend_table": trend_values(document, cutoff, period_end),
+        "trend_table": fields["trend_table"],
         "trend_table_note": ("computed on the same record as every figure above, which for "
                              "an accession listed under "
                              "read_from_the_filing_because_companyfacts_lagged includes that "

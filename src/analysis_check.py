@@ -836,9 +836,12 @@ def adjustment_problem(fields: dict):
             return f"direction {item.get('direction')!r} is not one of {', '.join(DIRECTIONS)}"
         if item.get("applies_to") not in APPLIES_TO:
             return f"applies_to {item.get('applies_to')!r} is not one of {', '.join(APPLIES_TO)}"
-        if calculator.adjustment_amount(fields, item.get("calculator_field")) is None:
-            return (f"calculator_field {item.get('calculator_field')!r} is not a dollar "
-                    f"amount under {' or '.join(calculator.ADJUSTMENT_ROOTS)}")
+        # applies_to is cash_flow or earnings, both flows: the one rule the calculator
+        # reads too decides whether the cell may be an amount
+        amount, why_not = calculator.adjustment_reading(fields, item.get("calculator_field"))
+        if amount is None:
+            return (f"calculator_field {item.get('calculator_field')!r} cannot be an "
+                    f"adjustment's amount: {why_not}")
         if not item.get("quote"):
             return "an adjustment carries no quote"
         return None

@@ -172,7 +172,13 @@ softening an adverse finding and inflating a benign one are the same mistake.
 
 For each finding that should change free cash flow or earnings, write an
 adjustment: its direction, the `calculator_filings_only.json` field **whose value is the
-amount**, and a verbatim quote that justifies it. You never compute the amount,
+amount**, and a verbatim quote that justifies it. The amount may be any dollar cell
+of `calculator_filings_only.json` except free cash flow itself: an adjustment of
+free cash flow cannot be read from free cash flow. `cash_flow` and `earnings` are
+both flows, so the cell must be a flow (a number over a span of dates) or a change
+between two balances: a note table's `changes` cell is a change, later minus earlier,
+worked out by Python. A balance at one date is not a flow, and Python drops an
+adjustment that names one, with that reason. You never compute the amount,
 and you never take a portion of a field — Python reads the whole field and
 applies it to `free_cash_flow_quality_adjusted`, and records what each one moved.
 Share-based compensation and acquisitions are already subtracted there; do not
@@ -180,6 +186,12 @@ list them again. An adjustment moves value once unless you set `"recurs": true`
 and your quote says why it will repeat; only then does Python carry it into
 every year of the forecast. Examples of the shape:
 
+- a flow, a note table's fact over a span of dates: `reduce`, `cash_flow`,
+  `note_tables.tables.notes_42.facts.14` (nine months of payments of contingent
+  consideration)
+- a change, a note table's `changes` cell: `reduce`, `cash_flow`,
+  `note_tables.tables.notes_38.changes.0` (gross intangible assets at two dates,
+  later minus earlier)
 - receivables growth tied to extended payment terms: `reduce`, `cash_flow`,
   `earnings_versus_cash.working_capital.receivables.balance_sheet_change`
 - receivables factoring: `reduce`, `cash_flow`,
@@ -246,7 +258,8 @@ Write `analysis_accounting.json`. Nothing else, anywhere.
 - `outcome` and `numbers_vs_prose` are each one of `confirms`, `contradicts`,
   `unresolved`.
 - `direction` is `reduce` or `increase`; `applies_to` is `cash_flow` or
-  `earnings`.
+  `earnings`, and either needs `calculator_field` to be a flow or a change, never
+  a balance at one date.
 - `summary_ko` is, for each area, one or two plain Korean sentences a finance
   student can read, with numbers only as `{field}` paths.
   A size in Korean number words is a number too ("십 퍼센트대 중후반"): write the
