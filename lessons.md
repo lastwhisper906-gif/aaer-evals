@@ -328,3 +328,5 @@ sixty lines; a line under a lesson that has no date is that lesson's wrapped lin
 2026-11-17 let a table's slice end at a substring that also named another constant (_FLOW_NAMES inside INSIDE_FREE_CASH_FLOW_NAMES) and cut a block out of the source; search for a name with its line start before slicing a file by text.
 2026-11-17 took the brief's 366-day limit without trying it on the brief's own accepted cell (STX's 53-week year is 371 days); run a rule on the cells it must accept before writing its number.
 2026-11-17 ran a mutation loop that a container restart cut off, leaving one spoiled line in src/calculator.py; keep a good copy of each file before such a loop and diff against it afterward.
+2026-11-17 judged rounds on four test files while the rule changed what the published runs reproduce; run the whole of tests/ once before saying a rule change is done, since the drift baselines read the same rule.
+2026-11-17 labelled a cell's span from its section's name; a span is read from the cell's own formula and inputs.

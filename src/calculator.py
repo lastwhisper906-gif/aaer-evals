@@ -1633,9 +1633,9 @@ PRODUCT_DEFERRED_REVENUE_TAGS = ("ContractWithCustomerLiability", "DeferredReven
 
 ACQUIRED_NOT_CARRIED = (
     "no us-gaap fact in the record states, over a period, the contract liabilities "
-    "acquired in business combinations, so none is subtracted: Fortinet's definition "
-    "subtracts them, and in a period with an acquisition this figure is higher than the "
-    "company's by what the acquisition brought in")
+    "acquired in business combinations, so none is subtracted: the definition some companies "
+    "publish subtracts them, and in a period with an acquisition this figure is higher than "
+    "such a company's by what the acquisition brought in")
 
 
 def _sourced(cell: dict) -> dict:
@@ -2113,9 +2113,11 @@ def contract_liabilities_and_billings(record: Record, terms: dict, periods: dict
                                       facts: list | dict) -> dict:
     """Row 19: contract liabilities split, billings, and what turns them into revenue.
 
-    Billings is Fortinet's own definition: revenue plus the change in current and
-    noncurrent contract liabilities, less contract liabilities acquired in
-    business combinations, over the trailing four quarters.
+    Billings here is one formula for every company: revenue plus the change in current and
+    noncurrent contract liabilities over the trailing four quarters. It is a definition some
+    companies publish (it also subtracts contract liabilities acquired in business
+    combinations, which no record states), and it is a company's own only where that
+    company's filing says so.
     """
     now, ago = periods["balance_now"], periods["balance_year_ago"]
     two_back = periods.get("two_years_back_to_date")
@@ -2136,9 +2138,11 @@ def contract_liabilities_and_billings(record: Record, terms: dict, periods: dict
         cell = field("revenue + change_in_contract_liabilities",
                      {"revenue": revenue_cell, "change_in_contract_liabilities": change},
                      lambda v: v["revenue"] + v["change_in_contract_liabilities"], unit="USD")
-        cell["definition"] = ("Fortinet's: revenue plus the change in deferred revenue from the "
-                              "beginning to the end of the period, less deferred revenue "
-                              "balances acquired from business combinations during the period")
+        cell["definition"] = ("one formula for every company: revenue plus the change in deferred "
+                              "revenue from the beginning to the end of the period; a definition "
+                              "some companies publish, which also subtracts deferred revenue "
+                              "balances acquired from business combinations during the period, "
+                              "and not the company's own unless its filing says so")
         cell["contract_liabilities_acquired_in_business_combinations"] = _missing(
             ACQUIRED_NOT_CARRIED)
         return cell
@@ -2391,8 +2395,10 @@ def quality_adjusted(simple: dict, compensation: dict, acquisitions: dict,
                "period": own,
                "free_cash_flow_covers": f"the four quarters {year}..{period_end}",
                "its_own_span": (f"{own} within the four quarters ending {period_end}" if own else
-                                f"no dates of its own: the table of CELL_CLASSES places it in the "
-                                f"four quarters ending {period_end}"),
+                                f"no dates of its own"
+                                + (f"; {derived_span(cell)[1]}" if derived_span(cell) else "")
+                                + f"; the table of CELL_CLASSES places it in the four quarters "
+                                  f"ending {period_end}"),
                "quote": item.get("quote")}
         if target == "earnings":
             to_earnings.append({**row, "applied_to": "not to free cash flow; the valuation applies it "
@@ -2497,6 +2503,19 @@ INSIDE_FREE_CASH_FLOW_CONCEPTS = (
     (r"PaymentsToAcquireBusinesses\w*", "payments to acquire businesses are subtracted in free cash flow"),
     (r"GoodwillAcquiredDuringPeriod", "goodwill acquired in the period carries acquisitions"),
 )
+# A CHANGE between two balances of an asset whose additions are investing outflows carries what
+# free cash flow already counts (capital expenditure, acquisitions): matched on the concept's
+# local name, in any namespace, by family (a search, not a list of names). A flow fact of the
+# same concept (a currency loss on goodwill over the year to date) is not a change and is not
+# refused here.
+INSIDE_FREE_CASH_FLOW_ASSET_FAMILIES = (
+    (r"PropertyPlantAndEquipment", "property, plant and equipment: a change carries capital expenditure"),
+    (r"RightOfUseAsset", "right-of-use assets combined with property and equipment carry capital expenditure"),
+    (r"Goodwill", "goodwill: a change carries acquisitions"),
+    (r"IntangibleAssets", "intangible assets, finite or indefinite: a change carries acquisitions"),
+    (r"CapitalizedComputerSoftware|CapitalizedSoftware|InternalUseSoftware",
+     "capitalised software: a change carries capital expenditure"),
+)
 # Lines inside operating cash flow (net income, depreciation and amortisation, the changes in
 # working capital) are NOT in this table: adjusting for one of them is a legitimate analytic
 # choice, and operating cash flow itself is the only figure free cash flow starts from.
@@ -2508,12 +2527,11 @@ PRIOR_PERIOD_SEGMENTS = (
     (r"history", "an entry of a history, a period before the latest"),
 )
 
-# A path segment that makes a cell the year to date or a quarter, for a cell the table places
-# (a cell with dates of its own is held to them): it may stand once, and never as recurring.
+# A path segment that names a cell's own span as the year to date (the cell's own key, as a
+# part of a trailing sum): it may stand once, and never as recurring. No section's name says a
+# span: a cell's span is read from its own formula and inputs (`derived_span`).
 SHORTER_THAN_A_YEAR_SEGMENTS = (
-    (r"cash_flow_families", "a family of cash-flow lines summed over the year to date"),
-    (r"this_year_to_date|year_to_date", "the year to date"),
-    (r"quarterly_cash_flow_and_accruals", "the quarter and its year to date"),
+    (r"this_year_to_date|year_to_date", "the year to date, as its own name says"),
 )
 
 _ONE = r"[^.]+"
@@ -2649,6 +2667,10 @@ def inside_free_cash_flow(path: str, cell: dict) -> str | None:
         for pattern, why in INSIDE_FREE_CASH_FLOW_CONCEPTS:
             if re.fullmatch(pattern, local):
                 return why
+        if isinstance(cell.get("from"), dict) and isinstance(cell.get("to"), dict):
+            for pattern, why in INSIDE_FREE_CASH_FLOW_ASSET_FAMILIES:
+                if re.search(pattern, local):
+                    return why
     return None
 
 
@@ -2721,6 +2743,26 @@ def period_problem(path: str, cell: dict, kind: str, fields: dict) -> str | None
     return None
 
 
+def derived_span(cell: dict) -> tuple[str, str] | None:
+    """What a cell with no dates of its own says of its span, read from its own formula and
+    inputs, never from the name of its section: ("year" or "shorter", the line that says so),
+    or None where the cell says nothing. A change of two balances is the span between the two
+    dates its inputs carry (`now` and `a_year_earlier`); a sum of `prior_fiscal_year +
+    this_year_to_date - prior_year_to_date` is the trailing year."""
+    inputs = cell.get("inputs")
+    if isinstance(inputs, dict) and isinstance(inputs.get("now"), dict) \
+            and isinstance(inputs.get("a_year_earlier"), dict):
+        late, early = (_date(inputs[side].get("period")) for side in ("now", "a_year_earlier"))
+        if late is not None and early is not None:
+            days = (late - early).days
+            return (("year" if 350 <= days <= 380 else "shorter"),
+                    f"its two balances, {early} and {late}, are {days} days apart")
+    formula = cell.get("formula")
+    if isinstance(formula, str) and "prior_fiscal_year + this_year_to_date - prior_year_to_date" in formula:
+        return "year", "its formula sums a fiscal year and a year to date less the year to date a year earlier"
+    return None
+
+
 def recurrence_problem(path: str, cell: dict, kind: str, fields: dict) -> str | None:
     """Why an amount cannot recur, or None: it must cover the whole trailing year. A cell with
     dates of its own begins on the year's first day (a change, the day before it); a cell the
@@ -2728,6 +2770,9 @@ def recurrence_problem(path: str, cell: dict, kind: str, fields: dict) -> str | 
     year = trailing_year_start(fields)
     own = cell_period(cell)
     if own is None or own[0] is None:
+        derived = derived_span(cell)
+        if derived is not None:
+            return None if derived[0] == "year" else f"{MUST_COVER_THE_YEAR}: {derived[1]}"
         for segment in path.split("."):
             for pattern, why in SHORTER_THAN_A_YEAR_SEGMENTS:
                 if re.fullmatch(pattern, segment):

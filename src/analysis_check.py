@@ -756,7 +756,9 @@ def _check_block(payload: dict, key: str, names, fields, sources, upstream, drop
 
 
 def _check_list(payload: dict, key: str, fields, sources, upstream, dropped, *, forbidden,
-                extra=None, filing=None, fallen=frozenset()) -> None:
+                extra=None, filing=None, fallen=frozenset(), unique=None) -> None:
+    """Each item is held to the checks; `unique` names a field no two kept items may share:
+    the later is dropped and counted, with a reason naming the repeat."""
     kept = []
     for position, item in enumerate(payload.get(key) or []):
         cut, reasons = trimmed(item, fields, sources, forbidden=forbidden, filing=filing,
@@ -771,6 +773,12 @@ def _check_list(payload: dict, key: str, fields, sources, upstream, dropped, *, 
                                filing=filing, fallen=fallen)
         if problem is None and extra is not None:
             problem = extra(item)
+        if problem is None and unique is not None and isinstance(item, dict):
+            earlier = next((index for index, other in enumerate(kept)
+                            if other.get(unique) == item.get(unique)), None)
+            if earlier is not None:
+                problem = (f"{unique} {item.get(unique)!r} repeats an earlier {key} item's "
+                           f"{unique}: each name is used once")
         if problem:
             dropped.append({"where": f"{key}[{position}]",
                             "id": item.get("id") if isinstance(item, dict) else None,
@@ -1301,7 +1309,7 @@ def check(kind: str, payload: dict, *, fields: dict, sources: dict[str, str],
         _check_list(payload, "anomalies", fields, sources, upstream, dropped,
                     forbidden=forbidden, fallen=fallen, extra=anomaly_problem(ACCOUNTING_AREAS), filing=filing)
         _check_list(payload, "adjustments", fields, sources, upstream, dropped,
-                    forbidden=forbidden, fallen=fallen, extra=adjustment_problem(fields), filing=filing)
+                    forbidden=forbidden, fallen=fallen, extra=adjustment_problem(fields), filing=filing, unique="name")
     elif kind == "financial":
         _check_block(payload, "sections", FINANCIAL_SECTIONS, fields, sources, upstream,
                      dropped, forbidden=forbidden, fallen=fallen, required=True, filing=filing)

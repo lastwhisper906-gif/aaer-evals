@@ -114,15 +114,6 @@ def test_the_published_reruns_cited_these_cells_and_the_gate_dropped_them():
 
 # (run, path, the cell's value, its class, the period, where it was read by eye)
 READ_BY_EYE = [
-    # Apple, input_notes.md [0000320193-26-000020:notes:38]; the table's columns are
-    # June 27, 2026 and September 27, 2025 (in millions).
-    # "Gross intangible assets $ 38,220 | $ 24,950": 38,220 - 24,950 = 13,270.
-    (APPLE, "note_tables.tables.notes_38.changes.0", 13_270 * MILLION, "change",
-     "a change from {'instant': '2025-09-27'} to {'instant': '2026-06-27'}"),
-    # "Non-current portion of intangible assets, net $ 20,342 | $ 11,093":
-    # 20,342 - 11,093 = 9,249 (confirmed here; the earlier build's reading stands).
-    (APPLE, "note_tables.tables.notes_38.changes.4", 9_249 * MILLION, "change",
-     "a change from {'instant': '2025-09-27'} to {'instant': '2026-06-27'}"),
     # Palo Alto, input_notes.md [0001327567-26-000015:notes:42], the contingent consideration
     # table, columns three months and nine months ended April 30, 2026 and 2025 (millions).
     # "Change in fair value (110)", three months ended April 30, 2026: a duration.
@@ -208,28 +199,37 @@ def test_apples_free_cash_flow_before_is_worked_by_hand_from_companyfacts():
     assert final_with(APPLE, [])["value"] == by_hand
 
 
-def test_apples_intangible_change_moves_free_cash_flow_by_the_amount():
-    before = (146_724 - 10_041 - 13_706 - 0) * MILLION           # the hand-worked base above
-    cited = final_with(APPLE, [adjustment("note_tables.tables.notes_38.changes.0")])
-    assert cited["adjustments_refused"] == [] and cited["adjustments_to_earnings"] == []
-    row, = cited["adjustments_applied"]
+def test_apples_working_capital_changes_move_free_cash_flow_by_their_amounts():
+    """Apple's receivables rose from 27,557 (2025-06-28) to 31,398 (2026-06-27) million, and its
+    accounts payable from 50,374 to 64,525 (companyfacts through the second reader, cutoff
+    2026-07-31): 3,841 and 14,151. Reducing free cash flow by the first, 122,977 - 3,841 = 119,136;
+    increasing it by the second, 119,136 + 14,151 = 133,287."""
+    cutoff = "2026-07-31"
+    rise = lambda tag: (source.one_value("AAPL", tag, "2026-06-27", cutoff)
+                        - source.one_value("AAPL", tag, "2025-06-28", cutoff))
+    assert (rise("AccountsReceivableNetCurrent"), rise("AccountsPayableCurrent")) == (
+        3_841 * MILLION, 14_151 * MILLION)
+    receivables = "earnings_versus_cash.working_capital.receivables.balance_sheet_change"
+    payables = "earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change"
+    one = final_with(APPLE, [adjustment(receivables)])
+    assert one["adjustments_refused"] == [] and one["adjustments_to_earnings"] == []
+    row, = one["adjustments_applied"]
     assert (row["amount"], row["before"], row["after"]) == (
-        13_270 * MILLION, before, (122_977 - 13_270) * MILLION)
-    assert cited["value"] == 109_707 * MILLION            # 122,977 - 13,270
-    # the row carries the cell's signed value, its class and its dates beside the amount
+        3_841 * MILLION, 122_977 * MILLION, 119_136 * MILLION)
+    assert one["value"] == 119_136 * MILLION
+    # the row carries the cell's signed value, its class and its span beside the amount: the two
+    # balance dates its inputs carry, a year apart
     assert (row["signed_value"], row["class"], row["direction"], row["applies_to"]) == (
-        13_270 * MILLION, "change", "reduce", "cash_flow")
-    assert row["period"] == {"from": {"instant": "2025-09-27"}, "to": {"instant": "2026-06-27"}}
+        3_841 * MILLION, "change", "reduce", "cash_flow")
+    assert row["period"] is None
+    assert row["its_own_span"].startswith("no dates of its own; its two balances, 2025-06-28 and 2026-06-27, are 364 days apart")
     # Apple's trailing year starts the day after the prior year to date ends (2025-06-28)
     assert row["free_cash_flow_covers"] == "the four quarters 2025-06-29..2026-06-27"
-    assert row["its_own_span"].endswith("within the four quarters ending 2026-06-27")
     assert row["recurs"] is False
-
-    both = final_with(APPLE, [adjustment("note_tables.tables.notes_38.changes.0"),
-                              adjustment("note_tables.tables.notes_38.changes.4", "increase")])
-    assert [(row["before"], row["after"]) for row in both["adjustments_applied"]] == [
-        (122_977 * MILLION, 109_707 * MILLION), (109_707 * MILLION, 118_956 * MILLION)]
-    assert both["value"] == 118_956 * MILLION             # 109,707 + 9,249
+    both = final_with(APPLE, [adjustment(receivables), adjustment(payables, "increase")])
+    assert [(r["before"], r["after"]) for r in both["adjustments_applied"]] == [
+        (122_977 * MILLION, 119_136 * MILLION), (119_136 * MILLION, 133_287 * MILLION)]
+    assert both["value"] == 133_287 * MILLION
 
 
 def test_palo_altos_payments_move_free_cash_flow_and_its_earnings_cells_move_nothing():
@@ -684,7 +684,7 @@ def test_the_definition_says_what_the_rule_says():
 
 @pytest.mark.parametrize("shape, path, run, kind", [
     ("note_tables.tables.notes_<n>.facts.<k>", "note_tables.tables.notes_42.facts.14", PALO_ALTO, "flow"),
-    ("note_tables.tables.notes_<n>.changes.<k>", "note_tables.tables.notes_38.changes.0", APPLE, "change"),
+    ("note_tables.tables.notes_<n>.changes.<k>", "note_tables.tables.notes_42.changes.4", PALO_ALTO, "change"),
     ("earnings_versus_cash.working_capital.receivables.balance_sheet_change",
      "earnings_versus_cash.working_capital.receivables.balance_sheet_change",
      RUNS / "DELL" / "0001571996-26-000046", "change"),
@@ -1345,16 +1345,17 @@ def test_the_valuation_keeps_every_row_in_the_analysts_order_and_each_rows_own_f
         ("a", "cash_flow", True), ("b", "earnings", False), ("c", "earnings", True)]
 
 
-def test_two_adjustments_of_one_name_keep_their_own_target_and_recurrence_through_the_valuation():
-    """The refuter's case: both named "x", one an earnings adjustment applied once, one a
-    cash-flow adjustment that recurs. The valuation reads each row's own flags, not a lookup by name.
-    Palo Alto's first run holds the price the valuation needs."""
+def test_two_adjustments_keep_their_own_target_and_recurrence_through_the_valuation():
+    """The refuter's case with its two names made distinct, as the gate now requires: one an
+    earnings adjustment applied once, one a cash-flow adjustment that recurs. The valuation reads
+    each row's own flags, not a lookup by name. Palo Alto's first run holds the price the
+    valuation needs."""
     published = json.loads((PALO_FIRST / "calculator.json").read_text(encoding="utf-8"))
     assumptions = json.loads((PALO_FIRST / "assumptions.json").read_text(encoding="utf-8"))
     adjustments = [
         {"name": "x", "direction": "reduce", "applies_to": "earnings", "recurs": False, "quote": "q",
          "calculator_field": "note_tables.tables.notes_42.facts.8"},
-        {"name": "x", "direction": "reduce", "applies_to": "cash_flow", "recurs": True, "quote": "q",
+        {"name": "y", "direction": "reduce", "applies_to": "cash_flow", "recurs": True, "quote": "q",
          "calculator_field": "terms.trailing_four_quarters.net_income"}]
     out = calculator.calculate(**calculator_drift.trigger(PALO_FIRST), fixtures_root=STORE, bundle=PALO_FIRST,
                                market_data=published["market"], assumptions=assumptions,
@@ -1365,7 +1366,7 @@ def test_two_adjustments_of_one_name_keep_their_own_target_and_recurrence_throug
     assert [(r["applies_to"], r["recurs"]) for r in quality["adjustments_to_earnings"]] == [("earnings", False)]
     each = out["valuation"]["accounting_adjustments"]["each"]
     assert [(r["name"], r["applies_to"], r["recurs"]) for r in each] == [
-        ("x", "earnings", False), ("x", "cash_flow", True)]
+        ("x", "earnings", False), ("y", "cash_flow", True)]
     assert "one-time" in each[0]["mechanism"] and "reinvestment rate raised" in each[1]["mechanism"]
     assert each[0]["moved_per_share"] == pytest.approx(-110e6 / 801e6, rel=1e-9)   # 110 over 801 million shares
 
@@ -1414,15 +1415,44 @@ def refused_with_recurs(held, path):
     assert amount is None and "a recurring amount must cover the year" in reason, (path, reason)
 
 
-def test_a_table_placed_cell_recurs_only_if_it_is_a_year_and_not_the_year_to_date():
+def test_a_table_placed_cells_span_is_read_from_its_own_formula_and_inputs_not_its_section():
+    """The span of a cell with no dates comes from what it says of itself. NVIDIA's change in cash
+    (`quarterly_cash_flow_and_accruals`) is `cash now - cash a year earlier`, its inputs the
+    balances of 2026-07-26 and 2025-07-27, 364 days apart: a year, so it may recur. Apple's
+    borrowing repaid is `prior_fiscal_year + this_year_to_date - prior_year_to_date`, the trailing
+    year, so it may recur; its `parts.this_year_to_date` names the year to date and may not."""
     held = printed(AAPL_RUN)
+    nvidia = printed("NVDA/0001045810-26-000075")
+    change = "quarterly_cash_flow_and_accruals.balance_sheet_accruals.inputs.change_in_cash"
+    cell = calculator._cell_at(nvidia, change)
+    assert cell["formula"] == "cash now - cash a year earlier"
+    assert (cell["inputs"]["now"]["period"], cell["inputs"]["a_year_earlier"]["period"]) == (
+        "2026-07-26", "2025-07-27")
+    assert calculator.derived_span(cell) == (
+        "year", "its two balances, 2025-07-27 and 2026-07-26, are 364 days apart")
+    assert reading(nvidia, change, True)[0] == cell["value"]
+    borrowing = calculator._cell_at(held, "terms.cash_flow_families.borrowing_repaid")
+    assert borrowing["formula"] == "prior_fiscal_year + this_year_to_date - prior_year_to_date"
+    assert calculator.derived_span(borrowing)[0] == "year"
+    assert reading(held, "terms.cash_flow_families.borrowing_repaid", True)[0] is not None
     assert reading(held, "terms.trailing_four_quarters.net_income", True)[0] is not None
     assert reading(held, "earnings_versus_cash.working_capital.receivables.balance_sheet_change", True)[0] is not None
-    refused_with_recurs(held, "terms.cash_flow_families.borrowing_repaid")
     refused_with_recurs(held, "terms.cash_flow_families.borrowing_repaid.parts.this_year_to_date")
-    refused_with_recurs(printed("NVDA/0001045810-26-000075"),
-                        "quarterly_cash_flow_and_accruals.balance_sheet_accruals.inputs.change_in_cash")
-    refused_with_recurs(held, "note_tables.tables.notes_38.changes.0")        # 273 days of the year
+
+
+def test_a_cell_whose_two_balances_are_a_quarter_apart_may_not_recur():
+    quarter = {**usd(), "formula": "x now - x a year earlier", "inputs": {
+        "now": {"period": "2026-06-30"}, "a_year_earlier": {"period": "2026-03-31"}}}
+    assert calculator.derived_span(quarter) == (
+        "shorter", "its two balances, 2026-03-31 and 2026-06-30, are 91 days apart")
+    held = {"x": {"change_in_cash": quarter}}
+    assert reading(held, "x.change_in_cash", False)[0] == 1_000_000.0
+    refused_with_recurs(held, "x.change_in_cash")
+
+
+def test_no_section_name_decides_a_span():
+    assert not any("quarterly" in pattern or "families" in pattern
+                   for pattern, _ in calculator.SHORTER_THAN_A_YEAR_SEGMENTS)
 
 
 # --- the sections an adjustment reads -----------------------------------------------------------
@@ -1461,3 +1491,166 @@ def test_the_row_names_free_cash_flows_span_and_its_own_beside_it():
     assert nine["free_cash_flow_covers"] == year["free_cash_flow_covers"] == "the four quarters 2025-05-01..2026-04-30"
     assert nine["its_own_span"] == "2025-08-01..2026-04-30 within the four quarters ending 2026-04-30"
     assert year["its_own_span"].startswith("no dates of its own")
+
+
+# --- a change of an asset whose additions are investing outflows ------------------------------------
+
+ASSET_CHANGES = [
+    # (run, path, concept, the change as the filing's note reads it, by eye)
+    (PALO_RUN, "note_tables.tables.notes_102.changes.0", "us-gaap:Goodwill", 17_335e6),    # goodwill 2025-07-31 to 2026-04-30
+    (PALO_RUN, "note_tables.tables.notes_105.changes.18", "us-gaap:IntangibleAssetsGrossExcludingGoodwill", 6_857e6),
+    ("CIEN/0001628280-26-040767-note-tables-2026-11-14", "note_tables.tables.notes_145.changes.3",
+     "cien:PropertyPlantAndEquipmentFinanceLeaseRightOfUseAssetAfterAccumulatedDepreciationAndAmortizationAndOperatingLeaseRightOfUseAsset",
+     58_149_000.0),                                        # notes:145 reads 483,541 against 425,392 (thousands)
+    (AAPL_RUN, "note_tables.tables.notes_38.changes.0", "us-gaap:IntangibleAssetsGrossExcludingGoodwill", 13_270e6),
+    (AAPL_RUN, "note_tables.tables.notes_38.changes.4", "aapl:IntangibleAssetsNetExcludingGoodwillNoncurrent", 9_249e6),
+]
+
+
+@pytest.mark.parametrize("run, path, concept, value", ASSET_CHANGES, ids=[row[1][-22:] for row in ASSET_CHANGES])
+def test_a_change_in_goodwill_intangibles_or_property_is_refused_as_inside_free_cash_flow(run, path, concept, value):
+    held = printed(run)
+    cell = calculator._cell_at(held, path)
+    assert cell["concept"] == concept and cell["value"] == value
+    amount, reason = reading(held, path)
+    assert amount is None and INSIDE in reason and "carries" in reason, reason
+
+
+def test_the_goodwill_change_would_have_moved_free_cash_flow_by_acquisitions_it_already_subtracts():
+    """Palo Alto's goodwill rose 17,335 million between 2025-07-31 and 2026-04-30 and the only line
+    between the two balances is goodwill acquired, which free cash flow's acquisitions (5,118.4
+    million of cash) already count. The calculator refuses the cell and leaves free cash flow at
+    -2,992.7 million."""
+    out = final_with(PALO_ALTO, [adjustment("note_tables.tables.notes_102.changes.0")])
+    assert out["adjustments_applied"] == [] and out["value"] == pytest.approx(-2_992_700_000)
+    assert INSIDE in out["adjustments_refused"][0]["reason"]
+
+
+def test_the_us_gaap_property_and_finance_lease_concept_is_refused_too():
+    held = {"period_end": "2026-06-30", "note_tables": {"tables": {"notes_1": {"changes": [
+        {**usd(unit="iso4217:USD"), "concept": "us-gaap:PropertyPlantAndEquipmentAndFinanceLeaseRightOfUse"
+         "AssetAfterAccumulatedDepreciationAndAmortization",
+         "from": {"instant": "2025-06-30"}, "to": {"instant": "2026-06-30"}}]}}}}
+    refused_with(held, "note_tables.tables.notes_1.changes.0", INSIDE)
+
+
+@pytest.mark.parametrize("concept", [
+    "us-gaap:PropertyPlantAndEquipmentGross", "us-gaap:Goodwill", "us-gaap:GoodwillGross",
+    "us-gaap:IntangibleAssetsNetExcludingGoodwill", "us-gaap:FiniteLivedIntangibleAssetsNet",
+    "us-gaap:IndefiniteLivedIntangibleAssetsExcludingGoodwill", "abc:FiniteLivedIntangibleAssetsGross",
+    "us-gaap:CapitalizedComputerSoftwareNet", "xyz:OperatingLeaseRightOfUseAsset",
+    "co:PropertyPlantAndEquipmentAndRightOfUseAssetNet"])
+def test_each_family_of_asset_is_matched_by_the_concepts_local_name_in_any_namespace(concept):
+    held = {"period_end": "2026-06-30", "note_tables": {"tables": {"notes_1": {"changes": [
+        {**usd(unit="iso4217:USD"), "concept": concept,
+         "from": {"instant": "2025-06-30"}, "to": {"instant": "2026-06-30"}}]}}}}
+    refused_with(held, "note_tables.tables.notes_1.changes.0", INSIDE)
+
+
+def test_a_flow_fact_of_goodwill_is_not_a_change_and_stands_once():
+    """CARR's currency translation loss on goodwill over the year to date (a flow fact of
+    2026-01-01..2026-06-30, -231 million) is accepted once, and is not a recurring year."""
+    held = printed(CARR_RUN)
+    path = "note_tables.tables.notes_17.facts.19"
+    assert calculator._cell_at(held, path)["concept"] == "us-gaap:GoodwillForeignCurrencyTranslationGainLoss"
+    assert reading(held, path, False) == (-231e6, None)
+    refused_with_recurs(held, path)
+
+
+def test_a_change_of_a_liability_or_a_receivable_is_not_an_asset_family():
+    held = {"period_end": "2026-06-30", "note_tables": {"tables": {"notes_1": {"changes": [
+        {**usd(unit="iso4217:USD"), "concept": c, "from": {"instant": "2025-06-30"},
+         "to": {"instant": "2026-06-30"}} for c in (
+            "us-gaap:SupplierFinanceProgramObligation", "us-gaap:AccountsReceivableNetCurrent",
+            "us-gaap:ContractWithCustomerLiability")]}}}}
+    for position in range(3):
+        assert reading(held, f"note_tables.tables.notes_1.changes.{position}")[0] == 1_000_000.0
+
+
+def test_a_sweep_counts_the_goodwill_and_intangible_changes_now_refused():
+    """A report, not a constant: over the committed runs of these companies as printed today, every
+    change cell of a goodwill or intangible concept that the older rule would have read is refused."""
+    import collections
+    families = ("Goodwill", "IntangibleAssets")
+    counted = collections.Counter()
+    for name in sorted({n for n, _ in committed_views()}):
+        ticker = name.split("/")[0]
+        if ticker not in {"CARR", "CSCO", "DELL", "GNRC", "JCI", "LFUS", "NVDA", "PANW", "AAPL", "CIEN"}:
+            continue
+        held = printed(name)
+        for table, body in held["note_tables"]["tables"].items():
+            for position, change in enumerate(body.get("changes", [])):
+                local = change["concept"].split(":")[-1]
+                if any(word in local for word in families):
+                    path = f"note_tables.tables.{table}.changes.{position}"
+                    assert reading(held, path)[0] is None, path
+                    counted[ticker] += 1
+    print("goodwill and intangible change cells refused:", dict(counted))
+    assert counted["PANW"] >= 2
+
+
+# --- a name is used once, enforced at the gate --------------------------------------------------
+
+def gate_adjustments(items):
+    """The gate on the analysis test file's own accounting payload, its adjustments replaced."""
+    from tests import test_analysis_check as gate
+    payload = gate.accounting()
+    payload["adjustments"] = items
+    return analysis_check.check("accounting", payload, fields=gate.FIELDS, sources=gate.SOURCES)
+
+
+ONE = {"name": "x", "direction": "reduce", "applies_to": "earnings", "recurs": False,
+       "calculator_field": "terms.trailing_four_quarters.revenue",
+       "quote": "extended payment terms to certain customers",
+       "quote_from": "report_notes_text.md", "evidence": []}
+
+
+def test_the_gate_drops_an_adjustment_whose_name_repeats_an_earlier_one():
+    first = ONE
+    second = {**ONE, "applies_to": "cash_flow", "recurs": True}
+    third = {**ONE, "name": "y"}
+    out = gate_adjustments([first, second, third])
+    assert [(item["name"], item["applies_to"]) for item in out["adjustments"]] == [
+        ("x", "earnings"), ("y", "earnings")]                    # the first of the name stands
+    repeats = [d for d in out["dropped_items"] if "repeats" in d["reason"]]
+    assert [d["where"] for d in repeats] == ["adjustments[1]"]
+    assert "name 'x' repeats an earlier adjustments item's name" in repeats[0]["reason"]
+    assert out["dropped_count"] >= 1
+
+
+def test_a_dropped_first_adjustment_does_not_take_its_name_from_a_later_one():
+    bad = {**ONE, "direction": "sideways"}
+    out = gate_adjustments([bad, ONE])
+    assert [item["name"] for item in out["adjustments"]] == ["x"]
+    assert not [d for d in out["dropped_items"] if "repeats" in d["reason"]]
+
+
+# --- the definitions name no company, no ticker and no concrete table ------------------------------
+
+def test_no_definition_gives_a_concrete_note_table_locator():
+    """A path such as `notes_38.facts.3` is one company's table: the accounting and the financial
+    analysts' definitions write `notes_<n>`, `facts.<i>` and `changes.<i>` instead."""
+    for definition in sorted((REPO / ".claude" / "agents").glob("*.md")):
+        text = definition.read_text(encoding="utf-8")
+        assert re.findall(r"notes[_:]\d+", text) == [], definition.name
+    for name in ("accounting-analyst", "financial-analyst"):
+        text = (REPO / ".claude" / "agents" / f"{name}.md").read_text(encoding="utf-8")
+        assert "{note_tables.tables.notes_<n>.facts.<i>}" in text and "{note_tables.tables.notes_<n>.changes.<i>}" in text
+
+
+def test_the_view_and_the_definition_call_billings_one_formula_for_every_company():
+    text = (REPO / ".claude" / "agents" / "accounting-analyst.md").read_text(encoding="utf-8")
+    flat = " ".join(text.split())
+    assert ("one formula for every company, revenue plus the change in deferred revenue, a definition some "
+            "companies publish and not the company's own unless its filing says so") in flat
+    held = printed(AAPL_RUN)
+    definition = held["contract_liabilities_and_billings"]["billings"]["definition"]
+    assert "one formula for every company" in definition and "not the company's own unless its filing says so" in definition
+    assert "Fortinet" not in json.dumps(held["contract_liabilities_and_billings"])
+
+
+def test_a_placeholder_form_in_a_definition_is_not_a_citation_the_gate_would_resolve():
+    """The definitions' `{note_tables.tables.notes_<n>.facts.<i>}` is a shape, not a path: the
+    gate's placeholder reader leaves it alone, and the same shape with digits is read."""
+    assert analysis_check.PLACEHOLDER.fullmatch("{note_tables.tables.notes_<n>.facts.<i>}") is None
+    assert analysis_check.PLACEHOLDER.fullmatch("{note_tables.tables.notes_7.facts.3}") is not None

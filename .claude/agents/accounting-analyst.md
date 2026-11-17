@@ -24,15 +24,15 @@ is no composite score.
 `calculator_filings_only.json` holds, for each table of this filing's notes that
 reached the readers, the numbers the filing itself tagged in that table, read
 from its XBRL instance: each fact's concept, value, unit, period, axes and fact
-id. A table sits under its paragraph's number — `note_tables.tables.notes_38`
-is the table the notes reader names `<accession>:notes:38`, also when it writes
+id. A table sits under its paragraph's number — `note_tables.tables.notes_<n>`
+is the table the notes reader names `<accession>:notes:<n>`, also when it writes
 "amounts only" and makes no item of it — and `paragraph` carries the whole id.
-Cite a fact as any other field, `{note_tables.tables.notes_38.facts.3}`. A row
+Cite a fact as any other field, `{note_tables.tables.notes_<n>.facts.<i>}`. A row
 the table does not print is not there; you never add rows up. Where the table
 states a fact at two dates — a balance at two dates, or a flow over two spans
 of like length (within a tenth) — `changes` holds the change from each earlier date to the
 latest, later minus earlier, with the two periods and the two fact ids:
-`{note_tables.tables.notes_38.changes.0}`. A swing you need is cited there;
+`{note_tables.tables.notes_<n>.changes.<i>}`. A swing you need is cited there;
 you never subtract one fact from another.
 
 ## You never do arithmetic, and you write no number of your own
@@ -138,7 +138,8 @@ Receivables: `receivables_extension.receivables_growth_minus_revenue_growth`,
 `receivables_extension.past_due_receivables_share` beside
 `receivables_extension.past_due_receivables_share.a_year_earlier`, each read at
 the date printed with it. Contract liabilities:
-`contract_liabilities_and_billings.billings` (the company's own definition; the
+`contract_liabilities_and_billings.billings` (one formula for every company, revenue plus the change in deferred revenue, a definition some
+companies publish and not the company's own unless its filing says so; the
 acquired balances still inside it are named),
 `contract_liabilities_and_billings.billings_growth_minus_revenue_growth`,
 `contract_liabilities_and_billings.contract_liability_duration` (the noncurrent
@@ -180,7 +181,9 @@ expenditure (payments for property and equipment), share-based compensation and
 acquisitions, in the calculator's own cells and in a note table's facts of those
 concepts. `cash_flow` and `earnings` are both flows, so the cell must be a flow
 (a number over a span of dates) or a change between two balances: a note table's
-`changes` cell is a change, later minus earlier, worked out by Python. A balance at
+`changes` cell is a change, later minus earlier, worked out by Python. A change in property, plant and equipment, goodwill, intangible assets, capitalised software or
+right-of-use assets is refused: it carries the capital expenditure and
+acquisitions free cash flow already counts. A balance at
 one date is not a flow, and Python drops an adjustment that names one, with that
 reason. The cell must also be of the period free cash flow covers: a span that
 begins no earlier than the first day of the trailing year the view prints
@@ -193,7 +196,8 @@ a shorter span (a quarter, the year to date) can stand only as one-time, and Pyt
 drops a recurring one with that reason. Only a `cash_flow` adjustment moves free cash
 flow. An `earnings` adjustment is read by the same rule and listed with its amount;
 it does not move free cash flow, and the valuation applies it (once, or as a margin
-cut where it recurs). You never compute the amount,
+cut where it recurs). Each adjustment's `name` is used once in your analysis: Python drops a name that repeats an
+earlier one. You never compute the amount,
 and you never take a portion of a field — Python reads the whole field and
 applies it to `free_cash_flow_quality_adjusted`, and records what each one moved.
 Share-based compensation and acquisitions are already subtracted there; do not
