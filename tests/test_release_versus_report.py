@@ -384,7 +384,7 @@ def test_release_versus_report_an_empty_verdict_list_is_not_in_release():
 
 def test_release_versus_report_the_precedence_holds_through_compare_both_ways():
     """A differing cell in one table and an unreadable table: `differs`. An agreeing cell
-    and an unreadable table: `period_not_read`, not `agrees`."""
+    and an unreadable table: `agrees_where_read`, not `agrees` and not `period_not_read`."""
     unread = "\n".join(["|  | Q2 FY27 |", "| (in millions) |", "| Net revenue | 5 |"])
     for ids, tables in ((["p:1", "p:2"], [_table([_row("Net revenue", "1,100")]), unread]),
                         (["p:2", "p:1"], [unread, _table([_row("Net revenue", "1,100")])])):
@@ -394,7 +394,8 @@ def test_release_versus_report_the_precedence_holds_through_compare_both_ways():
     tables = [unread, _table([_row("Net revenue", "1,000")])]
     out = rvr.compare(["p:1", "p:2"], tables, "2026-06-30",
                       lambda line, months: {"value": 1_000_000_000.0})
-    assert out["revenue"]["verdict"] == "period_not_read"
+    assert out["revenue"]["verdict"] == "agrees_where_read"
+    assert out["revenue"]["unread_paragraph_ids"] == ["p:1"]
     assert [c["verdict"] for c in out["revenue"]["comparisons"]] == ["agrees"]
     out = rvr.compare(["p:1"], [_table([_row("Net revenue", "1,000")])], "2026-06-30",
                       lambda line, months: {"missing": "none"})
@@ -807,7 +808,7 @@ def _run(rows, report, **options):
 def test_release_versus_report_the_precedence_is_a_total_order_and_each_pair_holds_both_ways():
     order = rvr.PRECEDENCE
     assert order == ("differs", "differs_outside_gaap", "block_not_identified",
-                     "report_fact_missing", "period_not_read", "agrees")
+                     "report_fact_missing", "period_not_read", "agrees_where_read", "agrees")
     for i, higher in enumerate(order):
         for lower in order[i + 1:]:
             assert rvr.line_verdict([higher, lower]) == higher, (higher, lower)
@@ -838,7 +839,7 @@ def test_release_versus_report_the_precedence_holds_through_compare_each_way():
                         (["p:1", "p:2"], [good, bad]), (["p:1", "p:2"], [bad, good])):
         assert rvr.compare(ids, tables, "2026-06-30", fact)["revenue"]["verdict"] == "differs"
     out = rvr.compare(["p:2", "p:1"], [unread, good], "2026-06-30", fact)
-    assert out["revenue"]["verdict"] == "period_not_read"
+    assert out["revenue"]["verdict"] == "agrees_where_read"
     assert [c["verdict"] for c in out["revenue"]["comparisons"]] == ["agrees"]
     out = rvr.compare(["p:1"], [good], "2026-06-30", lambda line, months: {"missing": "none"})
     assert out["revenue"]["verdict"] == "report_fact_missing"
@@ -983,7 +984,7 @@ def test_release_versus_report_a_row_under_a_neutral_per_share_heading_is_listed
             "| Operating expenses: |", _row("Net earnings", "100")]
     out = _run(rows, _fact(net_income=1e8))
     assert [c["release"]["cell"] for c in out["net_income"]["comparisons"]] == ["100", "100"]
-    assert out["net_income"]["verdict"] == "period_not_read"
+    assert out["net_income"]["verdict"] == "agrees_where_read"
     assert "neither basic nor diluted" in out["net_income"]["unread"][0]["reason"]
 
 
@@ -2723,7 +2724,7 @@ def test_release_versus_report_diluted_earnings_per_share_is_read_in_the_three_s
     entry = _planted_full(ticker, accession, {})["lines"]["diluted_earnings_per_share"]
     # ESCO's per-quarter EPS reconciliation tables (`:91`-`:97`) have no dated header: noted
     # unread, so its line is `period_not_read` beside the cells that agree
-    assert entry["verdict"] == ("period_not_read" if ticker == "ESE" else "agrees")
+    assert entry["verdict"] == ("agrees_where_read" if ticker == "ESE" else "agrees")
     assert entry["statement"]["verdict"] == "agrees"
     assert {c["verdict"] for c in entry["comparisons"]} == {"agrees"}
     found = {c["span_months"]: c for c in entry["comparisons"]}
@@ -3363,8 +3364,9 @@ def test_release_versus_report_a_row_under_a_basic_heading_is_the_basic_line_by_
 
 def test_release_versus_report_the_section_description_names_all_five_statement_verdicts():
     text = " ".join(calculator.RELEASE_WHAT_THIS_IS.split())
-    assert ("`agrees`, `differs`, `block_not_identified`, `report_fact_missing` or `not_compared`"
-            in text)
+    assert ("`agrees`, `agrees_where_read`, `differs`, `block_not_identified`, "
+            "`report_fact_missing` or `not_compared`") in text
+    assert "`agrees_where_read` if every compared cell agrees" in text
     assert "`another_label`" in text
 
 
@@ -3597,3 +3599,64 @@ def test_release_versus_report_johnson_controls_operating_cash_flow_is_printed_u
     assert ("93", "888") in {(r["paragraph_id"].split(":")[-1], r["cell"])
                               for r in carr["other_label_rows"]
                               if "continuing operating activities" in r["label"]}
+
+
+# --- round thirteen: a line that agrees where it was read ----------------------------------------------
+
+def test_release_versus_report_agrees_where_read_ranks_between_period_not_read_and_agrees():
+    for higher in ("differs", "differs_outside_gaap", "block_not_identified", "report_fact_missing",
+                   "period_not_read"):
+        assert rvr.line_verdict([higher, "agrees_where_read"]) == higher
+        assert rvr.line_verdict(["agrees_where_read", higher, "agrees"]) == higher
+    assert rvr.line_verdict(["agrees_where_read", "agrees"]) == "agrees_where_read"
+    assert rvr.statement_verdict(["agrees"], unread_here=True) == "agrees_where_read"
+    assert rvr.statement_verdict(["agrees"]) == "agrees"
+    assert rvr.statement_verdict(["report_fact_missing"], True) == "report_fact_missing"
+    assert rvr.statement_verdict(["differs"], True) == "differs"
+
+
+def test_release_versus_report_an_unread_table_never_hides_a_difference_nor_throws_away_an_agreement():
+    unread = "\n".join(["|  | Q2 FY27 |", "| (in millions) |", "| Net revenue | 5 |"])
+    fact = lambda line, months: {"value": 1_000_000_000.0}      # noqa: E731
+    only_unread = rvr.compare(["p:1"], [unread], "2026-06-30", fact)
+    assert only_unread["revenue"]["verdict"] == "period_not_read"       # nothing compared
+    both = rvr.compare(["p:1", "p:2"], [unread, _table([_row("Net revenue", "1,000")])],
+                       "2026-06-30", fact)
+    assert both["revenue"]["verdict"] == "agrees_where_read"
+    assert both["revenue"]["unread_paragraph_ids"] == ["p:1"]
+    wrong = rvr.compare(["p:1", "p:2"], [unread, _table([_row("Net revenue", "1,100")])],
+                        "2026-06-30", fact)
+    assert wrong["revenue"]["verdict"] == "differs"
+
+
+def test_release_versus_report_the_lines_that_agree_where_read_are_checked_against_the_record():
+    """ESCO's diluted EPS and revenue, NVIDIA's income tax expense and Seagate's revenue: every
+    compared cell agrees with the record (read through companyfacts), and each line also has a
+    table it could not read, whose paragraph ids it carries. Kills the mutants that keep these
+    at `period_not_read` or throw their agreement away."""
+    def agree_where_read(ticker, line):
+        entry = _planted_full(ticker, STATEMENTS[ticker][0], {})["lines"][line]
+        assert entry["verdict"] == "agrees_where_read", (ticker, line, entry["verdict"])
+        assert {c["verdict"] for c in entry["comparisons"]} == {"agrees"}
+        assert entry["unread_paragraph_ids"] and all(
+            pid.split(":")[-1].isdigit() for pid in entry["unread_paragraph_ids"])
+        return {c["span_months"]: c for c in entry["comparisons"]}
+
+    cutoff = "2026-08-10"
+    cells = agree_where_read("ESE", "diluted_earnings_per_share")
+    assert cells[3]["report"]["value"] == _eps("ESE", "2026-04-01..2026-06-30", cutoff) == 1.26
+    assert cells[9]["report"]["value"] == _eps("ESE", "2025-10-01..2026-06-30", cutoff) == 3.71
+    tag = "RevenueFromContractWithCustomerExcludingAssessedTax"
+    cells = agree_where_read("ESE", "revenue")
+    nine = source.one_value("ESE", tag, "2025-10-01..2026-06-30", cutoff)
+    six = source.one_value("ESE", tag, "2025-10-01..2026-03-31", cutoff)
+    assert cells[9]["report"]["value"] == nine == 938_027e3
+    assert cells[3]["report"]["value"] == nine - six == 339_027e3
+    cells = agree_where_read("NVDA", "income_tax_expense")
+    assert cells[3]["report"]["value"] == source.one_value(
+        "NVDA", "IncomeTaxExpenseBenefit", "2026-04-27..2026-07-26", "2026-08-26") == 11_819e6
+    cells = agree_where_read("STX", "revenue")
+    year = source.one_value("STX", tag, "2025-06-28..2026-07-03", "2026-08-04")
+    nine_months = source.one_value("STX", tag, "2025-06-28..2026-04-03", "2026-08-04")
+    assert cells[12]["report"]["value"] == year == 12_195e6
+    assert cells[3]["report"]["value"] == year - nine_months == 3_629e6

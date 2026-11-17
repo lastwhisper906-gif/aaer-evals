@@ -1109,9 +1109,11 @@ def read_cells(paragraph_ids: list[str], paragraphs: list[str], period_end: str,
 # The order a line's verdict is taken in. A difference in a GAAP cell is the line's; a
 # difference in a cell labelled anything else is named as outside GAAP; then a cell that
 # agrees but could not be told as GAAP, a report fact that is not there, and a table that
-# could not be read each keep the line from `agrees`.
+# could not be read each keep the line from `agrees`. A line whose compared cells all agree but
+# which also has rows in an unread table is `agrees_where_read` (never `agrees`, and never
+# thrown away); with no compared cell it is `period_not_read`.
 PRECEDENCE = ("differs", "differs_outside_gaap", "block_not_identified", "report_fact_missing",
-              "period_not_read", "agrees")
+              "period_not_read", "agrees_where_read", "agrees")
 
 
 def line_verdict(verdicts) -> str:
@@ -1229,14 +1231,16 @@ def _identity(cell: dict, rows: dict, parent_fact: dict, nci_fact: dict | None =
     return entry
 
 
-def statement_verdict(verdicts: list[str]) -> str:
+def statement_verdict(verdicts: list[str], unread_here: bool = False) -> str:
     """The face statement's own verdict for a line, from its cells in the statement: `agrees`
     only if every one agrees, else the weakest, most important first: `differs`,
-    `block_not_identified`, `report_fact_missing`; `not_compared` if it has none."""
+    `block_not_identified`, `report_fact_missing`, `agrees_where_read` (all agree, but the statement
+    also has an unread row of the line); `not_compared` if it has none."""
     if not verdicts:
         return "not_compared"
-    return next((v for v in ("differs", "block_not_identified", "report_fact_missing")
-                 if v in verdicts), "agrees")
+    weakest = next((v for v in ("differs", "block_not_identified", "report_fact_missing")
+                    if v in verdicts), None)
+    return weakest or ("agrees_where_read" if unread_here else "agrees")
 
 
 def compare_release(paragraph_ids: list[str], paragraphs: list[str], period_end: str, read_report,
@@ -1340,13 +1344,15 @@ def compare_release(paragraph_ids: list[str], paragraphs: list[str], period_end:
             else:
                 verdicts.append(verdict)
         if line in read["unread"]:
-            verdicts.append("period_not_read")
+            verdicts.append("agrees_where_read" if compared else "period_not_read")
         if line == BASIC and not compared and line not in read["seen"]:
             continue                 # no basic row anywhere: no tenth line
         if compared or line in read["unread"]:
             out[line] = {"verdict": line_verdict(verdicts), "comparisons": compared}
             if line in read["unread"]:
                 out[line]["unread"] = read["unread"][line]
+                out[line]["unread_paragraph_ids"] = sorted(
+                    {u["paragraph_id"] for u in read["unread"][line]})
         elif line in read["seen"]:
             out[line] = {"verdict": "period_not_read", "comparisons": [],
                          "reason": f"a table prints the line, and none of its columns is the "
@@ -1377,7 +1383,9 @@ def compare_release(paragraph_ids: list[str], paragraphs: list[str], period_end:
         # the face statement's own verdict, beside the line's and never borrowed by it
         statement = read["statement"]
         mine = [e["verdict"] for e in compared if e["release"]["paragraph_id"] == statement]
-        out[line]["statement"] = {"paragraph_id": statement, "verdict": statement_verdict(mine)}
+        unread_here = any(u["paragraph_id"] == statement for u in read["unread"].get(line, []))
+        out[line]["statement"] = {"paragraph_id": statement,
+                                  "verdict": statement_verdict(mine, unread_here)}
     by_kind: dict[str, list[dict]] = {}
     for line, notes in read["unread"].items():
         for item in notes:

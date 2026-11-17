@@ -116,11 +116,14 @@ and `trend_table`.
    cell of every table of the release beside the report's fact, and per line one
    of `differs` (a cell of the statement itself differs), `differs_outside_gaap`
    (only a cell labelled non-GAAP, segment, component or unidentified differs),
-   `agrees`, `block_not_identified`, `report_fact_missing`, `period_not_read`,
+   `agrees`, `agrees_where_read` (every compared cell agrees, but a table that prints the
+   line could not be read: its paragraph ids are beside it), `block_not_identified`,
+   `report_fact_missing`, `period_not_read` (nothing compared),
    `printed_under_another_label` (a row prints it under a label the table does
    not read) or `not_in_release`, with the face statement's own `statement`
    verdict beside it (`agrees` only if every compared cell in it agrees, else
-   the weakest cell's verdict); `basic_earnings_per_share` is a line outside the
+   the weakest cell's verdict, ordered differs, block_not_identified,
+   report_fact_missing, agrees_where_read, agrees); `basic_earnings_per_share` is a line outside the
    nine, emitted only when the release prints a basic row; cite its paths and
    never subtract.
 
