@@ -23,9 +23,9 @@ from pathlib import Path
 
 import pytest
 
-from src import agent_inputs, nightly, on_demand
+from src import agent_inputs, calculator, nightly, on_demand
 from tests.test_agent_inputs import spec_bundle_names
-from tests.test_on_demand import ACCESSION, TICKER, client, server  # noqa: F401
+from tests.test_on_demand import ACCESSION, CIK, TICKER, client, server  # noqa: F401
 
 WINDOW = (dt.date(2025, 7, 22), dt.date(2026, 8, 26))
 SYMBOLS = ["NVDA", "SPY", "XLI"]
@@ -42,8 +42,16 @@ class World:
 
     def __init__(self, tmp_path, server, monkeypatch):
         fetcher = client(tmp_path, server)
+        self.server = server
         monkeypatch.setattr(on_demand.edgar_client, "EdgarClient", lambda: fetcher)
         self.out = tmp_path / "runs" / TICKER / ACCESSION
+        self.fetcher = fetcher
+        # EDGAR's index names the registrant's tickers and SIC at its top level;
+        # the planted one is NVIDIA's own, as the live index states it
+        path = f"/submissions/CIK{CIK}.json"
+        index = json.loads(server.bodies[path][0])
+        server.bodies[path] = (json.dumps({**index, "tickers": ["NVDA"], "sic": "3674"}
+                                          ).encode(), "")
         self.asked = []
         self.analysed = []
 
@@ -51,6 +59,12 @@ class World:
             run = Path(argv[argv.index("--out") + 1])
             for name in spec_bundle_names() + ("input_controls.md",):
                 (run / name).write_text(f"this is {name}\n", encoding="utf-8")
+            payload = {"ticker": TICKER, "ratios": {"gross_margin": 0.5},
+                       **{section: {"price_at_cutoff": 1.0}
+                          for section in calculator.PRICED_SECTIONS}}
+            (run / "calculator.json").write_text(json.dumps(payload), encoding="utf-8")
+            (run / calculator.FILINGS_ONLY).write_text(
+                json.dumps(calculator.filings_only(payload)), encoding="utf-8")
             (run / "input_manifest.json").write_text(
                 json.dumps({"accession": ACCESSION, "ticker": TICKER, "dropped_items": []}),
                 encoding="utf-8")
@@ -72,10 +86,26 @@ class World:
             (folder / f"{symbol}.csv").write_text("date,close\n2026-08-26,1.0\n")
         return dict(FETCH_RECORD)
 
-    def main(self, *flags, environ, fetch_prices):
-        return on_demand.main(["--ticker", TICKER, "--accession", ACCESSION,
+    def main(self, *flags, environ, fetch_prices, ticker=TICKER):
+        return on_demand.main(["--ticker", ticker, "--accession", ACCESSION,
                                "--out", str(self.out), *flags],
                               environ=environ, fetch_prices=fetch_prices)
+
+    def poison_the_network_after_the_store(self, monkeypatch):
+        """Any call to EDGAR once the store is built raises, and is counted."""
+        real = on_demand.fetch_store
+        self.touched = []
+
+        def after(*args, **kwargs):
+            held = real(*args, **kwargs)
+            for name in ("get", "get_json", "document"):
+                def refuse(*a, _name=name, **k):
+                    self.touched.append(_name)
+                    raise AssertionError(f"EDGAR was asked ({_name}) after the store was built")
+                monkeypatch.setattr(self.fetcher, name, refuse)
+            return held
+
+        monkeypatch.setattr(on_demand, "fetch_store", after)
 
     def run(self, environ=None):
         return self.main("--run", environ={"TIINGO_TOKEN": STAND_IN_TOKEN}
@@ -153,34 +183,129 @@ def test_the_price_folder_is_fetched_without_run_too(world):
     assert world.analysed == []
 
 
-def test_the_sic_is_the_universes_else_the_submissions_indexs_else_none(tmp_path, server):
-    held = client(tmp_path, server)
-    assert on_demand.sic_of(held, "NVDA", "0001045810") == "3674"      # universe.json's row
-    # outside the universe the index answers; the planted one names no SIC
-    assert on_demand.sic_of(held, "ZZZZ", "0001045810") is None
+def test_the_sic_and_the_series_come_from_the_registrants_own_record(world):
+    # NVDA's record says SIC 3674, so the sector series is XLI; a record that
+    # said 3661 (division D too) is no different, and one that said 9995,
+    # nonclassifiable, would be asked for SPY once. The record is the one planted.
+    assert world.run() == 0
+    assert world.asked[0]["symbols"] == SYMBOLS
 
-    class Named:
-        def get_json(self, url):
-            return {"sic": "3661"}
 
-    assert on_demand.sic_of(Named(), "ZZZZ", "0001045810") == "3661"
-    assert nightly.price_series("ZZZZ", None)["symbols"] is None
+def test_a_record_that_names_no_sic_means_no_prices_with_the_reason_and_the_run_goes_on(
+        world, monkeypatch, capsys):
+    path = f"/submissions/CIK{CIK}.json"
+    index = json.loads(world.server.bodies[path][0])
+    del index["sic"]
+    world.server.bodies[path] = (json.dumps(index).encode(), "")
+    world.poison_the_network_after_the_store(monkeypatch)
+
+    def never(**_):
+        pytest.fail("the source was asked for a company with no SIC")
+
+    assert world.main("--run", environ={"TIINGO_TOKEN": STAND_IN_TOKEN},
+                      fetch_prices=never) == 0
+    assert "--prices" not in world.analysed[0]
+    assert "MarketError" in capsys.readouterr().err
+    assert world.touched == []
+    assert json.loads((world.out / "price_fetch.json").read_text())["fetched"] is False
+
+
+def test_the_price_step_makes_no_call_to_edgar_with_a_token_or_without(world, monkeypatch):
+    world.poison_the_network_after_the_store(monkeypatch)
+    assert world.run() == 0
+    assert len(world.asked) == 1 and world.touched == []
+
+
+def test_no_token_asks_edgar_nothing_either(world, monkeypatch):
+    world.poison_the_network_after_the_store(monkeypatch)
+    assert world.main("--run", environ={}, fetch_prices=world.fetch) == 0
+    assert world.asked == [] and world.touched == []
+
+
+def test_a_name_that_is_not_the_registrants_ticker_prices_nothing(world, monkeypatch, capsys):
+    """The refuter's case: AAPL given as the run's name on NVIDIA's filing, by --cik.
+    The series would be AAPL's, and the SIC the universe's for AAPL, not NVIDIA's."""
+    world.poison_the_network_after_the_store(monkeypatch)
+
+    def never(**_):
+        pytest.fail("the source was asked for a series named by a label")
+
+    out = world.out.parent.parent / "AAPL" / ACCESSION
+    assert on_demand.main(["--ticker", "AAPL", "--cik", CIK, "--accession", ACCESSION,
+                           "--out", str(out), "--run"],
+                          environ={"TIINGO_TOKEN": STAND_IN_TOKEN}, fetch_prices=never) == 0
+    reason = "the run's name is not one of the registrant's tickers at the cutoff"
+    assert reason in capsys.readouterr().err
+    assert "--prices" not in world.analysed[0]
+    assert json.loads((out / "price_fetch.json").read_text()) == {
+        "fetched": False, "reason": reason}
+    assert not (out / "prices").exists()
+
+
+def test_a_name_that_is_the_registrants_ticker_is_priced_under_cik(world):
+    assert on_demand.main(["--ticker", "nvda", "--cik", CIK, "--accession", ACCESSION,
+                           "--out", str(world.out), "--run"],
+                          environ={"TIINGO_TOKEN": STAND_IN_TOKEN},
+                          fetch_prices=world.fetch) == 0
+    assert world.asked[0]["symbols"] == SYMBOLS
+
+
+def test_an_empty_environment_handed_in_is_not_the_process_environment(world, monkeypatch):
+    monkeypatch.setenv("TIINGO_TOKEN", STAND_IN_TOKEN)
+
+    def never(**_):
+        pytest.fail("the process's own token was used though an empty mapping was handed in")
+
+    assert world.main("--run", environ={}, fetch_prices=never) == 0
+    assert "--prices" not in world.analysed[0]
+
+
+def test_the_process_environment_is_used_when_none_is_handed_in(world, monkeypatch):
+    monkeypatch.setenv("TIINGO_TOKEN", STAND_IN_TOKEN)
+    assert world.main("--run", environ=None, fetch_prices=world.fetch) == 0
+    assert world.asked and world.asked[0]["environ"] is on_demand.os.environ
 
 
 AGENTS_WITHOUT_PRICES = ("numbers-reader", "notes-text-reader", "accounting-analyst",
                          "financial-analyst")
 
 
-def test_no_reader_and_no_accounting_or_financial_analyst_receives_a_price_file(world):
+def _routed_files(root: Path):
+    return [path for path in sorted(root.rglob("*")) if path.is_file()]
+
+
+def test_no_reader_and_no_accounting_or_financial_analyst_receives_a_price(world):
+    """By content, not by name: a price line or the fetch record's text in any file
+    routed to the four, under any name, is a leak."""
     assert world.run() == 0
     assert (world.out / "prices").is_dir() and (world.out / "price_fetch.json").is_file()
+    price_lines = {line.strip() for path in (world.out / "prices").glob("*.csv")
+                   for line in path.read_text().splitlines() if line.strip()}
+    record_text = (world.out / "price_fetch.json").read_text()
+    record_lines = {line.strip() for line in record_text.splitlines() if len(line.strip()) > 10}
+    assert price_lines and record_lines
     for agent in AGENTS_WITHOUT_PRICES:
         agent_inputs.build(world.out, agent)
         root = agent_inputs.session_root(world.out, agent)
-        held = [str(p.relative_to(root)) for p in root.rglob("*")]
-        assert held, agent
-        assert [name for name in held
-                if "price" in name.lower() or name.endswith(".csv")] == [], agent
-        for path in root.rglob("*"):
-            if path.is_file():
-                assert "2026-08-26,1.0" not in path.read_text(), path
+        files = _routed_files(root)
+        assert files, agent
+        for path in files:
+            text = path.read_text(encoding="utf-8")
+            lines = {line.strip() for line in text.splitlines()}
+            assert not lines & price_lines, (agent, path.name, "holds a line of a price series")
+            assert record_text not in text, (agent, path.name)
+            assert not lines & record_lines, (agent, path.name, "holds text of the fetch record")
+            assert ".csv" not in path.name and "price" not in path.name.lower(), (agent, path)
+
+
+@pytest.mark.parametrize("agent", ["accounting-analyst", "financial-analyst"])
+def test_the_calculator_the_two_analysts_hold_has_no_priced_section(world, agent):
+    assert world.run() == 0
+    agent_inputs.build(world.out, agent)
+    root = agent_inputs.session_root(world.out, agent)
+    held = [path for path in _routed_files(root) if path.name.startswith("calculator")]
+    assert [path.name for path in held] == [calculator.FILINGS_ONLY]
+    for path in held:
+        view = json.loads(path.read_text(encoding="utf-8"))
+        assert view["ratios"] == {"gross_margin": 0.5}      # the view is the payload's, trimmed
+        assert [key for key in calculator.PRICED_SECTIONS if key in view] == []

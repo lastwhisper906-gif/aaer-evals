@@ -28,10 +28,12 @@ then the bundle, then, when asked, the run.
    series, the broad market's and its sector's, fetched by the nightly routine's
    own functions (`nightly.price_series`, `nightly.prices_for`, the token read
    from the environment alone) into `<run>/prices/` with the fetch record
-   `<run>/price_fetch.json`, where a nightly run has them. The company's SIC
-   code is the one `universe.json` records, or else the one EDGAR's submissions
-   index names. A fetch that did not happen (no token, a source error, a SIC the
-   map cannot place) prints the record's reason and the run goes on without
+   `<run>/price_fetch.json`, where a nightly run has them. The SIC code is the
+   registrant's own, read off the submissions index the store was built from in
+   that one fetch (no second call to EDGAR); with `--cik` the ticker is only the
+   run's name, and it prices nothing unless it is one of the registrant's tickers
+   in that record. A fetch that did not happen (no token, a source error, a SIC
+   the map cannot place, a name that is not the registrant's) prints the record's reason and the run goes on without
    prices; `--no-prices` skips the fetch and touches no network for prices.
 6. **The run**, by `src/run_analysis.py`, when `--run` is given, given
    `--prices <run>/prices` when the folder was fetched. The prices reach the
@@ -59,15 +61,15 @@ import sys
 from pathlib import Path
 
 try:
-    from src import (assemble_bundle, edgar_client, fetch_fixtures, interpreter_pin, nightly,
-                     universe)
+    from src import (assemble_bundle, edgar_client, fetch_fixtures, interpreter_pin, market,
+                     nightly, universe)
     # the rule of what stood when a filing was accepted is the store's, shared
     # with `fetch_fixtures --accession`
     from src.fetch_fixtures import known_at, stood_before  # noqa: F401
 except ImportError:  # invoked as a plain script
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from src import (assemble_bundle, edgar_client, fetch_fixtures, interpreter_pin, nightly,
-                     universe)
+    from src import (assemble_bundle, edgar_client, fetch_fixtures, interpreter_pin, market,
+                     nightly, universe)
     from src.fetch_fixtures import known_at, stood_before  # noqa: F401
 
 TICKER_MAP = "https://www.sec.gov/files/company_tickers.json"
@@ -131,7 +133,7 @@ def fetch_store(client, ticker: str, *, form: str = "10-Q", accession: str | Non
         cik, cik_from = f"{int(cik):010d}", "--cik"
     else:
         cik, cik_from = cik_of(client, ticker, ticker_map=ticker_map)
-    rows = fetch_fixtures.every_filing(client, cik)
+    registrant, rows = fetch_fixtures.registrant_and_filings(client, cik)
     filing = the_filing(rows, form, accession)
     accession, as_of = filing["accessionNumber"], filing["filingDate"]
     store = (root or client.root / "stores") / f"{ticker}-{accession}"
@@ -141,34 +143,44 @@ def fetch_store(client, ticker: str, *, form: str = "10-Q", accession: str | Non
         raise OnDemandError(f"{ticker} {accession}: " + "; ".join(problems))
     return {"ticker": ticker, "cik": cik, "cik_from": cik_from, "form": filing["form"],
             "accession": accession, "filing_date": as_of,
-            "period_end": filing["reportDate"], "store": store}
+            "period_end": filing["reportDate"], "store": store,
+            "registrant": registrant}
 
 
-def sic_of(client, ticker: str, cik: str) -> str | None:
-    """The company's SIC code: the universe's row, else EDGAR's submissions index.
+def not_priced_because(held: dict) -> str | None:
+    """Why this run's price series cannot be named from the registrant, or None.
 
-    None when neither names one; `nightly.price_series` then gives the reason.
+    The series is the registrant's own, and the registrant is the one whose
+    submissions index the store was built from, read in the one fetch that built
+    it (never a second call). With `--cik` the ticker is only the run's name, so
+    it must be one of the registrant's own tickers before it names a series.
     """
-    try:
-        if ticker.strip().upper() in universe.tickers():
-            return universe.sic(ticker)
-    except universe.UniverseError:
-        pass
-    index = client.get_json(fetch_fixtures.SUBMISSIONS_URL.format(cik=cik)) or {}
-    named = index.get("sic")
-    return str(named).strip() if named else None
+    registrant = held["registrant"]
+    if held["cik_from"] == "--cik":
+        if registrant["tickers"] is None:
+            return "the registrant's record names no tickers to check the run's name against"
+        if held["ticker"] not in registrant["tickers"]:
+            return "the run's name is not one of the registrant's tickers at the cutoff"
+    return None
 
 
-def fetch_prices_for_run(held: dict, run: str, sic, *, environ, fetch=None) -> str | None:
+def fetch_prices_for_run(held: dict, run: str, *, environ, fetch=None) -> str | None:
     """The run's price folder through the nightly routine's own functions.
 
     Returns the folder's path when it was fetched, else None after printing the
     reason the fetch record gives. The token is never printed: the reason has
     it replaced by its name.
     """
-    out = nightly.prices_for({"ticker": held["ticker"], "filing_date": held["filing_date"]},
-                             series=nightly.price_series(held["ticker"], sic),
-                             bundle=Path(run), environ=environ, fetch=fetch)
+    reason = not_priced_because(held)
+    if reason:
+        out = {"folder": None, "reason": reason}
+        market.write_fetch_record({"fetched": False, "reason": reason},
+                                  Path(run) / nightly.PRICE_RECORD)
+    else:
+        out = nightly.prices_for(
+            {"ticker": held["ticker"], "filing_date": held["filing_date"]},
+            series=nightly.price_series(held["ticker"], held["registrant"]["sic"]),
+            bundle=Path(run), environ=environ, fetch=fetch)
     if out["folder"] is None:
         print(f"on_demand: no prices for {held['ticker']}: {out['reason']}; "
               "the run goes on without them", file=sys.stderr)
@@ -238,8 +250,8 @@ def main(argv: list[str] | None = None, *, environ=None, fetch_prices=None) -> i
     prices = None
     if not args.no_prices:
         prices = fetch_prices_for_run(
-            held, run, sic_of(client, held["ticker"], held["cik"]),
-            environ=os.environ if environ is None else environ, fetch=fetch_prices)
+            held, run, environ=os.environ if environ is None else environ,
+            fetch=fetch_prices)
     if not args.run:
         return status
     from src import run_analysis      # imported here: the fetch needs none of it
