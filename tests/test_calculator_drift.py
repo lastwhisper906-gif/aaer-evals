@@ -17,6 +17,13 @@ every committed run from its own bundle, market data and analysts' files:
 Every expected value is worked below from rows read through
 `tests/companyfacts_source.py`, or from the run's own bundle where the store's
 companyfacts predates the triggering 10-Q; none is read from the tool's output.
+
+The twenty-eight runs the October branch published (2026-10-14 to 2026-10-22) were
+computed by that branch's calculator, before the three rules above existed. Ten of
+them drift under those rules and under nothing else (`OCTOBER_RUNS_THAT_DRIFT`,
+`test_the_october_runs_drift_only_under_the_three_rules`); they are kept out of the
+hand-worked sets, which are main's runs. Whether each is worked by hand as Johnson
+Controls and Dell are, or run again, is the owner's (`docs/needs_judgment.md`).
 """
 
 from __future__ import annotations
@@ -87,12 +94,50 @@ def moved_by_the_refusal(row: dict) -> bool:
                 "valuation.accounting_adjustments."))))
 
 
+# The runs the October branch published, each computed by that branch's calculator before the
+# rule for a cash-flow amount, the last-fiscal-year rung and the scope rule. The ten that drift
+# are named with what moves them; the other eighteen reproduce today in both files.
+OCTOBER_RUNS = frozenset({
+    "AAON/0000824142-26-000055", "ADTN/0001193125-26-331632", "AIOT/0001628280-26-055222",
+    "AMD/0000002488-26-000123", "AMSC/0001437749-26-025922",
+    "ANET/0001596532-26-000175-fable-2026-10-14", "AVGO/0001730168-26-000080",
+    "CLFD/0001171843-26-005329", "EVLV/0001805385-26-000049", "EXTR/0001193125-26-352872",
+    "FELE/0000038725-26-000055", "FFIV/0001048695-26-000067", "FLEX/0000866374-26-000030",
+    "FN/0001408710-26-000028", "FTNT/0001262039-26-000021-fable-2026-10-14",
+    "JCI/0000833444-26-000087-opus-2026-10-14", "LII/0001069202-26-000087",
+    "LITE/0001628280-26-057358", "LOGI/0001032975-26-000050", "MSI/0000068505-26-000028",
+    "MU/0000723125-26-000023", "NTAP/0001193125-26-380207", "OMCL/0000926326-26-000022",
+    "POWL/0000080420-26-000107", "SMCI/0001375365-26-000022", "SNDK/0001628280-26-057406",
+    "VISN/0001193125-26-336708", "WDC/0001628280-26-057139"})
+OCTOBER_RUNS_THAT_DRIFT = {
+    "AMD/0000002488-26-000123": "its acquisitions adjustment (1,587 million) is inside free cash flow "
+                                "already; the scope rule on pretax income's prior fiscal year",
+    "AMSC/0001437749-26-025922": "its income tax expense (115.998 million, a total) and borrowing repaid "
+                                 "(8.809 million) adjustments; the scope rule on depreciation's prior year to date",
+    "ANET/0001596532-26-000175-fable-2026-10-14": "its receivables balance-sheet change (642.6 million), "
+                                                   "as in Arista's two runs on main",
+    "CLFD/0001171843-26-005329": "the rung: interest paid over the fiscal year's average debt, where the "
+                                 "risk-free rate plus one point was published; the scope rule on operating "
+                                 "cash flow's and capital expenditure's prior year to date",
+    "FLEX/0000866374-26-000030": "the scope rule on the nine quarters behind smoothness and growth",
+    "JCI/0000833444-26-000087-opus-2026-10-14": "the rung and the scope rule, as in Johnson Controls' run on main",
+    "LITE/0001628280-26-057358": "its payables articulation gap (120.6 million) and income tax expense "
+                                 "(237.7 million, a total) adjustments",
+    "MSI/0000068505-26-000028": "its proceeds from sale of receivables adjustment (441 million)",
+    "SNDK/0001628280-26-057406": "its contract liabilities balance (849 million); its payables statement "
+                                 "change (109 million) stands and the adjusted figure is recomputed",
+    "VISN/0001193125-26-336708": "its income tax expense this year to date (22.3 million, a total)",
+}
+assert set(OCTOBER_RUNS_THAT_DRIFT) <= OCTOBER_RUNS
+
+
 def keyed(rows: list[dict]) -> dict:
     """The rows by run, file and path, without those today's rule for a cash-flow amount moves in the
     runs of `REFUSED_ADJUSTMENT`: `test_only_the_named_runs_move_under_the_rule_for_a_cash_flow_amount`
-    holds them, by the adjustment's amount, and nothing else is left out."""
+    holds them, by the adjustment's amount; and without the October branch's runs, which
+    `test_the_october_runs_drift_only_under_the_three_rules` holds. Nothing else is left out."""
     return {(row["run"], row["file"], row["path"]): (row["old"], row["new"]) for row in rows
-            if not moved_by_the_refusal(row)}
+            if not moved_by_the_refusal(row) and row["run"] not in OCTOBER_RUNS}
 
 
 @pytest.fixture(scope="module")
@@ -146,6 +191,49 @@ def spread(values: list) -> float:
 def close(old, new) -> tuple:
     return (None if old is None else pytest.approx(old, rel=1e-9),
             None if new is None else pytest.approx(new, rel=1e-9))
+
+
+def test_the_october_runs_drift_only_under_the_three_rules():
+    """The October branch's runs, recomputed by today's calculator: exactly the ten named
+    drift, and every leaf that moves falls to one of the three rules -- the rule for a
+    cash-flow amount (the adjusted free cash flow and its applied rows, and nothing else,
+    with both later rules off), the last-fiscal-year rung (the cost of debt's cell and
+    the row of the WACC table that reads it, on with the scope rule still off), or the
+    scope rule (what moves only once it is on). An unrelated drift in these runs, or a
+    drift in the other eighteen, shows here."""
+    with_both = {(r["run"], r["file"], r["path"]): (r["old"], r["new"]) for r in drift.report(RUNS, STORE)}
+    with_the_rung = {(r["run"], r["file"], r["path"]): (r["old"], r["new"])
+                     for r in drift.report(RUNS, STORE, scope_rule=False)}
+    with_neither = {(r["run"], r["file"], r["path"]): (r["old"], r["new"])
+                    for r in drift.report(RUNS, STORE, scope_rule=False, last_fiscal_year_rung=False)}
+    assert OCTOBER_RUNS <= {f"{run.parent.name}/{run.name}" for run in drift.committed_runs(RUNS)}
+    drifting = {run for run, _, _ in with_both if run in OCTOBER_RUNS}
+    assert drifting == set(OCTOBER_RUNS_THAT_DRIFT)
+    adjusted = "free_cash_flow.free_cash_flow_quality_adjusted."
+    rung = ("cost_of_capital.pre_tax_cost_of_debt.", "wacc_components.rows.4.value")
+    for key, value in with_both.items():
+        run, file, path = key
+        if run not in OCTOBER_RUNS:
+            continue
+        if with_the_rung.get(key) != value:
+            continue                                        # the scope rule's, by construction
+        if with_neither.get(key) != value:
+            assert path.startswith(rung) and file == FINAL, key   # the rung's
+            continue
+        assert path.startswith(adjusted) and file == FINAL, key    # the cash-flow amount's
+    moved_by_the_rung = {run for (run, _, path), value in with_the_rung.items()
+                         if run in OCTOBER_RUNS and with_neither.get((run, FINAL, path)) != value}
+    assert moved_by_the_rung == {"CLFD/0001171843-26-005329", "JCI/0000833444-26-000087-opus-2026-10-14"}
+    moved_by_the_scope_rule = {key[0] for key, value in with_both.items()
+                               if key[0] in OCTOBER_RUNS and with_the_rung.get(key) != value}
+    assert moved_by_the_scope_rule == {"AMD/0000002488-26-000123", "AMSC/0001437749-26-025922",
+                                       "CLFD/0001171843-26-005329", "FLEX/0000866374-26-000030",
+                                       "JCI/0000833444-26-000087-opus-2026-10-14"}
+    refused = {run for (run, _, _) in with_neither if run in OCTOBER_RUNS}
+    assert refused == {"AMD/0000002488-26-000123", "AMSC/0001437749-26-025922",
+                       "ANET/0001596532-26-000175-fable-2026-10-14", "LITE/0001628280-26-057358",
+                       "MSI/0000068505-26-000028", "SNDK/0001628280-26-057406",
+                       "VISN/0001193125-26-336708"}
 
 
 def test_it_runs_on_every_committed_run_and_reruns_are_among_them():

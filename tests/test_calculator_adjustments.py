@@ -667,6 +667,7 @@ ONE_PATH_PER_ENTRY = [
     ("ratios.solvency.ebitda.inputs.depreciation_and_amortization.parts.this_year_to_date", "flow"),
     ("earnings_versus_cash.working_capital.inventory.cash_flow_statement_change", "flow"),
     ("ratios.growth.revenue.trailing_four_quarters.inputs.now", "flow"),
+    ("ratios.solvency.ebitda.inputs.depreciation_and_amortization.parts.0", "flow"),
 ]
 
 
@@ -1310,10 +1311,13 @@ FROM_THE_FILING = [
      ("IncreaseDecreaseInAccountsReceivable",), "flow"),
     (AAPL_RUN, "AAPL", "ratios.growth.revenue.trailing_four_quarters.inputs.now",
      ("RevenueFromContractWithCustomerExcludingAssessedTax",), "flow"),
+    ("EXTR/0001193125-26-352872", "EXTR",
+     "ratios.solvency.ebitda.inputs.depreciation_and_amortization.parts.0",
+     ("Depreciation", "AmortizationOfIntangibleAssets"), "flow"),   # a 10-K: the year's two tags as one part
 ]
 
 
-@pytest.mark.parametrize("position", range(9))
+@pytest.mark.parametrize("position", range(10))
 def test_each_table_entry_gives_a_cell_the_class_of_its_tag_in_the_filing(position):
     run, ticker, path, tags, kind = FROM_THE_FILING[position]
     entry_kind, pattern, _ = calculator.CELL_CLASSES[position]
@@ -3181,7 +3185,7 @@ def test_no_line_of_other_comprehensive_income_is_an_earnings_adjustment():
     found = 0
     for ticker, path in (("FN", "notes_68.facts.6"), ("FN", "notes_138.facts.5"), ("CSCO", "notes_234.facts.7"),
                          ("STX", "notes_94.facts.21"), ("ESE", "notes_55.facts.36")):
-        run = sorted((RUNS / ticker).glob("*"))[0]
+        run = sorted((RUNS / ticker).glob("*/input_manifest.json"))[0].parent   # not a `.logs/` directory
         held = calculator_drift.recompute(run, STORE)
         full = f"note_tables.tables.{path}"
         cell = calculator._cell_at(held, full)
@@ -3285,7 +3289,15 @@ def test_no_published_applied_adjustment_is_refused_by_the_direction_rule_alone(
     """Every adjustment of free cash flow the committed runs applied, read with its direction: ten were refused
     already for what they cite (a balance, a balance-sheet change, a gap, a repayment); the eleventh, Littelfuse's
     statement change in payables (57.502 million, payables rose, taken out with `reduce`), takes a movement that
-    raised operating cash flow out and stands. None is refused by the direction rule."""
+    raised operating cash flow out and stands. The runs the October branch published add fourteen, read the same
+    way: five stand, each a working-capital movement of the statement of cash flows taken out with `reduce` --
+    ADTN's inventory (-38.322 million), AMD's payables (2,033 million), SNDK's payables (109 million), CLFD's
+    (-7.213 million) and EXTR's (-24.313 million) change in inventory -- and nine are refused for what they cite:
+    AMD's acquisitions (inside free cash flow already), income tax expense at AMSC, LITE and VISN (a total of the
+    statement), AMSC's borrowing repaid and MSI's proceeds from sale of receivables (neither a working-capital
+    line), the receivables balance-sheet change of ANET's October run and LITE's payables articulation gap (not
+    statement lines), and SNDK's contract liabilities (a balance at one date). None is refused by the direction
+    rule."""
     checked = standing = 0
     for held_path in sorted(RUNS.glob("*/*/analysis_accounting.json")):
         run = held_path.parent
@@ -3303,7 +3315,7 @@ def test_no_published_applied_adjustment_is_refused_by_the_direction_rule_alone(
             assert calculator.repeats_a_movement(view_, item["calculator_field"], item["direction"],
                                                  item.get("applies_to", "cash_flow")) is None, run.name
             standing += amount is not None
-    assert (checked, standing) == (11, 1)
+    assert (checked, standing) == (25, 6)
 
 
 def test_the_item_inputs_after_a_total_are_the_calculators_own_list(todays_views):

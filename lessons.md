@@ -364,3 +364,5 @@ sixty lines; a line under a lesson that has no date is that lesson's wrapped lin
 2026-11-25 ran the append check mid-merge and read main's whole record as deleted; the check compares committed trees, so a staged merge is judged with `--head $(git write-tree)`, not HEAD.
 2026-11-25 let a branch run 261 commits behind main while publishing runs, so three run paths collided and the record needed a correction line; merge main before each night's runs.
 2026-11-25 named a source file that carries the owner's contact address in a shell command and the privacy plugin refused the command; address such a file through a glob or a script argument.
+2026-11-25 merged two test files by taking both sides' table rows and ten rows landed in a dict the other side had inserted between them; after a merge, run every per-company test file on the companies the branch added before committing.
+2026-11-25 wrote a set comprehension whose element name was a variable leaked from the loop above it, so the set held one run whatever the filter passed; bind the element from the comprehension's own target.

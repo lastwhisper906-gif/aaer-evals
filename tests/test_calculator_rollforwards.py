@@ -84,6 +84,7 @@ from pathlib import Path
 import pytest
 
 from src import calculator, cutoff_guard, note_tables, rollforwards
+from src.fetch_fixtures import TICKERS
 
 # The evidence for every element of `rollforwards.ELEMENTS` and `SCHEDULE_TWO`: the
 # ticker whose committed instances use it. It lives here, not in src/, because a list of
@@ -989,7 +990,7 @@ def test_ttms_exchange_rate_row_makes_its_supplier_finance_note_not_complete():
 
 
 def all_filings():
-    """Every committed filing with an inline document and an instance (72), as a pair of its
+    """Every committed filing with an inline document and an instance (two per company), as a pair of its
     ticker and accession and the cutoff of its own filing date."""
     for manifest in sorted(FIXTURES.glob("*/manifest.json")):
         documents = json.loads(manifest.read_text(encoding="utf-8"))["documents"]
@@ -1064,7 +1065,7 @@ def planted_periods():
 
 
 def test_over_all_committed_filings_each_period_is_what_its_own_rows_say(capsys):
-    """Structural invariants over every period of the 72 committed filings and of the periods
+    """Structural invariants over every period of the committed filings, two per company, and of the periods
     planted above, each worked out from the period's own cells and no counts held: `foots` is
     true exactly when `difference` is zero; `complete` is false exactly when `rows_not_placed` is
     not empty; and `difference` is the stated ending less the sum of the placed rows, recomputed
@@ -1085,7 +1086,7 @@ def test_over_all_committed_filings_each_period_is_what_its_own_rows_say(capsys)
                     false_and_complete += check_period(
                         year, (ticker, accession, family, series["table"],
                                year["period"]["end"]))
-    assert filings == 72
+    assert filings == 2 * len(TICKERS)        # a 10-K and a 10-Q per company of the universe
     assert periods > 0
     planted_count = 0
     for year in planted_periods():

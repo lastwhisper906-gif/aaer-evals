@@ -1664,6 +1664,20 @@ LABELLED_PERIODS = {
     # ended June 30, 2026 and 2025
     "ESE": ("2024-10-01..2025-09-30", "2025-10-01..2026-06-30", "2024-10-01..2025-06-30"),
     "JCI": ("2024-10-01..2025-09-30", "2025-10-01..2026-06-30", "2024-10-01..2025-06-30"),
+    # Clearfield: "For the fiscal year ended September 30, 2025"; its 10-Q: "Nine Months
+    # Ended June 30, 2026" and "June 30, 2025"
+    "CLFD": ("2024-10-01..2025-09-30", "2025-10-01..2026-06-30", "2024-10-01..2025-06-30"),
+    # NetApp: "For the fiscal year ended April 24, 2026", a 52-week year from April 26,
+    # 2025 ("a 52- or 53-week year that ends on the last Friday in April"); its 10-Q:
+    # "Three Months Ended July 31, 2026" and "July 25, 2025"
+    "NTAP": ("2025-04-26..2026-04-24", "2026-04-25..2026-07-31", "2025-04-26..2025-07-25"),
+    # Vistance Networks: "For the fiscal year ended December 31, 2025"; its 10-Q: "Six
+    # Months Ended June 30, 2026" and "June 30, 2025"
+    "VISN": ("2025-01-01..2025-12-31", "2026-01-01..2026-06-30", "2025-01-01..2025-06-30"),
+    # Franklin Electric: "For the fiscal year ended December 31, 2025"; its 10-Q: "Six
+    # Months Ended June 30, 2026" and "June 30, 2025". Its trailing revenue has no parts
+    # (the year to date's revenue tag is not on record), so the periods are read here
+    "FELE": ("2025-01-01..2025-12-31", "2026-01-01..2026-06-30", "2025-01-01..2025-06-30"),
 }
 
 
@@ -1672,11 +1686,13 @@ def test_every_clause_of_every_committed_runs_label_is_true_of_the_record(commit
     walk of the record, carried in the cell as `standing`; here each fact of that
     walk, and then each clause of the label, is checked against companyfacts and
     the run's bundle, read by this test and never by the calculator. The periods of
-    the five companies whose cost of debt carries a label are written out by hand
+    the nine companies whose cost of debt carries a label are written out by hand
     from their filings (`LABELLED_PERIODS`) and the calculator's are held to them:
 
     - a span is on record for a figure exactly where a row of one of its tags is,
-      and is read under the first such tag in the chain's order;
+      and is read under the first such tag in the chain's order, or under no tag
+      where the filing states the span twice and the row is refused (Franklin
+      Electric's interest expense, the one committed case);
     - how each figure stands follows from those rows alone: absent where no span
       carries one, the last fiscal year only, the years to date only, or every span;
     - "the years to date do not state" the rung's figure only where no year to date
@@ -1706,14 +1722,19 @@ def test_every_clause_of_every_committed_runs_label_is_true_of_the_record(commit
     said = {}
     for run, (cutoff, payload) in committed_calculators.items():
         cell = payload["cost_of_capital"]["pre_tax_cost_of_debt"]
-        parts = payload["terms"]["trailing_four_quarters"]["revenue"]["parts"]
-        if not isinstance(parts, dict):
+        parts = payload["terms"]["trailing_four_quarters"]["revenue"].get("parts")
+        if not isinstance(parts, dict) and "fallback" not in cell:
             # an annual report: the trailing four quarters are the year itself, and
             # no committed annual run's cost of debt stands on a fallback
-            assert "fallback" not in cell and "standing" not in cell, run
+            assert "standing" not in cell, run
             continue
-        year = parts["prior_fiscal_year"]["period"]
-        to_date = [parts["this_year_to_date"]["period"], parts["prior_year_to_date"]["period"]]
+        if isinstance(parts, dict):
+            year = parts["prior_fiscal_year"]["period"]
+            to_date = [parts["this_year_to_date"]["period"], parts["prior_year_to_date"]["period"]]
+        else:
+            # a quarterly run whose trailing revenue is missing (Franklin Electric) has
+            # no parts to read the periods from; they are the ones written out by hand
+            year, *to_date = LABELLED_PERIODS[run.split("/")[0]]
 
         def stated(figure: str, periods: list) -> list:
             return rows_on_record(run, cutoff, tags[figure], periods)
@@ -1741,6 +1762,12 @@ def test_every_clause_of_every_committed_runs_label_is_true_of_the_record(commit
             for row in fact["spans"]:
                 found = stated(figure, [row["period"]])
                 assert row["on_record"] is bool(found), (run, figure, row)
+                if row["on_record"] and row["tag"] is None:
+                    # a refused row (the planted test above): the filing states the span
+                    # twice, so it is on record under no one tag, and the label says so
+                    assert found and f"{figure.replace('_', ' ')} is on record but refused" in label, \
+                        (run, figure, row)
+                    continue
                 assert row["tag"] == (found[0][0] if found else None), (run, figure, row)
             if stands(figure) == "every span":
                 assert fact["trailing"] in ("on_record", "refused", "two_scopes", "no_sum"), \
@@ -1758,7 +1785,10 @@ def test_every_clause_of_every_committed_runs_label_is_true_of_the_record(commit
             "not on record": "interest expense, which is not on record" in label
                              or "neither interest expense" in label,
             "neither": "neither interest expense nor interest paid is on record" in label,
-            "fiscal year only": "interest expense is on record for the last fiscal year" in label,
+            "fiscal year only": "interest expense is on record for the last fiscal year" in label
+                                and "but that year's average debt is missing/zero" not in label,
+            "year's debt missing": "is on record for the last fiscal year but that year's average "
+                                   "debt is missing/zero" in label,
             "years to date only": "interest expense is on record for the years to date" in label}
         for clause, present in clauses.items():
             if present:
@@ -1779,6 +1809,11 @@ def test_every_clause_of_every_committed_runs_label_is_true_of_the_record(commit
         assert clauses["not on record"] is (expense == "absent"), (run, label[:200])
         assert clauses["neither"] is (expense == "absent" and paid == "absent"), (run, label[:200])
         assert clauses["fiscal year only"] is (expense == "fiscal_year_only"), (run, label[:200])
+        if clauses["year's debt missing"]:
+            # the last rung: the year's interest is on record, and the label names the
+            # debt cell it could not divide by (Franklin Electric: DebtCurrent stated twice)
+            assert stated("interest_expense", [year]) or stated("interest_paid", [year]), run
+            assert "average_debt_over_that_fiscal_year:" in label, (run, label[:200])
         assert clauses["years to date only"] is (expense == "years_to_date_only"), (run, label[:200])
         if clauses["years to date only"]:
             named = label.split("is on record for the years to date (")[1].split(")")[0]
@@ -1792,7 +1827,7 @@ def test_every_clause_of_every_committed_runs_label_is_true_of_the_record(commit
         assert in_place is (paid == "every span"), (run, label[:200])
         if rung:
             assert (rung == "interest_paid") is (stated("interest_expense", [year]) == []), run
-        elif last_rung:
+        elif last_rung and not clauses["year's debt missing"]:
             # no rung above could be read: no row of either figure for the year
             assert stated("interest_expense", [year]) == [] == stated("interest_paid", [year]), run
         says_how_paid_stands = last_rung and "that year's average debt" not in label
@@ -1816,8 +1851,11 @@ def test_every_clause_of_every_committed_runs_label_is_true_of_the_record(commit
     assert "DELL" in said["two scopes"] and {"CARR", "JCI"} <= said["do not state"]
     assert "CARR" in said["fiscal year only"] and "JCI" in said["years to date only"]
     assert "AAPL" in said["not on record"] and "AAPL" in said["neither"]
-    assert said["paid in place"] == {"ESE"} and said["paid rung"] == {"JCI"}
-    assert said["last rung"] == {"AAPL"}
+    # the October branch's runs: NetApp and Vistance read interest paid in place of a
+    # refused trailing interest expense, Clearfield the rung on interest paid, and
+    # Franklin Electric reaches the last rung with the year on record and its debt not
+    assert said["paid in place"] == {"ESE", "NTAP", "VISN"} and said["paid rung"] == {"JCI", "CLFD"}
+    assert said["last rung"] == {"AAPL", "FELE"} and said["year's debt missing"] == {"FELE"}
     assert said["no label"]
 
 

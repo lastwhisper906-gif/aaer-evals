@@ -777,7 +777,11 @@ DOCUMENT_ROOTS = ("fixtures", "runs", "full_path")
 GATE = "cutoff_guard.py"
 # The fetcher is the module that *creates* fixtures from EDGAR; it is upstream
 # of the gate, not behind it. It is listed here rather than silently skipped.
-EXEMPT = {GATE, "fetch_fixtures.py"}
+# `add_company.py` is upstream of the gate too: it runs the two fetchers to build a
+# new company's store and reads the reference company's `expected_values.json`,
+# an expectation file and not a filing (`tests/test_add_company.py` holds it to
+# writing no expected value). It reads no bundle and no stored filing itself.
+EXEMPT = {GATE, "fetch_fixtures.py", "add_company.py"}
 
 
 def _parameters(function: ast.AST) -> set[str]:

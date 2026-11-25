@@ -295,6 +295,28 @@ UNDER_DROPPED = {
             "carried, and its one paragraph, 'Statements and graphics contained in this "
             "press release and the accompanying earnings call which are not historical "
             "facts', is dropped; 2 read, 1 dropped",
+    # The ten of October (2026-10-21, src/add_company.py), read the same way: the
+    # cleaner keeps part of each disclaimer, and MU's and AAON's page numerals.
+    "NTAP": "the second safe-harbour paragraph, which writes 'Actual results may "
+            "differ materially' and 'We disclaim any obligation to update', is "
+            "carried; 3 read, 2 dropped",
+    "EXTR": "the disclaimer's heading, its second paragraph and that paragraph's "
+            "page-broken second half are carried, and a one-sentence pointer inside "
+            "the outlook is dropped instead; 4 read, 2 dropped",
+    "EVLV": "the disclaimer's heading and its page-broken continuation are carried; "
+            "4 read, 2 dropped",
+    "JBL": "the one-paragraph disclaimer, which writes 'cause actual outcomes and results to differ materially' and 'We assume no obligation to update', is carried; 1 read, 0 dropped",
+    "MU": "6 of 10 bare page numerals, which sit closer together than the page-run gap allows, and both blocks of 'Forward-Looking Statements' are carried; 12 read, 4 dropped",
+    "CLFD": "the disclaimer's heading is carried; 2 read, 1 dropped",
+    "VISN": "the disclaimer's heading, its second paragraph, that paragraph's page-broken "
+            "continuation and its closing paragraph are carried; 5 read, 1 dropped",
+    "ATEN": "the one-paragraph disclaimer, which writes 'could cause actual results to differ "
+            "materially' and 'We do not intend to update or alter', and its heading are "
+            "carried; 2 read, 0 dropped",
+    "AAON": "3 of 12 bare page numerals (6, 8 and 11) and the disclaimer's heading are carried; "
+            "14 read, 10 dropped",
+    "AIOT": "the disclaimer's heading, its risk-list paragraph and its 'we assume no "
+            "obligation' paragraph are carried; 4 read, 1 dropped",
 }
 
 # What a reader can see, written here rather than read from the cleaner: a
@@ -345,26 +367,6 @@ INVISIBLE_BLOCKS = {
             "Compared to Fourth Quarter 2025' and 'Full Year 2026 Financial Results as "
             "Compared to Full Year 2025', and the cleaner drops each as 'empty'; "
             "43 read, 56 split",
-    "NTAP": "the second safe-harbour paragraph, which writes 'Actual results may "
-            "differ materially' and 'We disclaim any obligation to update', is "
-            "carried; 3 read, 2 dropped",
-    "EXTR": "the disclaimer's heading, its second paragraph and that paragraph's "
-            "page-broken second half are carried, and a one-sentence pointer inside "
-            "the outlook is dropped instead; 4 read, 2 dropped",
-    "EVLV": "the disclaimer's heading and its page-broken continuation are carried; "
-            "4 read, 2 dropped",
-    "JBL": "the one-paragraph disclaimer, which writes 'cause actual outcomes and results to differ materially' and 'We assume no obligation to update', is carried; 1 read, 0 dropped",
-    "MU": "6 of 10 bare page numerals, which sit closer together than the page-run gap allows, and both blocks of 'Forward-Looking Statements' are carried; 12 read, 4 dropped",
-    "CLFD": "the disclaimer's heading is carried; 2 read, 1 dropped",
-    "VISN": "the disclaimer's heading, its second paragraph, that paragraph's page-broken "
-            "continuation and its closing paragraph are carried; 5 read, 1 dropped",
-    "ATEN": "the one-paragraph disclaimer, which writes 'could cause actual results to differ "
-            "materially' and 'We do not intend to update or alter', and its heading are "
-            "carried; 2 read, 0 dropped",
-    "AAON": "3 of 12 bare page numerals (6, 8 and 11) and the disclaimer's heading are carried; "
-            "14 read, 10 dropped",
-    "AIOT": "the disclaimer's heading, its risk-list paragraph and its 'we assume no "
-            "obligation' paragraph are carried; 4 read, 1 dropped",
 }
 
 
@@ -1020,13 +1022,24 @@ def test_a_store_fetched_without_event_filings_says_so_and_names_the_windows_8ks
 # expected failure, so the day the two agree again the mark turns red.
 PUBLISHED_BEFORE_THE_AMENDMENT_CLAUSE = {
     ("LFUS", "0001628280-26-050481"), ("STX", "0001137789-26-000159")}
+# NetApp's run of 2026-10-21 was built from a store fetched that night, a week after
+# the committed one: its manifest records the submissions index under sha256
+# 83b7acf1..., the committed index is 963f0ad1..., and EDGAR's index holds the
+# latest 1,000 filings, so the week had rolled the oldest row, the 8-K of
+# 2016-08-17 (0001564590-16-024497), out of the run's copy. The published file
+# lists one 8-K fewer than the rebuild, the first line of its difference; the
+# record is append-only, so the mark stays until the run is repeated.
+BUILT_FROM_A_LATER_INDEX = {("NTAP", "0001193125-26-380207")}
 COMMITTED_RUNS = sorted(
     (path.parent.parent.name, path.parent.name)
     for path in (cutoff_guard.REPO_ROOT / "runs").glob("*/*/input_manifest.json"))
 REBUILT_RUNS = [
     pytest.param(ticker, name, marks=pytest.mark.xfail(
         strict=True, reason="published before the amendment clause; differs on main too"))
-    if (ticker, name) in PUBLISHED_BEFORE_THE_AMENDMENT_CLAUSE else pytest.param(ticker, name)
+    if (ticker, name) in PUBLISHED_BEFORE_THE_AMENDMENT_CLAUSE
+    else pytest.param(ticker, name, marks=pytest.mark.xfail(
+        strict=True, reason="built from an index fetched a week after the committed one"))
+    if (ticker, name) in BUILT_FROM_A_LATER_INDEX else pytest.param(ticker, name)
     for ticker, name in COMMITTED_RUNS]
 
 
@@ -1034,7 +1047,7 @@ def test_the_rebuild_covers_every_committed_run():
     """28 run directories on 2026-11-14, counted with `ls runs/*/*/input_manifest.json`;
     a floor, so a run published later joins the list and none can drop out of it."""
     assert len(COMMITTED_RUNS) >= 28
-    assert PUBLISHED_BEFORE_THE_AMENDMENT_CLAUSE <= set(COMMITTED_RUNS)
+    assert PUBLISHED_BEFORE_THE_AMENDMENT_CLAUSE | BUILT_FROM_A_LATER_INDEX <= set(COMMITTED_RUNS)
 
 
 @pytest.mark.parametrize("ticker,name", REBUILT_RUNS)

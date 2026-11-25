@@ -2754,7 +2754,7 @@ _FLOW_NAMES = (
     "depreciation_and_amortization|billings|billings_a_year_earlier|fiscal_year_revenue|fiscal_year_cost_of_revenue")
 _BALANCE_NAMES = (
     "debt_now|debt_a_year_earlier|debt_at_the_start|debt_at_the_end|"
-    "operating_lease_liability|total_debt|net_debt|invested_capital")
+    "operating_lease_liability|total_debt|net_debt|invested_capital|capital")
 _CHANGE_NAMES = (
     "balance_sheet_change|articulation_gap|change_in_cash|change_in_current_assets|"
     "change_in_current_liabilities|change_in_debt_in_current_liabilities|"
@@ -2784,6 +2784,9 @@ CELL_CLASSES = (
      "the change in a working capital line as the statement of cash flows states it, over the span"),
     (FLOW, rf"(?:{_ONE}\.)*(?:ratios\.growth\.{_ONE}\.trailing_four_quarters|(?:revenue|billings)_growth)\.inputs\.(?:now|before)",
      "the two trailing four quarters a growth rate compares, each a sum of a statement line"),
+    (FLOW, rf"(?:{_ONE}\.)*(?:{_FLOW_NAMES})\.parts\.\d+",
+     "a statement line that is itself a sum of two tags over the span, the sum written as one part "
+     "(Extreme Networks' depreciation plus amortization of intangibles)"),
 )
 PLACED_BY_THE_TABLE = "placed by the table of CELL_CLASSES"
 

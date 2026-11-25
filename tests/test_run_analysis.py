@@ -3208,7 +3208,7 @@ def _reports_in_turn(reports: dict, messages: dict, limit: dict | None = None):
     which it answers the limit."""
     turns: dict = {}
 
-    def ask(directory, *, agent, writes, message, spec, log):
+    def ask(directory, *, agent, writes, message, spec, log, settings=None):
         name = writes[0]
         turns[name] = turns.get(name, 0) + 1
         messages.setdefault(name, []).append(message)
@@ -3383,7 +3383,7 @@ def test_plain_name_no_second_ask_on_a_run_that_is_already_ending(tmp_path, monk
     messages: dict = {}
     base = _reports_in_turn({"report_numbers.md": [CODED]}, messages)
 
-    def ask(directory, *, agent, writes, message, spec, log):
+    def ask(directory, *, agent, writes, message, spec, log, settings=None):
         if agent == "notes-text-reader":
             return {"agent": agent, "result": "failed", "reason": "planted"}
         return base(directory, agent=agent, writes=writes, message=message, spec=spec, log=log)
