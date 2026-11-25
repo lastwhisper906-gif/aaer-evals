@@ -981,6 +981,31 @@ def test_a_fetched_series_reads_back_through_the_reader_unchanged(
     assert record["served"]["ZZZZ"]["first_day"] == "2025-05-12"
 
 
+def test_a_row_after_the_window_s_end_is_dropped_and_counted(tmp_path, monkeypatch):
+    """The window's end is the cutoff. A source that serves 2025-06-02 for a window
+    ending 2025-05-31 is not believed: the row is not written and the record says
+    one was dropped. 2025-05-13 is a day of the window and stays."""
+    _stub(monkeypatch, [_bar("2025-05-13", 200.00, 100.00),
+                        _bar("2025-05-31", 201.00, 100.5),
+                        _bar("2025-06-02", 999.00, 499.5)])
+    folder = tmp_path / "prices"
+    record = market.fetch_prices(symbols=["ZZZZ"], start=_dt.date(2025, 5, 1),
+                                 end=_dt.date(2025, 5, 31), into=folder, environ={})
+    series = market.read_prices(folder)
+    assert [day for day, _ in series["ZZZZ"]] == [_dt.date(2025, 5, 13), _dt.date(2025, 5, 31)]
+    assert record["served"]["ZZZZ"] == {"rows": 2, "first_day": "2025-05-13",
+                                        "last_day": "2025-05-31"}
+    assert record["dropped_after_end"] == {"ZZZZ": 1}
+    assert "2025-06-02" not in (folder / "ZZZZ.csv").read_text()
+
+
+def test_a_source_that_serves_only_rows_after_the_end_is_an_empty_answer(tmp_path, monkeypatch):
+    _stub(monkeypatch, [_bar("2025-06-02", 999.00, 499.5)])
+    with pytest.raises(market.MarketError, match="no rows"):
+        market.fetch_prices(symbols=["ZZZZ"], start=_dt.date(2025, 5, 1),
+                            end=_dt.date(2025, 5, 31), into=tmp_path / "prices", environ={})
+
+
 def test_an_empty_answer_is_refused_rather_than_written(tmp_path, monkeypatch):
     """A company with no trading days and a source that served nothing look
     identical on disk, and only one of them is a fact."""
@@ -1082,7 +1107,7 @@ def test_the_backend_is_the_one_the_handed_in_environment_names(tmp_path, monkey
 
     asked = []
 
-    def wire(path, params, token):
+    def wire(path, params, token, environ=None):
         asked.append(token)
         return []
 
@@ -1104,7 +1129,7 @@ def test_the_credential_is_the_one_the_handed_in_environment_carries(tmp_path, m
 
     asked = []
 
-    def wire(path, params, token):
+    def wire(path, params, token, environ=None):
         asked.append((path, token))
         # The metadata request answers an object and the price request a list,
         # as Tiingo's do; the list is empty, which the fetch refuses.

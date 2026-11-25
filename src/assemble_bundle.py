@@ -185,16 +185,32 @@ def with_stamp(entry: dict, row: dict) -> dict:
     return entry
 
 
+def with_release(entry: dict, row: dict) -> dict:
+    """`entry` with the day EDGAR made the document public, for a comment letter
+    and its header, whose filing date is the day it was filed in private."""
+    if row.get("released") is not None:
+        entry["released"] = row["released"]
+    return entry
+
+
 def documents_on_record(ticker: str, cutoff, fixtures_root) -> list[dict]:
     """Every fixture document filed at or before the cutoff, as the record has
-    it. A document filed later is not in the bundle and not in the manifest."""
+    it. A document filed later is not in the bundle and not in the manifest, and
+    neither is a comment letter filed in private before it and made public on
+    or after it: at the cutoff it was on nobody's record but the SEC's. A
+    letter's row with no release on record is refused, as the gate refuses a
+    read of it: an absent release is not an early one."""
     rows = []
     for row in cutoff_guard.documents(ticker, fixtures_root=fixtures_root):
-        if row["filing_date"] <= str(cutoff):
-            rows.append(with_stamp(
+        if row.get("form") in cutoff_guard.RELEASED_LATER_FORMS and not row.get("released"):
+            raise cutoff_guard.CutoffGuardError(
+                f"{ticker} {row['path']} is a {row.get('form')} with no release on record "
+                "— refused, because its filing date is the day it was filed in private")
+        if row["filing_date"] <= str(cutoff) and str(row.get("released") or "") < str(cutoff):
+            rows.append(with_release(with_stamp(
                 {"form": row["form"], "role": row["role"],
                  "accession": row["accession"], "path": row["path"],
-                 "filing_date": row["filing_date"], "sha256": row["sha256"]}, row))
+                 "filing_date": row["filing_date"], "sha256": row["sha256"]}, row), row))
     rows.sort(key=lambda row: (row["filing_date"], row["accession"], row["role"]))
     return rows
 
@@ -260,7 +276,7 @@ def documents_used(opened: dict, cutoff, fixtures_root) -> list[dict]:
             entry["date_basis"] = row.get("date_basis")
             entry["rows_used_through"] = str(cutoff)
         else:
-            with_stamp(entry, row)
+            with_release(with_stamp(entry, row), row)
         rows.append(entry)
     rows.sort(key=lambda row: (row["filing_date"] or "9999-12-31",
                                row["accession"], row["role"]))
@@ -362,15 +378,21 @@ def excluded_paragraphs(ticker: str, form: str, *, cutoff, fixtures_root) -> lis
 
 
 def eight_k_file(ticker: str, form: str, *, cutoff, fixtures_root,
-                 on_record: dict) -> tuple[dict | None, str, str | None]:
-    """`input_8k.md`: the parsed payload if there is one, the text, the reason.
+                 on_record: dict, trigger: dict | None = None
+                 ) -> tuple[dict | None, str, str | None, dict]:
+    """`input_8k.md`: the parsed payload if there is one, the text, the reason,
+    and the window of event filings as `parse_8k.event_filings` drew it.
 
     The payload is returned so the exclusions can be read out of the same
     cleaning that produced the text, instead of cleaning the exhibit twice.
+    `trigger`, the triggering report's manifest row, draws the window of event
+    filings the file ends with (`parse_8k.event_filings`), with or without an
+    earnings release.
     """
     if ("8-K", "exhibit_99_1") in on_record and ("8-K", "primary_html") in on_record:
-        payload = parse_8k.extract(ticker, cutoff=cutoff, fixtures_root=fixtures_root)
-        return payload, parse_8k.render(payload), None
+        payload = parse_8k.extract(ticker, cutoff=cutoff, fixtures_root=fixtures_root,
+                                   trigger=trigger)
+        return payload, parse_8k.render(payload), None, payload["event_filings"]
 
     # The sentence says what is missing and nothing about what comes later. It
     # used to name the held 8-K's own filing date, a date after the cutoff, in
@@ -382,10 +404,16 @@ def eight_k_file(ticker: str, form: str, *, cutoff, fixtures_root,
     # No exhibit on record does not mean no filing index. The item codes and the
     # late-filing notices come from `submissions.json`, which is stored for
     # every company, and a bundle that says nothing about them cannot answer
-    # `filing_irregularity` either way.
+    # `filing_irregularity` either way. Nor does it mean no event filing: the
+    # window's are carried after the index either way, when the store holds the
+    # window record and the window holds something; otherwise nothing is added,
+    # so a run built from a store fetched without them rebuilds byte for byte.
+    events = parse_8k.event_filings(ticker, cutoff=cutoff, fixtures_root=fixtures_root,
+                                    trigger=trigger)
     text = (f"# {ticker} 8-K\n\n{note}.\n\n"
-            + parse_8k.render_index(ticker, cutoff=cutoff, fixtures_root=fixtures_root))
-    return None, text, note
+            + parse_8k.render_index(ticker, cutoff=cutoff, fixtures_root=fixtures_root,
+                                    trigger=trigger, events=events))
+    return None, text, note, events
 
 
 def excluded_from_the_release(payload: dict | None) -> list[dict]:
@@ -597,9 +625,9 @@ def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIX
                                                    fixtures_root=fixtures_root)
 
     with phase(opened, "input_8k.md"):
-        eight_k, eight_k_text, eight_k_note = eight_k_file(
+        eight_k, eight_k_text, eight_k_note, events = eight_k_file(
             ticker, form, cutoff=cutoff, fixtures_root=fixtures_root,
-            on_record=on_record)
+            on_record=on_record, trigger=trigger)
 
     # The history is two consecutive 10-Qs, whatever form triggered the run.
     with phase(opened, "input_notes_history.md"):
@@ -698,6 +726,11 @@ def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIX
         "on_record_at_cutoff": documents_on_record(ticker, cutoff, fixtures_root),
         "paragraphs": paragraphs,
         "exclusions": exclusions,
+        # The window of event filings: what was drawn, carried and listed, and
+        # whether the store was fetched with them at all. `input_8k.md` prints
+        # nothing for an empty window or a store fetched without them, so this
+        # is where the two are told apart.
+        "event_filings": parse_8k.window_record(events),
         "counts": {
             "paragraphs": len(paragraphs),
             "exclusions": len(exclusions),

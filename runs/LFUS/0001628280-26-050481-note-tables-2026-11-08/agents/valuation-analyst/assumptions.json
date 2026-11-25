@@ -1,0 +1,284 @@
+{
+  "scenarios": {
+    "bear": {
+      "revenue_growth_year_one": 0.05,
+      "terminal_growth": 0.02,
+      "operating_margin_year_one": 0.11,
+      "operating_margin_year_ten": 0.10,
+      "reinvestment_rate_year_one": 0.55,
+      "reinvestment_rate_year_ten": 0.35,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "A cyclical reversal of the kind the company went through after fiscal 2022, when revenue fell for two consecutive years, arriving just as the Basler contribution laps in December; the acquired revenue carried through the back half of calendar 2026 keeps the year positive, while the automotive sensors exit, the closure of two semiconductor sites and softer passenger-car volumes subtract from it.",
+          "quote": "Passenger vehicle sales were impacted by lower global passenger car builds and auto sensor product declines.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.growth.revenue.year_over_year.value",
+            "ratios.growth.revenue.trailing_four_quarters.value",
+            "earnings_versus_cash.history.years.1.revenue_growth",
+            "earnings_versus_cash.history.years.2.revenue_growth",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound",
+            "note_tables.tables.notes_9.facts.35.value",
+            "note_tables.tables.notes_10.facts.35.value"
+          ],
+          "history": "The rate sits far below the quarter's year-over-year growth of {ratios.growth.revenue.year_over_year.value|pct} and the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters.value|pct}, below the five-year compound rate of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, but above the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} that fiscal 2023's {earnings_versus_cash.history.years.2.revenue_growth|pct} and fiscal 2024's {earnings_versus_cash.history.years.1.revenue_growth|pct} produced; the bear assumes that downturn pattern returns once the acquired revenue has lapped, with automotive sensors already down to {note_tables.tables.notes_9.facts.35.value} from {note_tables.tables.notes_10.facts.35.value} a year earlier."
+        },
+        "terminal_growth": {
+          "reason": "Long-run growth at roughly the pace of inflation, well below the risk-free rate the calculator carries, for a cyclical components maker whose three-year record is a contraction and whose growth beyond the cycle has come from acquisitions that the bear assumes stop adding value.",
+          "quote": "",
+          "quote_from": "",
+          "fields": [
+            "cost_of_capital.risk_free_rate.value",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "The rate is below the risk-free rate of {cost_of_capital.risk_free_rate.value|pct} as required, above the three-year compound revenue growth of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, which was negative, and well below the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct} that acquisitions produced."
+        },
+        "operating_margin_year_one": {
+          "reason": "A downturn takes the margin back toward the lower readings of the company's own record: volume leverage reverses in Electronics, commercial-vehicle cost inflation persists in Transportation, Basler amortisation weighs on Industrial, and the restructuring and impairment charges the release labels special keep recurring inside reported operating income.",
+          "quote": "Operating margins decreased from 15.6% in the second quarter of 2025 to 14.1% in the second quarter of 2026 due to lower gross margin from the commercial vehicle business.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.profitability.operating_margin.value",
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "earnings_versus_cash.history.years.1.operating_margin",
+            "earnings_versus_cash.history.years.5.operating_margin",
+            "ratios.growth.operating_income.this_quarter.value",
+            "ratios.growth.revenue.this_quarter.value",
+            "note_tables.tables.notes_82.facts.35.value",
+            "note_tables.tables.notes_83.facts.35.value"
+          ],
+          "history": "The margin sits above the trailing four-quarter figure of {ratios.profitability.operating_margin.value|pct} and the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}, both dragged down by fiscal 2025's impairments, and above fiscal 2024's {earnings_versus_cash.history.years.1.operating_margin|pct}; it is close to fiscal 2020's {earnings_versus_cash.history.years.5.operating_margin|pct}, the last cyclical trough before the fiscal 2021 upswing, and far below what the quarter's operating income of {ratios.growth.operating_income.this_quarter.value} on revenue of {ratios.growth.revenue.this_quarter.value} implies, even after restructuring and impairment charges of {note_tables.tables.notes_82.facts.35.value} against {note_tables.tables.notes_83.facts.35.value} a year earlier."
+        },
+        "operating_margin_year_ten": {
+          "reason": "No structural improvement: the site closures and the commercial-vehicle reorganisation deliver little, special charges recur year after year, and goodwill carried from past acquisitions is written down again as it was in fiscal 2025, so the terminal margin ends a little below year one.",
+          "quote": "the pressure is that a large share of equity rests on acquisition accounting that has been written down before",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "note_tables.tables.notes_67.facts.27.value",
+            "note_tables.tables.notes_67.facts.31.value",
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "earnings_versus_cash.history.years.1.operating_margin",
+            "earnings_versus_cash.history.years.3.operating_margin",
+            "earnings_versus_cash.history.years.5.operating_margin"
+          ],
+          "history": "A terminal margin at this level is below every year in the record except fiscal 2024's {earnings_versus_cash.history.years.1.operating_margin|pct} and fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}, and just below fiscal 2020's {earnings_versus_cash.history.years.5.operating_margin|pct}; it treats the fiscal 2022 peak of {earnings_versus_cash.history.years.3.operating_margin|pct} as a cyclical high never regained, with accumulated goodwill impairments of {note_tables.tables.notes_67.facts.27.value} against goodwill still carried of {note_tables.tables.notes_67.facts.31.value} as the precedent for value acquired and later written off."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "The company keeps acquiring at roughly the recent pace while capital spending, now running below depreciation, has to catch up with the asset base, and restructuring cash costs continue; set against a thinner after-tax operating income, that absorbs more than half of it, a higher share than the base case.",
+          "quote": "free cash flow is not lifted by deferral of costs into assets but is flattered by spending below the asset base's consumption",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "terms.trailing_four_quarters.capital_expenditure.value",
+            "note_tables.tables.notes_187.facts.14.value",
+            "note_tables.tables.notes_187.facts.30.value",
+            "terms.cash_flow_families.acquisitions.value",
+            "free_cash_flow.free_cash_flow_simple.value",
+            "free_cash_flow.free_cash_flow_quality_adjusted.value"
+          ],
+          "history": "Over the trailing four quarters capital spending of {terms.trailing_four_quarters.capital_expenditure.value} ran below the pace of depreciation, which was {note_tables.tables.notes_187.facts.14.value} for six months alone, while acquisitions took {terms.cash_flow_families.acquisitions.value}, leaving quality-adjusted free cash flow of {free_cash_flow.free_cash_flow_quality_adjusted.value} out of simple free cash flow of {free_cash_flow.free_cash_flow_simple.value}; the bear carries that acquisition-heavy reinvestment forward against lower income, so the share reinvested is the highest of the three scenarios."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "Terminal reinvestment consistent with low terminal growth earned on a low return on capital: when returns on invested capital are thin, even modest growth requires a large share of after-tax operating income to be reinvested, and capital spending can no longer stay below depreciation.",
+          "quote": "",
+          "quote_from": "",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital.value",
+            "ratios.profitability.return_on_invested_capital.invested_capital.value",
+            "terms.trailing_four_quarters.capital_expenditure.value",
+            "earnings_versus_cash.history.years.3.capital_expenditure"
+          ],
+          "history": "Trailing return on invested capital is {ratios.profitability.return_on_invested_capital.value|pct} on invested capital of {ratios.profitability.return_on_invested_capital.invested_capital.value}, depressed by fiscal 2025's impairments; the bear assumes returns recover only part of the way, so that sustaining even the low terminal growth rate takes a reinvestment share above the base and the bull, with capital spending returning from today's {terms.trailing_four_quarters.capital_expenditure.value} toward the {earnings_versus_cash.history.years.3.capital_expenditure} of fiscal 2022."
+        }
+      }
+    },
+    "base": {
+      "revenue_growth_year_one": 0.14,
+      "terminal_growth": 0.03,
+      "operating_margin_year_one": 0.15,
+      "operating_margin_year_ten": 0.17,
+      "reinvestment_rate_year_one": 0.50,
+      "reinvestment_rate_year_ten": 0.25,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "The next twelve months carry the organic upswing in passive products and power semiconductors, Industrial's data-centre and HVAC demand on record bookings, and the Basler contribution until it laps in December; the rate is set below the third-quarter guidance because that guidance includes the acquired revenue and because the second half of the year faces tougher comparisons against a quarter that already grew by a fifth.",
+          "quote": "Looking ahead to the third quarter, we expect approximately 26% total revenue growth versus the prior year, supported by record bookings, continued customer momentum, and contributions from the Basler acquisition.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.growth.revenue.year_over_year.value",
+            "ratios.growth.revenue.trailing_four_quarters.value",
+            "note_tables.tables.notes_52.changes.0.value",
+            "note_tables.tables.notes_52.facts.1.value",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.years.0.revenue_growth"
+          ],
+          "history": "The rate is below the quarter's reported growth of {ratios.growth.revenue.year_over_year.value|pct} and the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters.value|pct}, and close to the pro forma quarterly increase of {note_tables.tables.notes_52.changes.0.value} on a prior-year base of {note_tables.tables.notes_52.facts.1.value} that treats Basler and the Dortmund fab as owned in both periods; it is above fiscal 2025's {earnings_versus_cash.history.years.0.revenue_growth|pct}, above the five-year compound rate of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct} and far above the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, because the base reads the present as an upswing year and lets the straight-line fade carry the rest of the cycle."
+        },
+        "terminal_growth": {
+          "reason": "Long-run nominal growth between inflation and the economy's trend for an electrical-protection components maker whose end markets, higher power and higher energy density, grow with electrification, but whose own record is cyclical; held below the risk-free rate.",
+          "quote": "We continue to partner closely with our customers to drive the ongoing evolution to higher power and higher energy density solutions.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate.value",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "The rate sits below the risk-free rate of {cost_of_capital.risk_free_rate.value|pct}, between the three-year compound revenue growth of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, which is where a full cycle of organic growth without acquisitions is likely to land."
+        },
+        "operating_margin_year_one": {
+          "reason": "Roughly the first-half run-rate of reported operating income: Electronics above a fifth, Industrial in the high teens and Transportation in the low teens, less corporate costs and the restructuring and impairment charges that keep recurring; set a little below the quarter because the restructuring note implies further exit charges as the two semiconductor sites close.",
+          "quote": "Operating margins increased from 14.9% in the second quarter of 2025 to 21.4% in the second quarter of 2026 primarily due to volume leverage, operational execution and favorable price and product mix from the electronics products and the semiconductor businesses.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.growth.operating_income.this_quarter.value",
+            "ratios.growth.revenue.this_quarter.value",
+            "note_tables.tables.notes_182.facts.32.value",
+            "note_tables.tables.notes_182.facts.36.value",
+            "note_tables.tables.notes_182.facts.40.value",
+            "note_tables.tables.notes_182.facts.48.value",
+            "note_tables.tables.notes_82.facts.35.value",
+            "ratios.profitability.operating_margin.value",
+            "earnings_versus_cash.history.years.2.operating_margin",
+            "earnings_versus_cash.history.years.3.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average"
+          ],
+          "history": "The margin equals fiscal 2023's {earnings_versus_cash.history.years.2.operating_margin|pct}, far above the trailing four-quarter {ratios.profitability.operating_margin.value|pct} and the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct} that fiscal 2025's impairments depress, and below the fiscal 2022 peak of {earnings_versus_cash.history.years.3.operating_margin|pct}; the quarter's operating income of {ratios.growth.operating_income.this_quarter.value} on revenue of {ratios.growth.revenue.this_quarter.value} came after a corporate line of {note_tables.tables.notes_182.facts.48.value} that carried restructuring and impairment charges of {note_tables.tables.notes_82.facts.35.value}, so the base anchors on the reported quarter rather than on the segment margins."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Modest expansion from year one as the two semiconductor sites close, the Basler amortisation runs off and mix shifts toward power semiconductors and data-centre protection; held below the fiscal 2022 peak because the record shows that peak was cyclical and was followed by two years of contraction and then impairments.",
+          "quote": "The gross margin is the strongest reading in the company's own record",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "trend_table.quarters-back-0.ratios.gross_margin.value",
+            "trend_table.years-back-3.ratios.gross_margin.value",
+            "earnings_versus_cash.history.years.2.operating_margin",
+            "earnings_versus_cash.history.years.3.operating_margin",
+            "earnings_versus_cash.history.years.4.operating_margin",
+            "note_tables.tables.notes_76.facts.1.value"
+          ],
+          "history": "A terminal margin at this level sits between fiscal 2023's {earnings_versus_cash.history.years.2.operating_margin|pct} and fiscal 2021's {earnings_versus_cash.history.years.4.operating_margin|pct}, below fiscal 2022's {earnings_versus_cash.history.years.3.operating_margin|pct}; the quarter's gross margin of {trend_table.quarters-back-0.ratios.gross_margin.value|pct} is the highest of the filled quarters and above fiscal 2022's {trend_table.years-back-3.ratios.gross_margin.value|pct}, which is what allows a terminal operating margin above year one, while acquired-intangible amortisation of {note_tables.tables.notes_76.facts.1.value} over the next twelve months is a charge that fades across the decade."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Half of after-tax operating income reinvested: organic capital spending runs below depreciation, but working capital grows with revenue and the company has acquired a business in most recent years, Basler and the Dortmund fab the latest; the base assumes acquisitions continue at a more moderate pace than the trailing year.",
+          "quote": "Capital expenditures for the six months ended June 27, 2026 were $33.0 million compared to $33.0 million for the six months ended June 28, 2025.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "terms.trailing_four_quarters.capital_expenditure.value",
+            "earnings_versus_cash.history.years.3.capital_expenditure",
+            "note_tables.tables.notes_187.facts.14.value",
+            "terms.cash_flow_families.acquisitions.value",
+            "free_cash_flow.free_cash_flow_simple.value",
+            "free_cash_flow.free_cash_flow_quality_adjusted.value",
+            "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now.value",
+            "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier.value"
+          ],
+          "history": "Trailing capital spending of {terms.trailing_four_quarters.capital_expenditure.value} is below the {earnings_versus_cash.history.years.3.capital_expenditure} of fiscal 2022 and below depreciation of {note_tables.tables.notes_187.facts.14.value} for six months, trade working capital rose to {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now.value} from {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier.value}, and acquisitions took {terms.cash_flow_families.acquisitions.value} of the year's simple free cash flow of {free_cash_flow.free_cash_flow_simple.value}, leaving {free_cash_flow.free_cash_flow_quality_adjusted.value} after share-based pay; the base rate is below the share the trailing year reinvested with Basler included and well above the share without it."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "Terminal reinvestment consistent with the terminal growth rate earned on a mid-teens return on invested capital: growth of a few per cent a year needs about a quarter of after-tax operating income once acquisitions stop adding to the revenue base and capital spending has caught up with depreciation.",
+          "quote": "",
+          "quote_from": "",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital.value",
+            "ratios.profitability.return_on_invested_capital.invested_capital.value",
+            "terms.trailing_four_quarters.operating_income.value",
+            "ratios.growth.operating_income.this_quarter.value"
+          ],
+          "history": "Trailing return on invested capital of {ratios.profitability.return_on_invested_capital.value|pct} rests on trailing operating income of {terms.trailing_four_quarters.operating_income.value} that still carries the fiscal 2025 impairments; the quarter's operating income of {ratios.growth.operating_income.this_quarter.value} against invested capital of {ratios.profitability.return_on_invested_capital.invested_capital.value} points to a return in the mid teens once the loss quarter rolls out, and the terminal rate is what sustaining the terminal growth at that return requires, below the year-one rate because acquisitions fall away."
+        }
+      }
+    },
+    "bull": {
+      "revenue_growth_year_one": 0.22,
+      "terminal_growth": 0.04,
+      "operating_margin_year_one": 0.18,
+      "operating_margin_year_ten": 0.20,
+      "reinvestment_rate_year_one": 0.45,
+      "reinvestment_rate_year_ten": 0.20,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "Growth close to the guided third-quarter pace held for the full year: record bookings convert, the passive-products and power-semiconductor upswing broadens, Industrial's data-centre, HVAC and automation demand compounds on Basler, and the automotive drag stays small.",
+          "quote": "Net sales for the second quarter 2026 increased +52%. Organic sales increased +16% driven by improved data center, HVAC, industrial automation, and construction demand. The Basler acquisition contributed +36% to growth.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.growth.revenue.year_over_year.value",
+            "ratios.growth.revenue.trailing_four_quarters.value",
+            "note_tables.tables.notes_182.changes.0.value",
+            "note_tables.tables.notes_182.changes.4.value",
+            "earnings_versus_cash.history.years.3.revenue_growth",
+            "earnings_versus_cash.history.years.4.revenue_growth"
+          ],
+          "history": "The rate is above the quarter's reported growth of {ratios.growth.revenue.year_over_year.value|pct} and the trailing four-quarter {ratios.growth.revenue.trailing_four_quarters.value|pct}, in line with fiscal 2022's {earnings_versus_cash.history.years.3.revenue_growth|pct} and below fiscal 2021's {earnings_versus_cash.history.years.4.revenue_growth|pct}, the last two upswing years; Electronics revenue rose {note_tables.tables.notes_182.changes.0.value} and Industrial {note_tables.tables.notes_182.changes.4.value} in the quarter, so the rate is within the record but at its strong end."
+        },
+        "terminal_growth": {
+          "reason": "Long-run growth just under the risk-free rate, for a company whose markets of electrification, higher power density and data-centre protection outgrow the economy, with bolt-on acquisitions continuing to add to the base.",
+          "quote": "We continue to partner closely with our customers to drive the ongoing evolution to higher power and higher energy density solutions.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate.value",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound"
+          ],
+          "history": "The rate stays below the risk-free rate of {cost_of_capital.risk_free_rate.value|pct} and below the five-year compound revenue growth of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, which acquisitions lifted; it is the highest of the three scenarios and far above the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}."
+        },
+        "operating_margin_year_one": {
+          "reason": "Roughly the quarter's margin before the restructuring and impairment charges, weighting Electronics above a fifth, Industrial in the high teens and Transportation in the low teens; the bull treats the charges as finished and lets volume leverage, price and mix carry the result.",
+          "quote": "The increase of $74.0 million in gross profit and the improved gross margin of 3.6% were primarily due to higher volume and favorable price, operational execution, and favorable product mix from the Electronics segment and the industrial circuit protection business within the Industrial segment.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "note_tables.tables.notes_182.facts.44.value",
+            "note_tables.tables.notes_182.facts.12.value",
+            "note_tables.tables.notes_182.facts.32.value",
+            "note_tables.tables.notes_182.facts.36.value",
+            "note_tables.tables.notes_182.facts.40.value",
+            "note_tables.tables.notes_82.facts.35.value",
+            "earnings_versus_cash.history.years.3.operating_margin",
+            "earnings_versus_cash.history.years.4.operating_margin"
+          ],
+          "history": "The margin is near fiscal 2021's {earnings_versus_cash.history.years.4.operating_margin|pct} and below the fiscal 2022 peak of {earnings_versus_cash.history.years.3.operating_margin|pct}; segment operating income of {note_tables.tables.notes_182.facts.44.value} on quarterly revenue of {note_tables.tables.notes_182.facts.12.value}, before corporate costs and the charges of {note_tables.tables.notes_82.facts.35.value}, shows where the margin stands if the charges stop, with Electronics at {note_tables.tables.notes_182.facts.32.value}, Industrial at {note_tables.tables.notes_182.facts.40.value} and Transportation at {note_tables.tables.notes_182.facts.36.value}."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Regaining the fiscal 2022 peak as the site closures lower the semiconductor cost base, acquired-intangible amortisation runs off, and mix tilts toward the higher-margin Electronics and Industrial products.",
+          "quote": "Operating margins decreased from 19.2% in the second quarter of 2025 to 18.3% in the second quarter of 2026 due to higher amortization expenses of $2.9 million, or 2.0% related to the Basler acquisition noted previously, partially offset by improved gross margin in the industrial circuit protection products.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "earnings_versus_cash.history.years.3.operating_margin",
+            "trend_table.years-back-3.ratios.gross_margin.value",
+            "trend_table.quarters-back-0.ratios.gross_margin.value",
+            "note_tables.tables.notes_76.facts.1.value",
+            "note_tables.tables.notes_70.facts.14.value"
+          ],
+          "history": "The terminal margin equals the fiscal 2022 peak of {earnings_versus_cash.history.years.3.operating_margin|pct}, the best year in the record, reached on a gross margin of {trend_table.years-back-3.ratios.gross_margin.value|pct} that the quarter's {trend_table.quarters-back-0.ratios.gross_margin.value|pct} already exceeds; the bull assumes that gross margin holds and that the amortisation of {note_tables.tables.notes_76.facts.1.value} a year on intangibles of {note_tables.tables.notes_70.facts.14.value} fades, which the record has not yet shown for a full year."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Strong organic growth needs working capital and a return of capital spending toward depreciation, but relies less on acquisitions than the trailing year did, so the share reinvested is a little below the base.",
+          "quote": "The Company made a payment of $2.8 million for the Basler acquisition during the six months ended June 27, 2026. Net cash paid for the Dortmund Fab acquisition was $57.4 million during the six months ended June 28, 2025.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "terms.trailing_four_quarters.capital_expenditure.value",
+            "terms.trailing_four_quarters_a_year_earlier.capital_expenditure.value",
+            "terms.cash_flow_families.acquisitions.value",
+            "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now.value",
+            "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier.value"
+          ],
+          "history": "Trailing capital spending of {terms.trailing_four_quarters.capital_expenditure.value} is below the {terms.trailing_four_quarters_a_year_earlier.capital_expenditure.value} of a year earlier and below depreciation, while acquisitions of {terms.cash_flow_families.acquisitions.value} dominated the year's reinvestment and trade working capital moved to {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now.value} from {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier.value}; the bull keeps organic reinvestment rising with growth but assumes acquisitions return to the smaller bolt-on size of the Dortmund fab rather than Basler."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "Terminal reinvestment consistent with the terminal growth rate earned on a return on invested capital in the high teens: with a high return, sustaining growth near the risk-free rate takes about a fifth of after-tax operating income.",
+          "quote": "",
+          "quote_from": "",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital.value",
+            "ratios.profitability.return_on_invested_capital.invested_capital.value",
+            "earnings_versus_cash.history.years.3.operating_income",
+            "earnings_versus_cash.history.years.3.revenue"
+          ],
+          "history": "Fiscal 2022 operating income of {earnings_versus_cash.history.years.3.operating_income} on revenue of {earnings_versus_cash.history.years.3.revenue} shows the business has earned a return well above today's trailing {ratios.profitability.return_on_invested_capital.value|pct} on invested capital of {ratios.profitability.return_on_invested_capital.invested_capital.value}; the bull's terminal rate is what the terminal growth requires at a return in the high teens, the lowest of the three scenarios and far below the trailing year's acquisition-heavy reinvestment."
+        }
+      }
+    }
+  },
+  "wacc_overrides": {}
+}

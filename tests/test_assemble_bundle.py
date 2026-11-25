@@ -509,11 +509,29 @@ UNDER_DROPPED_BUNDLE = {
                       "carried; 66 read, 68 built",
     ("LOGI", "10-Q"): "the page-broken second half of the disclaimer carried; "
                       "61 read, 62 built",
-    ("OMCL", "10-Q"): "5 page numerals and 3 forward-looking blocks carried; "
-                      "92 read, 100 built",
+    # The third eight, by the same dates: UI's and NSSC's releases were filed the
+    # day of their 10-Ks (2026-08-21, 2026-08-24) and after their 10-Qs, so they
+    # are in the 10-K bundle; the other six were filed on or before their 10-Qs
+    # (AMD's 2026-08-04 against 2026-08-05, OMCL's 2026-07-30 against
+    # 2026-08-05, the other four the same day) and are in the 10-Q bundle.
+    ("LII", "10-Q"): "the heading 'FORWARD-LOOKING STATEMENTS & NON-GAAP FINANCIAL "
+                     "MEASURES' and its no-update paragraph carried; 64 read, 66 built",
+    ("AMSC", "10-Q"): "the heading 'Forward-Looking Statements' carried; "
+                      "55 read, 56 built",
+    ("UI", "10-K"): "two safe-harbour paragraphs and the bare page numeral '1' carried; "
+                    "69 read, 72 built",
+    ("NSSC", "10-K"): "the heading 'Safe Harbor Statement' and its paragraph carried; "
+                      "71 read, 73 built",
+    ("CLS", "10-Q"): "the heading 'Cautionary Note Regarding Forward-looking "
+                     "Statements' and six of its paragraphs carried; 108 read, 115 built",
+    ("AMD", "10-Q"): "10 page numerals, the outlook disclaimer and the heading "
+                     "'Cautionary Statement' carried; 81 read, 93 built",
+    ("OMCL", "10-Q"): "5 page numerals, the heading 'Forward-Looking Statements' and "
+                      "two of its paragraphs carried; 92 read, 100 built",
+    ("ADTN", "10-Q"): "the heading 'Cautionary note regarding forward-looking "
+                      "statements' carried; 126 read, 127 built",
     ("NTAP", "10-Q"): "the second safe-harbour paragraph carried; 126 read, 127 built",
     ("MU", "10-K"): "6 page numerals and both forward-looking blocks carried; 80 read, 88 built",
-    ("AMD", "10-Q"): "10 page numerals and the disclaimer's heading carried; 82 read, 93 built",
     ("CLFD", "10-Q"): "the disclaimer's heading carried; 29 read, 30 built",
     ("VISN", "10-Q"): "the disclaimer's heading, its second paragraph, its page-broken "
                       "continuation and its closing paragraph carried; 62 read, 66 built",
@@ -525,10 +543,6 @@ UNDER_DROPPED_BUNDLE = {
                       "page-broken second half carried; 122 read, 124 built",
     ("EVLV", "10-Q"): "the disclaimer's heading and its page-broken continuation "
                       "carried; 83 read, 85 built",
-    ("LII", "10-Q"): "the disclaimer's heading and its second paragraph carried; "
-                     "64 read, 66 built",
-    ("AMSC", "10-Q"): "the disclaimer's heading carried; 55 read, 56 built",
-    ("ADTN", "10-Q"): "the disclaimer's heading carried; 126 read, 127 built",
 }
 
 EIGHT_K_CASES = [
@@ -870,9 +884,39 @@ def test_the_note_history_count_is_its_entries_plus_its_changed_ones(ticker, for
 CHECKLIST_WORDS = ("critical audit matter", "disclosure controls and procedures",
                    "report of independent registered public accounting firm")
 
+# NAPCO's 10-K heads the item 'ITEM 9A: CONTROL AND PROCEDURES', singular, on its
+# only Item 9A line (10-K/nssc-20260630x10k.htm.gz), and `src/split_sections.py`
+# starts Item 9A on 'controls and procedures', so it finds no heading and the
+# item -- 'Evaluation of Disclosure Controls and Procedures', 'Management’s Report
+# on Internal Control over Financial Reporting' and Deloitte's opinion on
+# internal control -- never reaches the 10-K bundle (`tests/test_split_controls.py`
+# HEADING_NOT_FOUND). In its place the controls file carries the line '10-K
+# item_9a: no heading matched.', which has no id of its own and folds into the
+# block of the auditor's report's last paragraph above it, so a quote of that
+# block would carry the pipeline's words. Strict, so teaching the splitter the
+# singular turns these red and the marks come off.
+SECTION_NOT_FOUND = {
+    ("NSSC", "10-K"): "'ITEM 9A: CONTROL AND PROCEDURES' is singular, no Item 9A heading "
+                      "is found, and the line '10-K item_9a: no heading matched.' folds "
+                      "into the auditor's report's last block; 29 read, none built",
+}
 
-@pytest.mark.parametrize("ticker", TICKERS)
-@pytest.mark.parametrize("form", ("10-K", "10-Q"))
+
+def controls_case(ticker: str, form: str, **named):
+    """One (ticker, form) case, marked where `SECTION_NOT_FOUND` names it."""
+    marks = ([pytest.mark.xfail(
+        strict=True, reason=f"{ticker} {form}: {SECTION_NOT_FOUND[(ticker, form)]}")]
+        if (ticker, form) in SECTION_NOT_FOUND else [])
+    return pytest.param(ticker, form, marks=marks, **named)
+
+
+# The cases in the order and with the ids the two stacked parametrisations gave
+# them, form first: `10-K-AAPL` ... `10-Q-ADTN`.
+CONTROLS_CASES = [controls_case(ticker, form, id=f"{form}-{ticker}")
+                  for form in ("10-K", "10-Q") for ticker in TICKERS]
+
+
+@pytest.mark.parametrize("ticker,form", CONTROLS_CASES)
 def test_the_controls_file_carries_the_sections_the_spec_requires(ticker, form):
     bundle = built(ticker, form)
     text = bundle["texts"]["input_controls.md"]
@@ -884,7 +928,40 @@ def test_the_controls_file_carries_the_sections_the_spec_requires(ticker, form):
     assert listed, f"{ticker} {form}: the file is in the manifest with no paragraphs"
 
 
-@pytest.mark.parametrize("ticker", TICKERS)
+# A strict mark covers its whole case and is satisfied by any failure, so an
+# assertion that shares a marked case with the one that fails is one nobody
+# evaluates (`tests/test_parse_8k.py`, over UNDER_DROPPED). The case above stops
+# at the section NAPCO's 10-K bundle lacks, before the ids are held against the
+# manifest; the checklist case below stops at the phrase only that section would
+# have said, before the third phrase; and the containment case after it fails on
+# the one block the missing section's line folds into, so whether the file's
+# other 31 blocks are the filing's own text is asserted by nothing it leaves
+# standing. Each of those is asserted unmarked, for the cases the marks name, by
+# a test beside its marked one. The section each lacks, and the checklist
+# phrases that go with it -- NAPCO's auditor's report says the other two:
+MISSING_SECTION = {("NSSC", "10-K"): "item_9a"}
+SAID_ONLY_BY_THE_MISSING_SECTION = {"NSSC": ("disclosure controls and procedures",)}
+
+
+@pytest.mark.parametrize("ticker,form", sorted(MISSING_SECTION))
+def test_a_controls_file_missing_a_section_carries_the_rest_and_lists_its_ids(
+        ticker, form):
+    bundle = built(ticker, form)
+    text = bundle["texts"]["input_controls.md"]
+    for section in assemble_bundle.CONTROL_SECTIONS[form]:
+        if section != MISSING_SECTION[(ticker, form)]:
+            assert f":{section}:" in text, f"{ticker} {form}: no {section} paragraph id"
+    listed = {entry["id"] for entry in bundle["manifest"]["paragraphs"]
+              if entry["file"] == "input_controls.md"}
+    assert listed == set(assemble_bundle.paragraph_ids(text))
+    assert listed, f"{ticker} {form}: the file is in the manifest with no paragraphs"
+
+
+@pytest.mark.parametrize("ticker", [
+    pytest.param(ticker, marks=pytest.mark.xfail(
+        strict=True, reason=f"{ticker} 10-K: {SECTION_NOT_FOUND[(ticker, '10-K')]}"))
+    if (ticker, "10-K") in SECTION_NOT_FOUND else ticker
+    for ticker in TICKERS])
 def test_the_ten_k_bundle_can_answer_the_checklists_audit_questions(ticker):
     """A quote has to exist in the inputs before it can be checked against them."""
     joined = "\n".join(text for name, text in built(ticker, "10-K")["texts"].items()
@@ -893,8 +970,16 @@ def test_the_ten_k_bundle_can_answer_the_checklists_audit_questions(ticker):
         assert phrase in joined, f"{ticker}: no bundle text says {phrase!r}"
 
 
-@pytest.mark.parametrize("ticker", TICKERS)
-@pytest.mark.parametrize("form", ("10-K", "10-Q"))
+@pytest.mark.parametrize("ticker", sorted(SAID_ONLY_BY_THE_MISSING_SECTION))
+def test_a_ten_k_bundle_missing_a_section_still_says_the_other_checklist_phrases(ticker):
+    joined = "\n".join(text for name, text in built(ticker, "10-K")["texts"].items()
+                        if name.endswith(".md")).lower()
+    for phrase in CHECKLIST_WORDS:
+        if phrase not in SAID_ONLY_BY_THE_MISSING_SECTION[ticker]:
+            assert phrase in joined, f"{ticker}: no bundle text says {phrase!r}"
+
+
+@pytest.mark.parametrize("ticker,form", CONTROLS_CASES)
 def test_every_control_paragraph_is_the_filings_own_text(ticker, form):
     row = cutoff_guard.one_document(ticker, form, "primary_html")
     source = independent_text.Source(
@@ -903,6 +988,34 @@ def test_every_control_paragraph_is_the_filings_own_text(ticker, form):
     misses = []
     for _, body in assemble_bundle.paragraph_blocks(text):
         for piece in independent_text.quotable(body):
+            if not source.contains(piece):
+                misses.append(piece)
+    assert not misses, f"{ticker} {form}: {misses[:2]}"
+
+
+@pytest.mark.parametrize("ticker,form", sorted(MISSING_SECTION))
+def test_a_controls_file_missing_a_section_is_the_filings_text_but_the_line_in_its_place(
+        ticker, form):
+    """What the mark on the containment case above hides: every block of the
+    file is the filing's own text once the one line the file prints in the
+    missing section's place -- '10-K item_9a: no heading matched.' in NAPCO's,
+    spelled here as the file prints it -- is taken out; and that line is
+    printed once, inside the block of the last paragraph above the missing
+    section's heading, the block the mark's reason names."""
+    section = MISSING_SECTION[(ticker, form)]
+    line = f"{form} {section}: no heading matched."
+    row = cutoff_guard.one_document(ticker, form, "primary_html")
+    source = independent_text.Source(
+        cutoff_guard.load_document(row["full_path"], row["filing_date"]))
+    text = built(ticker, form)["texts"]["input_controls.md"]
+    assert text.count(line) == 1, f"{ticker} {form}: {text.count(line)} of {line!r}"
+    blocks = assemble_bundle.paragraph_blocks(text)
+    above = assemble_bundle.paragraph_ids(text.split(f"\n## {section}\n")[0])
+    holding = [identifier for identifier, body in blocks if line in body]
+    assert holding == above[-1:], f"{ticker} {form}: {holding} against {above[-1:]}"
+    misses = []
+    for _, body in blocks:
+        for piece in independent_text.quotable(body.replace(line, "")):
             if not source.contains(piece):
                 misses.append(piece)
     assert not misses, f"{ticker} {form}: {misses[:2]}"
@@ -1440,7 +1553,7 @@ def test_the_store_is_fetched_up_to_the_named_filing(tmp_path, monkeypatch):
     monkeypatch.setattr(fetch_fixtures, "Fetcher", lambda _agent: index)
     store = _stand_in_store(DETECTED[0], monkeypatch)
     monkeypatch.setattr(fetch_fixtures, "fetch_company",
-                        lambda _f, ticker, cik, as_of, out:
+                        lambda _f, ticker, cik, as_of, out, filings=None:
                         asked_as_of.append((ticker, cik, as_of))
                         or store(_f, ticker, cik, as_of, out))
     assert fetch_fixtures.main(["--ticker", "CIEN", "--accession", DETECTED[0],
@@ -1452,7 +1565,7 @@ def test_an_accession_the_index_does_not_list_fetches_nothing(tmp_path, monkeypa
     from src import fetch_fixtures
     monkeypatch.setattr(fetch_fixtures, "Fetcher", lambda _agent: _Index([STORE_HOLDS]))
     monkeypatch.setattr(fetch_fixtures, "fetch_company",
-                        lambda *a: pytest.fail("fetched a store for an unlisted filing"))
+                        lambda *a, **k: pytest.fail("fetched a store for an unlisted filing"))
     code = fetch_fixtures.main(["--ticker", "CIEN", "--accession", DETECTED[0],
                                 "--out", str(tmp_path / "store")])
     assert code == fetch_fixtures.FETCH_FAILED
@@ -1467,12 +1580,12 @@ def _stand_in_store(held_accession, monkeypatch):
     stand-in index serves no companyfacts record.
     """
     from src import fetch_companyfacts
-    monkeypatch.setattr(fetch_companyfacts, "fetch_company", lambda *a: [])
+    monkeypatch.setattr(fetch_companyfacts, "fetch_company", lambda *a, **k: [])
 
-    def fetch_company(_fetcher, ticker, cik, as_of, out):
+    def fetch_company(_fetcher, ticker, cik, as_of, out, filings=None):
         manifest = {"ticker": ticker, "cik": cik, "as_of": as_of, "documents": [
             {"form": "10-Q", "role": "primary_html", "accession": held_accession,
-             "filing_date": as_of}]}
+             "filing_date": as_of, "path": "10-Q/stand-in.htm"}]}
         (out / ticker).mkdir(parents=True)
         (out / ticker / "manifest.json").write_text(json.dumps(manifest))
         return manifest, []
@@ -1510,7 +1623,7 @@ def test_an_existing_store_is_not_refetched_to_another_date(tmp_path, monkeypatc
     (store / "CIEN" / held).write_text("{}")
     monkeypatch.setattr(fetch_fixtures, "Fetcher", lambda _agent: _Index([DETECTED]))
     monkeypatch.setattr(fetch_fixtures, "fetch_company",
-                        lambda *a: pytest.fail("fetched into a store that already exists"))
+                        lambda *a, **k: pytest.fail("fetched into a store that already exists"))
     code = fetch_fixtures.main(["--ticker", "CIEN", "--accession", DETECTED[0],
                                 "--out", str(store)])
     assert code == fetch_fixtures.FETCH_FAILED

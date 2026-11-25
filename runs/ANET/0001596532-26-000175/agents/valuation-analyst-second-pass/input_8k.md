@@ -48,14 +48,8 @@
 [0001596532-26-000174:8k_2_02:5]
 •Delivered 40% growth in non-GAAP EPS year-over-year as the company achieved its first $3+ billion revenue quarter.
 
-[0001596532-26-000174:8k_2_02:7]
-•Introduced 1.6 Tbps AI fabric platforms, including liquid-cooled options optimized for scale-up, scale-out, and scale-across networks.
-
 [0001596532-26-000174:8k_2_02:11]
 •Revenue of $3.036 billion, an increase of 12.1% compared to the first quarter of 2026, and an increase of 37.7% from the second quarter of 2025.
-
-[0001596532-26-000174:8k_2_02:12]
-•GAAP and non-GAAP operating margin of 45.4% and 49.9%, respectively, compared to GAAP and non-GAAP operating margin of 44.7% and 48.8% in the second quarter of 2025.
 
 [0001596532-26-000174:8k_2_02:15]
 Commenting on the company's financial results, Chantelle Breithaupt, Arista’s CFO, said, “Our second quarter 2026 reflects strong, broad-based growth, with revenue up 37.7% and EPS up 39.7%. This performance underscores the strength of our market position and the continued dedication of our global team."

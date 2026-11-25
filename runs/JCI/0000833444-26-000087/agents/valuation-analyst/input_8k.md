@@ -124,12 +124,40 @@ The financial highlights presented in the tables below exclude discontinued oper
 [0000833444-26-000083:8k_2_02:40]
 Adjusted Corporate expense in both Q3 2026 and Q3 2025 excludes certain transaction/separation costs and transformation costs. The increase year-over-year is primarily due to increased corporate accruals related to incentive compensation and the timing of certain corporate expenses.
 
+[0000833444-26-000083:8k_2_02:46]
+The Company initiated fiscal 2026 fourth quarter continuing operations guidance:
+
 [0000833444-26-000083:8k_2_02:51]
 ▪Organic sales growth of ~8% (previously up ~6%)
 
 [0000833444-26-000083:8k_2_02:52]
 ▪Operating leverage of 45% to 50% (previously ~50%)
 
+[0000833444-26-000083:8k_2_02:53]
+▪Adjusted EPS of ~$5.05 (previously ~$4.85)
+
 [0000833444-26-000083:8k_2_02:96]
 •Prepayment of royalty fees associated with certain IP licensed to divested businesses.
+
+[0000833444-26-000083:8k_2_02:97]
+•Discrete tax payments are non-recurring tax settlements for certain non-US jurisdictions.
+
+[0000833444-26-000083:8k_2_02:106]
+•Transformation costs represent incremental expenses incurred in association with strategic growth initiatives and cost saving opportunities in order to realize the benefits of portfolio simplification and the Company's lifecycle solutions strategy.
+
+[0000833444-26-000083:8k_2_02:133]
+|  | Three Months Ended June 30, |  | Nine Months Ended June 30, |  |  |  |  |
+| (in millions) | 2026 |  | 2025 |  | 2026 |  | 2025 |  |  |  |  |  |  |
+| Free cash flow (non-GAAP) | $ | 1,194 |  | $ | 693 |  | $ | 2,329 |  | $ | 1,282 |  |  |  |  |  |  |
+| Adjustments: |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| JC Capital cash provided (used) by operating activities | (8) |  | 34 |  | (33) |  | 111 |  |  |  |  |  |  |
+| Water systems AFFF settlement cash payments and insurance recoveries | (7) |  | (3) |  | (165) |  | 383 |  |  |  |  |  |  |
+| Prepaid IP royalties for divested businesses | — |  | — |  | (29) |  | — |  |  |  |  |  |  |
+| Impact from discontinued factoring program | — |  | 1 |  | — |  | 15 |  |  |  |  |  |  |
+| Discrete tax payments | — |  | — |  | 31 |  | — |  |  |  |  |  |  |
+| Adjusted free cash flow (non-GAAP) | $ | 1,179 |  | $ | 725 |  | $ | 2,133 |  | $ | 1,791 |  |  |  |  |  |  |
+| Adjusted net income attributable to JCI (non-GAAP) | $ | 868 |  | $ | 693 |  | $ | 2,145 |  | $ | 1,664 |  |  |  |  |  |  |
+| JC Capital net (income) loss | 26 |  | (8) |  | 22 |  | (4) |  |  |  |  |  |  |
+| Adjusted net income attributable to JCI, excluding JC Capital (non-GAAP) | $ | 894 |  | $ | 685 |  | $ | 2,167 |  | $ | 1,660 |  |  |  |  |  |  |
+| Adjusted free cash flow conversion (non-GAAP) | 132 | % |  | 106 | % |  | 98 | % |  | 108 | % |  |  |  |  |  |  |
 

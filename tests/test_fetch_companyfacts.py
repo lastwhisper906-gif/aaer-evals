@@ -86,8 +86,12 @@ NOT_YET_IN_COMPANYFACTS = {
     # filed 2026-07-29, were in no row either: the same gap, ten weeks later.
     ("JCI", "10-Q", "0000833444-26-000087"),    # filed 2026-07-29
     ("FELE", "10-Q", "0000038725-26-000055"),   # filed 2026-07-29
-    # Lennox's record was fetched 2026-10-14, and its 10-Q of the same
-    # 2026-07-29 was in no row either: the gap outlasts the quarter.
+    # The third eight's records were fetched the same day, and one of their
+    # 10-Qs, Lennox's, filed 2026-07-29 as well, is in no row of its record:
+    # the record's manifest row dates it 2026-04-29, the prior 10-Q
+    # 0001069202-26-000054, and no row of any namespace names
+    # 0001069202-26-000087. The other twenty-three instances of the eight, three
+    # per company, are each in their records.
     ("LII", "10-Q", "0001069202-26-000087"),    # filed 2026-07-29
 }
 

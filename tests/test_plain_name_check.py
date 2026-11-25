@@ -675,6 +675,29 @@ def test_a_code_only_a_json_input_carries_is_named_in_the_runs_reports(tmp_path,
     assert lines == [f"{report}:1: {PLANTED}"]
 
 
+# DELL's fact id, read by eye in its numbers input of 2026-09-08: the filer's
+# member for a note due April 2028.
+FILER_FACT_ID = ("0001571996-26-000008:facts:ProceedsFromIssuanceOfDebt:2025-02-01..2026-01-30:"
+                 "us-gaap:DebtInstrumentAxis=dell:A4.75DueApril2028Member")
+
+
+def test_a_taxonomy_name_in_a_fact_input_is_the_filers_and_a_bare_code_beside_it_is_not(
+        tmp_path, capsys):
+    run_dir = _run_with_input(tmp_path)
+    where = run_dir / "agents" / "numbers-reader"
+    where.mkdir(parents=True, exist_ok=True)
+    (where / "input_numbers.json").write_text(
+        f'{{"paragraph_id": "{FILER_FACT_ID}", "period": "{PLANTED}"}}\n', encoding="utf-8")
+    report = run_dir / "report_numbers.md"
+    report.write_text(f'"paragraph_id": "{FILER_FACT_ID}"\n"period": "{PLANTED}"\n',
+                      encoding="utf-8")
+
+    status, lines = run(capsys, str(tmp_path))
+
+    assert status == plain_name_check.FOUND
+    assert lines == [f"{report}:2: {PLANTED}"]
+
+
 def test_the_prose_inputs_are_the_files_the_bundle_gives_paragraphs():
     from src import assemble_bundle
     assert plain_name_check.QUOTABLE_PROSE == frozenset(assemble_bundle.PARAGRAPH_FILES)

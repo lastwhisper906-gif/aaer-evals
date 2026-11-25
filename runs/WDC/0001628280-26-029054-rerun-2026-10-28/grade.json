@@ -1,0 +1,385 @@
+{
+ "run": "WDC/0001628280-26-029054",
+ "rubric": "evals/capability/rubric.md",
+ "dealbreakers": [
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "controls_audit_and_filing_signals_tagging_oddities",
+   "where": "analysis_accounting.json anomalies[23].what",
+   "why": "The anomaly says the input does not say whether the one-dollar SPEX damages fact is nominal or a scaling choice, but notes:150 (and note_history:1) say the court \"awarded nominal damages of $1\" on the same two dates the facts carry (input_numbers.json f-1171, f-1172), so the inputs settle it."
+  }
+ ],
+ "items": [
+  {
+   "id": "earnings_versus_cash_operating_cash_flow_far_below_net_income",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "earnings_versus_cash.operating_cash_flow_over_net_income sits well under history.years.0 and years.3; the reader's EquitySecuritiesFvNiUnrealizedGainLoss fact for the quarter exceeds ratios.growth.operating_income.this_quarter, and mdna:46 has \"a gain of $2.73 billion on our retained interest in Sandisk\"."
+  },
+  {
+   "id": "earnings_versus_cash_accruals_far_above_own_history",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.accruals_over_average_assets far exceeds trend_table.years-back-0.ratios.accruals_over_total_assets (\"highest of the 5 filled years\"); the anomaly states the denominator mismatch, and working_capital.receivables.share_of_net_income shows working capital is not the driver."
+  },
+  {
+   "id": "earnings_versus_cash_income_moves_more_than_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.smoothness is above one; smoothness.net_income.0 against smoothness.operating_cash_flow.0 is explained by the reader's unrealized-gain and GainsLossesOnExtinguishmentOfDebt facts for the quarter."
+  },
+  {
+   "id": "earnings_versus_cash_unrealized_gain_larger_than_operating_income",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "The reader's EquitySecuritiesFvNiUnrealizedGainLoss fact for 2026-01-03..2026-04-03 exceeds ratios.growth.operating_income.this_quarter; notes:98 gives the tax-free treatment and notes:32 the planned exchange of the remaining stake."
+  },
+  {
+   "id": "earnings_versus_cash_comparison_quarter_carries_one_time_items",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "Both quotes are verbatim (notes:152, notes:99), and the reader's GainLossRelatedToLitigationSettlement fact sits in the year-ago quarter that ratios.growth.operating_income.year_over_year uses as its base."
+  },
+  {
+   "id": "revenue_recognition_receivables_figure_differs_from_cash_flow_line",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The mdna:65 quote is verbatim; the gap between terms.trailing_four_quarters.change_in_receivables.parts.this_year_to_date.value and prior_year_to_date.value matches the prose figure, and DSO fell from trend_table quarters-back-4 to quarters-back-0."
+  },
+  {
+   "id": "revenue_recognition_price_driven_growth_and_record_margin",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0.ratios.gross_margin is \"highest of the 6 filled quarters\" and the mdna:38 quote is verbatim; the name leans on price, though mdna:31 credits more of the growth to exabytes sold than to price."
+  },
+  {
+   "id": "estimates_and_reserves_effective_tax_rate_rests_on_items_that_end",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "tax_rate is the trailing effective rate; notes:98 names the tax-free Sandisk gain and notes:123 the windfall benefits (quote verbatim). The first ends with the stake; the second moves with the share price."
+  },
+  {
+   "id": "estimates_and_reserves_unrecognized_tax_benefits_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:103 and the reader's UnrecognizedTaxBenefits item show the rise on gross increases, and notes:47 shows the noncurrent liability up; the notes:104 quote is verbatim and no cause is given."
+  },
+  {
+   "id": "estimates_and_reserves_credit_reserve_not_material_beside_concentrated_receivables",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "concentration.facts.35.value against concentration.facts.13.value shows Customer One's receivables share rising; notes:20 calls credit reserves \"not material\", and no allowance is tagged (trend_table bad_debt_reserve_ratio missing)."
+  },
+  {
+   "id": "estimates_and_reserves_warranty_release_and_noncurrent_shift",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:43 shows a smaller pre-existing estimate release than a year earlier, notes:45 shows the shift to the long-term portion, and trend_table quarters-back-0 warranty_reserve_ratio is above quarters-back-4."
+  },
+  {
+   "id": "estimates_and_reserves_new_conversion_derivative_in_other_income",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The notes:75 quote is verbatim; the anomaly omits that the same paragraph calls this quarter's remeasurement an \"immaterial gain\"."
+  },
+  {
+   "id": "estimates_and_reserves_hedge_losses_still_to_reach_cost_of_revenue",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The notes:54 quote is verbatim and notes:53 shows reclassifications charged to cost of revenue; notes:52 prints the derivative balance in AOCI, which shows the amount is small."
+  },
+  {
+   "id": "cost_deferral_business_realignment_charges_recur",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:108 shows charges in the quarter and year to date, notes:111 shows the reserve above its fiscal year-end level, and the notes:109 quote is verbatim."
+  },
+  {
+   "id": "cost_deferral_litigation_cost_partly_capitalized_as_patent_licenses",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "Quotes are verbatim at notes:151 and notes:152; neither paragraph says whether the patent-license asset changed after the settlement."
+  },
+  {
+   "id": "cost_deferral_exchange_charge_may_recur_with_remaining_stake",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "Quotes are verbatim at notes:70 and notes:32; neither says whether later exchanges will need a discount."
+  },
+  {
+   "id": "cost_deferral_soft_asset_share_up_year_over_year",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "trend_table.quarters-back-0.ratios.soft_asset_share is above quarters-back-4; lower cash (terms.balances_now.cash against balances_a_year_earlier.cash) explains part of it, and the Sandisk explanation is offered only as likely."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_operating_cash_flow_lifted_by_timing",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.operating_cash_flow parts are calculator paths and both quotes are verbatim at mdna:65; the anomaly leaves out mdna:65's offsetting tax-timing item, which the finance frame includes."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_global_minimum_tax_paid_later",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The mdna:101 quote is verbatim, and the paraphrase of the later payment date is accurate."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_debt_retired_with_shares_outside_cash_flow",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The notes:70 quote is verbatim and mdna:69 shows the bridge proceeds as a financing inflow; terms.debt_now against terms.debt_a_year_earlier shows the deleveraging."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_convertible_fair_value_far_above_carrying",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:67 and the reader's LongTermDebtFairValue item show fair value far above carrying and up from fiscal year-end; the notes:75 quote is verbatim, and notes:145 shows the higher dilutive share count."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_receivables_sale_concept_absent_now",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "The claim matches the calculator's missing note for terms.trailing_four_quarters.proceeds_from_sale_of_receivables, but neither cited reader item shows a receivables-sale concept, and the anomaly cites no field."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_share_based_pay_falls_while_dilution_rises",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "medium",
+   "why": "The drop in terms.trailing_four_quarters.share_based_compensation against history.years.0 comes from the separation: notes:31 puts Sandisk stock-based compensation in the comparison period, notes:121 shows continuing-operations SBC up, and the cited mdna:41 and mdna:42 say compensation costs rose. notes:145 labels the dilutive line as including convertible notes."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_tagging_oddities",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "low",
+   "why": "notes:150 says the court \"awarded nominal damages of $1\" on the dates the facts carry, so the fact records the court's award, not a tagging oddity; struck as a dealbreaker."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_insider_trading_plans_adopted",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The notes:157 quote is verbatim, and notes:156 and notes:158 give the director's and the chief legal officer's plans."
+  },
+  {
+   "id": "cross_document_reconciliation_inventory_reduction_wording_against_rising_balance",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "terms.balances_now.inventory exceeds balances_a_year_earlier.inventory, and the gap between the change_in_inventory year-to-date parts matches the mdna:65 figure; the anomaly gives the cash-flow reading itself."
+  },
+  {
+   "id": "cross_document_reconciliation_preferred_preference_tagged_after_conversion",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "TemporaryEquityLiquidationPreference is tagged at 2026-04-03 (input_numbers.json f-1062) after notes:137's quoted conversion (verbatim); the anomaly calls tagging carry-over only the likely reading."
+  },
+  {
+   "id": "cross_document_reconciliation_exchange_cost_attributed_wholly_to_discount",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:46 (quote verbatim) attributes the whole caption to the discount; notes:70 gives a smaller exchange amount plus an issuance-cost write-off on the cash-redeemed Senior Notes, matching the reader's term-loan and senior-notes split."
+  },
+  {
+   "id": "cross_document_reconciliation_guarantee_release_only_in_discussion",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The mdna:89 quote is verbatim, notes:71 and notes:72 do not mention the release, and mdna:93 to mdna:97 still present guarantor information."
+  },
+  {
+   "id": "cross_document_reconciliation_earnings_release_not_comparable",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "input_8k.md says no 8-K is on record at or before the cutoff yet lists an earnings-results item code; no 8-K body is in the input, so no release can be compared."
+  },
+  {
+   "id": "industry_lens_customer_one_receivables_share_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "concentration.facts.13.value, .24 and .35 rise in that order, and the latest exceeds concentration.facts.29.value; the notes:20 quote is verbatim."
+  },
+  {
+   "id": "industry_lens_top_ten_share_higher_year_to_date",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "concentration.facts.28.value is above .7 and .27 is below .16, as stated; the notes:19 quote is verbatim."
+  },
+  {
+   "id": "profitability_net_income_carried_by_sandisk_mark_to_market_gain",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "ratios.profitability.net_margin exceeds operating_margin and terms.trailing_four_quarters.net_income exceeds operating_income; the mdna:46 and notes:32 quotes are verbatim, and the reader's unrealized-gain fact exceeds ratios.growth.operating_income.this_quarter."
+  },
+  {
+   "id": "profitability_operating_cash_flow_trails_net_income",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "earnings_versus_cash.operating_cash_flow_over_net_income, accruals_over_average_assets and smoothness read as stated; the annual accruals cell is \"highest of the 5 filled years\" and the quarterly accruals row is missing, as stated."
+  },
+  {
+   "id": "profitability_debt_for_equity_exchange_discount_charge",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The mdna:46 and notes:70 quotes are verbatim, and mdna:20 puts the caption below operating income. But \"the two texts are not reconciled\" undersells the cited GainsLossesOnExtinguishmentOfDebt item, whose term-loan and senior-notes split reconciles the two texts."
+  },
+  {
+   "id": "profitability_low_tax_rate_rests_on_items_that_end",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "tax_rate equals terms.trailing_four_quarters.income_tax_expense over pretax_income; the notes:98 and notes:123 quotes are verbatim."
+  },
+  {
+   "id": "liquidity_and_capital_all_remaining_debt_classified_current",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.debt_now.parts.debt_current is the whole of terms.debt_now, against terms.debt_a_year_earlier.parts.debt_noncurrent; the notes:76 quote is verbatim, and terms.cash_and_short_term_investments_now exceeds the current debt."
+  },
+  {
+   "id": "liquidity_and_capital_convertible_conversion_cash_settlement_exposure",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The quote is verbatim at notes:75 and mdna:87, notes:67 shows fair value far above carrying, and notes:75 confirms the company keeps the choice of settlement for the remaining notes."
+  },
+  {
+   "id": "liquidity_and_capital_cash_lower_and_quick_ratio_below_one",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.balances_now.cash against balances_a_year_earlier.cash, current assets, ratios.liquidity.quick_ratio, and terms.debt_now against debt_a_year_earlier all read as stated."
+  },
+  {
+   "id": "liquidity_and_capital_repurchases_exceed_free_cash_flow_to_equity",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.share_repurchases exceeds free_cash_flow.free_cash_flow_to_equity; the notes:139 quote is verbatim, and the notes:142 declaration is dated before the cutoff."
+  },
+  {
+   "id": "liquidity_and_capital_revolver_maturity_inside_sufficiency_window",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The mdna:61 quotes are verbatim, mdna:89 and notes:71 date the facility's maturity inside the twelve-month window, and neither mentions renewal."
+  },
+  {
+   "id": "liquidity_and_capital_operating_cash_flow_helped_by_timing_items",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The ratios.growth.operating_cash_flow paths read as stated; the mdna:65 quotes are verbatim, and the offsetting tax-timing item is acknowledged."
+  },
+  {
+   "id": "efficiency_receivables_concentrated_in_one_customer",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The notes:20 quote is verbatim; the reader's concentration item shows Customer One's receivables share rising above its revenue share, and DSO ticks up from trend_table quarters-back-1 to quarters-back-0."
+  },
+  {
+   "id": "growth_net_income_growth_outruns_operating_growth",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The ratios.growth.net_income paths sit far above the operating_income and revenue paths. The reader items show the comparison quarter's Sandisk loss, the notes:99 tax benefit, the litigation gain and discontinued operations."
+  },
+  {
+   "id": "growth_revenue_rests_on_pricing_and_few_customers",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The mdna:32 and notes:19 quotes are verbatim, earnings_versus_cash.history.years.1 and years.2 operating margins are negative, and contract liabilities are untagged."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_warranty_accrual_outpacing_revenue",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "terms.balances_now.warranty_accrual is above balances_a_year_earlier and trend_table quarters-back-0 warranty_reserve_ratio is above quarters-back-4; notes:43 shows provisions up and a release on pre-existing warranties."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_business_realignment_charges_continue",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:111 shows the reserve up and year-to-date charges all in employee termination benefits; the notes:109 quote is verbatim."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_hedge_losses_due_into_cost_of_revenue",
+   "frame": "finance",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "The notes:54 and mdna:65 quotes are verbatim and notes:53 shows the cost-of-revenue charge. But \"of undisclosed size\" does not hold: notes:52 prints the derivative balance in AOCI, and nothing shows the drag is material to margin."
+  },
+  {
+   "id": "solvency_unrecognized_tax_benefits_rising",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The notes:104 and mdna:101 quotes are verbatim and notes:103 shows the rise; \"they rise as profits rise\" is asserted without evidence."
+  },
+  {
+   "id": "solvency_pension_funded_status_slightly_weaker",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:115 shows a larger unfunded status and lower plan assets than at fiscal year-end."
+  }
+ ],
+ "coverage": {
+  "answer": "yes",
+  "why": "Every accounting area plus industry_lens has a finding and a verdict; the financial file covers profitability, efficiency, liquidity, solvency, growth and free_cash_flow plus dupont and path_to_distress; input_manifest.json analysis_stages show no drops for analysis_accounting or analysis_financial."
+ },
+ "calibration": {
+  "answer": "yes",
+  "why": "Area verdicts track their anomalies (earnings_versus_cash over the cash and accruals gaps; revenue_recognition \"Clean on the measures available\" over two low-stakes confirming items). The weak spot is controls_audit_and_filing_signals, whose \"tagging oddities\" verdict leans on the SPEX fact that notes:150 explains."
+ },
+ "valuation_reading": {
+  "answer": "no",
+  "why": "valuation.missing, market.missing and implied_growth_beside_history.implied_ten_year_revenue_growth.missing leave no value range, price or implied growth. The reading says so rather than estimating, and its two most_sensitive assumptions are judged from the drivers because no sensitivity grid exists."
+ },
+ "score": 0.951,
+ "grader": {
+  "model_requested": "opus",
+  "model_served": "claude-opus-5-5",
+  "input_tokens": 64,
+  "output_tokens": 63594,
+  "cost_usd": 8.033059999999999,
+  "seconds": 552.9
+ }
+}

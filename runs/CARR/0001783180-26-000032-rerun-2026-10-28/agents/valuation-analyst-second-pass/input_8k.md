@@ -1,0 +1,126 @@
+# CARR 8-K — 0001783180-26-000030 filed 2026-07-28
+
+## item codes, every 8-K on or before 2026-07-28
+
+- 2026-07-28 0001783180-26-000030 — 2.02, 9.01
+- 2026-07-24 0000950142-26-002161 — 5.02, 9.01
+- 2026-04-30 0001783180-26-000023 — 2.02, 9.01
+- 2026-04-16 0000950142-26-001146 — 5.07
+- 2026-02-05 0001783180-26-000005 — 2.02
+- 2025-10-28 0001783180-25-000063 — 2.02, 7.01, 9.01
+- 2025-09-04 0000950142-25-002375 — 5.02
+- 2025-07-29 0001783180-25-000058 — 8.01, 9.01
+- 2025-07-29 0001783180-25-000047 — 2.02, 9.01
+- 2025-06-05 0000950142-25-001575 — 7.01
+- 2025-05-01 0001783180-25-000028 — 2.02, 7.01, 9.01
+- 2025-04-17 0000950142-25-001103 — 5.02
+- 2025-04-11 0001783180-25-000021 — 5.02, 5.07, 9.01
+- 2025-02-11 0001783180-25-000006 — 2.02, 9.01
+- 2025-01-15 0000950142-25-000133 — 5.02, 9.01
+- 2024-12-20 0001783180-24-000093 — 1.01, 1.02, 2.03, 9.01
+- 2024-12-03 0000950142-24-002874 — 5.02
+- 2024-12-02 0000950142-24-002865 — 7.01, 9.01
+- 2024-11-08 0000950142-24-002699 — 1.01, 2.03, 9.01
+- 2024-10-28 0000950142-24-002640 — 8.01
+- 2024-10-28 0000950142-24-002638 — 8.01
+- 2024-10-24 0001783180-24-000084 — 2.02, 7.01, 9.01
+- 2024-10-18 0000950142-24-002601 — 1.01
+- 2024-08-15 0001140361-24-037426 — 7.01, 9.01
+- 2024-07-25 0001783180-24-000075 — 2.02, 9.01
+- 2024-06-21 0001783180-24-000069 — 5.02
+- 2024-06-21 0000950142-24-001676 — 5.02
+- 2024-06-07 0001783180-24-000062 — 5.02, 5.03, 9.01
+- 2024-06-03 0000950142-24-001538 — 1.02, 7.01, 9.01
+- 2024-05-17 0001783180-24-000049 — 1.01, 1.02, 2.03, 9.01
+- 2024-04-25 0001783180-24-000042 — 2.02, 9.01
+- 2024-04-19 0001783180-24-000035 — 5.07, 9.01
+- 2024-04-19 0000950142-24-001162 — 5.07 — amendment of 0001783180-24-000035
+- 2024-02-06 0001783180-24-000007 — 2.02, 9.01
+- 2024-02-01 0000950142-24-000264 — 5.02
+- 2024-01-02 0001140361-24-000034 — 1.01, 2.01, 2.03, 5.02, 7.01, 9.01
+- 2023-12-13 0001140361-23-057415 — 1.01, 9.01
+- 2023-12-08 0001140361-23-056751 — 7.01, 9.01
+- 2023-11-30 0000950142-23-002884 — 1.01, 2.03, 8.01, 9.01
+- 2023-11-16 0000950142-23-002788 — 8.01, 9.01
+- 2023-11-13 0001140361-23-052667 — 7.01, 8.01, 9.01
+- 2023-10-26 0001783180-23-000063 — 2.02, 9.01
+- 2023-07-27 0001783180-23-000053 — 2.02, 9.01
+- 2023-06-12 0000950142-23-001664 — 5.02
+- 2023-05-25 0000950142-23-001541 — 1.01, 1.02, 2.03, 9.01
+- 2023-04-26 0000950142-23-001205 — 1.01, 9.01
+- 2023-04-25 0001783180-23-000036 — 2.02, 7.01, 9.01
+- 2023-04-25 0000950142-23-001199 — 7.01, 8.01, 9.01
+- 2023-04-21 0001783180-23-000032 — 5.07, 9.01
+- 2023-02-07 0001783180-23-000010 — 2.02, 9.01
+- 2022-10-27 0001783180-22-000054 — 2.02, 7.01, 9.01
+- 2022-09-29 0000950142-22-002805 — 5.02, 9.01
+- 2022-07-28 0001783180-22-000045 — 2.02, 9.01
+- 2022-04-28 0001783180-22-000032 — 2.02, 9.01
+- 2022-04-15 0001783180-22-000024 — 5.07, 9.01
+- 2022-02-08 0001783180-22-000008 — 2.02, 9.01
+- 2022-02-07 0000950142-22-000510 — 8.01, 9.01
+- 2022-01-03 0000950142-22-000023 — 8.01, 9.01
+- 2021-12-17 0001783180-21-000071 — 5.02, 7.01, 9.01
+- 2021-11-23 0001783180-21-000068 — 5.03, 9.01
+- 2021-10-28 0001783180-21-000062 — 2.02, 9.01
+- 2021-08-27 0001783180-21-000056 — 8.01
+- 2021-07-30 0001783180-21-000053 — 1.01
+- 2021-07-29 0001783180-21-000049 — 2.02, 8.01, 9.01
+- 2021-07-27 0000950142-21-002448 — 8.01, 9.01
+- 2021-07-15 0000950142-21-002362 — 5.02, 9.01
+- 2021-06-09 0000950142-21-001885 — 5.02, 9.01
+- 2021-04-29 0001783180-21-000029 — 2.02, 9.01
+- 2021-04-22 0001140361-21-013889 — 5.02, 9.01
+- 2021-04-20 0001783180-21-000021 — 5.07, 9.01
+- 2021-04-19 0000950142-21-001308 — 8.01, 9.01
+- 2021-02-09 0001783180-21-000009 — 2.02, 9.01
+- 2021-02-05 0001140361-21-003513 — 8.01, 9.01
+- 2020-12-23 0001140361-20-029419 — 7.01, 9.01
+- 2020-12-22 0001140361-20-029097 — 8.01
+- 2020-12-14 0001140361-20-028246 — 5.03, 9.01
+- 2020-12-07 0001140361-20-027515 — 1.01, 7.01, 9.01
+- 2020-10-29 0001783180-20-000063 — 2.02, 9.01
+- 2020-10-19 0001140361-20-023241 — 5.02, 7.01, 9.01
+- 2020-09-23 0001140361-20-021220 — 8.01, 9.01
+- 2020-09-22 0001140361-20-021124 — 8.01, 9.01
+- 2020-07-30 0001783180-20-000045 — 2.02, 9.01
+- 2020-06-19 0001140361-20-014325 — 1.01, 2.03, 9.01
+- 2020-06-16 0001140361-20-013880 — 8.01, 9.01
+- 2020-06-03 0001140361-20-012939 — 1.01, 9.01
+- 2020-05-08 0001783180-20-000013 — 2.02, 9.01
+- 2020-04-03 0001140361-20-007888 — 1.01, 5.02, 5.03, 5.05, 7.01, 9.01
+- 2020-03-16 0001140361-20-005868 — 8.01, 9.01
+
+## late-filing notifications on or before 2026-07-28
+
+- none on or before 2026-07-28
+
+## item 2.02 — earnings release, exhibit 99.1
+
+[0001783180-26-000030:8k_2_02:6]
+•Total company orders1 up ~40%; Commercial HVAC1 up ~65%; data centers up >300%
+
+[0001783180-26-000030:8k_2_02:11]
+•Raises full year outlook to ~$23B sales, ~$3.5B adj. op. profit and ~$2.90 adj. EPS
+
+[0001783180-26-000030:8k_2_02:12]
+◦Includes ~($0.05) adj. EPS impact from NORESCO exit and new U.S. factory costs
+
+[0001783180-26-000030:8k_2_02:14]
+“We ended the first half with a stronger than expected second quarter, including better sales, adjusted EPS and free cash flow,” said Chairman & CEO David Gitlin. “Organic sales returned to growth earlier than expected, up 3%, driven by strong performance in our CSA segment. Improving Residential and Light Commercial markets in CSA and CSE are encouraging. Orders were very strong globally in the second quarter supported by continued data center demand. Given record backlog levels and our year-to-date performance, we are raising our full-year outlook and now expect sales of about $23 billion and adjusted EPS of ~$2.90."
+
+[0001783180-26-000030:8k_2_02:26]
+CSA segment sales grew 4%. Organic sales were up 4% driven by Residential and Light Commercial (RLC), up 9% and 10% respectively, partially offset by Commercial1, down 8% due to the timing of customer deliveries.
+
+[0001783180-26-000030:8k_2_02:27]
+Segment operating margin decreased 260 basis points as revenue growth mainly related to price which was more than offset by unfavorable mix and input costs.
+
+[0001783180-26-000030:8k_2_02:31]
+Segment operating margin decreased 70 basis points driven by volume growth and favorable price / cost more than offset by unfavorable mix and selling investments.
+
+[0001783180-26-000030:8k_2_02:37]
+Segment operating margin decreased 350 basis points driven by volume growth and productivity more than offset by unfavorable mix and lower JV income due to the impacts from the Middle East conflict.
+
+[0001783180-26-000030:8k_2_02:78]
+Free cash flow is a non-GAAP financial measure that represents net cash flows provided by continuing operating activities (a GAAP measure) less capital expenditures. Management believes free cash flow is a useful measure of liquidity and an additional basis for assessing Carrier’s ability to fund its activities, including the financing of acquisitions, debt service, repurchases of Carrier's common stock and distribution of earnings to shareowners. Orders are contractual commitments with customers to provide specified goods or services for an agreed upon price and may not be subject to penalty if cancelled.
+

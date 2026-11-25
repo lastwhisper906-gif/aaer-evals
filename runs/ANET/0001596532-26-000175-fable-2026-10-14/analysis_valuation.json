@@ -1,0 +1,84 @@
+{
+ "question": "what is this company worth, and what does the price already assume?",
+ "value_range": {
+  "reading": "No value range was computed. The calculator prints under valuation.missing: \"WACC is not computed: the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\", and under cost_of_capital.missing: \"the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". Of the cost of capital's parts, the risk-free rate of {cost_of_capital.risk_free_rate|pct}, the equity risk premium of {cost_of_capital.equity_risk_premium|pct} and the tax rate of {cost_of_capital.tax_rate|pct} are present, and the pre-tax cost of debt is {cost_of_capital.pre_tax_cost_of_debt|pct} because total debt is {ratios.solvency.total_debt}; beta, the market value of equity, the cost of equity and the WACC are missing. The drivers did not survive either: assumptions.json carries empty scenarios, each of bear, base and bull dropped because the text explaining its revenue_growth_year_one driver held a number written in the analyst's own words rather than as a field path, so no scenario was run and there is no enterprise value, equity value or value per share to read. What the record does hold is the starting point a DCF would have used: trailing revenue of {terms.trailing_four_quarters.revenue}, operating income of {terms.trailing_four_quarters.operating_income} for an operating margin of {ratios.profitability.operating_margin|pct}, free cash flow to the firm of {free_cash_flow.free_cash_flow_to_firm}, cash and short-term investments of {terms.cash_and_short_term_investments_now} against no debt, and {terms.diluted_shares} diluted shares. No value per share is estimated from these here; that is the calculator's work and it did not run.",
+  "fields": [
+   "valuation.missing",
+   "cost_of_capital.missing",
+   "cost_of_capital.risk_free_rate",
+   "cost_of_capital.equity_risk_premium",
+   "cost_of_capital.tax_rate",
+   "cost_of_capital.pre_tax_cost_of_debt",
+   "ratios.solvency.total_debt",
+   "terms.trailing_four_quarters.revenue",
+   "terms.trailing_four_quarters.operating_income",
+   "ratios.profitability.operating_margin",
+   "free_cash_flow.free_cash_flow_to_firm",
+   "terms.cash_and_short_term_investments_now",
+   "terms.diluted_shares"
+  ]
+ },
+ "price_position": {
+  "reading": "Where the price sits cannot be read: there is no range to place it in and no price to place. The calculator carries no price at the cutoff — market prints only \"no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\", and free_cash_flow_yield.price_at_cutoff is missing for the same reason — so the market value of equity, the enterprise value and the free-cash-flow-yield cross-check on the DCF are all absent. Nothing in the directory says whether the price lies above, inside or below any value, and this reading does not guess.",
+  "fields": [
+   "market.missing",
+   "free_cash_flow_yield.price_at_cutoff.missing",
+   "cost_of_capital.market_value_of_equity.missing"
+  ]
+ },
+ "market_implied_growth": {
+  "dropped": "reading: a number written in the analyst's own words: '  a year over the three fiscal years to 2025 and   over five; the newest fiscal '"
+ },
+ "most_sensitive": [
+  {
+   "assumption": "cost of equity (beta), which here is the whole of the discount rate",
+   "reading": "No sensitivity grid exists, so this is not read off one; it is the input whose absence by itself stops the valuation even if the drivers had survived. With total debt of {ratios.solvency.total_debt} the weight of debt is nil and the WACC collapses to the cost of equity alone. Of its three parts the risk-free rate of {cost_of_capital.risk_free_rate|pct} and the equity risk premium of {cost_of_capital.equity_risk_premium|pct} are present; beta is missing — \"no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\" — and with it the cost of equity, the WACC, every discount factor, the terminal value and the reverse DCF. Nothing in the filings supplies a beta, and none is chosen here.",
+   "fields": [
+    "cost_of_capital.beta.missing",
+    "cost_of_capital.risk_free_rate",
+    "cost_of_capital.equity_risk_premium",
+    "cost_of_capital.pre_tax_cost_of_debt",
+    "ratios.solvency.total_debt"
+   ]
+  },
+  {
+   "assumption": "revenue growth path (year one fading in a straight line to terminal)",
+   "reading": "The second is the driver that failed in all three scenarios: each of bear, base and bull was dropped on its revenue_growth_year_one text, so no growth path exists to set beside history. The history it would have been held against: {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} compound over three fiscal years, {earnings_versus_cash.history.revenue_growth_five_year_compound|pct} over five, {ratios.growth.revenue.trailing_four_quarters|pct} over the trailing four quarters, and a terminal ceiling at the risk-free rate of {cost_of_capital.risk_free_rate|pct} that Python enforces. The distance between the trailing rate and that ceiling is where a ten-year straight-line fade would have done its work, which is the structural reason a fade from a high starting rate carries so much of a DCF's value; whether it would have outweighed the margin or reinvestment drivers in this grid was not computed. The margin path had less room: the trailing operating margin of {ratios.profitability.operating_margin|pct} already sits above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}, and the release guides the next quarter's non-GAAP operating margin below the quarter just printed.",
+   "fields": [
+    "earnings_versus_cash.history.revenue_growth_three_year_compound",
+    "earnings_versus_cash.history.revenue_growth_five_year_compound",
+    "ratios.growth.revenue.trailing_four_quarters",
+    "cost_of_capital.risk_free_rate",
+    "ratios.profitability.operating_margin",
+    "earnings_versus_cash.history.operating_margin_three_year_average"
+   ]
+  }
+ ],
+ "accounting_adjustments": {
+  "reading": "valuation.accounting_adjustments does not exist because no valuation was computed, so how much the adjustments moved value is unmeasured — absent, not nil. The accounting analyst proposed one adjustment and the calculator applied it, but to the quality-adjusted free cash flow rather than to a value: \"Receivables growth tied to newly disclosed extended payment terms\", direction reduce, amount {free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.0.amount} (the year's rise in receivables, {earnings_versus_cash.working_capital.receivables.balance_sheet_change}), taking the quality-adjusted figure from {free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.0.before} to {free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.0.after} against simple free cash flow of {free_cash_flow.free_cash_flow_simple}; no adjustment was refused. It rests on the MD&A sentence \"Additionally, our working capital and operating cash flows may experience timing differences as a result of certain large customer arrangements that include extended payment terms.\" Had a DCF run, this would have borne on reinvestment through working capital rather than on the operating income the model starts from; what it would have moved per share cannot be stated.",
+  "fields": [
+   "free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.0.amount",
+   "free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.0.before",
+   "free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.0.after",
+   "free_cash_flow.free_cash_flow_quality_adjusted",
+   "free_cash_flow.free_cash_flow_simple",
+   "earnings_versus_cash.working_capital.receivables.balance_sheet_change"
+  ]
+ },
+ "summary_ko": {
+  "value_range": "가치 범위는 계산되지 않았습니다. 계산기는 가격 시계열이 없어 베타와 자기자본비용, 가중평균자본비용을 구할 수 없다고 적고 있고, 첫 단계의 세 시나리오(약세·기본·강세)는 모두 사유 문장에 숫자를 직접 적어 탈락했기 때문에 실행된 드라이버도 없습니다.",
+  "price_position": "컷오프 시점의 가격이 계산기에 없어 가격이 가치 범위의 어디에 있는지 읽을 수 없습니다. 시가총액과 잉여현금흐름 수익률 교차검증도 같은 이유로 비어 있습니다.",
+  "market_implied_growth": "역산 DCF가 실행되지 않아 현재 가격이 가정하는 성장률은 없습니다. 참고로 회사 매출은 최근 삼 년 연평균 {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, 오 년 연평균 {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}로 늘었고 최근 네 분기 성장률 {ratios.growth.revenue.trailing_four_quarters|pct}은 그보다 높습니다.",
+  "most_sensitive": "민감도 표가 없어 어느 가정에 가치가 가장 민감한지 읽을 수 없습니다. 부채가 {ratios.solvency.total_debt}로 없어 할인율은 자기자본비용 하나로 정해지는데 그 핵심인 베타가 빠져 있고, 성장률 드라이버는 세 시나리오 모두에서 탈락해 과거 성장률과 비교할 값이 남지 않았습니다.",
+  "accounting_adjustments": "가치평가가 없어 회계 조정이 가치를 얼마나 움직였는지는 측정되지 않았습니다. 회계 분석가의 조정 한 건은 질 조정 잉여현금흐름에만 적용되어 그 값을 {free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.0.before}에서 {free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.0.after}로 낮췄습니다."
+ },
+ "limits": "This valuation is a set of stated assumptions run through a stated formula. It states no recommendation to trade, and a different reader choosing different drivers would reach a different value.",
+ "normalized_quotes": 0,
+ "dropped_items": [
+  {
+   "where": "market_implied_growth",
+   "reason": "reading: a number written in the analyst's own words: '  a year over the three fiscal years to 2025 and   over five; the newest fiscal '"
+  }
+ ],
+ "dropped_count": 1
+}

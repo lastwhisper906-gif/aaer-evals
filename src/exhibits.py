@@ -124,6 +124,12 @@ MATERIAL_CONTRACT_EXHIBIT = "EX-10"
 # up by name alone in more than one place.
 TRIGGER_HEADER_ROLE = "eight_k_submission_header"
 CONTRACT_EXHIBIT_ROLE = "exhibit_10"
+# The roles of the earnings 8-K's submission as the store records it. An event
+# 8-K's body (`src/fetch_fixtures.py` "event filings": `event_body`,
+# `auditor_letter`) is a form-8-K row too, with no header of its own, and a
+# walk by form read one carrying item 1.01 as a submission it had no header
+# for and refused the bundle; the walk is by these roles.
+SUBMISSION_ROLES = ("primary_html", "exhibit_99_1", TRIGGER_HEADER_ROLE, CONTRACT_EXHIBIT_ROLE)
 
 # Characters a filer uses as an empty cell that `str.strip()` leaves alone:
 # zero-width space, byte-order mark, soft hyphen. ESCO's exhibit spaces its
@@ -551,7 +557,7 @@ def eight_k_submissions(ticker: str, *, cutoff,
     limit = str(cutoff)
     found: dict[str, dict] = {}
     for row in cutoff_guard.documents(ticker, form="8-K", fixtures_root=fixtures_root):
-        if row["filing_date"] > limit:
+        if row["filing_date"] > limit or row.get("role") not in SUBMISSION_ROLES:
             continue
         entry = found.setdefault(row["accession"], {
             "accession": row["accession"],

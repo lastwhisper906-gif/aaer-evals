@@ -1,0 +1,103 @@
+{
+ "question": "what is this company worth, and what does the price already assume?",
+ "value_range": {
+  "reading": "Python computed no value range. The calculator prints under valuation.missing: \"WACC is not computed: the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\", and under cost_of_capital.missing: \"the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". So there is no enterprise value, equity value or value per share for the bear, base or bull case, and I do not estimate them. What the record does hold is the operating side of the model: trailing operating income of {ebit} on revenue of {terms.trailing_four_quarters.revenue}, an operating margin of {ratios.profitability.operating_margin|pct}, an effective tax rate of {tax_rate|pct}, free cash flow to the firm of {free_cash_flow.free_cash_flow_to_firm}, total debt of {terms.debt_now} against cash and current securities of {terms.cash_and_short_term_investments_now}, net debt of {ratios.solvency.net_debt}, and {terms.shares_outstanding} shares outstanding. On the cost-of-capital side it holds a risk-free rate of {cost_of_capital.risk_free_rate|pct}, an equity risk premium of {cost_of_capital.equity_risk_premium|pct} and a fallback pre-tax cost of debt of {cost_of_capital.pre_tax_cost_of_debt|pct}, the last a rule-of-thumb spread over the risk-free rate because no interest expense is on record. The beta, the market value of equity, the cost of equity, the capital weights and the discount rate itself are absent, and without a discount rate no cash flow can be brought to a present value. Read against history, my three scenarios bracket the company's own record rather than extend it: the bear case starts revenue growth near the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and holds the operating margin below every recent fiscal year; the base case starts growth well below the trailing four-quarter pace of {ratios.growth.revenue.trailing_four_quarters|pct} and well above the three-year record, and fades the margin from just below the trailing {ratios.profitability.operating_margin|pct} to the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}; the bull case starts just below the trailing pace with the margin held at the trailing record and rising. The width of any value range those drivers would produce cannot be read until the discount rate is.",
+  "fields": [
+   "valuation.missing",
+   "cost_of_capital.missing",
+   "ebit",
+   "terms.trailing_four_quarters.revenue",
+   "ratios.profitability.operating_margin",
+   "tax_rate",
+   "free_cash_flow.free_cash_flow_to_firm",
+   "terms.debt_now",
+   "terms.cash_and_short_term_investments_now",
+   "ratios.solvency.net_debt",
+   "terms.shares_outstanding",
+   "cost_of_capital.risk_free_rate",
+   "cost_of_capital.equity_risk_premium",
+   "cost_of_capital.pre_tax_cost_of_debt",
+   "earnings_versus_cash.history.revenue_growth_three_year_compound",
+   "ratios.growth.revenue.trailing_four_quarters",
+   "earnings_versus_cash.history.operating_margin_three_year_average"
+  ]
+ },
+ "price_position": {
+  "reading": "The price at the cutoff is not in the calculator: market prints \"no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\", and the price-at-cutoff line of the free-cash-flow-yield cross-check is missing for the same reason. With neither a price nor a value range, where the price sits in the range cannot be read, and no free cash flow yield on market value can be read either. The only claims the record states in money are the ones on the company's own books: trailing free cash flow to equity of {free_cash_flow.free_cash_flow_to_equity} after net debt repayment, against which the company paid {terms.trailing_four_quarters.dividends_paid} in dividends and {terms.trailing_four_quarters.share_repurchases} in repurchases over the same four quarters, and a diluted share count of {terms.diluted_shares} in the quarter. Those are the denominators a price would be set against; they say nothing about the price itself.",
+  "fields": [
+   "market.missing",
+   "free_cash_flow_yield.price_at_cutoff.missing",
+   "free_cash_flow.free_cash_flow_to_equity",
+   "terms.trailing_four_quarters.dividends_paid",
+   "terms.trailing_four_quarters.share_repurchases",
+   "terms.diluted_shares"
+  ]
+ },
+ "market_implied_growth": {
+  "reading": "No reverse DCF was run: the implied ten-year revenue growth is printed as missing because the WACC is not computed, so the growth the price assumes cannot be read. What can be read is the growth the company has filed and what the company says about the year ahead. The three-year compound revenue growth to fiscal 2025 is {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, made of {earnings_versus_cash.history.years.2.revenue_growth|pct} in fiscal 2023, {earnings_versus_cash.history.years.1.revenue_growth|pct} in fiscal 2024 and {earnings_versus_cash.history.years.0.revenue_growth|pct} in fiscal 2025; the five-year compound rate is {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, lifted by the fiscal 2021 surge of {earnings_versus_cash.history.years.4.revenue_growth|pct}; and the trailing four quarters grew {ratios.growth.revenue.trailing_four_quarters|pct}, with the June quarter up {ratios.growth.revenue.year_over_year|pct} on a year earlier. The release calls the quarter \"our strongest June quarter ever, with double-digit revenue growth across iPhone, Mac and Services, and in every geographic segment\", and the MD&A gives no numeric outlook; its forward-looking text is a warning that \"The Company expects these trends to intensify\" and that \"Actions, such as price increases, that have been and may in the future be taken by the Company may not effectively mitigate these negative impacts, and may also reduce demand\". My base case takes the middle ground between the record and the release: first-year growth of seven per cent, well below the trailing pace and well above the three-year compound record, fading in a straight line to a terminal three per cent that sits below the risk-free rate of {cost_of_capital.risk_free_rate|pct}; the bear case starts at two per cent, near the three-year record, and the bull case at thirteen per cent, just under the trailing pace. Which of these the price is nearest to is exactly the question the missing reverse DCF would have answered.",
+  "fields": [
+   "implied_growth_beside_history.implied_ten_year_revenue_growth.missing",
+   "earnings_versus_cash.history.revenue_growth_three_year_compound",
+   "earnings_versus_cash.history.years.2.revenue_growth",
+   "earnings_versus_cash.history.years.1.revenue_growth",
+   "earnings_versus_cash.history.years.0.revenue_growth",
+   "earnings_versus_cash.history.revenue_growth_five_year_compound",
+   "earnings_versus_cash.history.years.4.revenue_growth",
+   "ratios.growth.revenue.trailing_four_quarters",
+   "ratios.growth.revenue.year_over_year",
+   "cost_of_capital.risk_free_rate"
+  ],
+  "quote": "Actions, such as price increases, that have been and may in the future be taken by the Company may not effectively mitigate these negative impacts, and may also reduce demand",
+  "quote_from": "input_mdna.md"
+ },
+ "most_sensitive": [
+  {
+   "assumption": "revenue_growth_year_one, and how fast the current surge fades",
+   "reading": "No sensitivity grid was computed, so this is read from the scenario spread alone. First-year revenue growth is the driver the three scenarios are set furthest apart on: the bear case starts near the three-year compound record of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, the bull case just below the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct}, and the base case between them; because Python fades each in a straight line to its terminal rate over ten years, the starting rate sets the whole revenue path and every cash flow on it. The record itself says this is where the uncertainty lies: fiscal growth of {earnings_versus_cash.history.years.2.revenue_growth|pct}, {earnings_versus_cash.history.years.1.revenue_growth|pct} and {earnings_versus_cash.history.years.0.revenue_growth|pct} in the three fiscal years before the current surge, and {earnings_versus_cash.history.years.4.revenue_growth|pct} in fiscal 2021 followed by three near-flat years. How much value moves per point of growth cannot be stated without the discount rate.",
+   "fields": [
+    "earnings_versus_cash.history.revenue_growth_three_year_compound",
+    "ratios.growth.revenue.trailing_four_quarters",
+    "earnings_versus_cash.history.years.2.revenue_growth",
+    "earnings_versus_cash.history.years.1.revenue_growth",
+    "earnings_versus_cash.history.years.0.revenue_growth",
+    "earnings_versus_cash.history.years.4.revenue_growth"
+   ]
+  },
+  {
+   "assumption": "terminal_growth together with reinvestment_rate_year_ten, the terminal value",
+   "reading": "For a company that distributes nearly all of its cash, with trailing repurchases of {terms.trailing_four_quarters.share_repurchases} and dividends of {terms.trailing_four_quarters.dividends_paid} against simple free cash flow of {free_cash_flow.free_cash_flow_simple}, most of any discounted value sits in the terminal year, and the terminal year is set by two drivers at once: the perpetual growth rate and the share of after-tax operating income that must be reinvested to earn it. My scenarios disagree widely on both. Terminal growth runs from well below to just under the risk-free rate of {cost_of_capital.risk_free_rate|pct}, and year-ten reinvestment from a small share in the bull case, which keeps the trailing return on invested capital of {ratios.profitability.return_on_invested_capital|pct} on new capital, to a fifth of after-tax operating income in the bear case, which assumes that return does not persist. The record offers little guide here: trailing capital expenditure of {terms.trailing_four_quarters.capital_expenditure} sits below depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization}, the change in trade working capital of {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital} was a source of cash, and yet gross intangibles rose {note_tables.tables.notes_38.changes.0} outside the capital expenditure line. The terminal value is also the term most exposed to the discount rate, which is the missing input; the gap between the discount rate and terminal growth is the denominator of the terminal value, and neither half of that gap can be checked against a computed WACC here.",
+   "fields": [
+    "terms.trailing_four_quarters.share_repurchases",
+    "terms.trailing_four_quarters.dividends_paid",
+    "free_cash_flow.free_cash_flow_simple",
+    "cost_of_capital.risk_free_rate",
+    "ratios.profitability.return_on_invested_capital",
+    "terms.trailing_four_quarters.capital_expenditure",
+    "terms.trailing_four_quarters.depreciation_and_amortization",
+    "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital",
+    "note_tables.tables.notes_38.changes.0"
+   ]
+  }
+ ],
+ "accounting_adjustments": {
+  "reading": "None reached the valuation. The calculator's quality-adjusted free cash flow, {free_cash_flow.free_cash_flow_quality_adjusted} against simple free cash flow of {free_cash_flow.free_cash_flow_simple}, lists no adjustment applied and none refused; the only deduction is share-based compensation of {terms.trailing_four_quarters.share_based_compensation}, and no acquisition line is on record. The accounting reader proposed one adjustment, for the rise in gross intangible assets of {note_tables.tables.notes_38.changes.0} since the fiscal year-end with no acquisition outflow, and the pipeline dropped it because the field it named is not a dollar amount under the families the adjustment rule accepts, so it never entered the cash-flow line. Since no valuation was computed, there is no before-and-after value to compare. Had one been computed, the drivers would have carried the point instead: my base and bear reinvestment rates are set above the record precisely to charge for that intangible build and the component stocking that the capital expenditure line does not capture, and the base case's first-year margin starts below the trailing {ratios.profitability.operating_margin|pct} to strip the tariff refund that the release quantifies and the 10-Q does not.",
+  "fields": [
+   "free_cash_flow.free_cash_flow_quality_adjusted",
+   "free_cash_flow.free_cash_flow_simple",
+   "terms.trailing_four_quarters.share_based_compensation",
+   "note_tables.tables.notes_38.changes.0",
+   "ratios.profitability.operating_margin"
+  ]
+ },
+ "summary_ko": {
+  "value_range": "기준일 주가와 베타가 없어 자기자본비용과 가중평균자본비용이 산출되지 않았고, 할인율 없이는 현금흐름을 현재가치로 환산할 수 없어 파이썬은 가치 범위를 계산하지 못했습니다. 기록에 있는 것은 직전 네 분기 영업이익 {ebit}, 기업 잉여현금흐름 {free_cash_flow.free_cash_flow_to_firm}, 무위험이자율 {cost_of_capital.risk_free_rate|pct} 같은 재료뿐이며 시나리오별 주당 가치는 추정하지 않습니다.",
+  "price_position": "기준일 주가가 계산기에 없어 주가가 가치 범위의 어디에 있는지 읽을 수 없습니다. 비교 대상이 될 수 있는 것은 회사 장부상의 주주 잉여현금흐름 {free_cash_flow.free_cash_flow_to_equity}과 희석 주식 수 {terms.diluted_shares}뿐이며, 이것만으로는 주가에 대해 아무것도 말할 수 없습니다.",
+  "market_implied_growth": "역산 DCF가 실행되지 않아 주가가 가정하는 성장률은 읽을 수 없습니다. 회사의 기록은 최근 세 해 연평균 매출 성장률 {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, 다섯 해 연평균 {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, 직전 네 분기 {ratios.growth.revenue.trailing_four_quarters|pct}이고, 기본 시나리오의 첫해 성장률은 그 사이에, 영구 성장률은 무위험이자율 {cost_of_capital.risk_free_rate|pct} 아래에 두었습니다.",
+  "most_sensitive": "민감도 표가 계산되지 않아 시나리오 간 차이로만 읽으면, 첫해 매출 성장률과 영구 성장률·십 년차 재투자율로 이루어진 종결가치 가정이 가장 크게 갈립니다. 다만 가치가 성장률 한 단위에 얼마나 움직이는지는 빠져 있는 할인율 없이는 말할 수 없습니다.",
+  "accounting_adjustments": "가치평가에 반영된 회계 조정은 없습니다. 품질조정 잉여현금흐름 {free_cash_flow.free_cash_flow_quality_adjusted}은 단순 잉여현금흐름 {free_cash_flow.free_cash_flow_simple}에서 주식보상 {terms.trailing_four_quarters.share_based_compensation}만 뺀 것이고, 회계 분석가가 제안한 무형자산 증가 {note_tables.tables.notes_38.changes.0} 조정은 규칙상 제외되어 계산기에 들어가지 못했습니다."
+ },
+ "limits": "This valuation is a set of stated assumptions run through a stated formula. It states no recommendation to trade, and a different reader choosing different drivers would reach a different value.",
+ "normalized_quotes": 0,
+ "dropped_items": [],
+ "dropped_count": 0
+}

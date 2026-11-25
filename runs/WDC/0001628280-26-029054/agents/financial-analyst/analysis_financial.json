@@ -1,0 +1,537 @@
+{
+  "question": "how healthy is this company?",
+  "sections": {
+    "profitability": {
+      "reading": "Trailing-four-quarter gross margin is {ratios.profitability.gross_margin|pct}, operating margin {ratios.profitability.operating_margin|pct} and net margin {ratios.profitability.net_margin|pct}. Net margin sits above operating margin, and that is not an operating result: trailing net income {terms.trailing_four_quarters.net_income} exceeds operating income {terms.trailing_four_quarters.operating_income} because pretax income {terms.trailing_four_quarters.pretax_income} carries the mark-to-market gain on the retained Sandisk stake, which MD&A calls non-operating and the tax note calls tax-free; the effective tax rate inside the calculator is {tax_rate|pct}. Return on assets {ratios.profitability.return_on_assets|pct} and return on equity {ratios.profitability.return_on_equity|pct} are lifted by the same gain. Return on invested capital {ratios.profitability.return_on_invested_capital|pct}, built from operating income after tax, is the cleaner operating return and is itself high. Against the company's own history the operating result is at the top of its range: the latest quarter's gross margin {trend_table.quarters-back-0.ratios.gross_margin|pct} is the highest of the six filled quarters, against {trend_table.quarters-back-4.ratios.gross_margin|pct} in the year-ago quarter, and the last fiscal year's {trend_table.years-back-0.ratios.gross_margin|pct} was the highest of five filled years against {trend_table.years-back-1.ratios.gross_margin|pct} the year before. The three-year average operating margin is only {earnings_versus_cash.history.operating_margin_three_year_average|pct}, because the two fiscal years before the last carried operating losses in the history in earnings_versus_cash.history.years, so the current margin is a cyclical high rather than the company's steady state. MD&A attributes the margin to a lower cost structure on newer-generation products and improved pricing. The year-over-year operating comparison is, if anything, understated: the prior-year quarter held a litigation reversal in operating expenses that the current quarter does not. Three cost items push the other way: a large loss on debt extinguishment tied to the debt-for-equity exchange, cash flow hedge losses in accumulated other comprehensive income that the notes say will be reclassified into cost of revenue within twelve months, and warranty provisions rising faster than before. Operating cash flow over net income is {earnings_versus_cash.operating_cash_flow_over_net_income} and accruals over average assets {earnings_versus_cash.accruals_over_average_assets|pct}; both say reported profit runs far ahead of cash, for the same Sandisk reason.",
+      "fields": [
+        "ratios.profitability.gross_margin",
+        "ratios.profitability.operating_margin",
+        "ratios.profitability.net_margin",
+        "ratios.profitability.return_on_assets",
+        "ratios.profitability.return_on_equity",
+        "ratios.profitability.return_on_invested_capital",
+        "terms.trailing_four_quarters.net_income",
+        "terms.trailing_four_quarters.operating_income",
+        "terms.trailing_four_quarters.pretax_income",
+        "tax_rate",
+        "trend_table.quarters-back-0.ratios.gross_margin",
+        "trend_table.quarters-back-4.ratios.gross_margin",
+        "trend_table.years-back-0.ratios.gross_margin",
+        "trend_table.years-back-1.ratios.gross_margin",
+        "earnings_versus_cash.history.operating_margin_three_year_average",
+        "earnings_versus_cash.operating_cash_flow_over_net_income",
+        "earnings_versus_cash.accruals_over_average_assets"
+      ],
+      "evidence": [
+        "earnings_quality_gross_margin_quarterly",
+        "earnings_quality_gross_margin_annual",
+        "earnings_quality_operating_income",
+        "earnings_quality_unrealized_gain_on_equity_securities",
+        "earnings_quality_income_from_continuing_operations",
+        "earnings_quality_sandisk_mark_to_market_gain_in_pretax_income",
+        "earnings_quality_tax_rate_lowered_by_tax_free_sandisk_gain",
+        "estimates_and_discretion_effective_tax_rate",
+        "results_against_expectations_gross_margin_newer_products_and_pricing",
+        "earnings_quality_prior_year_litigation_reversal_in_comparative",
+        "related_parties_contingencies_and_subsequent_events_ip_litigation_settlement_gain",
+        "earnings_quality_debt_extinguishment_loss",
+        "earnings_quality_cash_flow_hedge_net_losses_to_reclassify",
+        "estimates_and_discretion_warranty_provisions",
+        "earnings_quality_accruals_over_total_assets_annual"
+      ]
+    },
+    "efficiency": {
+      "reading": "Days sales outstanding is {ratios.efficiency.days_sales_outstanding} days and days sales of inventory {ratios.efficiency.days_sales_of_inventory} days on trailing-four-quarter averages. Days payables outstanding and the cash conversion cycle are not computed: the calculator has no accounts payable row at the year-earlier balance date and says so. Asset turnover is {ratios.efficiency.asset_turnover}. Against its own history the working-capital readings are at the good end. The latest quarter's days sales outstanding {trend_table.quarters-back-0.ratios.days_sales_outstanding} is the third lowest of eight filled quarters, slightly above the prior quarter's {trend_table.quarters-back-1.ratios.days_sales_outstanding} but well under the year-ago quarter's {trend_table.quarters-back-4.ratios.days_sales_outstanding}; days sales of inventory {trend_table.quarters-back-0.ratios.days_sales_of_inventory} is the lowest of six filled quarters, against {trend_table.quarters-back-4.ratios.days_sales_of_inventory} a year earlier. On the annual view the last fiscal year's days sales outstanding {trend_table.years-back-0.ratios.days_sales_outstanding} and days sales of inventory {trend_table.years-back-0.ratios.days_sales_of_inventory} were both down from {trend_table.years-back-1.ratios.days_sales_outstanding} and {trend_table.years-back-1.ratios.days_sales_of_inventory} the year before. Receivables rose by {earnings_versus_cash.working_capital.receivables.balance_sheet_change} over the year to {terms.balances_now.receivables}, which MD&A attributes to business volume; the balance-sheet change articulates exactly with the cash-flow line, and the rise is {earnings_versus_cash.working_capital.receivables.share_of_net_income|pct} of trailing net income. Inventory rose only {earnings_versus_cash.working_capital.inventory.balance_sheet_change} while cost of revenue grew, which is the inventory-days improvement, and MD&A attributes the inventory reduction in the period to increased shipments. The one working-capital reading that counts as pressure is concentration: the largest customer's share of net receivables rose from the last fiscal year end and the top ten customers carry most of revenue. No bad-debt allowance and no inventory reserve is tagged in the record, so reserve adequacy against that concentration cannot be read here.",
+      "fields": [
+        "ratios.efficiency.days_sales_outstanding",
+        "ratios.efficiency.days_sales_of_inventory",
+        "ratios.efficiency.days_payables_outstanding",
+        "ratios.efficiency.cash_conversion_cycle",
+        "ratios.efficiency.asset_turnover",
+        "trend_table.quarters-back-0.ratios.days_sales_outstanding",
+        "trend_table.quarters-back-1.ratios.days_sales_outstanding",
+        "trend_table.quarters-back-4.ratios.days_sales_outstanding",
+        "trend_table.quarters-back-0.ratios.days_sales_of_inventory",
+        "trend_table.quarters-back-4.ratios.days_sales_of_inventory",
+        "trend_table.years-back-0.ratios.days_sales_outstanding",
+        "trend_table.years-back-1.ratios.days_sales_outstanding",
+        "trend_table.years-back-0.ratios.days_sales_of_inventory",
+        "trend_table.years-back-1.ratios.days_sales_of_inventory",
+        "earnings_versus_cash.working_capital.receivables.balance_sheet_change",
+        "earnings_versus_cash.working_capital.receivables.share_of_net_income",
+        "earnings_versus_cash.working_capital.inventory.balance_sheet_change",
+        "terms.balances_now.receivables"
+      ],
+      "evidence": [
+        "revenue_recognition_days_sales_outstanding_quarterly",
+        "revenue_recognition_receivables_over_revenue_quarterly",
+        "earnings_quality_days_sales_of_inventory_quarterly",
+        "revenue_recognition_days_sales_outstanding_annual",
+        "earnings_quality_days_sales_of_inventory_annual",
+        "earnings_quality_receivables_increase_attributed_to_business_volume",
+        "earnings_quality_inventory_reduction_attributed_to_shipments",
+        "revenue_recognition_customer_receivable_concentration",
+        "earnings_quality_receivables_customer_concentration",
+        "revenue_recognition_customer_revenue_concentration",
+        "estimates_and_discretion_bad_debt_reserve_ratio_quarterly",
+        "estimates_and_discretion_inventory_reserve_ratio_quarterly"
+      ]
+    },
+    "liquidity": {
+      "reading": "The current ratio is {ratios.liquidity.current_ratio} and the quick ratio {ratios.liquidity.quick_ratio}. The quick ratio sits below one because current liabilities {terms.balances_now.current_liabilities} include the whole of the company's debt, {terms.debt_now.parts.debt_current}, which is the convertible notes due 2028 classified current because the notes say the sale-price conversion condition was met. Cash is {terms.balances_now.cash}, down from {terms.balances_a_year_earlier.cash} a year earlier, with no short-term investments line on record; the cash covers the current debt but not current liabilities as a whole. No cash runway is computed: the calculator says free cash flow over the trailing four quarters is not negative, so there is no burn to divide by. What left the balance sheet over the year was debt and shares, not operations: borrowing repaid {terms.cash_flow_families.borrowing_repaid} against borrowing issued {terms.cash_flow_families.borrowing_issued}, share repurchases {terms.trailing_four_quarters.share_repurchases} and dividends {terms.trailing_four_quarters.dividends_paid}, against free cash flow of {free_cash_flow.free_cash_flow_simple}. Repurchases alone exceed free cash flow to equity {free_cash_flow.free_cash_flow_to_equity}, the board added a further repurchase authorization in the quarter with most of it unused at quarter end, and the dividend per share was raised after quarter end. Two further calls on cash sit in the notes: holders tendered part of the convertible notes and the company irrevocably elected to settle the conversion value above principal in cash in June 2026, and accrued income taxes were paid down heavily in the nine months. On the supply side, the notes say a revolving credit facility remains fully available and matures in January 2027, and that investment-grade ratings obtained in the quarter released its guarantees and collateral; MD&A's standing statement that liquidity is sufficient relies on cash and that facility.",
+      "fields": [
+        "ratios.liquidity.current_ratio",
+        "ratios.liquidity.quick_ratio",
+        "ratios.liquidity.cash_runway_months",
+        "terms.balances_now.current_liabilities",
+        "terms.debt_now.parts.debt_current",
+        "terms.balances_now.cash",
+        "terms.balances_a_year_earlier.cash",
+        "terms.cash_flow_families.borrowing_repaid",
+        "terms.cash_flow_families.borrowing_issued",
+        "terms.trailing_four_quarters.share_repurchases",
+        "terms.trailing_four_quarters.dividends_paid",
+        "free_cash_flow.free_cash_flow_simple",
+        "free_cash_flow.free_cash_flow_to_equity"
+      ],
+      "evidence": [
+        "liquidity_and_capital_cash",
+        "liquidity_and_capital_long_term_debt_current",
+        "liquidity_and_capital_convertible_notes_tendered_with_cash_settlement_election",
+        "liquidity_and_capital_share_repurchases",
+        "liquidity_and_capital_additional_share_repurchase_authorization",
+        "related_parties_contingencies_and_subsequent_events_dividend_increase",
+        "liquidity_and_capital_accrued_income_taxes_paid_down",
+        "liquidity_and_capital_investment_grade_ratings_release_revolver_guarantees_and_collateral",
+        "across_documents_bridge_loan_cash_inflow_and_non_cash_retirement",
+        "liquidity_and_capital_operating_cash_flow_year_to_date"
+      ]
+    },
+    "solvency": {
+      "reading": "Total debt is {ratios.solvency.total_debt}, down from {terms.debt_a_year_earlier} a year earlier after the senior notes were redeemed with a bridge loan and the bridge loan and term loan were then retired in a non-cash exchange for Sandisk shares. Net debt is {ratios.solvency.net_debt}, a net cash position. Debt over EBITDA is {ratios.solvency.debt_over_ebitda} on EBITDA of {ratios.solvency.ebitda}, interest coverage {ratios.solvency.interest_coverage} on trailing interest expense of {terms.trailing_four_quarters.interest_expense} and interest paid of {terms.trailing_four_quarters.interest_paid}, and liabilities over assets {ratios.solvency.liabilities_over_assets|pct}, with total liabilities {terms.balances_now.total_liabilities} against {terms.balances_a_year_earlier.total_liabilities} a year earlier and equity {terms.balances_now.stockholders_equity} against {terms.balances_a_year_earlier.stockholders_equity}. Operating lease liabilities are {ratios.solvency.operating_lease_liability} and unconditional purchase obligations {terms.balances_now.unconditional_purchase_obligations}. On these measures the balance sheet is the strongest in the record. Two qualifications. First, the only debt left is the convertible notes, whose fair-value estimate in the numbers reader's record is many times the carrying amount; the standing terms require cash for principal on any conversion, the company has now elected cash for the excess on the tendered portion, and the whole carrying amount sits in current liabilities, so the economic claim is larger than the carrying amount that the debt ratios use. Second, the interest coverage is a trailing figure whose denominator still carries interest on the retired debt; MD&A says the interest charge has fallen with the debt reduction. Smaller items: unrecognized tax benefits rose with accrued interest and penalties beside them, the defined-benefit plan is modestly underfunded, and the warranty accrual rose to {terms.balances_now.warranty_accrual} from {terms.balances_a_year_earlier.warranty_accrual}.",
+      "fields": [
+        "ratios.solvency.total_debt",
+        "ratios.solvency.net_debt",
+        "ratios.solvency.ebitda",
+        "ratios.solvency.debt_over_ebitda",
+        "ratios.solvency.interest_coverage",
+        "ratios.solvency.liabilities_over_assets",
+        "ratios.solvency.operating_lease_liability",
+        "terms.debt_a_year_earlier",
+        "terms.debt_now",
+        "terms.trailing_four_quarters.interest_expense",
+        "terms.trailing_four_quarters.interest_paid",
+        "terms.balances_now.total_liabilities",
+        "terms.balances_a_year_earlier.total_liabilities",
+        "terms.balances_now.stockholders_equity",
+        "terms.balances_a_year_earlier.stockholders_equity",
+        "terms.balances_now.unconditional_purchase_obligations",
+        "terms.balances_now.warranty_accrual",
+        "terms.balances_a_year_earlier.warranty_accrual"
+      ],
+      "evidence": [
+        "liquidity_and_capital_senior_notes_redeemed_with_bridge_loan",
+        "liquidity_and_capital_bridge_loan_and_term_loan_retired_through_sandisk_share_exchange",
+        "liquidity_and_capital_long_term_debt_noncurrent",
+        "liquidity_and_capital_long_term_debt_current",
+        "liquidity_and_capital_convertible_notes_fair_value",
+        "liquidity_and_capital_convertible_notes_tendered_with_cash_settlement_election",
+        "liquidity_and_capital_interest_expense_lower_with_debt_reduction",
+        "liquidity_and_capital_stockholders_equity",
+        "liquidity_and_capital_investment_grade_ratings_release_revolver_guarantees_and_collateral",
+        "estimates_and_discretion_unrecognized_tax_benefits",
+        "estimates_and_discretion_pension_funded_status",
+        "estimates_and_discretion_warranty_provisions"
+      ]
+    },
+    "growth": {
+      "reading": "Revenue grew {ratios.growth.revenue.quarter_over_quarter|pct} quarter over quarter, {ratios.growth.revenue.year_over_year|pct} year over year and {ratios.growth.revenue.trailing_four_quarters|pct} on a trailing-four-quarter basis, to {ratios.growth.revenue.this_quarter} in the quarter; MD&A attributes the quarter to more exabytes shipped and a higher price per exabyte across all end markets, led by cloud. Operating income grew {ratios.growth.operating_income.quarter_over_quarter|pct}, {ratios.growth.operating_income.year_over_year|pct} and {ratios.growth.operating_income.trailing_four_quarters|pct} on the same three views, faster than revenue, and the year-over-year figure is understated if anything because the prior-year quarter held a litigation reversal. Net income grew {ratios.growth.net_income.quarter_over_quarter|pct}, {ratios.growth.net_income.year_over_year|pct} and {ratios.growth.net_income.trailing_four_quarters|pct}; these are not operating readings, because the current quarter carries the Sandisk mark-to-market gain and the comparative quarter carried a one-time deferred tax benefit and a loss from discontinued operations. Operating cash flow grew {ratios.growth.operating_cash_flow.quarter_over_quarter|pct}, {ratios.growth.operating_cash_flow.year_over_year|pct} and {ratios.growth.operating_cash_flow.trailing_four_quarters|pct}, with MD&A naming income-tax timing, reduced hedging and variable-compensation timing among the working-capital contributors, so part of that growth is timing. The longer history has a different shape: three-year compound revenue growth is {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and five-year {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, because the history spans the Separation of the former flash business, which the filing now carries as discontinued operations, and a down-cycle in which the two fiscal years before the last carried operating losses. Results against expectations cannot be read: the bundle holds no guidance, release figure or consensus number, as the numbers reader states.",
+      "fields": [
+        "ratios.growth.revenue.quarter_over_quarter",
+        "ratios.growth.revenue.year_over_year",
+        "ratios.growth.revenue.trailing_four_quarters",
+        "ratios.growth.revenue.this_quarter",
+        "ratios.growth.operating_income.quarter_over_quarter",
+        "ratios.growth.operating_income.year_over_year",
+        "ratios.growth.operating_income.trailing_four_quarters",
+        "ratios.growth.net_income.quarter_over_quarter",
+        "ratios.growth.net_income.year_over_year",
+        "ratios.growth.net_income.trailing_four_quarters",
+        "ratios.growth.operating_cash_flow.quarter_over_quarter",
+        "ratios.growth.operating_cash_flow.year_over_year",
+        "ratios.growth.operating_cash_flow.trailing_four_quarters",
+        "earnings_versus_cash.history.revenue_growth_three_year_compound",
+        "earnings_versus_cash.history.revenue_growth_five_year_compound"
+      ],
+      "evidence": [
+        "results_against_expectations_revenue_without_a_benchmark",
+        "results_against_expectations_revenue_growth_from_exabytes_and_pricing",
+        "results_against_expectations_cloud_improved_pricing_environment",
+        "earnings_quality_operating_income",
+        "earnings_quality_prior_year_litigation_reversal_in_comparative",
+        "earnings_quality_income_from_continuing_operations",
+        "earnings_quality_prior_year_one_time_deferred_tax_benefit",
+        "structure_and_disclosure_changes_discontinued_operations_in_prior_year",
+        "liquidity_and_capital_operating_cash_flow_year_to_date",
+        "liquidity_and_capital_income_tax_receivable_timing_in_operating_cash",
+        "liquidity_and_capital_variable_compensation_payment_timing"
+      ]
+    },
+    "free_cash_flow": {
+      "reading": "Four measures. Simple free cash flow is {free_cash_flow.free_cash_flow_simple}: operating cash flow {terms.trailing_four_quarters.operating_cash_flow} less capital expenditure {terms.trailing_four_quarters.capital_expenditure}, against operating cash flow of {terms.trailing_four_quarters_a_year_earlier.operating_cash_flow} and capital expenditure of {terms.trailing_four_quarters_a_year_earlier.capital_expenditure} in the trailing four quarters a year earlier, and against negative free cash flow in the two fiscal years before the last in the history. Free cash flow to the firm is missing: the calculator says the change in trade working capital needs an accounts payable balance at the year-earlier date and none is on record for that date. Free cash flow to equity is {free_cash_flow.free_cash_flow_to_equity}, after net borrowing of {free_cash_flow.free_cash_flow_to_equity.net_borrowing}, which is the cash repayment of debt in the year; that is the figure to set against repurchases of {terms.trailing_four_quarters.share_repurchases} and dividends of {terms.trailing_four_quarters.dividends_paid}, and it is smaller than the repurchases. Quality-adjusted free cash flow is {free_cash_flow.free_cash_flow_quality_adjusted}, after deducting share-based compensation of {terms.trailing_four_quarters.share_based_compensation}; there were no acquisitions and no other adjustments were applied or refused. Two cautions on the operating cash flow underneath. The cash-flow statement shows the bridge loan as a cash inflow while the notes describe its retirement as non-cash, which the notes reader leaves to the numbers reader, so the net borrowing figure mixes a cash borrowing with a non-cash retirement. And MD&A names income-tax receivable timing, reduced hedging and variable-compensation timing as large contributors to the nine-month improvement, which do not recur by themselves. Capital expenditure is low against the company's own history, and MD&A states an expected capital expenditure range as a small share of net revenue.",
+      "fields": [
+        "free_cash_flow.free_cash_flow_simple",
+        "free_cash_flow.free_cash_flow_to_firm",
+        "free_cash_flow.free_cash_flow_to_equity",
+        "free_cash_flow.free_cash_flow_to_equity.net_borrowing",
+        "free_cash_flow.free_cash_flow_quality_adjusted",
+        "terms.trailing_four_quarters.operating_cash_flow",
+        "terms.trailing_four_quarters.capital_expenditure",
+        "terms.trailing_four_quarters_a_year_earlier.operating_cash_flow",
+        "terms.trailing_four_quarters_a_year_earlier.capital_expenditure",
+        "terms.trailing_four_quarters.share_based_compensation",
+        "terms.trailing_four_quarters.share_repurchases",
+        "terms.trailing_four_quarters.dividends_paid"
+      ],
+      "evidence": [
+        "liquidity_and_capital_operating_cash_flow_year_to_date",
+        "liquidity_and_capital_construction_in_progress",
+        "liquidity_and_capital_capital_expenditure_range_of_net_revenue",
+        "liquidity_and_capital_share_repurchases",
+        "earnings_quality_share_based_compensation",
+        "across_documents_bridge_loan_cash_inflow_and_non_cash_retirement",
+        "liquidity_and_capital_income_tax_receivable_timing_in_operating_cash",
+        "earnings_quality_reduced_derivative_hedging_since_separation",
+        "liquidity_and_capital_variable_compensation_payment_timing"
+      ]
+    }
+  },
+  "dupont": {
+    "reading": "Return on equity {ratios.profitability.dupont.product|pct} is net margin {ratios.profitability.dupont.net_margin|pct} times asset turnover {ratios.profitability.dupont.asset_turnover} times equity multiplier {ratios.profitability.dupont.equity_multiplier}. Net margin carries it: turnover is below one and the multiplier is modest, so nearly all of the return comes from the margin, and that margin stands above the operating margin {ratios.profitability.operating_margin|pct} only because of the non-operating Sandisk gain. The calculator computes the decomposition for the current trailing window alone, so the movement of each factor is not computed; what the inputs show is that average equity is built from {terms.balances_a_year_earlier.stockholders_equity} rising to {terms.balances_now.stockholders_equity} while debt fell from {terms.debt_a_year_earlier} to {terms.debt_now}, which pulls the multiplier down over time, and that net income rose far faster than revenue, which pushes the margin up. The gain is a mark-to-market on a stake slated for exchange, so return on equity on this basis rests on an item outside operations; the operating return that stands on its own is closer to return on invested capital {ratios.profitability.return_on_invested_capital|pct}.",
+    "fields": [
+      "ratios.profitability.dupont.product",
+      "ratios.profitability.dupont.net_margin",
+      "ratios.profitability.dupont.asset_turnover",
+      "ratios.profitability.dupont.equity_multiplier",
+      "ratios.profitability.operating_margin",
+      "ratios.profitability.return_on_invested_capital",
+      "terms.balances_a_year_earlier.stockholders_equity",
+      "terms.balances_now.stockholders_equity",
+      "terms.debt_a_year_earlier",
+      "terms.debt_now"
+    ]
+  },
+  "anomalies": [
+    {
+      "id": "profitability_net_margin_above_operating_margin_on_non_operating_gain",
+      "name": "Net margin above operating margin on a non-operating gain",
+      "name_ko": "영업외 평가이익으로 순이익률이 영업이익률을 상회",
+      "area": "profitability",
+      "what": "Trailing net margin {ratios.profitability.net_margin|pct} exceeds operating margin {ratios.profitability.operating_margin|pct} because net income {terms.trailing_four_quarters.net_income} carries the mark-to-market gain on the retained Sandisk stake, which MD&A calls non-operating and the tax note calls tax-free; the numbers reader records the quarter's gain as larger than the quarter's operating income. Return on equity {ratios.profitability.return_on_equity|pct} and return on assets {ratios.profitability.return_on_assets|pct} are lifted by the same item, and the calculator's effective tax rate {tax_rate|pct} is low for the same reason. The remaining Sandisk shares are slated for exchange by the end of 2026, so the gain is tied to a stake that is leaving the balance sheet.",
+      "evidence": [
+        "earnings_quality_unrealized_gain_on_equity_securities",
+        "earnings_quality_sandisk_mark_to_market_gain_in_pretax_income",
+        "earnings_quality_income_from_continuing_operations",
+        "earnings_quality_tax_rate_lowered_by_tax_free_sandisk_gain",
+        "liquidity_and_capital_remaining_sandisk_shares_to_be_exchanged_for_common_stock"
+      ],
+      "fields": [
+        "ratios.profitability.net_margin",
+        "ratios.profitability.operating_margin",
+        "ratios.profitability.return_on_equity",
+        "ratios.profitability.return_on_assets",
+        "terms.trailing_four_quarters.net_income",
+        "terms.trailing_four_quarters.operating_income",
+        "terms.trailing_four_quarters.pretax_income",
+        "tax_rate"
+      ]
+    },
+    {
+      "id": "profitability_operating_cash_flow_far_below_net_income",
+      "name": "Operating cash flow far below net income",
+      "name_ko": "영업현금흐름이 순이익에 크게 못 미침",
+      "area": "profitability",
+      "what": "Operating cash flow over net income is {earnings_versus_cash.operating_cash_flow_over_net_income} on the trailing four quarters and accruals over average assets {earnings_versus_cash.accruals_over_average_assets|pct}; the smoothness measure {earnings_versus_cash.smoothness} says net income moves more than cash from quarter to quarter, and the annual accruals ratio for the last fiscal year was the highest of five filled years. The gap is the non-cash Sandisk gain, so reported profit overstates cash generation rather than the reverse; operating cash flow {terms.trailing_four_quarters.operating_cash_flow} is the figure that describes the business.",
+      "evidence": [
+        "earnings_quality_accruals_over_total_assets_annual",
+        "liquidity_and_capital_operating_cash_flow_year_to_date",
+        "earnings_quality_unrealized_gain_on_equity_securities",
+        "earnings_quality_accruals_over_total_assets_quarterly"
+      ],
+      "fields": [
+        "earnings_versus_cash.operating_cash_flow_over_net_income",
+        "earnings_versus_cash.accruals_over_average_assets",
+        "earnings_versus_cash.smoothness",
+        "terms.trailing_four_quarters.operating_cash_flow",
+        "terms.trailing_four_quarters.net_income",
+        "trend_table.years-back-0.ratios.accruals_over_total_assets"
+      ]
+    },
+    {
+      "id": "profitability_loss_on_debt_for_equity_exchange",
+      "name": "Large loss on the debt-for-equity exchange",
+      "name_ko": "부채-주식 교환에서 발생한 대규모 손실",
+      "area": "profitability",
+      "what": "The quarter carries a loss on extinguishment of debt, most of it on the term loan retired through the exchange of Sandisk shares; the notes say the amount mainly reflects a discount on the Sandisk shares given to the counterparties because the Sandisk stock price was volatile during the exchange. The note and MD&A print different figures for the cost, and the numbers reader says the input does not show what was given to settle the loan. The company still holds Sandisk shares it expects to exchange for its own common stock by the end of 2026, and the prose does not say whether that exchange will also carry a discount. Trailing pretax income {terms.trailing_four_quarters.pretax_income} is after this charge, while operating income {terms.trailing_four_quarters.operating_income} is before it.",
+      "evidence": [
+        "earnings_quality_debt_extinguishment_loss",
+        "earnings_quality_term_loan_extinguishment_component",
+        "earnings_quality_debt_for_equity_exchange_discount_charge",
+        "across_documents_debt_exchange_cost_amount_note_and_discussion",
+        "liquidity_and_capital_remaining_sandisk_shares_to_be_exchanged_for_common_stock"
+      ],
+      "fields": [
+        "terms.trailing_four_quarters.pretax_income",
+        "terms.trailing_four_quarters.operating_income"
+      ]
+    },
+    {
+      "id": "liquidity_and_capital_all_debt_classified_current_on_convertible_conversion_trigger",
+      "name": "All remaining debt classified current on the convertible conversion trigger",
+      "name_ko": "전환 조건 충족으로 잔여 부채 전액이 유동부채로 분류",
+      "area": "liquidity_and_capital",
+      "what": "Total debt {ratios.solvency.total_debt} is entirely current, {terms.debt_now.parts.debt_current} current against {terms.debt_now.parts.debt_noncurrent} noncurrent, because the convertible notes due 2028 sit in current liabilities: the notes say the sale-price conversion condition was met again, so holders may convert through the end of June 2026, and the standing terms require cash for the principal on any conversion. Holders tendered part of the notes in the quarter and the company irrevocably elected to settle the conversion value above principal in cash, with settlement in June 2026, which also required the conversion feature to be bifurcated as a derivative. Cash {terms.balances_now.cash} covers the principal, but the quick ratio is {ratios.liquidity.quick_ratio} and current liabilities are {terms.balances_now.current_liabilities}.",
+      "evidence": [
+        "liquidity_and_capital_long_term_debt_current",
+        "liquidity_and_capital_long_term_debt_noncurrent",
+        "liquidity_and_capital_convertible_notes_tendered_with_cash_settlement_election",
+        "estimates_and_discretion_conversion_feature_bifurcated_as_derivative"
+      ],
+      "fields": [
+        "ratios.solvency.total_debt",
+        "terms.debt_now.parts.debt_current",
+        "terms.debt_now.parts.debt_noncurrent",
+        "terms.balances_now.cash",
+        "ratios.liquidity.quick_ratio",
+        "terms.balances_now.current_liabilities"
+      ]
+    },
+    {
+      "id": "liquidity_and_capital_quick_ratio_below_one_with_cash_lower",
+      "name": "Quick ratio below one with cash lower than a year earlier",
+      "name_ko": "당좌비율이 일을 밑돌고 현금은 전년 대비 감소",
+      "area": "liquidity_and_capital",
+      "what": "Quick ratio {ratios.liquidity.quick_ratio} is below one and the current ratio {ratios.liquidity.current_ratio} is modest; cash fell to {terms.balances_now.cash} from {terms.balances_a_year_earlier.cash} a year earlier even though the company generated free cash flow of {free_cash_flow.free_cash_flow_simple}, because the cash went to debt repayment of {terms.cash_flow_families.borrowing_repaid} and share repurchases of {terms.trailing_four_quarters.share_repurchases}. The notes say a revolving credit facility remains fully available and matures in January 2027, and MD&A's standing statement that liquidity is sufficient relies on cash and that facility.",
+      "evidence": [
+        "liquidity_and_capital_cash",
+        "liquidity_and_capital_share_repurchases",
+        "liquidity_and_capital_investment_grade_ratings_release_revolver_guarantees_and_collateral",
+        "across_documents_bridge_loan_cash_inflow_and_non_cash_retirement"
+      ],
+      "fields": [
+        "ratios.liquidity.quick_ratio",
+        "ratios.liquidity.current_ratio",
+        "terms.balances_now.cash",
+        "terms.balances_a_year_earlier.cash",
+        "free_cash_flow.free_cash_flow_simple",
+        "terms.cash_flow_families.borrowing_repaid",
+        "terms.trailing_four_quarters.share_repurchases"
+      ]
+    },
+    {
+      "id": "liquidity_and_capital_share_repurchases_exceed_free_cash_flow_to_equity",
+      "name": "Share repurchases exceed free cash flow to equity",
+      "name_ko": "자사주 매입이 주주 잉여현금흐름을 초과",
+      "area": "liquidity_and_capital",
+      "what": "Share repurchases over the trailing four quarters were {terms.trailing_four_quarters.share_repurchases} and dividends {terms.trailing_four_quarters.dividends_paid}, against free cash flow to equity of {free_cash_flow.free_cash_flow_to_equity} after net borrowing of {free_cash_flow.free_cash_flow_to_equity.net_borrowing}; the repurchases alone exceed what was left for equity after debt repayment, and simple free cash flow {free_cash_flow.free_cash_flow_simple} is the ceiling before any debt movement. In the quarter the board authorized a further repurchase program with no expiration, most of it unused at quarter end, and after quarter end the dividend per share was raised. The company says repurchases are to be funded principally by operating cash flow, and it plans to exchange its remaining Sandisk shares for its own common stock, which retires shares without cash.",
+      "evidence": [
+        "liquidity_and_capital_share_repurchases",
+        "liquidity_and_capital_additional_share_repurchase_authorization",
+        "related_parties_contingencies_and_subsequent_events_dividend_increase",
+        "related_parties_contingencies_and_subsequent_events_dividend_declared_after_quarter_end",
+        "liquidity_and_capital_remaining_sandisk_shares_to_be_exchanged_for_common_stock"
+      ],
+      "fields": [
+        "terms.trailing_four_quarters.share_repurchases",
+        "terms.trailing_four_quarters.dividends_paid",
+        "free_cash_flow.free_cash_flow_to_equity",
+        "free_cash_flow.free_cash_flow_to_equity.net_borrowing",
+        "free_cash_flow.free_cash_flow_simple"
+      ]
+    },
+    {
+      "id": "liquidity_and_capital_operating_cash_flow_lifted_by_tax_and_hedging_timing",
+      "name": "Operating cash flow lifted by tax, hedging and compensation timing",
+      "name_ko": "세금·헤지·보상 지급 시점 효과로 영업현금흐름이 높아짐",
+      "area": "liquidity_and_capital",
+      "what": "Nine-month operating cash flow rose sharply year over year, and MD&A attributes large parts of the working-capital improvement to the timing of income-tax receivable realization, a significant reduction in derivative hedging activity since the Separation, and the amount and timing of variable compensation payments; it also names an offsetting cash use from income-tax payment timing, and accrued income taxes were paid down in the period. The trailing-four-quarter operating cash flow of {terms.trailing_four_quarters.operating_cash_flow}, up {ratios.growth.operating_cash_flow.trailing_four_quarters|pct}, therefore includes items that are timing rather than earnings, and the accrued variable compensation falls into a later period's cash flow.",
+      "evidence": [
+        "liquidity_and_capital_income_tax_receivable_timing_in_operating_cash",
+        "earnings_quality_reduced_derivative_hedging_since_separation",
+        "liquidity_and_capital_variable_compensation_payment_timing",
+        "liquidity_and_capital_accrued_income_taxes_paid_down",
+        "liquidity_and_capital_operating_cash_flow_year_to_date"
+      ],
+      "fields": [
+        "ratios.growth.operating_cash_flow.trailing_four_quarters",
+        "ratios.growth.operating_cash_flow.year_over_year",
+        "terms.trailing_four_quarters.operating_cash_flow"
+      ]
+    },
+    {
+      "id": "solvency_convertible_notes_fair_value_far_above_carrying_amount",
+      "name": "Convertible notes' fair value far above carrying amount",
+      "name_ko": "전환사채 공정가치가 장부금액을 크게 상회",
+      "area": "solvency",
+      "what": "The only debt left is the convertible notes due 2028, carried at {ratios.solvency.total_debt}; the numbers reader records a fair-value estimate for those notes many times the carrying amount, and a total-debt fair value that rose over the year even as carrying debt fell from {terms.debt_a_year_earlier}. Debt over EBITDA {ratios.solvency.debt_over_ebitda} and net debt {ratios.solvency.net_debt} are computed on the carrying amount and therefore understate the economic claim. The conversion feature on the tendered portion is now bifurcated as a derivative remeasured through other income each period, and diluted shares {terms.diluted_shares} already carry a large incremental count that the input does not split between share awards and the notes.",
+      "evidence": [
+        "liquidity_and_capital_convertible_notes_fair_value",
+        "liquidity_and_capital_long_term_debt_current",
+        "earnings_quality_diluted_share_count",
+        "estimates_and_discretion_conversion_feature_bifurcated_as_derivative",
+        "structure_and_disclosure_changes_convertible_conversion_price"
+      ],
+      "fields": [
+        "ratios.solvency.total_debt",
+        "ratios.solvency.debt_over_ebitda",
+        "ratios.solvency.net_debt",
+        "terms.debt_a_year_earlier",
+        "terms.diluted_shares"
+      ]
+    },
+    {
+      "id": "solvency_unrecognized_tax_benefits_rising",
+      "name": "Unrecognized tax benefits rising with interest and penalties accrued",
+      "name_ko": "불확실한 세무포지션 관련 부채와 이자·가산세 증가",
+      "area": "solvency",
+      "what": "The numbers reader records unrecognized tax benefits higher than at the last fiscal year end, with accrued interest and penalties beside them and a larger noncurrent liability for uncertain tax positions; the tax note says the provision now includes global minimum tax for several jurisdictions. These sit outside the calculator's debt measures: total debt {ratios.solvency.total_debt} does not include them, and liabilities over assets {ratios.solvency.liabilities_over_assets|pct} on total liabilities {terms.balances_now.total_liabilities} does not single them out. The notes carry a line on potential cash payments within twelve months that the notes reader marks as amounts only.",
+      "evidence": [
+        "estimates_and_discretion_unrecognized_tax_benefits",
+        "earnings_quality_tax_rate_lowered_by_tax_free_sandisk_gain",
+        "liquidity_and_capital_accrued_income_taxes_paid_down"
+      ],
+      "fields": [
+        "ratios.solvency.total_debt",
+        "ratios.solvency.liabilities_over_assets",
+        "terms.balances_now.total_liabilities"
+      ]
+    },
+    {
+      "id": "efficiency_receivables_concentrated_in_largest_customer",
+      "name": "Receivables concentrated in the largest customer",
+      "name_ko": "매출채권이 최대 고객사에 집중",
+      "area": "efficiency",
+      "what": "Receivables rose by {earnings_versus_cash.working_capital.receivables.balance_sheet_change} over the year to {terms.balances_now.receivables}, which MD&A attributes to business volume, and days sales outstanding {ratios.efficiency.days_sales_outstanding} is at the low end of the company's own history, with the latest quarter's {trend_table.quarters-back-0.ratios.days_sales_outstanding} the third lowest of eight filled quarters, so collection has not slowed. The pressure is in mix: the largest customer's share of net receivables rose markedly from the last fiscal year end while the second customer's share fell, and the top ten customers carry most of revenue. No allowance for credit losses is tagged in the record and the notes call credit-loss reserves not material, so the reserve against that concentration cannot be read.",
+      "evidence": [
+        "revenue_recognition_customer_receivable_concentration",
+        "earnings_quality_receivables_customer_concentration",
+        "revenue_recognition_customer_revenue_concentration",
+        "earnings_quality_receivables_increase_attributed_to_business_volume",
+        "estimates_and_discretion_bad_debt_reserve_ratio_quarterly"
+      ],
+      "fields": [
+        "earnings_versus_cash.working_capital.receivables.balance_sheet_change",
+        "terms.balances_now.receivables",
+        "ratios.efficiency.days_sales_outstanding",
+        "trend_table.quarters-back-0.ratios.days_sales_outstanding"
+      ]
+    },
+    {
+      "id": "narrative_signs_of_operating_pressure_warranty_provisions_rising_faster_than_revenue",
+      "name": "Warranty provisions rising faster than revenue",
+      "name_ko": "보증충당부채 설정액이 매출보다 빠르게 증가",
+      "area": "narrative_signs_of_operating_pressure",
+      "what": "The warranty accrual rose to {terms.balances_now.warranty_accrual} from {terms.balances_a_year_earlier.warranty_accrual} a year earlier; the numbers reader records warranties issued in the quarter well above the prior-year quarter, a shift of the accrual toward the noncurrent part, and smaller releases of prior estimates than a year ago. The quarterly warranty reserve ratio {trend_table.quarters-back-0.ratios.warranty_reserve_ratio|pct} sits mid-history, fourth highest of eight filled quarters, so this reads as a cost rising with newer-generation product volume rather than a reserve problem; what the input does not show is whether the higher issuance is mix or quality.",
+      "evidence": [
+        "estimates_and_discretion_warranty_provisions",
+        "estimates_and_discretion_warranty_estimate_changes",
+        "estimates_and_discretion_warranty_reserve_ratio_quarterly"
+      ],
+      "fields": [
+        "terms.balances_now.warranty_accrual",
+        "terms.balances_a_year_earlier.warranty_accrual",
+        "trend_table.quarters-back-0.ratios.warranty_reserve_ratio"
+      ]
+    },
+    {
+      "id": "narrative_signs_of_operating_pressure_business_realignment_restructuring_charges",
+      "name": "Business-realignment restructuring charges with a rising reserve",
+      "name_ko": "사업 재편 구조조정 비용과 충당부채 증가",
+      "area": "narrative_signs_of_operating_pressure",
+      "what": "Nine-month business-realignment restructuring charges are all one-time termination benefits, the reserve at quarter end is higher than at the last fiscal year end, and the notes expect further employee termination costs in the rest of 2026. The amounts are small against trailing operating income {terms.trailing_four_quarters.operating_income}; the sign is that headcount actions continue through a quarter in which revenue grew {ratios.growth.revenue.year_over_year|pct} year over year and R&D and SG&A rose on performance-linked compensation.",
+      "evidence": [
+        "narrative_signs_of_operating_pressure_restructuring_charges",
+        "estimates_and_discretion_remaining_realignment_termination_costs",
+        "results_against_expectations_research_and_development_compensation_and_roadmap",
+        "results_against_expectations_selling_general_administrative_performance_compensation"
+      ],
+      "fields": [
+        "terms.trailing_four_quarters.operating_income",
+        "ratios.growth.revenue.year_over_year"
+      ]
+    },
+    {
+      "id": "narrative_signs_of_operating_pressure_hedge_losses_to_reclassify_into_cost_of_revenue",
+      "name": "Cash flow hedge losses to be reclassified into cost of revenue",
+      "name_ko": "현금흐름위험회피 손실이 매출원가로 재분류될 예정",
+      "area": "narrative_signs_of_operating_pressure",
+      "what": "The notes say all existing net losses on cash flow hedges in accumulated other comprehensive income are expected to be reclassified to earnings within twelve months, charged substantially to cost of revenue, and MD&A says derivative hedging activity has been reduced significantly since the Separation without saying how much foreign-currency exposure is now unhedged. The trailing gross margin {ratios.profitability.gross_margin|pct} and the latest quarter's {trend_table.quarters-back-0.ratios.gross_margin|pct}, the highest of the company's filled quarters, therefore carry a known reclassification ahead and a larger open currency exposure; the amount is in a table the notes reader marks as amounts only.",
+      "evidence": [
+        "earnings_quality_cash_flow_hedge_net_losses_to_reclassify",
+        "earnings_quality_reduced_derivative_hedging_since_separation",
+        "earnings_quality_gross_margin_quarterly"
+      ],
+      "fields": [
+        "ratios.profitability.gross_margin",
+        "trend_table.quarters-back-0.ratios.gross_margin"
+      ]
+    },
+    {
+      "id": "growth_net_income_growth_carried_by_non_operating_and_one_time_items",
+      "name": "Net income growth carried by non-operating and one-time items",
+      "name_ko": "순이익 성장률이 영업외·일회성 항목에 좌우됨",
+      "area": "growth",
+      "what": "Net income grew {ratios.growth.net_income.year_over_year|pct} year over year and {ratios.growth.net_income.trailing_four_quarters|pct} on the trailing four quarters, against revenue growth of {ratios.growth.revenue.year_over_year|pct} and {ratios.growth.revenue.trailing_four_quarters|pct} and operating income growth of {ratios.growth.operating_income.year_over_year|pct} and {ratios.growth.operating_income.trailing_four_quarters|pct}. The gap is the Sandisk mark-to-market gain in the current period on one side and, on the other, a comparative quarter that held a one-time deferred tax benefit, a litigation reversal in operating expenses and a loss from discontinued operations. The operating growth is real and fast; the net income growth rate does not describe the business, and the tax note implies the tax-free-gain driver of the low effective rate falls away as the remaining stake is exchanged.",
+      "evidence": [
+        "earnings_quality_income_from_continuing_operations",
+        "earnings_quality_prior_year_one_time_deferred_tax_benefit",
+        "earnings_quality_prior_year_litigation_reversal_in_comparative",
+        "structure_and_disclosure_changes_discontinued_operations_in_prior_year",
+        "earnings_quality_tax_rate_lowered_by_tax_free_sandisk_gain",
+        "estimates_and_discretion_effective_tax_rate"
+      ],
+      "fields": [
+        "ratios.growth.net_income.year_over_year",
+        "ratios.growth.net_income.trailing_four_quarters",
+        "ratios.growth.revenue.year_over_year",
+        "ratios.growth.revenue.trailing_four_quarters",
+        "ratios.growth.operating_income.year_over_year",
+        "ratios.growth.operating_income.trailing_four_quarters"
+      ]
+    }
+  ],
+  "path_to_distress": {
+    "reading": "On today's filed numbers the company is healthy, and distress would need several of the following to happen together. First, the operating cycle would have to turn: operating margin {ratios.profitability.operating_margin|pct} and the latest quarter's gross margin {trend_table.quarters-back-0.ratios.gross_margin|pct} are the highest in the company's filled history, while its three-year average operating margin is {earnings_versus_cash.history.operating_margin_three_year_average|pct} because the two fiscal years before the last carried operating losses and negative free cash flow; a return to that part of the cycle would take interest coverage {ratios.solvency.interest_coverage} and EBITDA {ratios.solvency.ebitda} down with it, though the debt the coverage now serves is far smaller than a year ago at {ratios.solvency.total_debt}. Second, the convertible notes would have to be put to the company for cash at a bad moment: all debt is current at {terms.debt_now.parts.debt_current}, principal is payable in cash on conversion, and the company has elected cash for the conversion value above principal on the tendered portion; cash is {terms.balances_now.cash}, the quick ratio {ratios.liquidity.quick_ratio}, and the fair value of the notes in the numbers reader's record is many times the carrying amount, so a broad cash election on the excess would be far larger than the cash on hand and would have to come from the revolving facility, which matures in January 2027, or from new borrowing. Third, capital returns would have to keep running ahead of what the business leaves for equity: repurchases of {terms.trailing_four_quarters.share_repurchases} already exceed free cash flow to equity of {free_cash_flow.free_cash_flow_to_equity}, a further authorization is mostly unused and the dividend was raised; if operating cash flow of {terms.trailing_four_quarters.operating_cash_flow}, part of which MD&A attributes to tax and compensation timing, fell back while repurchases continued, the cash cushion would thin quickly. Fourth, the Sandisk stake would have to be exchanged at a further discount or marked down: the stake carried the quarter's reported earnings, the first exchange cost a large discount, and the remaining shares are slated for exchange by the end of 2026, so net income {terms.trailing_four_quarters.net_income} and return on equity {ratios.profitability.return_on_equity|pct} would fall toward the operating return even with no change in the business. Fifth, a customer problem: receivables are concentrated in one customer and the top ten carry most of revenue, with no credit-loss allowance tagged. What keeps distress remote on today's numbers is net debt of {ratios.solvency.net_debt}, liabilities over assets of {ratios.solvency.liabilities_over_assets|pct}, free cash flow of {free_cash_flow.free_cash_flow_simple} with no cash runway to compute, and the investment-grade ratings the notes say were obtained in the quarter.",
+    "fields": [
+      "ratios.profitability.operating_margin",
+      "trend_table.quarters-back-0.ratios.gross_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "ratios.solvency.interest_coverage",
+      "ratios.solvency.ebitda",
+      "ratios.solvency.total_debt",
+      "terms.debt_now.parts.debt_current",
+      "terms.balances_now.cash",
+      "ratios.liquidity.quick_ratio",
+      "terms.trailing_four_quarters.share_repurchases",
+      "free_cash_flow.free_cash_flow_to_equity",
+      "terms.trailing_four_quarters.operating_cash_flow",
+      "terms.trailing_four_quarters.net_income",
+      "ratios.profitability.return_on_equity",
+      "ratios.solvency.net_debt",
+      "ratios.solvency.liabilities_over_assets",
+      "free_cash_flow.free_cash_flow_simple",
+      "ratios.liquidity.cash_runway_months"
+    ]
+  },
+  "summary_ko": {
+    "profitability": "직전 네 분기 기준 매출총이익률 {ratios.profitability.gross_margin|pct}와 영업이익률 {ratios.profitability.operating_margin|pct}는 회사 자체 역사에서 가장 높은 수준이며, 순이익률 {ratios.profitability.net_margin|pct}이 영업이익률을 웃도는 것은 샌디스크 잔여 지분의 평가이익이라는 영업외 항목 때문입니다. 자기자본이익률 {ratios.profitability.return_on_equity|pct}도 같은 항목으로 높아져 있어, 영업 기준의 투하자본이익률 {ratios.profitability.return_on_invested_capital|pct}이 더 깨끗한 수익성 지표입니다.",
+    "efficiency": "매출채권회수기간 {ratios.efficiency.days_sales_outstanding}일과 재고보유기간 {ratios.efficiency.days_sales_of_inventory}일은 모두 회사 역사에서 양호한 쪽에 있고, 매입채무회전기간과 현금전환주기는 전년 매입채무 잔액이 기록에 없어 계산되지 않았습니다. 최대 고객사의 매출채권 비중이 높아진 점이 유일한 압박 신호입니다.",
+    "liquidity": "유동비율 {ratios.liquidity.current_ratio}, 당좌비율 {ratios.liquidity.quick_ratio}로 당좌비율이 일을 밑도는데, 이는 전환 조건이 충족된 전환사채 전액이 유동부채로 분류되었기 때문입니다. 잉여현금흐름이 양수라 현금 소진 기간은 계산되지 않았고, 현금 {terms.balances_now.cash}은 부채 상환과 자사주 매입에 쓰이면서 전년 {terms.balances_a_year_earlier.cash}보다 줄었습니다.",
+    "solvency": "총부채 {ratios.solvency.total_debt}는 전년 {terms.debt_a_year_earlier}에서 크게 줄어 순부채 {ratios.solvency.net_debt}의 순현금 상태이며, 부채/EBITDA {ratios.solvency.debt_over_ebitda}, 이자보상배율 {ratios.solvency.interest_coverage}, 부채/자산 {ratios.solvency.liabilities_over_assets|pct}로 재무구조는 기록상 가장 튼튼합니다. 다만 남은 전환사채의 공정가치가 장부금액을 크게 웃돌아 경제적 부담은 장부보다 큽니다.",
+    "growth": "매출은 전분기 대비 {ratios.growth.revenue.quarter_over_quarter|pct}, 전년 동기 대비 {ratios.growth.revenue.year_over_year|pct}, 직전 네 분기 기준 {ratios.growth.revenue.trailing_four_quarters|pct} 성장했고 영업이익은 그보다 빠르게 늘었습니다. 순이익 성장률 {ratios.growth.net_income.year_over_year|pct}은 샌디스크 평가이익과 전년의 일회성 항목 때문에 사업 자체를 설명하지 못하며, 삼 년 복리 매출성장률 {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}이 음수인 것은 플래시 사업 분리와 과거 하강 사이클 때문입니다.",
+    "free_cash_flow": "단순 잉여현금흐름은 {free_cash_flow.free_cash_flow_simple}, 품질조정 잉여현금흐름은 {free_cash_flow.free_cash_flow_quality_adjusted}이고, 기업 잉여현금흐름은 전년 매입채무 잔액이 없어 계산되지 않았습니다. 주주 잉여현금흐름은 순차입 {free_cash_flow.free_cash_flow_to_equity.net_borrowing}을 반영한 뒤 {free_cash_flow.free_cash_flow_to_equity}로, 자사주 매입 {terms.trailing_four_quarters.share_repurchases}이 이를 넘어섭니다.",
+    "dupont": "자기자본이익률 {ratios.profitability.dupont.product|pct}은 순이익률 {ratios.profitability.dupont.net_margin|pct}, 자산회전율 {ratios.profitability.dupont.asset_turnover}, 자기자본승수 {ratios.profitability.dupont.equity_multiplier}의 곱이며, 순이익률이 거의 전부를 떠받칩니다. 그 순이익률은 영업외 평가이익으로 높아진 것이고, 부채 감소와 자본 증가로 승수는 낮아지는 방향입니다.",
+    "path_to_distress": "오늘 수치로는 부실과 거리가 멀지만, 사이클이 꺾여 영업이익률이 삼 년 평균 {earnings_versus_cash.history.operating_margin_three_year_average|pct} 수준으로 되돌아가고, 유동부채로 분류된 전환사채 {terms.debt_now.parts.debt_current}가 현금 {terms.balances_now.cash}을 넘어서는 현금 결제를 요구하며, 자사주 매입이 주주 잉여현금흐름 {free_cash_flow.free_cash_flow_to_equity}을 계속 초과하는 일이 겹쳐야 합니다. 이자보상배율 {ratios.solvency.interest_coverage}과 순현금 {ratios.solvency.net_debt}이 그 완충 장치입니다."
+  },
+  "limits": "This analysis reads the company's health from its own filed numbers against its own past. It forecasts nothing, and it cannot see what is not in the filings."
+}

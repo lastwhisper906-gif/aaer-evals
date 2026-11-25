@@ -65,6 +65,36 @@ class CutoffViolationError(CutoffGuardError):
         )
 
 
+class NotYetPublicError(CutoffViolationError):
+    """The document was filed in private and made public on or after the cutoff."""
+
+    def __init__(self, path, released: dt.date, cutoff_date: dt.date):
+        CutoffGuardError.__init__(
+            self, f"look-ahead violation: {path} was made public {released}, not "
+                  f"before the cutoff {cutoff_date}; its EDGAR filing date is the day it "
+                  "was filed in private, not a day anyone could read it")
+        self.path = str(path)
+        self.doc_date = released
+        self.cutoff_date = cutoff_date
+
+
+# The forms EDGAR files in private and makes public later: the SEC staff's
+# comment letters and the company's responses. Their EDGAR filing date is the
+# day the letter was sent; the public release comes after the review closes, and
+# the filing's SGML header states it (`<SEC-HEADER>….hdr.sgml : YYYYMMDD` beside
+# `<PRIVATE-TO-PUBLIC>`): Apple's letters filed 2024-03-06 to 2024-05-16 were all
+# made public 2024-06-14, NVIDIA's of July to September 2025 on 2026-01-13. A row
+# of one of these forms is read only with its release on record (`released`),
+# and only when the release came before the cutoff day. A filing of the cutoff
+# day is allowed because its acceptance stamp can show it stood before the
+# triggering report (`fetch_fixtures.known_at`); a release is a day with no
+# time, so a letter made public on the cutoff day is not shown to have come
+# first and is refused as unshown -- the rule every selection path keeps
+# (`fetch_fixtures.public_in_window`, `assemble_bundle.documents_on_record`,
+# `extraction_checks.check_cutoff`), held here at the last gate too.
+RELEASED_LATER_FORMS = ("UPLOAD", "CORRESP")
+
+
 def parse_date(value, field: str = "date") -> dt.date:
     """An ISO date, or a refusal. Never None, never a silent default."""
     if isinstance(value, dt.datetime):
@@ -222,7 +252,33 @@ def check(path, cutoff_date, *, fixtures_root=FIXTURES) -> dict:
                        f"{row.get('ticker', '?')} {row.get('path', path)} filing_date")
     if filed > cutoff:
         raise CutoffViolationError(path, filed, cutoff)
+    released = row.get("released")
+    if released is None and row.get("form") in RELEASED_LATER_FORMS:
+        raise CutoffGuardError(
+            f"{row.get('ticker', '?')} {row.get('path', path)} is a {row.get('form')} "
+            "with no release date on record — refused, because EDGAR makes a "
+            "comment letter public weeks or months after its filing date")
+    if released is not None:
+        public = parse_date(released, f"{row.get('ticker', '?')} "
+                                      f"{row.get('path', path)} released")
+        if public >= cutoff:
+            raise NotYetPublicError(path, public, cutoff)
     return row
+
+
+def fetched_event_filings(ticker: str, *, fixtures_root=FIXTURES) -> dict | None:
+    """What a store records of the event filings it fetched, or None for a store
+    fetched without them: the manifest's `event_filings`, which
+    `src/fetch_fixtures.py` writes when it builds a store up to one filing. A
+    record about the store, not a document, so no date gate applies; read here
+    because every read of a store goes through this module."""
+    manifest_path = Path(fixtures_root) / ticker / "manifest.json"
+    if not manifest_path.is_file():
+        raise CutoffGuardError(f"{manifest_path} does not exist — no record for {ticker}")
+    record = json.loads(manifest_path.read_text(encoding="utf-8")).get("event_filings")
+    if record is not None and not isinstance(record, dict):
+        raise CutoffGuardError(f"{manifest_path}: `event_filings` is not an object")
+    return record
 
 
 # --- what was actually opened ------------------------------------------------
@@ -442,6 +498,41 @@ def load_catalogue(path, cutoff_date, *, fixtures_root=FIXTURES) -> dict:
             "no rows to cut is not the catalogue this route was asked for")
     kept = _rows_filed_by(facts, cutoff, row.get("ticker", "?"))
     _opened(path)
+    return dict(document, facts=kept)
+
+
+def cut_catalogue(document: dict, cutoff_date, *, source: str) -> dict:
+    """A companyfacts record fetched on demand, with the cutoff applied to its rows.
+
+    `load_catalogue`'s cut for a record that never sat under the fixtures root:
+    `src/company_facts.py` fetches it from EDGAR through `src/edgar_client.py`
+    and hands it here before anything reads it. The same parse of the cutoff,
+    the same refusal of a row whose `filed` is absent or unreadable, the same
+    drop of a concept left with no row. `source` is the URL it came from; there
+    is no manifest row to check it against, because the owner's decision of
+    2026-10-28 is that the record is fetched when a run needs it rather than
+    committed. `src/company_facts.py` hands back the hash of the bytes it was
+    cut from, for the run's manifest.
+
+    One difference, on purpose: each kept row loses its `frame`. EDGAR labels
+    one row per calendar period with a frame (`CY2017Q4`) across every filing
+    it holds, so which row carries the label, and whether a cut record carries
+    it at all, depends on filings made after the cutoff. Apple's quarter ending
+    2017-12-30 is framed on the row filed 2019-10-31; cut at 2019-06-30, the
+    row filed 2019-01-30 would stand unframed only because of that later one.
+    """
+    cutoff = parse_date(cutoff_date, "cutoff_date")
+    facts = document.get("facts") if isinstance(document, dict) else None
+    if not isinstance(facts, dict):
+        raise CutoffGuardError(
+            f"{source} carries no facts object — refused, because a document with "
+            "no rows to cut is not the catalogue this route was asked for")
+    kept = _rows_filed_by(facts, cutoff, source)
+    for concepts in kept.values():
+        for concept in concepts.values():
+            concept["units"] = {unit: [{key: value for key, value in row.items()
+                                        if key != "frame"} for row in rows]
+                                for unit, rows in concept["units"].items()}
     return dict(document, facts=kept)
 
 

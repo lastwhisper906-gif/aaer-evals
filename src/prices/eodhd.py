@@ -38,7 +38,7 @@ import datetime as dt
 import os
 from typing import Any
 
-from src.prices import PriceError, Unconfigured, row
+from src.prices import PriceError, Unconfigured, route, row
 
 NAME = "eodhd"
 BASE = "https://eodhd.com/api"
@@ -116,18 +116,22 @@ def delisted_from(payload: Any) -> dict[str, dict[str, str]]:
     return listing
 
 
-def _get(path: str, params: dict[str, str], token: str) -> Any:
+def _get(path: str, params: dict[str, str], token: str, environ=None) -> Any:
     import requests
 
     session = requests.Session()
-    # `requests` otherwise reads the process's `~/.netrc` and its proxy
-    # variables, which route the request.
+    # `requests` otherwise reads the process's `~/.netrc`. The proxy and the
+    # certificate bundle it would also have read are handed to the request
+    # below, out of the environment given.
     session.trust_env = False
     try:
         response = session.get(
             f"{BASE}{path}",
             params={**params, "api_token": token, "fmt": "json"},
             timeout=TIMEOUT_SECONDS,
+            # the proxy and the bundle the switch above dropped, from the
+            # environment handed in (`src/prices/__init__.py`, `route`)
+            **route(f"{BASE}{path}", environ),
         )
     except requests.RequestException as error:
         # EODHD takes the token in the query string, so the address of a failed
@@ -164,11 +168,11 @@ def history(
         params["from"] = start.isoformat()
     if end is not None:
         params["to"] = end.isoformat()
-    payload = _get(f"/eod/{symbol(ticker)}", params, token)
+    payload = _get(f"/eod/{symbol(ticker)}", params, token, environ)
     return rows_from(payload, ticker=ticker.strip().upper())
 
 
 def delisted(*, environ: dict[str, str] | None = None) -> dict[str, dict[str, str]]:
     """Every symbol EODHD records as having stopped trading on a US exchange."""
     token = credential(environ)
-    return delisted_from(_get("/exchange-symbol-list/US", {"delisted": "1"}, token))
+    return delisted_from(_get("/exchange-symbol-list/US", {"delisted": "1"}, token, environ))

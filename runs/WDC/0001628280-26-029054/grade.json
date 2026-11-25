@@ -1,0 +1,322 @@
+{
+ "run": "WDC/0001628280-26-029054",
+ "rubric": "evals/capability/rubric.md",
+ "dealbreakers": [
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": null,
+   "where": "analysis_financial.json sections.free_cash_flow.reading",
+   "why": "The reading says net borrowing 'mixes a cash borrowing with a non-cash retirement', but mdna:69 and notes:70 settle it: the bridge proceeds paid the senior notes in cash and the bridge's own retirement was non-cash and never entered free_cash_flow.free_cash_flow_to_equity.net_borrowing; no anomaly id rests on this sentence."
+  }
+ ],
+ "items": [
+  {
+   "id": "earnings_versus_cash_operating_cash_flow_covers_half_of_net_income",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "earnings_versus_cash.operating_cash_flow_over_net_income.value against earnings_versus_cash.history.years.0 and years.3 reads as stated, and the unrealized-gain items (f-130, mdna:46) explain the gap."
+  },
+  {
+   "id": "earnings_versus_cash_accruals_over_assets_at_record_high",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.accruals_over_average_assets.value and trend_table.years-back-0/years-back-1 accruals_over_total_assets rank as stated; the numbers reader ties the accrual to the Sandisk unrealized gain."
+  },
+  {
+   "id": "earnings_versus_cash_receivables_absorb_cash_with_clean_articulation",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.working_capital.receivables.articulation_gap.value is nil, the balance change matches f-234, and mdna:65 attributes the rise to volume with DSO not lengthening in trend_table."
+  },
+  {
+   "id": "earnings_versus_cash_inventory_balance_rises_while_prose_says_reduction",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "terms.trailing_four_quarters.change_in_inventory.parts this_year_to_date (f-236) against prior_year_to_date (f-237) reconciles mdna:65's 'reduction' as a smaller cash build; the analyst resolved it, so it is not an open contradiction."
+  },
+  {
+   "id": "earnings_versus_cash_payables_articulation_untestable",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "earnings_versus_cash.working_capital.accounts_payable.cash_flow_statement_change.value exists while the year-earlier payables balance is missing in the calculator; the cited accruals item is off-target but the field shows the claim."
+  },
+  {
+   "id": "revenue_recognition_largest_customer_receivable_share_exceeds_revenue_share",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "concentration.facts.35.value against concentration.facts.29.value matches f-525 and f-512, and the receivable-concentration item (notes:20) gives no reason for the gap."
+  },
+  {
+   "id": "revenue_recognition_contract_liabilities_untagged_at_balance_date",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The numbers reader's contract-liability ratio items are unfilled at every trend date; the cited field receivables_over_revenue is not the tested ratio, so this is a presentation-level gap."
+  },
+  {
+   "id": "revenue_recognition_gross_margin_at_series_high",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0/-1/-4 gross_margin rank as stated, f-94 over f-86 agrees, and results_against_expectations_gross_margin_newer_products_and_pricing carries the MD&A attribution."
+  },
+  {
+   "id": "estimates_and_reserves_effective_tax_rate_depressed_by_tax_free_gain_and_windfall_benefits",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "tax_rate.value on terms.trailing_four_quarters.pretax_income.value matches f-921 and f-923, and notes:123 names the tax-free Sandisk gain and excess windfall benefits."
+  },
+  {
+   "id": "estimates_and_reserves_warranty_accrual_rising_with_fewer_releases",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.balances_now.warranty_accrual.value exceeds terms.balances_a_year_earlier.warranty_accrual.value (f-679 vs f-680) and the nine-month preexisting change is nil at f-677 against f-678."
+  },
+  {
+   "id": "estimates_and_reserves_unrecognized_tax_benefits_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "f-933 exceeds f-928 and the noncurrent uncertain-tax liability f-690 exceeds f-691; the cited field tax_rate.value is context only."
+  },
+  {
+   "id": "estimates_and_reserves_bad_debt_and_inventory_reserves_untagged",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "estimates_and_discretion_bad_debt_reserve_ratio_quarterly and the inventory reserve item are unfilled in every period, and no allowance or reserve concept appears in input_numbers."
+  },
+  {
+   "id": "estimates_and_reserves_conversion_feature_derivative_new_fair_value_estimate",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:75 describes the bifurcated conversion feature, the immaterial gain and the settlement timing, and no derivative row for it exists in input_numbers."
+  },
+  {
+   "id": "cost_deferral_debt_for_equity_exchange_cost_may_recur",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:70 ties the discount to 'volatility of the Sandisk stock price in the period of the exchange', and the remaining-shares item plans a further exchange without stating discount terms."
+  },
+  {
+   "id": "cost_deferral_research_and_development_capitalization_untestable",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "f-98 carries R&D under ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost, which the trend table does not read, and no capitalized-software concept is tagged; the cited soft_asset_share field is off-target."
+  },
+  {
+   "id": "cost_deferral_non_gaap_gap_unavailable",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The non-GAAP gap items are unfilled and the input_8k.md exclusion in input_manifest.json records that there is no release body."
+  },
+  {
+   "id": "cost_deferral_soft_asset_share_moves_with_sandisk_stake",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "The trend_table soft_asset_share values match, but the cited numbers-reader item does not tie the swings to the stake, and the year-over-year rise also tracks lower cash in input_trends."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_convertible_fair_value_far_above_carrying_with_cash_settlement",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "Fair value f-792 sits far above the carrying amount f-791 at terms.debt_now.value, all current per f-58 and f-62, and the tender item describes the cash-settlement election."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_receivables_sales_concept_in_record_not_this_period",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "The only cited evidence is the DSO item, which bears on factoring but does not show a receivables-sale concept in earlier periods; plausible, not settled."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_share_based_compensation_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "terms.trailing_four_quarters.share_based_compensation.value feeds free_cash_flow.free_cash_flow_quality_adjusted.value, and the quarter's charge f-993 exceeds f-994."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_purchase_obligations_falling",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "terms.balances_now.unconditional_purchase_obligations.value is below terms.balances_a_year_earlier.unconditional_purchase_obligations.value, and f-910 confirms the current balance."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_stale_liquidation_preference_after_conversion",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "f-1062 keeps the liquidation preference equal to f-1061 while f-70 and f-386 show nil temporary equity, and notes:137 records the conversion."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_note_and_mdna_exchange_cost_differ",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "f-134 matches the mdna:46 figure, f-849 the notes:70 term-loan figure, and f-846 the senior-note remainder, so it reconciles as stated."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_insider_selling_plans_adopted",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The chief executive, director and chief legal officer trading-plan items quote the filing's plan disclosures; no numeric counterpart is claimed."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_receivables_printed_at_two_precisions",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "f-32 and f-523 share one paragraph_id at different decimals, and neither carries a superseded marker."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_conversion_price_changed_without_restatement_marker",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "f-854 differs from the prior filing's f-796 and the cap price f-863 from f-804; note_history:15 shows the price is adjusted 'as a result of the Separation and dividends paid', so routine."
+  },
+  {
+   "id": "industry_lens_receivable_concentration_rising_in_largest_customer",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "concentration.facts.13, .24 and .35 rise in sequence against concentration.facts.29 for revenue, and notes:20 states the shares without a reason."
+  },
+  {
+   "id": "industry_lens_top_ten_revenue_share_eases_from_prior_quarter",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "concentration.facts.27 against .16 and .6 matches f-508 and f-510, and the mdna:36 prose agrees."
+  },
+  {
+   "id": "industry_lens_inventory_days_at_series_low",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "trend_table.quarters-back-0 and years-back-0/years-back-1 days_sales_of_inventory rank as stated."
+  },
+  {
+   "id": "profitability_net_margin_above_operating_margin_on_non_operating_gain",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "ratios.profitability.net_margin exceeds ratios.profitability.operating_margin, and the quarter's unrealized gain f-130 exceeds operating income f-118, as mdna:46 explains."
+  },
+  {
+   "id": "profitability_operating_cash_flow_far_below_net_income",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "earnings_versus_cash.operating_cash_flow_over_net_income and accruals_over_average_assets match, and earnings_versus_cash.smoothness is read in the direction its formula text gives."
+  },
+  {
+   "id": "profitability_loss_on_debt_for_equity_exchange",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The total f-134 and term-loan component f-849 match, notes:70 gives the Sandisk-price reason, and the remaining-shares item leaves discount terms open."
+  },
+  {
+   "id": "liquidity_and_capital_quick_ratio_below_one_with_cash_lower",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.liquidity.quick_ratio is as named, terms.balances_now.cash sits below terms.balances_a_year_earlier.cash, terms.cash_flow_families.borrowing_repaid and repurchases account for the use, and mdna:89 gives the revolver."
+  },
+  {
+   "id": "liquidity_and_capital_share_repurchases_exceed_free_cash_flow_to_equity",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.share_repurchases exceeds free_cash_flow.free_cash_flow_to_equity after its net_borrowing; the authorization (notes:139) and dividend increase (f-1083) are as stated."
+  },
+  {
+   "id": "liquidity_and_capital_operating_cash_flow_lifted_by_tax_and_hedging_timing",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:65 names the tax-receivable, hedging and compensation timing effects, f-244 shows the accrued-tax paydown, and ratios.growth.operating_cash_flow.trailing_four_quarters frames it."
+  },
+  {
+   "id": "solvency_convertible_notes_fair_value_far_above_carrying_amount",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "f-792 against ratios.solvency.total_debt (f-791), total-debt fair value f-808 above f-810, and terms.diluted_shares including the incremental count f-1134."
+  },
+  {
+   "id": "solvency_unrecognized_tax_benefits_rising",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "f-933 exceeds f-928 with accrued interest and penalties at f-934, and the claim rightly sits outside ratios.solvency.total_debt."
+  },
+  {
+   "id": "efficiency_receivables_concentrated_in_largest_customer",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "concentration.facts.35 rose from .13 while .36 fell below .14, and ratios.efficiency.days_sales_outstanding with trend_table.quarters-back-0 DSO rank as stated."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_warranty_provisions_rising_faster_than_revenue",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "Issuance f-667 exceeds f-668, noncurrent f-685 exceeds f-686 while current f-683 is below f-684, the release f-675 is smaller than f-676, and terms.balances_now.warranty_accrual rose."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_hedge_losses_to_reclassify_into_cost_of_revenue",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:54 states the reclassification into cost of revenue, f-721 shows a hedge loss in AOCI, and mdna:65 gives the reduced hedging."
+  },
+  {
+   "id": "growth_net_income_growth_carried_by_non_operating_and_one_time_items",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.growth.net_income runs far ahead of ratios.growth.revenue and ratios.growth.operating_income; notes:99, notes:152 and f-159 explain the comparative quarter."
+  }
+ ],
+ "coverage": {
+  "answer": "no",
+  "why": "Gate drops left the earnings_versus_cash, revenue_recognition, cost_deferral, cash_flow_engineering_and_off_balance_sheet and industry_lens areas and the financial liquidity section unanswered, per each file's dropped_items."
+ },
+ "calibration": {
+  "answer": "yes",
+  "why": "The surviving verdicts match their anomalies (estimates_and_reserves: tax rate, building warranty and tax reserves; controls_audit_and_filing_signals: tagging items); the only gap is the insider-plan anomaly sitting outside that verdict's 'only signals'."
+ },
+ "valuation_reading": {
+  "answer": "no",
+  "why": "analysis_valuation.json reports no price and no implied growth, citing market.missing and implied_growth_beside_history.implied_ten_year_revenue_growth.missing, and takes its most sensitive assumptions (operating_margin_year_ten, revenue_growth_year_one) from scenario spread, not from a calculator sensitivity."
+ },
+ "score": 0.985,
+ "grader": {
+  "model_requested": "opus",
+  "model_served": "claude-opus-5-5",
+  "input_tokens": 110,
+  "output_tokens": 71946,
+  "cost_usd": 18.6778636,
+  "seconds": 743.5
+ }
+}

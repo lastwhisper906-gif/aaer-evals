@@ -1,0 +1,89 @@
+{
+ "question": "what is this company worth, and what does the price already assume?",
+ "value_range": {
+  "reading": "Python did not compute a value range. Under valuation.missing the calculator prints \"WACC is not computed: the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". Under cost_of_capital.missing it prints \"the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". So no scenario has an enterprise value, an equity value or a value per share, and there is no low, base or high figure to report. The drivers themselves stand: all six for each of the bear, base and bull cases are in assumptions.json, and none was dropped. The other inputs to the discount rate are present: a risk-free rate of {cost_of_capital.risk_free_rate|pct}, an equity risk premium of {cost_of_capital.equity_risk_premium|pct}, a pre-tax cost of debt of {cost_of_capital.pre_tax_cost_of_debt|pct} measured as interest expense over average debt, and a tax rate of {cost_of_capital.tax_rate|pct}. What is missing is the cost of equity, together with the market value of equity that sets the weights, and both need the price series that was not fetched. Neither is a component the drivers may override, so no override was given. The step from enterprise value to value per share has its parts in the file, net debt of {ratios.solvency.net_debt} and {terms.shares_outstanding} shares outstanding, so the discount rate is the one missing link. Supplying the price series would let Python compute the beta, the cost of equity and the WACC, and then run the stated drivers. The calculator also lists free cash flow to the firm as missing, because depreciation and amortization for this year to date is not tagged, but valuation.missing names only the missing WACC as the reason the DCF was not run.",
+  "fields": [
+   "valuation.missing",
+   "cost_of_capital.missing",
+   "cost_of_capital.risk_free_rate",
+   "cost_of_capital.equity_risk_premium",
+   "cost_of_capital.pre_tax_cost_of_debt",
+   "cost_of_capital.tax_rate",
+   "ratios.solvency.net_debt",
+   "terms.shares_outstanding",
+   "free_cash_flow.free_cash_flow_to_firm.missing"
+  ]
+ },
+ "price_position": {
+  "reading": "Where the price sits cannot be read. Neither market.price nor cost_of_capital.price_at_cutoff is in the calculator. Under market.missing it prints \"no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". The free-cash-flow yield cross-check, which would set trailing free cash flow against the market value at the cutoff, is missing for the same reason. With no price and no value range, nothing in this file says whether the price at 2026-07-29 sits below, inside or above the scenarios, and this analysis does not guess.",
+  "fields": [
+   "market.missing",
+   "free_cash_flow_yield.price_at_cutoff.missing",
+   "valuation.missing"
+  ]
+ },
+ "market_implied_growth": {
+  "reading": "The reverse DCF was not run. Under implied_growth_beside_history the calculator prints \"no reverse DCF: WACC is not computed: the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". So the growth the price assumes is unknown. What can be read is the company's own record and its guidance, set beside the base case. Revenue compounded at {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} a year over the last three fiscal years, after changes of {earnings_versus_cash.history.years.2.revenue_growth|pct} in fiscal 2023 and {earnings_versus_cash.history.years.1.revenue_growth|pct} in fiscal 2024. Over five years it compounded at {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, a span that starts at the fiscal 2020 trough and includes acquired revenue. The latest quarter grew {ratios.growth.revenue.year_over_year|pct} on the year, and the trailing four quarters grew {ratios.growth.revenue.trailing_four_quarters|pct}. For the third quarter the release says \"we expect approximately 26% total revenue growth versus the prior year, supported by record bookings, continued customer momentum, and contributions from the Basler acquisition\". In the segment that holds Basler it reports \"The Basler acquisition contributed +36% to growth\", so part of the guided pace is acquired, and that part fades once Basler, closed on 2025-12-11, passes its anniversary. The base case's year-one growth in assumptions.json is set below the latest quarter and the trailing four quarters, well above the three-year compound and a little above the five-year compound. It then fades in a straight line to a terminal rate held below the risk-free rate of {cost_of_capital.risk_free_rate|pct}. Whether the price asks for more growth than that path, or less, cannot be said until a price and a WACC are supplied.",
+  "fields": [
+   "implied_growth_beside_history.implied_ten_year_revenue_growth.missing",
+   "earnings_versus_cash.history.revenue_growth_three_year_compound",
+   "earnings_versus_cash.history.years.2.revenue_growth",
+   "earnings_versus_cash.history.years.1.revenue_growth",
+   "earnings_versus_cash.history.revenue_growth_five_year_compound",
+   "ratios.growth.revenue.year_over_year",
+   "ratios.growth.revenue.trailing_four_quarters",
+   "cost_of_capital.risk_free_rate"
+  ],
+  "quote": "we expect approximately 26% total revenue growth versus the prior year, supported by record bookings, continued customer momentum, and contributions from the Basler acquisition",
+  "quote_from": "input_8k.md"
+ },
+ "most_sensitive": [
+  {
+   "assumption": "operating margin path, from year one to year ten",
+   "reading": "The sensitivity grid was not computed, because the valuation it varies was not run, so it cannot show which assumptions move value most. This entry and the next only read how far apart the scenarios are against the company's own record. They are not a measure of sensitivity. The year-ten margins run from near the fiscal 2020 margin of {earnings_versus_cash.history.years.5.operating_margin|pct} in the bear case to about the fiscal 2022 peak of {earnings_versus_cash.history.years.3.operating_margin|pct} in the bull case, nearly the whole range of the years not dominated by impairment charges. The base path starts above the first-half rate, operating income of {terms.trailing_four_quarters.operating_income.parts.this_year_to_date} on revenue of {terms.trailing_four_quarters.revenue.parts.this_year_to_date}. It ends between the fiscal 2023 margin of {earnings_versus_cash.history.years.2.operating_margin|pct} and the fiscal 2021 margin of {earnings_versus_cash.history.years.4.operating_margin|pct}. Every scenario sits well above the trailing operating margin of {ratios.profitability.operating_margin|pct} and the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}, both held down by the impairments of fiscal 2024 and fiscal 2025. A reader who expects charges of that size to recur would set every margin lower.",
+   "fields": [
+    "valuation.missing",
+    "earnings_versus_cash.history.years.5.operating_margin",
+    "earnings_versus_cash.history.years.3.operating_margin",
+    "terms.trailing_four_quarters.operating_income.parts.this_year_to_date",
+    "terms.trailing_four_quarters.revenue.parts.this_year_to_date",
+    "earnings_versus_cash.history.years.2.operating_margin",
+    "earnings_versus_cash.history.years.4.operating_margin",
+    "ratios.profitability.operating_margin",
+    "earnings_versus_cash.history.operating_margin_three_year_average"
+   ]
+  },
+  {
+   "assumption": "revenue growth in year one",
+   "reading": "No grid exists to rank this driver either. Across the scenarios, year-one growth runs from a bear rate above the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} to a bull rate somewhat below the latest quarter's {ratios.growth.revenue.year_over_year|pct} and the fiscal 2022 growth of {earnings_versus_cash.history.years.3.revenue_growth|pct}. Python fades growth in a straight line from year one to the terminal rate, so the year-one choice also sets the middle years of the forecast, and this spread carries through most of the decade. The record holds both ends: changes of {earnings_versus_cash.history.years.2.revenue_growth|pct} in fiscal 2023 and {earnings_versus_cash.history.years.1.revenue_growth|pct} in fiscal 2024, and growth of {earnings_versus_cash.history.years.4.revenue_growth|pct} in fiscal 2021, an upswing that acquisitions helped. The year-ten reinvestment rates also differ across the scenarios. But the calculator holds no filed reinvestment series to set them against, because depreciation and amortization for this year to date is missing and acquisition spending covers only the trailing window.",
+   "fields": [
+    "valuation.missing",
+    "earnings_versus_cash.history.revenue_growth_three_year_compound",
+    "ratios.growth.revenue.year_over_year",
+    "earnings_versus_cash.history.years.3.revenue_growth",
+    "earnings_versus_cash.history.years.2.revenue_growth",
+    "earnings_versus_cash.history.years.1.revenue_growth",
+    "earnings_versus_cash.history.years.4.revenue_growth"
+   ]
+  }
+ ],
+ "accounting_adjustments": {
+  "reading": "No accounting adjustment was made, and the valuation that would show the effect of one was not run. The accounting analysis lists no adjustment. The calculator's quality-adjusted free cash flow applies none beyond its standard deductions: share-based compensation of {terms.trailing_four_quarters.share_based_compensation} and acquisition spending of {terms.cash_flow_families.acquisitions}. Together they take simple free cash flow of {free_cash_flow.free_cash_flow_simple} down to {free_cash_flow.free_cash_flow_quality_adjusted}. The accounting analysis finds that restructuring and impairment charges recur and already sit inside GAAP operating income and operating cash flow. The drivers therefore carry them inside the margin rather than through a separate adjustment, and the base and bear margins were set with that in mind. The analysis also flags a thinner inventory reserve in the latest quarter and a tax rate lowered by discrete items. No calculator field carries the amounts of either, and the calculator holds the tax rate at {cost_of_capital.tax_rate|pct} because the trailing effective rate is above statutory, so the discrete tax benefits would not have entered the DCF.",
+  "fields": [
+   "terms.trailing_four_quarters.share_based_compensation",
+   "terms.cash_flow_families.acquisitions",
+   "free_cash_flow.free_cash_flow_simple",
+   "free_cash_flow.free_cash_flow_quality_adjusted",
+   "cost_of_capital.tax_rate",
+   "valuation.missing"
+  ]
+ },
+ "summary_ko": {
+  "value_range": "주가 자료가 주어지지 않아 베타와 자기자본비용을 구할 수 없었고, 그래서 가중평균자본비용(WACC)과 현금흐름할인(DCF) 가치 범위가 계산되지 않았습니다. 무위험이자율 {cost_of_capital.risk_free_rate|pct}, 세전 부채비용 {cost_of_capital.pre_tax_cost_of_debt|pct} 등 나머지 요소는 모두 준비되어 있습니다.",
+  "price_position": "계산기에 기준일 주가가 없으므로, 주가가 가치 범위의 어디에 있는지는 말할 수 없습니다.",
+  "market_implied_growth": "역DCF가 계산되지 않아 주가가 가정하는 성장률은 알 수 없습니다. 회사의 삼 년 연평균 매출 성장률은 {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, 최근 분기의 전년 대비 성장률은 {ratios.growth.revenue.year_over_year|pct}이며, 회사는 다음 분기에 Basler 인수 효과를 포함한 높은 성장을 예상합니다.",
+  "most_sensitive": "민감도 표가 계산되지 않아, 가치에 가장 큰 영향을 주는 가정을 표에서 읽을 수는 없습니다. 시나리오 간 차이가 가장 큰 가정은 영업이익률 경로와 첫해 매출 성장률이며, 장기 영업이익률은 약세 시나리오의 과거 저점 {earnings_versus_cash.history.years.5.operating_margin|pct} 부근부터 강세 시나리오의 과거 고점 {earnings_versus_cash.history.years.3.operating_margin|pct} 부근까지 걸쳐 있습니다.",
+  "accounting_adjustments": "회계 조정은 없었고, 조정의 효과를 보여줄 가치평가도 계산되지 않았습니다. 반복되는 구조조정·손상 비용은 이미 영업이익과 영업현금흐름 안에 들어 있으므로, 별도 조정 없이 영업이익률 가정에 반영했습니다."
+ },
+ "limits": "This valuation is a set of stated assumptions run through a stated formula. It states no recommendation to trade, and a different reader choosing different drivers would reach a different value."
+}

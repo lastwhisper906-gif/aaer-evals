@@ -1223,3 +1223,475 @@ def test_a_prose_file_that_is_not_utf8_is_refused_and_not_replaced(tmp_path):
     (run / "input_mdna.md").write_bytes(MDNA.encode("utf-8").replace(b"Second", b"Sec\xffond"))
     with pytest.raises(AgentInputError, match="is not UTF-8"):
         agent_inputs.build(run, "valuation-analyst")
+
+
+# --- the rows of a note's table reach the accounting analyst -------------------------
+#
+# The notes reader marks a table whose change is its amounts "amounts only" and
+# makes no item of it, and the numbers reader's input holds no fact the filer
+# tagged in its own namespace, so the row that settles a difference between the
+# release and the 10-Q never reached the analyst: 6 of the analysis-grader's 10
+# contradictions left unresolved over the nine reruns of 2026-10-28. The
+# calculator now carries each table's facts (`src/note_tables.py`). Expected
+# values: each row's printed amount, read by eye in the table as the filing
+# prints it (`input_notes.md` of the committed rerun, the unit the table's
+# heading states), and the concept the committed instance tags it with, read
+# by eye in the instance.
+NOTE_TABLE_RUNS = {
+    # Apple's intangible assets, in millions. The non-current line is the
+    # release's "Intangible assets, net" of 20,342 and 11,093, an Apple
+    # extension the numbers reader's input does not carry. Instants, so no start.
+    # Each row: fact id, concept, start, end or instant, value.
+    "AAPL": ("runs/AAPL/0000320193-26-000020-rerun-2026-10-28",
+             "0000320193-26-000020:notes:38", [
+                 ("f-656", "us-gaap:IntangibleAssetsGrossExcludingGoodwill", None, "2026-06-27",
+                  38_220e6),
+                 ("f-657", "us-gaap:IntangibleAssetsGrossExcludingGoodwill", None, "2025-09-27",
+                  24_950e6),
+                 ("f-658", "us-gaap:FiniteLivedIntangibleAssetsAccumulatedAmortization", None,
+                  "2026-06-27", 12_803e6),
+                 ("f-664", "aapl:IntangibleAssetsNetExcludingGoodwillNoncurrent", None,
+                  "2026-06-27", 20_342e6),
+                 ("f-665", "aapl:IntangibleAssetsNetExcludingGoodwillNoncurrent", None,
+                  "2025-09-27", 11_093e6),
+             ]),
+    # Ciena's share-based compensation capitalized in inventory, in thousands:
+    # "—" this quarter and "(64)" in the quarter ended May 3, 2025. The quarter's
+    # first day is the instance's: contexts c-11 (2026-02-01 to 2026-05-02) and
+    # c-12 (2025-02-02 to 2025-05-03); the six months to 2026-05-02 (c-1, f-1160)
+    # also print "—", so the start is what tells the quarter's cell apart.
+    "CIEN": ("runs/CIEN/0001628280-26-040767-rerun-2026-10-28",
+             "0001628280-26-040767:notes:132", [
+                 ("f-1158", "us-gaap:EmployeeServiceShareBasedCompensationAllocationOfRecognized"
+                  "PeriodCostsCapitalizedAmount", "2026-02-01", "2026-05-02", 0.0),
+                 ("f-1159", "us-gaap:EmployeeServiceShareBasedCompensationAllocationOfRecognized"
+                  "PeriodCostsCapitalizedAmount", "2025-02-02", "2025-05-03", -64e3),
+                 ("f-1160", "us-gaap:EmployeeServiceShareBasedCompensationAllocationOfRecognized"
+                  "PeriodCostsCapitalizedAmount", "2025-11-02", "2026-05-02", 0.0),
+             ]),
+    # Littelfuse's Basler acquisition, in thousands: receivables 14,739,
+    # inventories 20,703, current liabilities (15,380), tagged f-516, f-517 and
+    # f-523 at context c-178 in the instance (stored gzipped).
+    "LFUS": ("runs/LFUS/0001628280-26-050481-rerun-2026-10-28",
+             "0001628280-26-050481:notes:37", [
+                 ("f-516", "us-gaap:BusinessCombinationRecognizedIdentifiableAssetsAcquiredAnd"
+                  "LiabilitiesAssumedCurrentAssetsReceivables", None, "2025-12-11", 14_739e3),
+                 ("f-517", "us-gaap:BusinessCombinationRecognizedIdentifiableAssetsAcquiredAnd"
+                  "LiabilitiesAssumedInventory", None, "2025-12-11", 20_703e3),
+                 ("f-523", "us-gaap:BusinessCombinationRecognizedIdentifiableAssetsAcquiredAnd"
+                  "LiabilitiesAssumedCurrentLiabilities", None, "2025-12-11", 15_380e3),
+             ]),
+}
+REPO = Path(__file__).resolve().parent.parent
+
+
+def _analyst_directory_of(tmp_path: Path, ticker: str) -> Path:
+    """A run holding the committed rerun's bundle and reports, with its calculator
+    computed now over the committed fixture store, and the accounting analyst's
+    directory built from it."""
+    from src import calculator
+
+    committed = REPO / NOTE_TABLE_RUNS[ticker][0]
+    run = tmp_path / "runs" / ticker / committed.name
+    run.mkdir(parents=True)
+    # input_numbers.json too: the calculator reads the filing's own facts from it
+    # where companyfacts lagged the filing (Littelfuse's quarter)
+    for name in ("input_manifest.json", "input_notes.md", "input_numbers.json",
+                 "report_numbers.md", "report_notes_text.md"):
+        (run / name).write_bytes((committed / name).read_bytes())
+    manifest = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
+    old = json.loads((committed / "calculator_filings_only.json").read_text(encoding="utf-8"))
+    payload = calculator.calculate(ticker=ticker, cutoff=manifest["cutoff"],
+                                   period_end=old["period_end"], form=manifest["form"],
+                                   accession=manifest["accession"],
+                                   fixtures_root=REPO / "tests" / "fixtures", bundle=run)
+    (run / "calculator_filings_only.json").write_text(
+        json.dumps(calculator.filings_only(payload), indent=1), encoding="utf-8")
+    agent_inputs.build(run, "accounting-analyst")
+    return agent_inputs.session_root(run, "accounting-analyst")
+
+
+@pytest.mark.parametrize("ticker", sorted(NOTE_TABLE_RUNS))
+def test_the_rows_of_a_note_table_reach_the_accounting_analyst(tmp_path, ticker):
+    _, paragraph, rows = NOTE_TABLE_RUNS[ticker]
+    seen = _analyst_directory_of(tmp_path, ticker)
+    held = json.loads((seen / "calculator_filings_only.json").read_text(encoding="utf-8"))
+    table = held["note_tables"]["tables"]["notes_" + paragraph.rsplit(":", 1)[1]]
+    assert table["paragraph"] == paragraph
+    accession = paragraph.split(":")[0]
+    got = {(fact["fact"].removeprefix(accession + ":"), fact["concept"], fact.get("start"),
+            fact.get("instant") or fact.get("end"), fact["value"]) for fact in table["facts"]}
+    for row in rows:
+        assert row in got, row
+    # every fact of the table is the filing's own, named by its accession
+    assert all(fact["fact"].startswith(paragraph.split(":")[0] + ":")
+               for fact in table["facts"])
+    assert held["note_tables"]["unmatched"] == []
+    if ticker == "AAPL":
+        # the weighted-average grant-date fair value of the units granted, 258.16
+        # dollars a unit (`aapl-20260627_htm.xml`, unit usdPerShare), is a price
+        # and never reaches the analyst
+        assert not any("GrantDateFairValue" in fact["concept"] or fact["value"] == 258.16
+                       for entry in held["note_tables"]["tables"].values()
+                       for fact in entry["facts"])
+        assert held["note_tables"]["left_out_as_a_price"].get("notes_48")
+        # the table prints five rows in two columns, and those ten numbers are
+        # all it holds: f-656 to f-665, read by eye in the inline document
+        assert sorted(fact["fact"] for fact in table["facts"]) == \
+            [f"{paragraph.split(':')[0]}:f-{n}" for n in range(656, 666)]
+    # and the directory is still the layer's: no price, no filing
+    assert "market" not in held and "valuation" not in held
+    assert not any(name.startswith("input_") and name.endswith((".md", ".htm"))
+                   for name in _names(seen))
+
+
+def test_a_note_table_fact_is_cited_by_its_path_and_read_as_a_number(tmp_path):
+    """The path the analyst writes resolves in its file, and the number at it is
+    the one the gate and the memo read (`analysis_check.placeholder_value`)."""
+    from src import analysis_check
+
+    seen = _analyst_directory_of(tmp_path, "AAPL")
+    held = json.loads((seen / "calculator_filings_only.json").read_text(encoding="utf-8"))
+    facts = held["note_tables"]["tables"]["notes_38"]["facts"]
+    at = next(i for i, fact in enumerate(facts)
+              if fact["concept"] == "aapl:IntangibleAssetsNetExcludingGoodwillNoncurrent"
+              and fact["instant"] == "2026-06-27")
+    path = f"note_tables.tables.notes_38.facts.{at}"
+    # written in braces in a sentence, as the analyst writes it
+    assert analysis_check.PLACEHOLDER.fullmatch("{" + path + "}")
+    assert analysis_check.placeholder_value(held, path) == 20_342e6
+
+
+def test_a_swing_a_note_table_states_is_a_change_the_analyst_cites(tmp_path):
+    """Apple's intangible table states the non-current net line at two dates,
+    20,342 and 11,093 (millions, read by eye above: f-664 and f-665), so the
+    change the analyst cites is 20,342 - 11,093 = 9,249, later minus earlier;
+    the gross line's is 38,220 - 24,950 = 13,270 (f-656 and f-657)."""
+    from src import analysis_check
+
+    seen = _analyst_directory_of(tmp_path, "AAPL")
+    held = json.loads((seen / "calculator_filings_only.json").read_text(encoding="utf-8"))
+    moved = held["note_tables"]["tables"]["notes_38"]["changes"]
+    at = next(i for i, change in enumerate(moved)
+              if change["concept"] == "aapl:IntangibleAssetsNetExcludingGoodwillNoncurrent")
+    path = f"note_tables.tables.notes_38.changes.{at}"
+    assert analysis_check.PLACEHOLDER.fullmatch("{" + path + "}")
+    assert analysis_check.placeholder_value(held, path) == 9_249e6
+    assert (moved[at]["from"], moved[at]["to"]) == ({"instant": "2025-09-27"},
+                                                    {"instant": "2026-06-27"})
+    assert moved[at]["facts"] == ["0000320193-26-000020:f-665", "0000320193-26-000020:f-664"]
+    gross = next(change for change in moved
+                 if change["concept"] == "us-gaap:IntangibleAssetsGrossExcludingGoodwill")
+    assert gross["value"] == 13_270e6
+
+
+def test_the_note_table_paragraph_tells_both_analysts_what_a_change_is():
+    """The paragraph each analyst reads says what the code writes: a change is
+    later minus earlier, cited at its path, and the analyst never subtracts."""
+    from src import note_tables
+
+    for agent in ("accounting-analyst", "financial-analyst"):
+        text = (REPO / ".claude" / "agents" / f"{agent}.md").read_text(encoding="utf-8")
+        paragraph = text[text.index("**A table of the notes, row by row.**"):]
+        paragraph = " ".join(paragraph[:paragraph.index("\n\n")].split())
+        assert "`changes`" in paragraph and "later minus earlier" in paragraph, agent
+        assert "never subtract" in paragraph, agent
+        assert "{note_tables.tables.notes_<n>.changes.<i>}" in paragraph, agent
+    assert "later minus earlier" in note_tables.WHAT_THIS_IS
+    assert "never subtract" in note_tables.WHAT_THIS_IS
+
+
+def test_the_event_filings_paragraph_tells_the_notes_reader_what_the_section_shows():
+    """The paragraph the notes reader reads says what `src/parse_8k.py` writes at
+    the end of `input_8k.md` and what the absence of it shows: the area for an
+    auditor change, a late filing and a comment letter; a heading-only line is
+    no finding; and a file without the section shows nothing about the company,
+    since a store fetched without event filings gives the same file as a quarter
+    that had none."""
+    from src import fetch_fixtures, parse_8k
+
+    text = (REPO / ".claude" / "agents" / "notes-text-reader.md").read_text(encoding="utf-8")
+    paragraph = text[text.index("**The event filings at the end of `input_8k.md`.**"):]
+    paragraph = " ".join(paragraph[:paragraph.index("\n\n")].split())
+    assert ("Area `controls_audit_and_filings` for auditor changes, late filings and "
+            "comment letters") in paragraph
+    # the area is one the quote gate accepts in an item id (rules/pilot/areas.json)
+    areas = json.loads((REPO / "rules" / "pilot" / "areas.json").read_text(encoding="utf-8"))
+    assert areas["controls_audit_and_filings"] == "Controls, audit and filings"
+    assert ("A heading that says the store holds no text of a filing, or that a letter is "
+            "a PDF with no text copy, is not a finding and carries no paragraph id"
+            ) in paragraph
+    assert 'write at most "none in this file" and never that the company filed none' \
+        in paragraph
+    assert "from a store that was fetched without them" in paragraph
+    assert "carries no event filing" not in paragraph
+    assert "you report none" not in paragraph
+    # the paragraph names the section by the words the code opens it with, and
+    # the lookback it states is the one the code fetches by
+    events = {"state": "another_filing", "cutoff": "2026-08-05",
+              "previous": {"form": "10-Q", "accession": "0000002488-26-000076",
+                           "filing_date": "2026-05-06", "items": []},
+              "letter_lookback_years": fetch_fixtures.LETTER_LOOKBACK_YEARS,
+              "carried": [], "listed": [], "not_carried": []}
+    opening = next(line for line in parse_8k.render_event_filings(events)
+                   if line.startswith("## "))
+    assert opening.startswith("## event filings made public after")
+    assert 'opens "event filings made public after"' in paragraph
+    assert fetch_fixtures.LETTER_LOOKBACK_YEARS == 2
+    assert "within the two years before the window opened" in paragraph
+
+
+def test_a_run_whose_note_tables_cannot_be_read_says_so_where_the_run_is_checked(tmp_path):
+    """No `input_notes.md` in the bundle: the reason is in the section and in the
+    file's own `missing` list, which the analyst's view keeps."""
+    from src import calculator
+
+    committed = REPO / NOTE_TABLE_RUNS["AAPL"][0]
+    run = tmp_path / "runs" / "AAPL" / committed.name
+    run.mkdir(parents=True)
+    (run / "input_numbers.json").write_bytes((committed / "input_numbers.json").read_bytes())
+    old = json.loads((committed / "calculator_filings_only.json").read_text(encoding="utf-8"))
+    payload = calculator.calculate(ticker="AAPL", cutoff=old["cutoff"],
+                                   period_end=old["period_end"], form="10-Q",
+                                   accession=old["accession"],
+                                   fixtures_root=REPO / "tests" / "fixtures", bundle=run)
+    assert "input_notes.md is not in the bundle" in payload["note_tables"]["missing"]
+    line = next(line for line in payload["missing"] if line.startswith("note_tables: "))
+    assert "input_notes.md" in line
+    assert line in calculator.filings_only(payload)["missing"]
+
+
+ANALYSTS = ("accounting-analyst", "financial-analyst", "valuation-analyst")
+NUMBER_WORDS_OPENING = "**Write no quantity in number words either:** "
+# What follows the examples, word for word. Nothing here says the gate reads a
+# number word: it does not, and a sentence that claimed it would fail this text.
+NUMBER_WORDS_REST = {
+    "accounting-analyst": (
+        " are the same numbers spelled out, and the grader counts each as a number that did not "
+        "come from the calculator. The way out is the same as for a digit: write the `{path}`, or "
+        "put inside quotation marks the `quote` of an item in the notes reader's report, as "
+        "described below."),
+    "valuation-analyst": (
+        " are the same numbers spelled out, and the grader counts each as a number that did not "
+        "come from the calculator, in a driver's `reason` as in a reading. The way out is the same "
+        "as for a digit: write the `{path}`, or quote the MD&A or the earnings release verbatim as "
+        "described below. In a reading of the second pass a driver's size is its path, "
+        "`{valuation.scenarios.base.drivers.revenue_growth_year_one|pct}`; where the calculator "
+        "does not carry a scenario's drivers, the sentence says only where the driver sits against "
+        "a history `{path}`."),
+}
+NUMBER_WORDS_REST["financial-analyst"] = NUMBER_WORDS_REST["accounting-analyst"]
+# The digit rule each definition already held, which the new sentence must follow at once.
+DIGIT_RULE = {
+    "accounting-analyst": "**Write no digit in your own words.**",
+    "financial-analyst": "**Write no digit in your own words.**",
+    "valuation-analyst": ("**Write no digit in your own words** except the driver values "
+                          "themselves, which are your assumptions and the one place a number of "
+                          "yours belongs."),
+}
+KOREAN_SENTENCE = ('A size in Korean number words is a number too ("십 퍼센트대 중후반"): write '
+                   'the `{field}` path in its place. The name of a window the calculator reads '
+                   '("최근 네 분기") is not a size.')
+# Each example, and the published grade whose dealbreaker counted it as a number
+# not from the calculator: read by eye in that run's grade.json, and held to it below.
+COUNTED_IN = {
+    "seven per cent": "AAPL/0000320193-26-000020-note-tables-2026-10-29",
+    "growth of seven per cent": "AAPL/0000320193-26-000020-note-tables-2026-10-29",
+    "a fifth of": "AAPL/0000320193-26-000020-note-tables-2026-10-29",
+    "about half": "LFUS/0001628280-26-050481-note-tables-2026-11-08",
+    "about half of after-tax operating income": "LFUS/0001628280-26-050481-note-tables-2026-11-08",
+    "mid teens": "LFUS/0001628280-26-050481-note-tables-2026-11-08",
+    "hundreds of millions": "LFUS/0001628280-26-050481-note-tables-2026-11-08",
+    "roughly doubled": "CSCO/0000858877-26-000078",
+    "twelve to fourteen years": "PANW/0001327567-26-000015-note-tables-2026-11-08",
+    "high single digits": "PANW/0001327567-26-000015-note-tables-2026-11-08",
+    "twenty in the base": "CIEN/0001628280-26-040767-note-tables-2026-11-14",
+    "fifty-three weeks": "STX/0001137789-26-000159",
+}
+
+
+def _definition(agent: str) -> str:
+    return " ".join((REPO / ".claude" / "agents" / f"{agent}.md").read_text(encoding="utf-8").split())
+
+
+def _number_words_sentence(agent: str) -> str:
+    text = _definition(agent)
+    start = text.index(NUMBER_WORDS_OPENING)
+    return text[start:text.index(" When a sentence needs a number", start)]
+
+
+def _phrases_the_grader_quoted_as_numbers(run: str | None = None) -> list[str]:
+    """Every phrase a `number_not_from_calculator` dealbreaker quotes in a
+    published grade (one run's, when a run is named): what stands between
+    quotation marks in its `why`. An apostrophe inside a word (the analyst's)
+    opens and closes nothing."""
+    quoted, rows = [], 0
+    for grade in sorted((REPO / "runs").glob("*/*/grade.json")):
+        if run is not None and grade.parent != REPO / "runs" / run:
+            continue
+        for row in json.loads(grade.read_text(encoding="utf-8")).get("dealbreakers") or []:
+            if row.get("kind") == "number_not_from_calculator":
+                rows += 1
+                why = row.get("why") or ""
+                quoted += re.findall(r"(?<!\w)'(.+?)'(?!\w)", why) + re.findall(r'"([^"]+)"', why)
+    assert rows >= (80 if run is None else 1)      # 88 on 2026-11-15, over 32 graded runs
+    return quoted
+
+
+def _examples(sentence: str) -> list[str]:
+    listed = sentence[len(NUMBER_WORDS_OPENING):sentence.index(" are the same numbers spelled out")]
+    examples = re.findall(r'"([^"]+)"', listed)
+    # the list is nothing but its examples: "a", "b" and "c"
+    assert listed == ", ".join(f'"{e}"' for e in examples[:-1]) + f' and "{examples[-1]}"'
+    return examples
+
+
+@pytest.mark.parametrize("agent", ANALYSTS)
+def test_each_analyst_is_told_a_quantity_in_words_is_a_number_with_the_graders_own_examples(agent):
+    """The three definitions forbid a quantity in number words beside the digit
+    rule. Every example is two words or more and stands inside one phrase the
+    owner's grader quoted when it counted a number not from the calculator, read
+    from the grade files here; the rest of the sentence is held word for word,
+    so it cannot come to deny the ways out or to claim the gate reads such words;
+    and it follows the digit rule directly."""
+    sentence = _number_words_sentence(agent)
+    examples = _examples(sentence)
+    assert len(examples) >= 6
+    for example in examples:
+        # a size the grader counted, by the table above, and quoted in that run's grade
+        assert example in COUNTED_IN, example
+        assert any(example in phrase
+                   for phrase in _phrases_the_grader_quoted_as_numbers(COUNTED_IN[example])), example
+    assert len(set(examples)) == len(examples)
+    assert sentence == (NUMBER_WORDS_OPENING + ", ".join(f'"{e}"' for e in examples[:-1])
+                        + f' and "{examples[-1]}"' + NUMBER_WORDS_REST[agent])
+    text = _definition(agent)
+    assert text[:text.index(NUMBER_WORDS_OPENING)].endswith(DIGIT_RULE[agent] + " ")
+    # number words are spoken of in these two sentences and nowhere else in the definition
+    assert len(re.findall(r"number words?", text, flags=re.IGNORECASE)) == 2
+
+
+def test_a_fragment_of_the_graders_explanation_is_not_one_of_its_quoted_phrases():
+    """What the example test reads: the grader's quoted phrases, not its prose."""
+    quoted = _phrases_the_grader_quoted_as_numbers()
+    for words in ("no calculator path", "own words", "several dozen"):
+        assert not any(words in phrase for phrase in quoted), words
+    assert any("mid teens" in phrase for phrase in quoted)
+
+
+@pytest.mark.parametrize("agent", ANALYSTS)
+def test_each_analysts_korean_summary_is_told_the_same(agent):
+    """The Korean sentences are what the one-page view prints. The sentence is
+    held word for word and stands in the `summary_ko` paragraph once."""
+    text = _definition(agent)
+    start = text.index("`summary_ko` is, for each")
+    assert KOREAN_SENTENCE in text[start:start + 420]
+    assert text.count("Korean number words") == 1
+
+
+def test_the_korean_sentences_two_examples_are_one_summary_the_grader_read():
+    """Generac's published `summary_ko.market_implied_growth` carries both: the
+    grader struck that sentence for "십 퍼센트대 중후반" and for nothing else, and
+    "최근 네 분기" stands in the same sentence beside the calculator path of that
+    window, quoted by no dealbreaker of any run."""
+    size, window = re.findall(r'\("([^"]+)"\)', KOREAN_SENTENCE)
+    generac = REPO / "runs" / "GNRC" / "0001437749-26-025669"
+    summary = json.loads((generac / "analysis_valuation.json").read_text(encoding="utf-8"))[
+        "summary_ko"]["market_implied_growth"]
+    assert size in summary
+    assert window + " 성장률 {ratios.growth.revenue.trailing_four_quarters.value|pct}" in summary
+    struck = [row for row in json.loads((generac / "grade.json").read_text(encoding="utf-8"))[
+        "dealbreakers"] if row.get("where") == "analysis_valuation.json summary_ko.market_implied_growth"]
+    assert len(struck) == 1 and struck[0]["kind"] == "number_not_from_calculator"
+    assert re.findall(r"(?<!\w)'(.+?)'(?!\w)", struck[0]["why"]) == [size]
+    assert not any(window in phrase for phrase in _phrases_the_grader_quoted_as_numbers())
+
+
+def test_the_path_the_valuation_analyst_is_given_for_a_drivers_size_holds_a_number():
+    """The valuation definition names one path for a driver's size in a reading
+    of the second pass. Carrier's published second-pass calculator carries that
+    driver (0.05, the base case's first-year revenue growth in its
+    assumptions.json); Apple's published valuation is missing whole, which is the
+    case the sentence's last clause covers."""
+    path = re.search(r"`\{(valuation\.scenarios\.[a-z_.]+)\|pct\}`",
+                     NUMBER_WORDS_REST["valuation-analyst"]).group(1)
+    carrier = REPO / "runs" / "CARR" / "0001783180-26-000032"
+    cell = json.loads((carrier / "calculator.json").read_text(encoding="utf-8"))
+    for key in path.split("."):
+        cell = cell[key]
+    assumed = json.loads((carrier / "assumptions.json").read_text(encoding="utf-8"))
+    assert cell == assumed["scenarios"]["base"]["revenue_growth_year_one"] == 0.05
+    apple = json.loads((REPO / "runs" / "AAPL" / "0000320193-26-000020" / "calculator.json")
+                       .read_text(encoding="utf-8"))
+    assert "missing" in apple["valuation"]
+
+
+def test_no_analyst_definition_spells_a_percentage_out_as_its_own_example():
+    """The valuation definition explained a decimal as "twelve per cent", the
+    very form the new sentence forbids; it now writes the digits, which a
+    definition may."""
+    assert "twelve per cent" not in _definition("valuation-analyst")
+    assert "(`0.12` is 12%)" in _definition("valuation-analyst")
+
+
+# --- the earnings release printed beside the report ---------------------------------------
+
+def test_release_versus_report_reaches_the_analysts_in_the_filings_only_view():
+    """`calculator_filings_only.json` is what the accounting and financial analysts
+    read. The section holds no price, so it is in that view whole. Dell's committed release
+    row `Net income | $ | 4,133` (millions, read by eye in
+    `runs/DELL/0001571996-26-000046/input_8k.md`) is read here against Dell's quarterly
+    `NetIncomeLoss` through `tests/companyfacts_source.py`, which imports nothing from
+    `src/`, and the section's cell must say the same two numbers."""
+    from src import calculator
+    from tests import companyfacts_source as source
+    expected = source.one_value("DELL", "NetIncomeLoss", "2026-05-02..2026-07-31", "2026-09-08")
+    assert expected == 4_133 * 1_000_000
+    out = calculator.calculate(ticker="DELL", cutoff="2026-09-08", period_end="2026-07-31",
+                               form="10-Q", accession="0001571996-26-000046")
+    view = calculator.filings_only(out)
+    assert "release_versus_report" not in calculator.PRICED_SECTIONS
+    assert view["release_versus_report"] == out["release_versus_report"]
+    cells = [c for c in view["release_versus_report"]["lines"]["net_income"]["comparisons"]
+             if c["span_months"] == 3]
+    assert {c["release"]["cell"] for c in cells} == {"4,133"}
+    assert {c["release"]["value"] for c in cells} == {4_133 * 1_000_000.0} == {expected}
+    assert {c["report"]["value"] for c in cells} == {expected}
+    assert {c["verdict"] for c in cells} == {"agrees"}
+    assert view["release_versus_report"]["lines"]["net_income"]["statement"]["verdict"] == "agrees"
+
+
+def test_release_versus_report_is_pointed_at_in_the_accounting_analysts_cross_document_area():
+    """One sentence in the accounting analyst's definition, in the cross-document
+    reconciliation area, and no other prompt names it: the readers' prompts are
+    unchanged because a reader never sees the calculator."""
+    prompt = (PROMPTS / "accounting-analyst.md").read_text(encoding="utf-8")
+    area = prompt.split("**Cross-document reconciliation**", 1)[1].split(
+        "**Revenue and working capital.**", 1)[0]
+    assert "does the 8-K earnings\n   release match the 10-Q?" in area
+    assert "`release_versus_report`" in area
+    assert prompt.count("`release_versus_report`") == 1
+    for name in ("numbers-reader", "notes-text-reader"):
+        assert "release_versus_report" not in (PROMPTS / f"{name}.md").read_text(encoding="utf-8")
+
+
+def test_the_accounting_analysts_reserve_rollforward_paragraph_names_the_fields_and_the_quote_rule():
+    """The paragraph that points the analyst at `rollforwards.<family>`: the fields it may cite,
+    its reading of a `foots` false beside a `complete` false, the sign source of every row of
+    `other` (a zero row included), and that the reason a reserve moved is quoted from a notes
+    reader's item, never from the filing the analyst does not see."""
+    text = (REPO / ".claude" / "agents" / "accounting-analyst.md").read_text(encoding="utf-8")
+    opening = text.index("**Reserve rollforwards.**")
+    paragraph = " ".join(text[opening:].split("\n\n", 1)[0].split())
+    for name in ("foots", "complete", "difference", "sign_source", "release",
+                 "provision_over_usage", "rows_not_placed", "coverage_years",
+                 "ending_over_gross_base", "prior_period_revision_over_current_expense"):
+        assert f"`{name}`" in paragraph, name
+    assert ("so a `foots` false beside a `complete` false is a table Python did not read in "
+            "full and no finding") in paragraph
+    assert "Every row in `other`, a zero row included, carries `sign_source`" in paragraph
+    assert "`difference` is the stated ending less the rows" in paragraph
+    assert ("put inside quotation marks the `quote` of an item in the notes reader's report"
+            in paragraph)
+    assert "quote the filing's own words" not in paragraph
+    assert "do not write any arithmetic of your own" in paragraph

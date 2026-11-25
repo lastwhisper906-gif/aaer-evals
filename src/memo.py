@@ -89,23 +89,58 @@ def field_node(fields: dict, path: str):
         return None
 
 
-def unit_of(path: str, node) -> str:
-    if isinstance(node, dict) and node.get("unit"):
-        return node["unit"]
+def _unit_by_name(path: str) -> str | None:
     last = path.rsplit(".", 1)[-1]
     if "per_share" in path or last in ("low", "high", "price_at_cutoff"):
         return "USD per share"
     if last.startswith("days") or "days_" in last:
         return "days"
+    # pay in shares is dollars, not a share of anything, unless the name
+    # divides it by something
+    rest = last.replace("share_based", "")
+    if "share_based" in last and not any(word in rest for word in RATIO_WORDS):
+        return "USD"
     if any(word in last for word in RATIO_WORDS):
         return "ratio"
     if any(word in last for word in USD_WORDS):
         return "USD"
+    return None
+
+
+def unit_of(path: str, node) -> str:
+    """The unit a bare number prints in: the node's own, else the one its name
+    says, else the one the nearest name above it says -- a quarter, an index,
+    a part or a side says which, not what (`ratios.growth.revenue` for
+    `ratios.growth.revenue.this_quarter`; `earnings_versus_cash.smoothness.net_income`
+    for its `.2`) -- passing over the ratio an input belongs to (`revenue`, not
+    `year_over_year`, for `ratios.growth.revenue.year_over_year.inputs.before`)
+    and never reading the section's own name; else a plain ratio."""
+    if isinstance(node, dict) and node.get("unit"):
+        return node["unit"]
+    named = _unit_by_name(path)
+    if named:
+        return named
+    parts = path.split(".")
+    while len(parts) > 2:
+        parts.pop()
+        if parts[-1] == "inputs":
+            # an input of a ratio is in the unit of what the ratio compares
+            del parts[-2:]
+        if len(parts) >= 2:
+            named = _unit_by_name(".".join(parts))
+            if named:
+                return named
     return "ratio"
+
+
+# A filing's own units, as `note_tables` carries a fact's (`iso4217:USD`), read as
+# the calculator's words for them.
+INSTANCE_UNITS = {"iso4217:USD": "USD", "xbrli:shares": "shares", "shares": "shares"}
 
 
 def korean_number(value: float, unit: str, *, percent: bool = False) -> str:
     """A number as a Korean reader expects it, never rounded to hide a sign."""
+    unit = INSTANCE_UNITS.get(unit, unit)
     if value is None or not math.isfinite(value):
         return "(값 없음)"
     if percent:
@@ -113,7 +148,11 @@ def korean_number(value: float, unit: str, *, percent: bool = False) -> str:
     if unit == "USD":
         if abs(value) >= 1e8:
             return f"{value / 1e8:,.1f}억 달러"
-        return f"{value / 1e4:,.0f}만 달러"
+        if abs(value) >= 1e4:
+            return f"{value / 1e4:,.0f}만 달러"
+        # under ten thousand dollars, in dollars: in 만 a change of 3,000
+        # would print as "-0만 달러", a sign with nothing after it
+        return f"{value:,.0f}달러"
     if unit == "USD per share":
         return f"주당 {value:,.2f}달러"
     if unit == "days":
@@ -122,6 +161,9 @@ def korean_number(value: float, unit: str, *, percent: bool = False) -> str:
         return f"{value:,.1f}개월"
     if unit == "shares":
         return f"{value / 1e6:,.1f}백만 주"
+    if unit.startswith("iso4217:") and "/" not in unit:
+        # another currency a note table states, named by its code, never read as dollars
+        return f"{value:,.0f} {unit.split(':', 1)[1]}"
     return f"{value:,.3f}"
 
 
@@ -179,8 +221,13 @@ def fill(text: str | None, fields: dict) -> str:
             out.append(text[last:match.start()] + value)
             last = match.end()
             continue
-        node = field_node(fields, path)
-        rendered = korean_number(value, unit_of(path, node), percent=how == "pct")
+        node, named = field_node(fields, path), path
+        if path.endswith(".value"):
+            # a cell's number, in the cell's unit, read off the cell
+            cell = field_node(fields, path[:-len(".value")])
+            if isinstance(cell, dict):
+                node, named = cell, path[:-len(".value")]
+        rendered = korean_number(value, unit_of(named, node), percent=how == "pct")
         at = match.end()
         unit = UNIT_AFTER.match(text, at)
         if unit:
@@ -213,6 +260,30 @@ def _absent(frame: str, missing: dict | None) -> str:
     return ABSENT_KO[frame] + (f" 이유: {reason}" if reason else "")
 
 
+# (until the special-items table exists: a note for the code, not for the reader)
+EARNINGS_ALONE_KO = "이익 조정: 단독으로만 표시하며 가치에 합산하지 않음"
+
+
+def earnings_adjustments(fields: dict) -> list[dict]:
+    """The accounting analyst's earnings adjustments, as the memo and the page print them: the amount, the
+    direction, and the per-share effect the valuation computed for the row alone. They are shown alone and are
+    never summed into the value, and the words say so."""
+    quality = (fields.get("free_cash_flow") or {}).get("free_cash_flow_quality_adjusted") or {}
+    each = (((fields.get("valuation") or {}).get("accounting_adjustments") or {}).get("each")) or []
+    effect = {row.get("name"): row for row in each if isinstance(row, dict)}
+    rows = []
+    for item in quality.get("adjustments_to_earnings") or []:
+        row = effect.get(item.get("name")) or {}
+        per_share = (korean_number(row["alone_per_share"], "USD per share")
+                     if isinstance(row.get("alone_per_share"), (int, float))
+                     else "주당 효과 계산 안 됨")
+        rows.append({"name": item.get("name"), "path": item.get("calculator_field"),
+                     "amount": korean_number(item["amount"], "USD"),
+                     "verb": "차감" if item["direction"] == "reduce" else "가산",
+                     "note": f"이 조정만의 효과 {per_share}. {EARNINGS_ALONE_KO}"})
+    return rows
+
+
 def accounting_section(analysis: dict | None, fields: dict, *, adjusted: dict | None = None,
                        missing: dict | None = None) -> list[str]:
     out = ["## 1. 회계", "",
@@ -234,12 +305,15 @@ def accounting_section(analysis: dict | None, fields: dict, *, adjusted: dict | 
     quality = ((adjusted or fields).get("free_cash_flow") or {}).get(
         "free_cash_flow_quality_adjusted") or {}
     applied = quality.get("adjustments_applied") or []
+    alone = earnings_adjustments(adjusted or fields)
     out += ["", "**회계 조정** (금액은 분석가가 지정한 계산기 항목에서 Python이 읽음)", ""]
     for item in applied:
         verb = "차감" if item["direction"] == "reduce" else "가산"
         out.append(f"- {item.get('name')}: {korean_number(item['amount'], 'USD')} {verb} "
                    f"(`{item['calculator_field']}`)")
-    if not applied:
+    for item in alone:
+        out.append(f"- {item['name']}: {item['amount']} {item['verb']} (`{item['path']}`) — {item['note']}")
+    if not applied and not alone:
         out.append("- 없음")
     return out + ["", f"_한계: {LIMITS_KO['accounting']}_", ""]
 
@@ -285,6 +359,7 @@ def valuation_section(analysis: dict | None, fields: dict,
                 f" · 과거 3년 연평균: "
                 f"{korean_number(history.get('revenue_growth_three_year_compound'), 'ratio', percent=True)}")
         out.append("")
+        out += accounting_adjustment_lines(fields)
     out += beside_the_dcf_lines(fields)
     out += cost_of_debt_fallback_line(fields)
     if analysis is None:
@@ -296,7 +371,25 @@ def valuation_section(analysis: dict | None, fields: dict,
     return out + ["", f"_한계: {LIMITS_KO['valuation']}_", ""]
 
 
+ADJUSTED_VALUE_LINE_KO = "회계 조정에 따른 주당 가치 변화 (잉여현금흐름 조정만 합산)"
 FALLBACK_KO = "세전 타인자본비용은 대체값이며, WACC와 가치 범위는 이 대체값에 기대고 있습니다"
+
+
+def accounting_adjustment_lines(fields: dict) -> list[str]:
+    """What the accounting adjustments moved in the value, as the calculator printed it: the value the
+    cash-flow adjustments moved (`all_together`), then each earnings adjustment on its own, shown alone and
+    never added to it. Nothing when the valuation holds no accounting adjustment."""
+    block = (fields.get("valuation") or {}).get("accounting_adjustments")
+    if not isinstance(block, dict) or not block.get("each"):
+        return []
+    moved = (block.get("all_together") or {}).get("moved_per_share")
+    out = [f"- {ADJUSTED_VALUE_LINE_KO}: "
+           f"{korean_number(moved, 'USD per share')}"]
+    for row in block["each"]:
+        if row.get("applies_to") == "earnings" and isinstance(row.get("alone_per_share"), (int, float)):
+            out.append(f"  - 이익 조정 {row.get('name')}: 단독으로만 표시 ({korean_number(row['alone_per_share'], 'USD per share')}), "
+                       f"위 가치에 합산하지 않음")
+    return out + [""]
 
 
 def cost_of_debt_fallback_line(fields: dict) -> list[str]:

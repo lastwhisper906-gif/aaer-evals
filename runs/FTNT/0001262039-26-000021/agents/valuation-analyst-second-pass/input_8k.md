@@ -87,41 +87,14 @@
 [0001262039-26-000018:8k_2_02:5]
 Exceeds high end of second quarter guidance on revenue and profitability
 
+[0001262039-26-000018:8k_2_02:6]
+Raises 2026 revenue guidance to 19% year over year growth
+
 [0001262039-26-000018:8k_2_02:20]
 •Announced a strategic collaboration with Intel to develop Fortinet Security Processor 6 (SP6), combining Fortinet’s proprietary, purpose-built security processor expertise with Intel’s advanced design, development, packaging, and manufacturing capabilities to accelerate SP6 development while strengthening the resilience and diversity of Fortinet’s global supply chain.
 
 [0001262039-26-000018:8k_2_02:28]
 •Revenue in the range of $2.010 billion to $2.100 billion
-
-[0001262039-26-000018:8k_2_02:29]
-•Billings in the range of $2.250 billion to $2.350 billion
-
-[0001262039-26-000018:8k_2_02:30]
-•Non-GAAP gross margin in the range of 79.0% to 81.0%
-
-[0001262039-26-000018:8k_2_02:31]
-•Non-GAAP operating margin in the range of 35.0% to 37.0%
-
-[0001262039-26-000018:8k_2_02:32]
-•Diluted non-GAAP net income per share in the range of $0.83 to $0.87, assuming a non-GAAP effective tax rate of 18%. This assumes a diluted share count of 741 million to 745 million.
-
-[0001262039-26-000018:8k_2_02:34]
-•Revenue in the range of $8.020 billion to $8.180 billion
-
-[0001262039-26-000018:8k_2_02:35]
-•Service revenue in the range of $5.180 billion to $5.220 billion
-
-[0001262039-26-000018:8k_2_02:36]
-•Billings in the range of $9.350 billion to $9.550 billion
-
-[0001262039-26-000018:8k_2_02:37]
-•Non-GAAP gross margin in the range of 79.0% to 81.0%
-
-[0001262039-26-000018:8k_2_02:38]
-•Non-GAAP operating margin in the range of 35.0% to 37.0%
-
-[0001262039-26-000018:8k_2_02:39]
-•Diluted non-GAAP net income per share in the range of $3.41 to $3.47, assuming a non-GAAP effective tax rate of 18%. This assumes a diluted share count of 741 million to 745 million.
 
 [0001262039-26-000018:8k_2_02:88]
 Adjusted free cash flow (non-GAAP). We define adjusted free cash flow as free cash flow plus cash payments associated with real estate related purchases. Adjusted free cash flow margin is defined as adjusted free cash flow divided by GAAP revenue.

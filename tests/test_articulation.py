@@ -745,6 +745,15 @@ CASH_FLOW_AND_BALANCE = {
 # quarterly states working capital as one line, as ESCO's does
 # (`test_flexs_quarterlies_state_one_working_capital_line_too`); the other
 # fifteen triggers of the next eight, Flex's 10-K among them, each hold a row.
+# LII is of the third eight: its 10-Q of 2026-07-29 is the fourth 10-Q of that
+# day companyfacts had not loaded, after LFUS's, JCI's and FELE's
+# (NOT_YET_IN_COMPANYFACTS again), so its record holds no row of it. The other
+# fifteen triggers of the third eight each hold one, read off the record by
+# `record_holds_a_row`'s rule: a cash-flow change over the column ending on the
+# report date and the same account's balance at both ends -- for every one of
+# them inventories, `IncreaseDecreaseInInventories`
+# against `InventoryNet`, among the accounts that qualify (for Lennox's 10-K,
+# 2025-01-01..2025-12-31 against 2024-12-31 and 2025-12-31).
 NOTHING_TO_READ = ["CARR 10-Q 0001783180-26-000032",
                    "ESE 10-Q 0001104659-26-093266",
                    "FELE 10-Q 0000038725-26-000055",

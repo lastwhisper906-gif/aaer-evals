@@ -222,6 +222,73 @@ def credentials(name: str, environ) -> dict[str, Any]:
     return {"environ": dict(environ)}
 
 
+# The certificate bundles `requests` itself reads when a session trusts the
+# environment, in the order it reads them.
+BUNDLE_VARIABLES = ("REQUESTS_CA_BUNDLE", "CURL_CA_BUNDLE")
+
+
+def _proxies_of(environ) -> dict[str, str]:
+    """`urllib.request.getproxies_environment`, over the mapping handed in.
+
+    The same two passes: any spelling of `<scheme>_proxy` first, then the
+    lower-case one alone, whose empty value takes the scheme's proxy away.
+    `requests` reads the process's proxies through that function; this reads
+    the caller's mapping the same way and never the process's.
+    """
+    proxies: dict[str, str] = {}
+    for name, value in environ.items():
+        if value and name.lower().endswith("_proxy"):
+            proxies[name.lower()[:-6]] = value
+    for name, value in environ.items():
+        if name.endswith("_proxy"):
+            if value:
+                proxies[name.lower()[:-6]] = value
+            else:
+                proxies.pop(name.lower()[:-6], None)
+    return proxies
+
+
+def route(url: str, environ=None) -> dict[str, Any]:
+    """The proxy and the certificate bundle a request to `url` goes through.
+
+    Tiingo's and EODHD's sessions set `trust_env` false, because a session that
+    trusts the environment reads the process's `~/.netrc`, whose password for
+    the host replaces the token handed in. The same switch drops the proxy
+    variables and the bundle, and where every request leaves through a proxy
+    with its own certificate -- the cloud session's -- that is every request
+    failing as an SSL error. So the two are read out of `environ` (the
+    process's when none is handed in) as the standard library reads the
+    process's -- `requests` takes its proxies from the same function -- and
+    handed to the request: the `https` proxy, else the `all` one, unless
+    `no_proxy` names the host as `urllib.request.proxy_bypass_environment` reads
+    it; and `REQUESTS_CA_BUNDLE`, else `CURL_CA_BUNDLE`, the order `requests`
+    reads them in. `~/.netrc` is never read. `requests`' own bypass reads two
+    cases more widely than the standard library, a space inside a `no_proxy`
+    entry and an upper-case `NO_PROXY` beside an empty lower-case one; here
+    both go through the proxy the environment names (`docs/needs_judgment.md`).
+    A bundle the environment names that is not there is refused here, before
+    any request, as unconfigured: nothing was asked, so nothing answered.
+    """
+    import urllib.request
+    from pathlib import Path
+    from urllib.parse import urlsplit
+
+    environ = os.environ if environ is None else environ
+    proxies = _proxies_of(environ)
+    chosen = {}
+    if not urllib.request.proxy_bypass_environment(urlsplit(url).netloc, proxies):
+        proxy = proxies.get("https") or proxies.get("all")
+        if proxy:
+            chosen["https"] = proxy
+    named = next(((name, environ[name]) for name in BUNDLE_VARIABLES if environ.get(name)),
+                 None)
+    if named is not None and not Path(named[1]).exists():
+        # unconfigured, not refused: no request was made, so nothing answered.
+        # A directory of certificates is a bundle `requests` takes, so it stands.
+        raise Unconfigured(f"${named[0]} names a certificate bundle that is not there, so "
+                           "no request was made")
+    return {"proxies": chosen, "verify": named[1] if named else True}
+
 def as_csv_rows(rows: list[dict[str, Any]]) -> list[dict[str, str]]:
     """The frame in the shape `src/market.py:read_prices` already reads.
 

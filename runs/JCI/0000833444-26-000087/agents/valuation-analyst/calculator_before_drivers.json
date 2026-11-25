@@ -3995,7 +3995,7 @@
    }
   },
   "free_cash_flow_quality_adjusted": {
-   "value": 2747000000.0,
+   "value": 2251000000.0,
    "formula": "free_cash_flow_simple - share_based_compensation - acquisitions - (each reducing adjustment) + (each increasing adjustment)",
    "unit": "USD",
    "inputs": {
@@ -4034,7 +4034,17 @@
      "note": null
     }
    },
-   "adjustments_applied": [],
+   "adjustments_applied": [
+    {
+     "name": "Remove the accounts-payable build from free cash flow as an unexplained timing source",
+     "calculator_field": "earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change",
+     "direction": "reduce",
+     "amount": 496000000.0,
+     "before": 2747000000.0,
+     "after": 2251000000.0,
+     "quote": "The change in accounts payable and accrued liabilities provided 701 for three months against 258, and 764 for nine months against 31."
+    }
+   ],
    "adjustments_refused": [],
    "rule": "an adjustment's amount is the absolute value of the field it names; its direction is the analyst's"
   }

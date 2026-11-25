@@ -1,0 +1,105 @@
+{
+ "scenarios": {
+  "bear": {
+   "revenue_growth_year_one": 0.2,
+   "terminal_growth": 0.03,
+   "operating_margin_year_one": 0.0,
+   "operating_margin_year_ten": 0.14,
+   "reinvestment_rate_year_one": 0.7,
+   "reinvestment_rate_year_ten": 0.4,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "The acquired year of CyberArk revenue still lifts the first year mechanically, because the trailing four quarters carry the acquired businesses for only part of one quarter, but the organic pace underneath slips toward low double digits: deferred revenue is building more slowly than recognized revenue, the QRadar estimate cut signals fewer customer migrations than planned, point-in-time identity licenses make quarters lumpy, and hardware demand faces tariffs and component shortages while the sales force is absorbed by integration.",
+     "quote": "Fewer expected migrations means less future subscription revenue from that base, even as the credit flattered this quarter's operating line.",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "ratios.growth.revenue.trailing_four_quarters",
+      "ratios.growth.revenue.year_over_year",
+      "trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue",
+      "trend_table.quarters-back-4.ratios.contract_liabilities_over_revenue",
+      "note_tables.tables.notes_42.facts.8",
+      "note_tables.tables.notes_95.changes.0"
+     ],
+     "history": "Close to the trailing four-quarter rate of {ratios.growth.revenue.trailing_four_quarters|pct} and just above the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, but because the first year carries a full year of acquired revenue, the organic pace underneath sits below the fiscal 2025 rate of {earnings_versus_cash.history.years.0.revenue_growth|pct}, already the slowest year on record; the straight-line fade then takes growth below every filed year within the first few years."
+    },
+    "terminal_growth": {
+     "reason": "A maturing security market with consolidating buyers, and a much larger company losing share to cloud-native rivals, grows with the economy rather than ahead of it; the bear terminal rate therefore sits well below the risk-free ceiling, and the slower build in deferred revenue is read as the first sign of that maturing.",
+     "quote": "the backlog cushions a smaller share of the current run-rate than before",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue",
+      "trend_table.quarters-back-6.ratios.contract_liabilities_over_revenue"
+     ],
+     "history": "Far below every filed year of growth, the slowest being fiscal 2025 at {earnings_versus_cash.history.years.0.revenue_growth|pct}, and below the risk-free rate of {cost_of_capital.risk_free_rate|pct} that caps the terminal rate by a wider margin than the base case allows."
+    },
+    "operating_margin_year_one": {
+     "reason": "The quarter's operating loss persists through the first full year of CyberArk: amortization of acquired intangibles runs at its scheduled peak, replacement awards keep share-based compensation at the quarter's level, the severance plan continues to the end of fiscal 2027, cloud hosting and personnel costs grow with acquired headcount, and hardware gross margin keeps slipping on tariffs and component costs, so the year lands at break-even rather than recovering.",
+     "quote": "Cost of product revenue increased for the three and nine months ended April 30, 2026 compared to the same periods in 2025 primarily due to higher amortization of intangible assets as a result of our CyberArk acquisition, increased demand for our hardware products and higher tariff costs, partially offset by a decrease in inventory excess and obsolete charges.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.growth.operating_income.this_quarter",
+      "ratios.growth.operating_income.year_over_year",
+      "note_tables.tables.notes_109.facts.2",
+      "note_tables.tables.notes_175.facts.20",
+      "note_tables.tables.notes_175.facts.21",
+      "trend_table.quarters-back-0.ratios.gross_margin",
+      "trend_table.quarters-back-4.ratios.gross_margin"
+     ],
+     "history": "Below the trailing operating margin of {ratios.profitability.operating_margin|pct} and below every filed year since fiscal 2023, whose margin was {earnings_versus_cash.history.years.2.operating_margin|pct}, back toward the territory of fiscal 2022 at {earnings_versus_cash.history.years.3.operating_margin|pct}; it is the quarter's operating result of {ratios.growth.operating_income.this_quarter} carried forward for a year rather than reversed."
+    },
+    "operating_margin_year_ten": {
+     "reason": "Margins recover only to about the fiscal 2025 level: the company keeps buying businesses, so new amortization and acquisition charges replace the old ones as they run off, share-based compensation stays a heavy share of revenue, and competition in cloud and identity security caps pricing; the acquisition charges the company presents as one-off keep arriving every period.",
+     "quote": "These are integration costs rather than run-rate costs, but the plan runs to the end of fiscal 2027.",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "earnings_versus_cash.history.years.0.operating_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "terms.cash_flow_families.acquisitions",
+      "terms.cash_flow_families.acquisitions.parts.prior_fiscal_year",
+      "terms.trailing_four_quarters.share_based_compensation"
+     ],
+     "history": "At about the best filed year, fiscal 2025 at {earnings_versus_cash.history.years.0.operating_margin|pct}, and above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}; the bear case says the company's margin climb has already peaked and that serial acquisitions, with cash of {terms.cash_flow_families.acquisitions} spent over the trailing four quarters against {terms.cash_flow_families.acquisitions.parts.prior_fiscal_year} in fiscal 2025, keep reported margins where the record left them."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "The company keeps buying: after CyberArk, Koi and Portkey closed within months, the unrecorded cloud commitment book has roughly doubled, capital spending has nearly doubled with the headquarters land, and integration spending continues, so most after-tax operating income is reinvested in the first year and little is left for the firm.",
+     "quote": "Operating cash generation is real and above income, but reported income is depressed by acquisition charges and cash is flattered by non-cash compensation that is a genuine cost; after compensation and acquisition spending the company consumed cash over the trailing four quarters.",
+     "quote_from": "analysis_accounting.json",
+     "fields": [
+      "terms.cash_flow_families.acquisitions",
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters_a_year_earlier.capital_expenditure",
+      "note_tables.tables.notes_142.facts.0",
+      "terms.balances_now.unconditional_purchase_obligations",
+      "terms.balances_a_year_earlier.unconditional_purchase_obligations",
+      "free_cash_flow.free_cash_flow_quality_adjusted"
+     ],
+     "history": "Still below the acquisition-inclusive record, in which acquisition cash of {terms.cash_flow_families.acquisitions} over the trailing four quarters dwarfed after-tax operating income and quality-adjusted free cash flow was {free_cash_flow.free_cash_flow_quality_adjusted}, but far above the organic record of capital spending at {terms.trailing_four_quarters.capital_expenditure} against depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization}."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "If the return on new capital settles in the high single digits, close to today's low return on an invested-capital base built from purchased goodwill, then sustaining even the bear terminal growth takes about two-fifths of after-tax operating income every year.",
+     "quote": "Returns will stay low until the acquired businesses earn on that base, and the allocation itself is still open to revision within the measurement period.",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "ratios.profitability.return_on_invested_capital",
+      "note_tables.tables.notes_102.facts.2",
+      "note_tables.tables.notes_105.facts.38"
+     ],
+     "history": "Above the base case because the return on invested capital of {ratios.profitability.return_on_invested_capital|pct} today, on goodwill of {note_tables.tables.notes_102.facts.2} and intangibles of {note_tables.tables.notes_105.facts.38}, is taken as closer to the lasting return on acquired capital than the base case allows; the filed record holds no steady-state reinvestment rate to compare against directly."
+    }
+   }
+  }
+ },
+ "wacc_overrides": {},
+ "dropped_items": [
+  {
+   "where": "scenarios.base",
+   "reason": "revenue_growth_year_one: reason: a ruled-out word ('sell')"
+  },
+  {
+   "where": "scenarios.bull",
+   "reason": "operating_margin_year_one: reason: a ruled-out word ('sell')"
+  }
+ ],
+ "dropped_count": 2
+}

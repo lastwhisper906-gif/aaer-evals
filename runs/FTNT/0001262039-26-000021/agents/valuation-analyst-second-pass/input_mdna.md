@@ -3,6 +3,12 @@
 
 ## mdna
 
+[0001262039-26-000021:mdna:7]
+•macroeconomic, geopolitical factors and other disruptions to our manufacturing or sales, including tariffs or other trade disruptions, public health issues, wars, natural disasters and economic growth;
+
+[0001262039-26-000021:mdna:28]
+•expected outcomes and liabilities in litigation;
+
 [0001262039-26-000021:mdna:66]
 Product revenue increased 52% and 46% during the three and six months ended June 30, 2026, respectively, compared to the same periods last year, primarily driven by hardware revenue growth resulting from higher unit shipments year over year and recent pricing actions. We experienced product revenue growth across our hardware products and software licensing, which mainly benefited from growth in secure networking hardware products and term licenses, including increased demand for higher performance products, deployments related to AI infrastructure, technology upgrades, upsell activity, and expansion into new use cases. We expect our product revenue to continue to grow year over year for the remainder of 2026 compared to the same periods of 2025.
 
@@ -14,6 +20,9 @@ Total gross margin decreased 0.5 percentage points during each of the three and 
 
 [0001262039-26-000021:mdna:72]
 Operating margin increased 5.6 and 3.8 percentage points during the three and six months ended June 30, 2026, respectively, driven by revenue growth exceeding expense growth, resulting in improved operating leverage, partially offset by lower total gross margin. For the full year 2026, we expect our operating margin to increase slightly compared to 2025, benefiting from operating leverage and measured investments. Both total revenue and operating expense are expected to increase in 2026 compared to the prior year. The increase in expense is expected to primarily reflect investments in sales and marketing headcount, product development, and continued investments in data centers and real estate. We expect these and other investments to support long-term revenue growth and market expansion.
+
+[0001262039-26-000021:mdna:77]
+We typically sell our security solutions to distributors that sell to networking security focused resellers and to certain service providers and managed security service providers (“MSSPs”), who, in turn, sell to end-customers or use our products and services to provide hosted solutions to other enterprises. At times, we also sell directly to enterprise customers, service providers, systems integrators and large enterprises. We also sell our software licenses and cloud delivered services via third-party cloud service provider platforms, both directly and through our channel partners. Our end-customers are located in over 100 countries and include small, medium and large enterprises and government organizations across a wide range of industries, including financial services, government, healthcare, manufacturing, retail, technology and telecommunications. An end-customer deployment may involve as few as one or as many as thousands of secure networking, unified SASE and security operations technology products or users, depending on the end-customer’s size and security requirements.
 
 [0001262039-26-000021:mdna:100]
 Product revenue increased $264.1 million, or 52%, during the three months ended June 30, 2026 compared to the same period last year, primarily driven by hardware revenue growth resulting from higher unit shipments year over year, higher average selling prices resulting from customer demand for higher-performing models and recent pricing actions. We experienced product revenue growth across our hardware products and software licensing, mainly driven by growth in secure networking hardware products and term licenses, including increased demand for higher performance products, deployments related to AI infrastructure, technology upgrades, upsell activity, and expansion into new use cases.

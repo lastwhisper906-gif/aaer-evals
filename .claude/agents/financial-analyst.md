@@ -18,23 +18,47 @@ the valuation analyst's. If any of those is in your directory, stop and say so.
 The three analyses are never merged, and there is no composite score and no rank
 across companies.
 
+**A table of the notes, row by row.** `note_tables.tables` in
+`calculator_filings_only.json` holds, for each table of this filing's notes that
+reached the readers, the numbers the filing itself tagged in that table, read
+from its XBRL instance: each fact's concept, value, unit, period, axes and fact
+id. A table sits under its paragraph's number — `note_tables.tables.notes_<n>`
+is the table the notes reader names `<accession>:notes:<n>`, also when it writes
+"amounts only" and makes no item of it — and `paragraph` carries the whole id.
+Cite a fact as any other field, `{note_tables.tables.notes_<n>.facts.<i>}`. A row
+the table does not print is not there; you never add rows up. Where the table
+states a fact at two dates — a balance at two dates, or a flow over two spans
+of like length (within a tenth) — `changes` holds the change from each earlier date to the
+latest, later minus earlier, with the two periods and the two fact ids:
+`{note_tables.tables.notes_<n>.changes.<i>}`. A swing you need is cited there;
+you never subtract one fact from another.
+
 ## You never do arithmetic, and you write no number of your own
 
-**Write no digit in your own words.** When a sentence needs a number, write the
+**Write no digit in your own words.**
+**Write no quantity in number words either:** "seven per cent", "about half", "a
+fifth of", "roughly doubled", "mid teens", "hundreds of millions", "twelve to
+fourteen years" and "fifty-three weeks" are the same numbers spelled out, and
+the grader counts each as a number that did not come from the calculator. The
+way out is the same as for a digit: write the `{path}`, or put inside quotation
+marks the `quote` of an item in the notes reader's report, as described below.
+When a sentence needs a number, write the
 `calculator_filings_only.json` path in braces — `{ratios.liquidity.current_ratio}`,
 `{ratios.solvency.interest_coverage}`,
 `{ratios.growth.revenue.year_over_year|pct}` — and Python puts the value there.
 `|pct` shows a ratio as a percentage. A path that does not resolve to a number
-drops the item it is in, and the drop is counted. If the number you want is not
-in `calculator_filings_only.json`, say it is not there; never work it out. Digits may appear
-only inside the `quote` field, inside an id you cite, or as a form name or a
-four-digit year.
-A figure the filing prints goes in the item's `quote` field, character for
-character, and nowhere else: a digit inside quotation marks in a `finding`,
-`why`, `what`, `reading` or any other sentence of yours is still a digit in your
-own words, and Python drops the whole item. Name the figure in words ("the
-amount quoted") or by its `{path}`. When you write your file, Python reads it
-at once and tells you each item it would drop and why; rewrite those items.
+drops the sentence it is in, and the drop is counted. If the number you want is not
+in `calculator_filings_only.json`, say it is not there; never work it out.
+Digits may appear only inside quotation marks around three or more words copied
+character for character from the `quote` of an item in the notes reader's report
+(never its `what_changed`, and never the numbers reader's, whose quotes are
+Python's tables), opening and closing on a word; inside an id you cite; as a
+form name (10-K, 10-Q, 8-K, or their plurals); or as a year written after
+"fiscal" or "calendar" (fiscal 2025) or in a date (2026-06-30). A sentence that
+breaks this is left out where it stood, marked, and counted; an item whose
+sentences mostly break it is dropped whole.
+When you write your file, Python reads it at once and tells you each sentence it
+would leave out and why; rewrite those before you finish.
 
 ## What to read, in this order
 
@@ -54,6 +78,25 @@ at once and tells you each item it would drop and why; rewrite those items.
 
 Read each against the company's own history — `earnings_versus_cash.history`
 and `trend_table` carry it — and cite the fields you read.
+
+**Working capital and billings.** Efficiency and growth also read these
+fields, each a number or null with its reason beside it: when it is null, say
+it is not there.
+`receivables_extension.receivables_growth_minus_revenue_growth` and
+`receivables_extension.days_sales_outstanding_index`;
+`inventory_composition_and_growth_gap.inventory_raw_materials_share`,
+`inventory_composition_and_growth_gap.inventory_work_in_process_share` and
+`inventory_composition_and_growth_gap.inventory_finished_goods_share` (each line
+over total inventory),
+`inventory_composition_and_growth_gap.finished_goods_growth_minus_revenue_growth`
+and `inventory_composition_and_growth_gap.inventory_growth_minus_revenue_growth`;
+`contract_liabilities_and_billings.billings` and
+`contract_liabilities_and_billings.billings_growth_minus_revenue_growth`, which
+say whether billings run ahead of revenue (revenue still to come) or behind it
+(demand slowing before revenue shows it); and operating cash flow by quarter,
+from `quarterly_cash_flow_and_accruals.operating_cash_flow_quarterly.history.0`,
+the newest, to
+`quarterly_cash_flow_and_accruals.operating_cash_flow_quarterly.history.7`.
 
 **The DuPont story.** Return on equity is net margin × asset turnover × equity
 multiplier (`ratios.profitability.dupont`); Python has already multiplied them.
@@ -121,5 +164,8 @@ Write `analysis_financial.json`. Nothing else, anywhere.
 ```
 
 `summary_ko` is, for each key, one or two plain Korean sentences a finance
-student can read, with numbers only as `{field}` paths. Python assembles the
-memo from these, and from nothing you did not write.
+student can read, with numbers only as `{field}` paths.
+A size in Korean number words is a number too ("십 퍼센트대 중후반"): write the
+`{field}` path in its place. The name of a window the calculator reads ("최근 네
+분기") is not a size.
+Python assembles the memo from these, and from nothing you did not write.

@@ -1,0 +1,361 @@
+{
+ "run": "LFUS/0001628280-26-050481",
+ "rubric": "evals/capability/rubric.md",
+ "dealbreakers": [
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "earnings_versus_cash_working_capital_articulation_gaps",
+   "where": "analysis_accounting.json anomalies[1].what",
+   "why": "The balance-sheet and cash-flow changes are left unreconciled with 'No input states the acquired balances, so the size of the gaps is unexplained', but notes:37 lists Basler's acquisition-date 'Trade receivables, net', 'Inventories' and 'Current liabilities', the balances that account for the earnings_versus_cash.working_capital.*.articulation_gap differences."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "cross_document_reconciliation_release_maturity_range_differs_from_debt_note",
+   "where": "analysis_accounting.json anomalies[22].what",
+   "why": "The release's 'maturities ranging from 2027 to 2031' is left as an open contradiction, but the 10-Q debt table at notes:91 still carries 'U.S. Senior Notes, due 2032' at quarter end and notes:107 dates them 'due June 30, 2032', so the inputs settle it against the release."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "cross_document_reconciliation_passenger_car_line_rose_while_release_cites_lower_builds",
+   "where": "analysis_accounting.json anomalies[25].what",
+   "why": "The anomaly says the organic measure and currency effect are missing, but 8k_2_02:75 splits passenger car growth into FX and organic, and 8k_2_02:76 says 'Passenger vehicle business (PVB) includes passenger car and auto sensor products'. Together they settle the conflict it leaves open."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "liquidity_and_capital_current_debt_and_liabilities_rising",
+   "where": "analysis_financial.json anomalies[11].what",
+   "why": "'The release and the 10-Q give different final maturity years for the notes' is left unresolved, but notes:91 carries 'U.S. Senior Notes, due 2032' at quarter end, which settles it."
+  }
+ ],
+ "items": [
+  {
+   "id": "earnings_versus_cash_trailing_loss_turns_cash_conversion_negative",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.operating_cash_flow_over_net_income is negative only because terms.trailing_four_quarters.net_income is a loss. earnings_versus_cash.smoothness.net_income.2 is the loss quarter while smoothness.operating_cash_flow.2 stays positive, and 8k_2_02:82 adds back 'Impairment charges'."
+  },
+  {
+   "id": "earnings_versus_cash_working_capital_articulation_gaps",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "medium",
+   "why": "Struck by a dealbreaker. The gaps in earnings_versus_cash.working_capital.*.articulation_gap are real, but notes:37 contradicts the claim that no input states the acquired balances."
+  },
+  {
+   "id": "earnings_versus_cash_payables_swing_to_cash_source",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.change_in_payables.parts swing from outflow to inflow. mdna:110 credits only 'higher cash earnings', and ratios.efficiency.days_payables_outstanding has no trend row to compare against."
+  },
+  {
+   "id": "revenue_recognition_annual_receivable_days_at_five_year_high",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.years-back-0.ratios.days_sales_outstanding is 'highest of the 5 filled years' and quarters-back-0 is 'lowest of the 6 filled quarters', as written. The Basler-timing reading is offered as an explanation and the evidence does not contradict it."
+  },
+  {
+   "id": "revenue_recognition_contract_liabilities_fell_as_revenue_rose",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "terms.balances_now.contract_liabilities is below the year-end balance in revenue_recognition_deferred_revenue_balance and above terms.balances_a_year_earlier.contract_liabilities. The six-month cash-flow line reverses sign in the reader item."
+  },
+  {
+   "id": "revenue_recognition_discounts_and_allowances_charges_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "revenue_recognition_sales_discounts_and_allowances_reserve shows the Schedule II reserve and the charges to it both higher than a year earlier, and no notes-reader item discusses the estimate."
+  },
+  {
+   "id": "estimates_and_reserves_inventory_reserve_ratio_fell_as_gross_margin_peaked",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0.ratios.inventory_reserve_ratio is 'third lowest of the 6 filled quarters' while quarters-back-0 gross_margin is 'highest of the 6 filled quarters'. The reserve fell as net inventory rose (reader balance items), and mdna:25 names no reserve effect."
+  },
+  {
+   "id": "estimates_and_reserves_receivable_allowance_ratio_at_annual_low",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "years-back-0 bad_debt_reserve_ratio is 'lowest of the 5 filled years' and quarters-back-0 is 'second lowest of the 6 filled quarters'. terms.balances_now.bad_debt_allowance exceeds terms.balances_a_year_earlier.bad_debt_allowance, so the thinning is relative, as stated."
+  },
+  {
+   "id": "estimates_and_reserves_basler_value_moved_from_intangibles_to_goodwill",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:39 states the intangible, inventory and PP&E reductions and that 'goodwill was increased by $8.6 million'. The reader items confirm the restated Basler goodwill and intangibles and the goodwill-acquired tag."
+  },
+  {
+   "id": "estimates_and_reserves_tax_rate_lowered_by_discrete_benefits",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:37 names the statute lapses and 'excess tax benefits for share based compensation'. 8k_2_02:90 pairs the lapse with 'the reversal of an indemnification receivable of $2.7 million', and liquidity_and_capital_stock_option_exercises_quarter shows the exercise jump."
+  },
+  {
+   "id": "estimates_and_reserves_valuation_allowance_build_on_foreign_losses",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The 10-K valuation-allowance and Germany items show the build, and mdna:38 gives 'losses in non-U.S. jurisdictions with no related tax benefit'. tax_rate.effective_rate is reported without being attributed to the foreign losses."
+  },
+  {
+   "id": "estimates_and_reserves_amortization_fell_despite_basler_additions",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "Consolidated amortization fell (estimates_and_discretion_intangible_amortization_reported_quarter) while mdna:65 cites 'higher amortization expenses' from Basler, so legacy amortization fell. notes:187, which the anomaly does not cite, places the fall in Electronics and Transportation, so 'no input explains' overstates the gap."
+  },
+  {
+   "id": "estimates_and_reserves_level_three_site_impairment",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:150 says the assets were measured with 'significant unobservable inputs, which are classified within Level 3' and names no technique. The impairment tags sit almost wholly in Electronics, and notes:183 puts the charge in 'Other'."
+  },
+  {
+   "id": "estimates_and_reserves_accumulated_goodwill_impairment_declined",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "estimates_and_discretion_accumulated_goodwill_impairment_balance shows the decline. The notes:67 roll-forward has no impairment or disposal line, which leaves currency translation, the cause the anomaly names."
+  },
+  {
+   "id": "cost_deferral_restructuring_and_impairment_recur_every_year",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "The corporate non-segment loss widens each year and again in the quarter (reader items), and earnings_versus_cash.smoothness.net_income.6 and .2 are the loss quarters. 8k_2_02:62, 8k_2_02:69 and 8k_2_02:84 set these charges outside the segment, adjusted and covenant measures."
+  },
+  {
+   "id": "cost_deferral_soft_asset_share_near_its_high",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "trend_table.quarters-back-1.ratios.soft_asset_share is 'highest of the 6 filled quarters' and quarters-back-0 is 'third highest of the 6 filled quarters'. The Basler goodwill item supports the stated cause."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_equity_sale_proceeds_in_property_line",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:122 places the proceeds 'in Net proceeds from sale of property, plant and equipment, and other in investing activities', and mdna:112 adds the Basler held-for-sale asset. terms.trailing_four_quarters.capital_expenditure is the gross purchases line."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_option_exercises_and_dilution",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The reader items show option-exercise issuance up sharply in both quarters, diluted shares up and no repurchases. terms.trailing_four_quarters.share_based_compensation is already deducted in free_cash_flow.free_cash_flow_quality_adjusted."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_prior_year_cost_of_sales_and_inventory_corrected",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "The paired ScenarioAdjustment rows (reader items articulation_and_the_filed_history_prior_year_*) raise prior-year cost of sales and cut inventory by the same amount, and no input text explains them. input_8k.md lists the prior-year NT 10-K, and trend_table.years-back-1.ratios.gross_margin is on the adjusted basis."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_site_closure_without_matching_eight_k_item",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:64 calls the closure 'announced', and the notes reader confirms the 8-K index 'lists no Item 2.05 (exit or disposal costs) or Item 2.06 (material impairments)'. The anomaly rightly leaves materiality open."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_interest_paid_tagged_with_two_values",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "terms.trailing_four_quarters.interest_paid.missing does show two values, but the cited item and field (interest expense) do not. notes:111's rounded 'Interest paid on all Company debt' figure points to a precision duplicate rather than an inconsistency."
+  },
+  {
+   "id": "cross_document_reconciliation_polytronics_gain_tagged_but_not_described",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "earnings_quality_polytronics_realized_gain_quarter tags a realized gain equal to the net proceeds that notes:122 states, and notes:122 itself states no gain."
+  },
+  {
+   "id": "cross_document_reconciliation_release_maturity_range_differs_from_debt_note",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "medium",
+   "why": "Struck by a dealbreaker. The documents do differ, but notes:91 and notes:107 settle the final maturity, so the claim that nothing settles it is wrong."
+  },
+  {
+   "id": "cross_document_reconciliation_covenant_add_back_only_in_release",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:84 states the add-back. The 10-Q amendment paragraphs notes:93, mdna:11 and mdna:83 list other changes but not this one, and liquidity_and_capital_net_leverage_covenant_ratio shows wide headroom."
+  },
+  {
+   "id": "cross_document_reconciliation_indemnification_reversal_only_in_release",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:90 and 8k_2_02:91 pair the reversal with the tax benefit. The 10-Q tax paragraphs mdna:37, mdna:38, notes:167 and notes:168 cite the lapses without the reversal."
+  },
+  {
+   "id": "cross_document_reconciliation_passenger_car_line_rose_while_release_cites_lower_builds",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "low",
+   "why": "Struck by a dealbreaker. 8k_2_02:75 and 8k_2_02:76 show the release's passenger-vehicle statement agrees with the filed lines, so the claimed tension does not hold."
+  },
+  {
+   "id": "cross_document_reconciliation_release_trailing_net_loss_rounding",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:82 prints a trailing 'Net Loss' that does not round to terms.trailing_four_quarters.net_income. The rounding cause is offered only as 'may explain', and the anomaly claims no more than that."
+  },
+  {
+   "id": "industry_lens_china_share_of_sales_edging_up",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "concentration.facts.7.value is above concentration.facts.4.value, and results_against_expectations_china_sales rose year over year. No prose item discusses it."
+  },
+  {
+   "id": "profitability_trailing_net_loss_after_last_year_impairments",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.net_income is a loss and ratios.profitability.net_margin, return_on_assets and return_on_equity are negative. ratios.profitability.operating_margin is below earnings_versus_cash.history.operating_margin_three_year_average, and the 10-K impairment item with earnings_versus_cash.smoothness.net_income.2 locates the loss."
+  },
+  {
+   "id": "profitability_non_us_losses_without_tax_benefit",
+   "frame": "finance",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "tax_rate.effective_rate and the trailing tax and pretax paths are right. But the quoted mdna:38 sentence explains the rate for 'the three and six months ended June 27, 2026', not the trailing rate, and the German allowance build shows a contribution, not the headline cause."
+  },
+  {
+   "id": "profitability_further_charges_already_disclosed",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:156 has 'a one-time non-cash settlement charge', mdna:65 has 'due to higher amortization expenses' and mdna:28 has 'higher annual incentive expenses'. The forecast tag is a filer forecast in the filing made at the cutoff, so it is not a post-cutoff fact."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_semiconductor_site_closures",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:85 and notes:150 carry both quotes. The restructuring, impairment and corporate-loss items rose year over year, and ratios.growth.operating_income.year_over_year is positive, as stated."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_transportation_margin_squeeze",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:58 carries the quote. Transportation segment operating income fell while its sales rose (reader items), 8k_2_02:28 reports the margin down, and notes:85 names the commercial vehicle reorganization."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_passenger_car_and_sensor_volume",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:27 and mdna:55 carry the quotes. Auto sensor sales fell and passenger car sales were roughly flat (reader items), and mdna:77 adds the Europe volume. No contradiction is claimed."
+  },
+  {
+   "id": "results_against_expectations_net_income_growth_helped_by_tax_and_currency_items",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.growth.net_income.year_over_year exceeds ratios.growth.operating_income.year_over_year. mdna:34 and mdna:37 carry the FX and tax quotes, and 8k_2_02:15 has 'performance exceeding our expectations'."
+  },
+  {
+   "id": "growth_trailing_earnings_down_and_multi_year_revenue_flat",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.growth.operating_income.trailing_four_quarters and net_income.trailing_four_quarters are negative. earnings_versus_cash.history.revenue_growth_three_year_compound is negative after negative years.1 and years.2 revenue_growth, and 8k_2_02:16 has 'contributions from the Basler acquisition'."
+  },
+  {
+   "id": "efficiency_receivable_days_high_against_annual_history",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.years-back-0 days_sales_outstanding is 'highest of the 5 filled years' and quarters-back-0 is 'lowest of the 6 filled quarters'. The change_in_receivables parts and bad_debt_allowance paths match the text."
+  },
+  {
+   "id": "efficiency_inventory_reserve_ratio_high_against_history",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "years-back-0 inventory_reserve_ratio is 'highest of the 5 filled years' and quarters-back-0 is lower. ratios.efficiency.days_sales_of_inventory and cash_conversion_cycle are as written."
+  },
+  {
+   "id": "efficiency_payables_growth_funding_working_capital",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "working_capital.accounts_payable.balance_sheet_change exceeds working_capital.receivables.balance_sheet_change, and the change_in_payables parts swing from outflow to inflow. mdna:110 credits only 'higher cash earnings'."
+  },
+  {
+   "id": "liquidity_and_capital_current_debt_and_liabilities_rising",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "Struck by a dealbreaker. The debt_current, current_liabilities and cash paths support the main point, but the maturity disagreement it repeats is settled by notes:91."
+  },
+  {
+   "id": "liquidity_and_capital_acquisition_spending_absorbed_free_cash_flow",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "free_cash_flow.free_cash_flow_simple falls to free_cash_flow_quality_adjusted after inputs.acquisitions.cash_spent and share-based compensation. The Basler consideration and net-asset items tie the spending to Basler."
+  },
+  {
+   "id": "liquidity_and_capital_covenant_ebitda_definition_widened",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:84 carries the quote, and notes:93, mdna:11 and mdna:83 do not mention the add-back. 8k_2_02:82 shows the leverage ratio far inside the 8k_2_02:83 trigger, and ratios.solvency.net_debt is as stated."
+  },
+  {
+   "id": "solvency_interest_coverage_thin_on_trailing_earnings",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.solvency.interest_coverage and the trailing operating-income and interest paths, with their this_year_to_date parts, match. ratios.solvency.debt_over_ebitda is missing for want of depreciation and amortization, as stated."
+  },
+  {
+   "id": "solvency_goodwill_heavy_asset_base_after_impairments",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0.ratios.soft_asset_share, terms.balances_now.stockholders_equity and ratios.solvency.liabilities_over_assets match. The accumulated-impairment item shows most of it in Electronics."
+  }
+ ],
+ "coverage": {
+  "answer": "yes",
+  "why": "Every accounting area and industry_lens has a finding and a verdict, and the financial file fills every section plus dupont and path_to_distress. dropped_items is empty in all three analyses; the manifest's only gate drop is a numbers-reader item."
+ },
+ "calibration": {
+  "answer": "yes",
+  "why": "Each area verdict follows the anomalies listed under it: estimates_and_reserves reads 'Mixed' over the reserve, tax and Basler items, and controls names the prior-year correction and the missing 8-K item. The one slip is industry_lens: its verdict says the distributor share 'has eased', although concentration.facts.8.value is above concentration.facts.5.value and the area's own anomaly has concentration edging up."
+ },
+ "valuation_reading": {
+  "answer": "no",
+  "why": "The calculator holds no price (market.missing, valuation.missing, implied_growth_beside_history.implied_ten_year_revenue_growth.missing), so the reading cannot place the price or give implied growth. Its most_sensitive entries say they are 'not a measure of sensitivity'. It reports these gaps from the calculator instead of filling them."
+ },
+ "score": 0.88,
+ "grader": {
+  "model_requested": "opus",
+  "model_served": "claude-opus-5-5",
+  "input_tokens": 46,
+  "output_tokens": 84052,
+  "cost_usd": 6.629195999999999,
+  "seconds": 738.3
+ }
+}

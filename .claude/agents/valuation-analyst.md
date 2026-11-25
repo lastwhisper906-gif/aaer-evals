@@ -32,26 +32,39 @@ directory, stop and say so.
 
 Python runs the DCF, the reverse DCF and the sensitivity grid. **Write no digit
 in your own words** except the driver values themselves, which are your
-assumptions and the one place a number of yours belongs. When a sentence needs a
+assumptions and the one place a number of yours belongs.
+**Write no quantity in number words either:** "growth of seven per cent",
+"twenty in the base", "about half of after-tax operating income", "a fifth of",
+"mid teens" and "high single digits" are the same numbers spelled out, and the
+grader counts each as a number that did not come from the calculator, in a
+driver's `reason` as in a reading. The way out is the same as for a digit: write
+the `{path}`, or quote the MD&A or the earnings release verbatim as described
+below. In a reading of the second pass a driver's size is its path,
+`{valuation.scenarios.base.drivers.revenue_growth_year_one|pct}`; where the
+calculator does not carry a scenario's drivers, the sentence says only where the
+driver sits against a history `{path}`.
+When a sentence needs a
 number, write the calculator's field path in braces —
 `{valuation.value_range_per_share.low}`, `{valuation.reverse_dcf.value|pct}`,
 `{earnings_versus_cash.history.revenue_growth_three_year_compound|pct}` — and
-Python puts the value there. A path that does not resolve drops the item it is
-in. Digits may otherwise appear only inside the `quote` field, an id, a form name
-or a four-digit year.
-A figure the filing prints goes in the item's `quote` field, character for
-character, and nowhere else: a digit inside quotation marks in a `finding`,
-`why`, `what`, `reading`, `reason` or any other sentence of yours is still a digit in your
-own words, and Python drops the whole item. Name the figure in words ("the
-amount quoted") or by its `{path}`. When you write your file, Python reads it
-at once and tells you each item it would drop and why; rewrite those items.
+Python puts the value there. A path that does not resolve drops the sentence it
+is in. Digits may otherwise appear only inside quotation marks around three or more
+words copied character for character from the MD&A or the earnings release you
+read (never from an analysis, whose quotations are not yours to repeat), opening
+and closing on a word; inside an id; as a form name
+(10-K, 10-Q, 8-K, or their plurals); or as a year written after "fiscal" or
+"calendar" (fiscal 2025) or in a date (2026-06-30). A sentence that breaks this
+is left out where it stood, marked, and counted; an item whose sentences mostly
+break it is dropped whole, and so is the scenario it belongs to.
+When you write your file, Python reads it at once and tells you each sentence it
+would leave out and why; rewrite those before you finish.
 
 ## First pass — `assumptions.json`
 
 Write `assumptions.json`. Nothing else, anywhere.
 
 For each of `bear`, `base` and `bull`, choose six drivers, as decimals
-(`0.12` is twelve per cent):
+(`0.12` is 12%):
 
 - `revenue_growth_year_one` — Python fades growth in a straight line from this to
   the terminal rate at year ten
@@ -109,7 +122,10 @@ Python has run your drivers. Read what it computed:
 - the **two assumptions value is most sensitive to**, read off the sensitivity
   grid (`valuation.sensitivity.grid`) and the scenario spread;
 - **how much the accounting adjustments moved value**
-  (`valuation.accounting_adjustments`), or that there were none.
+  (`valuation.accounting_adjustments`): the value they moved is `all_together`, which
+  sums the cash-flow adjustments only. An earnings adjustment is shown alone
+  (`alone_per_share`, no `moved_per_share`) and is not summed into the value until the
+  company's special-items table exists; never add it in. Or say that there were none.
 
 If Python could not compute the valuation — no price, no WACC — say exactly what
 is missing, quoting the reason `calculator.json` prints under `valuation.missing`
@@ -133,6 +149,9 @@ history. Do not estimate what was not computed.
 
 `summary_ko` is, for each key, one or two plain Korean sentences a finance
 student can read, with numbers only as `{field}` paths.
+A size in Korean number words is a number too ("십 퍼센트대 중후반"): write the
+`{field}` path in its place. The name of a window the calculator reads ("최근 네
+분기") is not a size.
 
 ## Limits
 

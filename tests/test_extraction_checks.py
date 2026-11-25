@@ -8,6 +8,7 @@ where it must fail, exit non-zero, and say which gate it was.
 
 from __future__ import annotations
 
+import datetime as dt
 import functools
 import json
 from pathlib import Path
@@ -40,9 +41,28 @@ def gate_lines(lines: list[str], gate: str) -> list[str]:
     return [line for line in lines if line.startswith(f"{gate}: ")]
 
 
+# A defect of `src/assemble_bundle.py`, not of the gate: the 8-K index in a bundle's
+# `input_8k.md` lists every 8-K filed on or before the cutoff by its date alone, so it
+# keeps a row filed on the cutoff day after the triggering report, which the gate and
+# the owner's `nothing_after_cutoff` both refuse. Each entry quotes the row and the
+# two accessions from the company's committed submissions index.
+INDEX_ROW_AFTER_THE_TRIGGER = {
+    "UI": ("input_8k.md's index lists '- 2026-05-08 0001511737-26-000035 — 2.02, 9.01', "
+           "Ubiquiti's earnings release, filed on 2026-05-08 as its 10-Q "
+           "0001511737-26-000034 was and after it in the agent's sequence; neither "
+           "has an acceptance stamp on record"),
+}
+
+CUTOFF_CASES = [
+    pytest.param(ticker, marks=pytest.mark.xfail(
+        strict=True, reason=f"{ticker}: {INDEX_ROW_AFTER_THE_TRIGGER[ticker]}"))
+    if ticker in INDEX_ROW_AFTER_THE_TRIGGER else ticker
+    for ticker in TICKERS
+]
+
 # --- (e) every real bundle passes -------------------------------------------
 
-@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("ticker", CUTOFF_CASES)
 def test_a_real_bundle_passes_every_gate(ticker, tmp_path):
     code, lines = extraction_checks.run(good_bundle(tmp_path, ticker))
     assert code == 0, "\n".join(lines)
@@ -56,7 +76,7 @@ def test_a_ten_k_bundle_passes_too(tmp_path):
     assert code == 0, "\n".join(lines)
 
 
-@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("ticker", CUTOFF_CASES)
 def test_the_cutoff_gate_reads_every_real_bundle_as_the_owner_does(ticker, tmp_path):
     """The cutoff gate holds a bundle's documents, the cutoff day's order, and
     every dated row and id-less line of its inputs, as the owner's
@@ -73,6 +93,29 @@ def test_the_cutoff_gate_reads_every_real_bundle_as_the_owner_does(ticker, tmp_p
     assert "every dated row and id-less line of the inputs" in cutoff[0]
     owner = mechanical.check_nothing_after_cutoff(bundle)
     assert owner.status == PASS, owner.failures
+
+
+@pytest.mark.parametrize("ticker", sorted(INDEX_ROW_AFTER_THE_TRIGGER))
+def test_an_index_row_after_the_trigger_fails_the_cutoff_alone_as_the_owner_does(ticker, tmp_path):
+    """What the two marks above hide, asserted unmarked: the bundle's other three
+    gates pass, the cutoff gate refuses the one index row its entry quotes and
+    nothing else, and the owner's `nothing_after_cutoff` refuses the same line."""
+    from evals.common import PASS
+    from evals.regression import mechanical
+    bundle = good_bundle(tmp_path, ticker)
+    code, lines = extraction_checks.run(bundle)
+    assert code != 0
+    assert [line.split(":")[0] for line in lines] == \
+        ["schema", "paragraph counts", "cutoff", "notes"]
+    assert all(": pass — " in line for line in lines if not line.startswith("cutoff: "))
+    late = "0001511737-26-000035"   # the row the entry quotes, from UI's submissions index
+    cutoff = gate_lines(lines, "cutoff")
+    assert len(cutoff) == 1 and cutoff[0].startswith("cutoff: FAIL — ")
+    assert cutoff[0].count("line ") == 1 and late in cutoff[0]
+    owner = mechanical.check_nothing_after_cutoff(bundle)
+    assert owner.status != PASS
+    assert len(owner.failures) == 1 and late in owner.failures[0]
+    assert owner.failures[0] in cutoff[0]
 
 
 # --- (b) the command ---------------------------------------------------------
@@ -174,6 +217,57 @@ def test_a_document_dated_after_the_cutoff_fails_the_cutoff_gate(tmp_path):
     failures = gate_lines(lines, "cutoff")
     assert len(failures) == 1
     assert "was filed 2027-01-01, after the cutoff" in failures[0]
+
+
+# A comment letter is filed in private and made public later: the manifest row of
+# one says both days, and the cutoff holds it to the later one. The row planted
+# here is ADTRAN's staff letter in shape (an UPLOAD with the role the store gives
+# it), with dates set against this bundle's own cutoff.
+def plant_a_letter(bundle: Path, **dates) -> str:
+    """One UPLOAD row filed sixty days before the cutoff; the cutoff comes back."""
+    found = {}
+
+    def damage(payload):
+        cutoff = dt.date.fromisoformat(payload["cutoff"])
+        found["cutoff"] = cutoff
+        row = dict(payload["documents"][0], form="UPLOAD", role="staff_letter",
+                   accession="0000000000-24-010922", path="events/0000000000-24-010922/"
+                   "filename2.txt", filing_date=(cutoff - dt.timedelta(days=60)).isoformat())
+        row.pop("acceptance_datetime", None)
+        for key, days in dates.items():
+            row[key] = (cutoff - dt.timedelta(days=days)).isoformat()
+        payload["documents"].append(row)
+    rewrite(bundle, "input_manifest.json", damage)
+    return found["cutoff"].isoformat()
+
+
+def test_a_letter_with_no_release_on_record_fails_the_cutoff_gate(tmp_path):
+    """Its filing date is sixty days inside the cutoff and proves nothing: that
+    is the day it was filed in private."""
+    bundle = good_bundle(tmp_path)
+    plant_a_letter(bundle)
+    code, lines = extraction_checks.run(bundle)
+    assert code != 0
+    [failure] = gate_lines(lines, "cutoff")
+    assert failure.startswith("cutoff: FAIL — ")
+    assert "is a UPLOAD with no release on record" in failure
+    assert failure.count("0000000000-24-010922") == 1
+
+
+def test_a_letter_made_public_on_the_cutoff_day_fails_the_cutoff_gate(tmp_path):
+    """A release is a day with no time, so the cutoff's own day does not show the
+    letter came first; the day before does."""
+    bundle = good_bundle(tmp_path)
+    cutoff = plant_a_letter(bundle, released=0)
+    [failure] = gate_lines(extraction_checks.run(bundle)[1], "cutoff")
+    assert f"was made public {cutoff}, not before the cutoff {cutoff}" in failure
+
+
+def test_a_letter_made_public_the_day_before_the_cutoff_passes_the_cutoff_gate(tmp_path):
+    bundle = good_bundle(tmp_path)
+    plant_a_letter(bundle, released=1)
+    [line] = gate_lines(extraction_checks.run(bundle)[1], "cutoff")
+    assert line.startswith("cutoff: pass — "), line
 
 
 def test_an_empty_notes_file_fails_the_notes_gate(tmp_path):

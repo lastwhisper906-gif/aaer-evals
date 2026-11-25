@@ -60,21 +60,25 @@ THE_EIGHT = ("DELL", "WDC", "ANET", "FTNT", "JCI", "POWL", "FELE", "FN")
 # from the module under test; their fixture sets are pinned to 2026-10-07.
 THE_NEXT_EIGHT = ("MSI", "LITE", "FLEX", "AVGO", "SMCI", "SNDK", "FFIV", "LOGI")
 
-# The seven added on 2026-10-14, by the same rule continued past the twenty-eight
-# (`docs/structure_changes.md`, 2026-10-14): the next-largest current filer under
-# 3571, 3572, 3576, 3577, 3585, 3621 and 3661, in that order. Typed from that
-# line, not imported from the module under test; their fixture sets are pinned
-# to 2026-10-14.
-THE_SEVEN = ("OMCL", "NTAP", "EXTR", "EVLV", "LII", "AMSC", "ADTN")
+# The eight after the twenty-eight, by the continuation of the owner's rule of
+# 2026-10-07, in universe.json's order: seven in the order the commit that added
+# them walked the codes, 3585, 3621, 3663, 3669, 3672, 3674, 3571, then ADTRAN
+# under 3661, in the row NetApp held. That commit took NetApp under 3572 as the
+# eighth because it found no current filer under 3661; ADTRAN is one, so the
+# rule stops at eight before 3572. Typed from those two commits, not imported
+# from the module under test; their fixture sets are pinned to 2026-10-07.
+THE_THIRD_EIGHT = ("LII", "AMSC", "UI", "NSSC", "CLS", "AMD", "OMCL", "ADTN")
 
-# The eight added on 2026-10-21 by the same rule continued (`docs/structure_changes.md`,
-# 2026-10-22): the largest current filer under 3674 named on 2026-10-14 and not yet
-# fetched, then the next under 3672, 3674, 3661, 3585, 3576, 3669 and 3663, through
-# `src/add_company.py`. Typed from that line; their fixture sets are pinned to
-# 2026-10-21.
-THE_EIGHT_OF_OCTOBER = ("MU", "JBL", "AMD", "CLFD", "AAON", "ATEN", "AIOT", "VISN")
+# The three of the batch of 2026-10-14 that the third eight did not carry (NetApp,
+# Extreme Networks, Evolv), and the seven added on 2026-10-21 through
+# `src/add_company.py` (the eighth of that batch, AMD, is in the third eight);
+# appended to universe.json after the third eight when the two branches were
+# merged on 2026-11-25 (`docs/structure_changes.md`). Typed from that line.
+THE_THREE_OF_OCTOBER = ("NTAP", "EXTR", "EVLV")
+THE_SEVEN_OF_OCTOBER = ("MU", "JBL", "CLFD", "AAON", "ATEN", "AIOT", "VISN")
 
-EVERY_ROW = THE_TWELVE + THE_EIGHT + THE_NEXT_EIGHT + THE_SEVEN + THE_EIGHT_OF_OCTOBER
+EVERY_ROW = (THE_TWELVE + THE_EIGHT + THE_NEXT_EIGHT + THE_THIRD_EIGHT
+             + THE_THREE_OF_OCTOBER + THE_SEVEN_OF_OCTOBER)
 
 
 def _manifest(ticker: str) -> dict:

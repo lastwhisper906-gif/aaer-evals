@@ -95,13 +95,18 @@ def undated(facts: dict) -> list[str]:
             if not row.get("filed")]
 
 
-def within_cutoff(facts: dict, as_of: str) -> dict:
+def within_cutoff(facts: dict, as_of: str, known: frozenset[str] | None = None) -> dict:
     """The `facts` object with every row filed after `as_of` removed.
 
     A unit with no row left is dropped and so is a concept with no unit left: a
     tag that exists in this record only because a later filing introduced it is
     that filing showing through, which is the look-ahead the cutoff exists to
     stop.
+
+    `known`, when given, is the accessions that stood when the triggering filing
+    was accepted (`src/on_demand.py`, `known_at`): a row filed on `as_of` itself
+    is kept only when its accession is one of them, so a filing made later that
+    same day does not show through either.
     """
     kept = {}
     for namespace, concepts in facts.items():
@@ -109,7 +114,9 @@ def within_cutoff(facts: dict, as_of: str) -> dict:
         for tag, concept in concepts.items():
             units = {}
             for unit, unit_rows in concept.get("units", {}).items():
-                inside = [row for row in unit_rows if row["filed"] <= as_of]
+                inside = [row for row in unit_rows if row["filed"] < as_of
+                          or (row["filed"] == as_of
+                              and (known is None or row.get("accn") in known))]
                 if inside:
                     units[unit] = inside
             if units:
@@ -119,22 +126,46 @@ def within_cutoff(facts: dict, as_of: str) -> dict:
     return kept
 
 
+def as_of_the_filing(facts: dict) -> dict:
+    """A record cut to one filing with what EDGAR writes today taken off.
+
+    A row's `frame` moves to the latest filing that reports its period, so it
+    depends on filings made after the cutoff, and `src/cutoff_guard.py`'s
+    `cut_catalogue` drops it for the same reason. A concept's `label` and
+    `description` are today's taxonomy's words, a "(Deprecated ...)" among
+    them. Nothing reads any of the three.
+    """
+    return {namespace: {tag: {**{key: value for key, value in concept.items()
+                                 if key not in ("label", "description")},
+                              "units": {unit: [{key: value for key, value in row.items()
+                                                if key != "frame"} for row in rows]
+                                        for unit, rows in concept.get("units", {}).items()}}
+                        for tag, concept in concepts.items()}
+            for namespace, concepts in facts.items()}
+
+
 def latest_filed(facts: dict) -> str:
     """The filing date of the newest filing this record carries a fact from."""
     return max((row["filed"] for _, _, _, row in rows(facts)), default="")
 
 
-def companyfacts_record(ticker: str, cik: str, as_of: str,
-                        served: dict) -> tuple[dict, bytes]:
+def companyfacts_record(ticker: str, cik: str, as_of: str, served: dict, *,
+                        known: frozenset[str] | None = None,
+                        entity_name: str | None = None) -> tuple[dict, bytes]:
+    """The record as stored. `entity_name`, when given, is the name the
+    triggering filing states, which stands in for the name EDGAR serves today:
+    a company renamed after its filing would otherwise show its later name."""
     payload = {
         "ticker": ticker,
         "cik": cik,
         "as_of": as_of,
         "url": COMPANYFACTS_URL.format(cik=cik),
         "note": NOTE,
-        "entity_name": served.get("entityName", ""),
-        "facts": within_cutoff(served.get("facts", {}), as_of),
+        "entity_name": served.get("entityName", "") if entity_name is None else entity_name,
+        "facts": within_cutoff(served.get("facts", {}), as_of, known),
     }
+    if known is not None:
+        payload["facts"] = as_of_the_filing(payload["facts"])
     return payload, (json.dumps(payload, indent=2) + "\n").encode("utf-8")
 
 
@@ -163,7 +194,10 @@ def verify_existing(ticker_dir: Path, entry: dict) -> list[str]:
 
 
 def fetch_company(fetcher: fetch_fixtures.Fetcher, ticker: str, as_of: str,
-                  out: Path) -> list[str]:
+                  out: Path, *, known: frozenset[str] | None = None,
+                  entity_name: str | None = None) -> list[str]:
+    """`known` and `entity_name` are `companyfacts_record`'s, for a store built
+    up to one filing."""
     ticker_dir = out / ticker
     manifest = fetch_fixtures.load_manifest(ticker_dir)
     if not manifest:
@@ -187,7 +221,8 @@ def fetch_company(fetcher: fetch_fixtures.Fetcher, ticker: str, as_of: str,
                 f"date, so the cutoff cannot be applied to them: "
                 f"{', '.join(sorted(set(missing_dates))[:5])}"]
 
-    payload, raw = companyfacts_record(ticker, cik, as_of, served)
+    payload, raw = companyfacts_record(ticker, cik, as_of, served, known=known,
+                                       entity_name=entity_name)
     if not payload["facts"]:
         return [f"{ticker}: companyfacts holds no fact filed on or before {as_of}"]
 

@@ -1,0 +1,248 @@
+{
+ "scenarios": {
+  "bear": {
+   "revenue_growth_year_one": 0.05,
+   "terminal_growth": 0.02,
+   "operating_margin_year_one": 0.145,
+   "operating_margin_year_ten": 0.12,
+   "reinvestment_rate_year_one": 0.3,
+   "reinvestment_rate_year_ten": 0.3,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "The guided third quarter is already set, so even the bear case keeps part of the upswing. After it the bear case assumes demand turns, as it did in fiscal 2023 and fiscal 2024, with passenger car builds weak and the sensor exit continuing, leaving Basler's months before its anniversary as the main source of growth.",
+     "quote": "Passenger vehicle sales were impacted by lower global passenger car builds and auto sensor product declines",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.growth.revenue.year_over_year",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.years.1.revenue_growth",
+      "earnings_versus_cash.history.years.2.revenue_growth"
+     ],
+     "history": "Bear year-one growth is far below the latest quarter's {ratios.growth.revenue.year_over_year|pct} but above the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}. Revenue growth was {earnings_versus_cash.history.years.2.revenue_growth|pct} in fiscal 2023 and {earnings_versus_cash.history.years.1.revenue_growth|pct} in fiscal 2024, so a turn of this kind is in the company's own record."
+    },
+    "terminal_growth": {
+     "reason": "A cyclical maker whose revenue shrank over the last three fiscal years is given a long-run rate below nominal output, reflecting exits from lower-margin automotive products and the risk that growth bought through acquisitions does not continue.",
+     "quote": "partially offset by lower volume from the automotive sensors business driven by the strategic exit of certain lower margin products",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound"
+     ],
+     "history": "Bear terminal growth is above the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, since a perpetual decline is not assumed, and well below the risk-free rate of {cost_of_capital.risk_free_rate|pct}."
+    },
+    "operating_margin_year_one": {
+     "reason": "Bear year one gives back part of the first-half margin: operating leverage reverses as growth slows, the Transportation squeeze from commercial vehicle costs persists, incentive pay stays high, and the closure of two semiconductor sites brings further exit costs inside operating income.",
+     "quote": "lower gross margin from the commercial vehicles business impacted by cost inflation and unfavorable product mix",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "terms.trailing_four_quarters.operating_income.parts.this_year_to_date",
+      "terms.trailing_four_quarters.revenue.parts.this_year_to_date",
+      "earnings_versus_cash.history.years.2.operating_margin",
+      "ratios.profitability.operating_margin"
+     ],
+     "history": "Bear year one is below the first-half rate, operating income of {terms.trailing_four_quarters.operating_income.parts.this_year_to_date} on revenue of {terms.trailing_four_quarters.revenue.parts.this_year_to_date}, and below the fiscal 2023 margin of {earnings_versus_cash.history.years.2.operating_margin|pct}, but far above the trailing {ratios.profitability.operating_margin|pct}, which carries the fiscal 2025 impairments."
+    },
+    "operating_margin_year_ten": {
+     "reason": "The bear case reads the last two fiscal years as a warning: restructuring and impairment charges have recurred while segment, adjusted and covenant measures leave them out, and their cash part belongs in a cash model. Year ten settles near the fiscal 2020 trough rather than the peaks.",
+     "quote": "Items presented as outside the run-rate keep recurring",
+     "quote_from": "analysis_accounting.json",
+     "fields": [
+      "earnings_versus_cash.history.years.5.operating_margin",
+      "earnings_versus_cash.history.years.1.operating_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average"
+     ],
+     "history": "Bear year ten is near the fiscal 2020 margin of {earnings_versus_cash.history.years.5.operating_margin|pct} and above both the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct} and the fiscal 2024 margin of {earnings_versus_cash.history.years.1.operating_margin|pct}, which impairment charges, largely non-cash, held down."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "Slower growth needs less working capital, but the bear case keeps reinvestment at the base level because site closures and restructuring absorb cash and the company keeps acquiring businesses whose value has later been written down.",
+     "quote": "after past write-downs that leave a large accumulated goodwill impairment, most of it in Electronics",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "terms.cash_flow_families.acquisitions",
+      "terms.trailing_four_quarters.capital_expenditure",
+      "trend_table.quarters-back-0.ratios.soft_asset_share"
+     ],
+     "history": "Bear year one equals the base rate and sits far below the trailing reinvestment once acquisition spending of {terms.cash_flow_families.acquisitions}, nearly all of it Basler, is counted. Soft assets are {trend_table.quarters-back-0.ratios.soft_asset_share|pct} of total assets, a share built by past acquisitions."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "Held flat, so the bear case keeps reinvesting a large share of a thinner margin for low terminal growth. That pairing means new capital earns little, the bear reading of a record in which impairment charges turned the fourth quarters of fiscal 2024 and fiscal 2025 into losses.",
+     "quote": "A further impairment would cut equity",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "earnings_versus_cash.smoothness.net_income.6",
+      "earnings_versus_cash.smoothness.net_income.2",
+      "ratios.profitability.return_on_invested_capital"
+     ],
+     "history": "Bear year ten is above the base and bull rates. The quarters ended 2024-12-28 and 2025-12-27 recorded net income of {earnings_versus_cash.smoothness.net_income.6} and {earnings_versus_cash.smoothness.net_income.2} on impairment charges, and the trailing return on invested capital is {ratios.profitability.return_on_invested_capital|pct}, so the record holds periods in which capital earned little."
+    }
+   }
+  },
+  "base": {
+   "revenue_growth_year_one": 0.12,
+   "terminal_growth": 0.03,
+   "operating_margin_year_one": 0.17,
+   "operating_margin_year_ten": 0.165,
+   "reinvestment_rate_year_one": 0.3,
+   "reinvestment_rate_year_ten": 0.2,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "Revenue in the latest quarter grew {ratios.growth.revenue.year_over_year|pct} on the year, and the release guides the third quarter higher still, citing record bookings and Basler. Year one is set below that pace for two reasons. Basler closed on 2025-12-11, so its inorganic lift ends once the deal laps, partway through year one. And Python fades growth in a straight line from this figure, so writing a cyclical peak into year one would also inflate the middle years of the forecast.",
+     "quote": "we expect approximately 26% total revenue growth versus the prior year, supported by record bookings, continued customer momentum, and contributions from the Basler acquisition",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.growth.revenue.year_over_year",
+      "ratios.growth.revenue.trailing_four_quarters",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.revenue_growth_five_year_compound"
+     ],
+     "history": "Base year-one growth is below the latest quarter's growth and below the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct}, but well above the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, which spans the declines of fiscal 2023 and fiscal 2024. It is a little above the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, a span that starts at the fiscal 2020 trough and includes acquired revenue."
+    },
+    "terminal_growth": {
+     "reason": "A long-run rate for a components maker tied to industrial, electronics and transportation demand, held well below the risk-free rate of {cost_of_capital.risk_free_rate|pct} that caps it. It lets the company grow roughly with nominal output once the current upswing and the Basler lift have passed, without the lasting share gains a higher rate would need.",
+     "quote": "leveraging our leadership position in safe and efficient electrical energy transfer",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.revenue_growth_five_year_compound"
+     ],
+     "history": "Terminal growth sits between the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}. The first is held down by a down-cycle and the second is lifted by acquisitions and a trough starting year, so neither is a perpetual rate."
+    },
+    "operating_margin_year_one": {
+     "reason": "The first half of fiscal 2026 earned operating income of {terms.trailing_four_quarters.operating_income.parts.this_year_to_date} on revenue of {terms.trailing_four_quarters.revenue.parts.this_year_to_date}, after a new semiconductor site impairment and higher incentive pay, and the latest quarter's gross margin of {trend_table.quarters-back-0.ratios.gross_margin|pct} is the highest of six quarters. Year one assumes the guided volume adds some operating leverage to that first-half rate. It keeps restructuring and impairment inside the margin, because the accounting analysis finds those charges recur every year.",
+     "quote": "primarily due to higher volume and favorable price, operational execution, and favorable product mix from the Electronics segment and the industrial circuit protection business within the Industrial segment",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "terms.trailing_four_quarters.operating_income.parts.this_year_to_date",
+      "terms.trailing_four_quarters.revenue.parts.this_year_to_date",
+      "trend_table.quarters-back-0.ratios.gross_margin",
+      "ratios.profitability.operating_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "earnings_versus_cash.history.years.3.operating_margin",
+      "earnings_versus_cash.history.years.4.operating_margin"
+     ],
+     "history": "Year one is far above the trailing operating margin of {ratios.profitability.operating_margin|pct} and the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}, both held down by impairments in fiscal 2024 and fiscal 2025. It is below the fiscal 2021 margin of {earnings_versus_cash.history.years.4.operating_margin|pct} and the fiscal 2022 peak of {earnings_versus_cash.history.years.3.operating_margin|pct}."
+    },
+    "operating_margin_year_ten": {
+     "reason": "A through-cycle margin rather than an upswing one. Closing two semiconductor sites, exiting lower-margin sensor products and Basler's richer gross margin should support the structural margin, but a down-cycle can take a large part of it away, as fiscal 2023 and fiscal 2024 showed, and restructuring charges keep recurring. Year ten is therefore set a little below year one.",
+     "quote": "restructuring and impairment charges recur year after year",
+     "quote_from": "analysis_accounting.json",
+     "fields": [
+      "earnings_versus_cash.history.years.2.operating_margin",
+      "earnings_versus_cash.history.years.3.operating_margin",
+      "earnings_versus_cash.history.years.4.operating_margin",
+      "earnings_versus_cash.history.years.5.operating_margin"
+     ],
+     "history": "Year ten is above the fiscal 2023 margin of {earnings_versus_cash.history.years.2.operating_margin|pct} and the fiscal 2020 trough of {earnings_versus_cash.history.years.5.operating_margin|pct}, and below the fiscal 2021 and fiscal 2022 peaks of {earnings_versus_cash.history.years.4.operating_margin|pct} and {earnings_versus_cash.history.years.3.operating_margin|pct}, roughly the middle of the years not dominated by impairment charges."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "Working capital is heavy, with a cash conversion cycle of {ratios.efficiency.cash_conversion_cycle} days, so faster sales tie up receivables and inventory, and payables supplied an unusual amount of cash this year that may reverse. The company also grows by acquisition: acquisitions of {terms.cash_flow_families.acquisitions} took most of free cash flow over the trailing four quarters. Year one reinvests a meaningful share of after-tax operating income to cover working capital, plant and smaller bolt-on deals.",
+     "quote": "part of the cash improvement rests on supplier credit that can reverse",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "ratios.efficiency.cash_conversion_cycle",
+      "terms.cash_flow_families.acquisitions",
+      "free_cash_flow.free_cash_flow_simple",
+      "free_cash_flow.free_cash_flow_quality_adjusted",
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters_a_year_earlier.capital_expenditure"
+     ],
+     "history": "Counting the Basler purchase, the company's recent reinvestment ran far above this rate: simple free cash flow of {free_cash_flow.free_cash_flow_simple} shrinks to {free_cash_flow.free_cash_flow_quality_adjusted} after acquisitions and share-based pay. Capital spending of {terms.trailing_four_quarters.capital_expenditure} compares with {terms.trailing_four_quarters_a_year_earlier.capital_expenditure} a year earlier, so plant spending alone is not rising. Year one assumes deals smaller than Basler."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "In the long run reinvestment only has to fund the terminal growth rate. This rate implies a return on new capital a little above what the base margin would earn on today's invested capital of {ratios.profitability.return_on_invested_capital.invested_capital}, which fits organic growth that needs working capital and plant but little acquired goodwill.",
+     "quote": "deploying capital with discipline",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.profitability.return_on_invested_capital.invested_capital",
+      "ratios.profitability.return_on_invested_capital",
+      "terms.cash_flow_families.acquisitions"
+     ],
+     "history": "Year ten is below year one and far below the trailing reinvestment that includes Basler, because the base case assumes acquisitions shrink to what the terminal growth needs. The trailing return on invested capital of {ratios.profitability.return_on_invested_capital|pct} carries the fiscal 2025 impairments and is not a guide here, and the calculator holds acquisition spending only for the trailing window, so the longer acquisition record cannot be checked against this rate."
+    }
+   }
+  },
+  "bull": {
+   "revenue_growth_year_one": 0.18,
+   "terminal_growth": 0.035,
+   "operating_margin_year_one": 0.185,
+   "operating_margin_year_ten": 0.2,
+   "reinvestment_rate_year_one": 0.32,
+   "reinvestment_rate_year_ten": 0.18,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "The bull case reads the guided third quarter as a run-rate rather than a peak: record bookings, organic Industrial demand from data centers, HVAC and automation, and Electronics volume with favorable price carry on through year one, and Basler adds until its anniversary.",
+     "quote": "driven by improved data center, HVAC, industrial automation, and construction demand",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.growth.revenue.year_over_year",
+      "ratios.growth.revenue.quarter_over_quarter",
+      "earnings_versus_cash.history.years.3.revenue_growth",
+      "earnings_versus_cash.history.years.4.revenue_growth"
+     ],
+     "history": "Bull year-one growth is somewhat below the latest quarter's {ratios.growth.revenue.year_over_year|pct} and the fiscal 2022 growth of {earnings_versus_cash.history.years.3.revenue_growth|pct}, and far below the fiscal 2021 upswing of {earnings_versus_cash.history.years.4.revenue_growth|pct}, so the company has grown this fast before in an upswing, with acquisitions helping."
+    },
+    "terminal_growth": {
+     "reason": "The bull case credits a lasting tilt toward electrification, higher power and data center infrastructure, letting the company grow a little faster than nominal output for good, still below the risk-free cap of {cost_of_capital.risk_free_rate|pct}.",
+     "quote": "drive the ongoing evolution to higher power and higher energy density solutions",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.revenue_growth_five_year_compound",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound"
+     ],
+     "history": "Bull terminal growth is far below the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, which includes acquisitions and starts from a trough, and above the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}."
+    },
+    "operating_margin_year_one": {
+     "reason": "In the bull case the guided volume runs through a cost base that is being cut: gross margin is already at a six-quarter high of {trend_table.quarters-back-0.ratios.gross_margin|pct}, lower-margin sensor products are being exited, and Basler carries a higher gross margin. Restructuring stays inside the margin but is smaller than in the latest quarter.",
+     "quote": "Additionally, gross margin was higher due to higher gross margin from the Basler acquisition",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "trend_table.quarters-back-0.ratios.gross_margin",
+      "ratios.growth.operating_income.this_quarter",
+      "ratios.growth.revenue.this_quarter",
+      "earnings_versus_cash.history.years.3.operating_margin",
+      "earnings_versus_cash.history.years.4.operating_margin"
+     ],
+     "history": "Bull year one is about the fiscal 2021 margin of {earnings_versus_cash.history.years.4.operating_margin|pct} and below the fiscal 2022 peak of {earnings_versus_cash.history.years.3.operating_margin|pct}. The latest quarter earned operating income of {ratios.growth.operating_income.this_quarter} on revenue of {ratios.growth.revenue.this_quarter}, after impairment charges."
+    },
+    "operating_margin_year_ten": {
+     "reason": "The bull case holds that site closures, product exits and a richer mix from Basler and industrial circuit protection lift the through-cycle margin to the level of the last peak, with restructuring fading once the footprint work ends.",
+     "quote": "higher gross margin from the industrial circuit protection products driven by volume leverage, operational efficiencies, favorable product mix and the incremental increases from the Basler acquisition",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "earnings_versus_cash.history.years.3.operating_margin",
+      "earnings_versus_cash.history.years.4.operating_margin"
+     ],
+     "history": "Bull year ten is about the fiscal 2022 peak of {earnings_versus_cash.history.years.3.operating_margin|pct}, the best year on record, so the bull case assumes the company holds a peak margin through later cycles, which its record has not yet shown."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "Faster growth ties up more receivables and inventory in a business with a cash conversion cycle of {ratios.efficiency.cash_conversion_cycle} days, so the bull case reinvests slightly more than the base in year one, while acquisitions stay bolt-on.",
+     "quote": "Cash generation is the strongest part of the picture",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "ratios.efficiency.cash_conversion_cycle",
+      "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now",
+      "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier",
+      "terms.cash_flow_families.acquisitions"
+     ],
+     "history": "Trade working capital stands at {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now} against {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier} a year earlier. Bull year one is far below the trailing reinvestment that includes acquisition spending of {terms.cash_flow_families.acquisitions}."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "With a higher terminal margin, a smaller share of after-tax income funds the terminal growth, which implies the high return on new capital a peak-margin business would earn on organic investment.",
+     "quote": "Inventory is turning faster and carries a heavy reserve",
+     "quote_from": "analysis_accounting.json",
+     "fields": [
+      "trend_table.quarters-back-0.ratios.days_sales_of_inventory",
+      "trend_table.years-back-3.ratios.days_sales_of_inventory",
+      "ratios.profitability.return_on_invested_capital"
+     ],
+     "history": "Bull year ten is the lowest reinvestment of the three cases. Inventory days of {trend_table.quarters-back-0.ratios.days_sales_of_inventory} are the lowest of six quarters, against {trend_table.years-back-3.ratios.days_sales_of_inventory} in fiscal 2022, so capital efficiency has been improving, though the trailing return on invested capital of {ratios.profitability.return_on_invested_capital|pct} is still held down by impairments."
+    }
+   }
+  }
+ },
+ "wacc_overrides": {},
+ "dropped_items": [],
+ "dropped_count": 0
+}
